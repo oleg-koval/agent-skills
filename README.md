@@ -1,4 +1,13 @@
-# olko-skills
+<div align="center">
+  <h1>olko-skills</h1>
+  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.</strong></p>
+  <p>
+    <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
+    <img src="https://img.shields.io/badge/skills-9-2563eb" alt="9 skills">
+    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor-111827" alt="Codex Claude Cursor">
+    <img src="https://img.shields.io/badge/status-private%20beta-7c3aed" alt="Private beta">
+  </p>
+</div>
 
 Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware tools.
 
