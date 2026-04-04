@@ -92,3 +92,19 @@ Validate the neutral catalog and generated root manifests:
 ```bash
 ./scripts/validate-catalog.sh
 ```
+
+## Smoke-tested workflows
+
+The following package workflows have been smoke-tested locally before first push:
+
+- `docs-index-keeper`
+  - installed from npm in a temporary git repo
+  - initialized hook generation with `npx docs-index-keeper init`
+  - updated `docs/README.md` from a staged Markdown file
+  - passed `docs-index-keeper check`
+- `semantic-release-beta`
+  - configured a temporary git repo with `main` and `beta` branches
+  - ran `semantic-release --dry-run --no-ci` on `beta`
+  - verified prerelease calculation to `1.0.0-beta.1`
+
+The semantic-release smoke test was intentionally self-contained and used a local bare git remote plus a valid `file://` repository URL so dry-run behavior could be validated without real npm or GitHub publishing credentials.

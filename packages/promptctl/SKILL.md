@@ -1,3 +1,16 @@
+---
+name: promptctl
+description: Use promptctl for template-based prompt engineering, prompt scoring, prompt generation, and reusable prompt workflows across repositories and teams.
+compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires promptctl to be installed when the workflow depends on the CLI.
+metadata:
+  author: Oleg Koval
+  tags:
+    - prompts
+    - prompt-engineering
+    - templates
+    - cli
+---
+
 # promptctl — Template-Based Prompt Engineering
 
 promptctl is a CLI for version control and testing of LLM prompt templates. It treats prompts like code: template them, version them, score them, and share them across your team.
