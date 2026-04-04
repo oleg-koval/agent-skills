@@ -38,6 +38,16 @@
       "name": "promptctl",
       "source": "./packages/promptctl/adapters/claude",
       "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation."
+    },
+    {
+      "name": "fill-music-player",
+      "source": "./packages/fill-music-player/adapters/claude",
+      "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity."
+    },
+    {
+      "name": "product-builder",
+      "source": "./packages/product-builder/adapters/claude",
+      "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
     }
   ]
 }

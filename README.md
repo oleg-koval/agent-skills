@@ -24,7 +24,9 @@ Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware
 - `gh-cli`
 - `git-commit`
 - `gallery`
+- `fill-music-player`
 - `promptctl`
+- `product-builder`
 
 ## Planned next steps
 
@@ -108,3 +110,8 @@ The following package workflows have been smoke-tested locally before first push
   - verified prerelease calculation to `1.0.0-beta.1`
 
 The semantic-release smoke test was intentionally self-contained and used a local bare git remote plus a valid `file://` repository URL so dry-run behavior could be validated without real npm or GitHub publishing credentials.
+
+## Licensing notes
+
+- `fill-music-player` includes an MIT license and is safe to carry as-is in this repository.
+- `product-builder` was imported from your repository but does not currently include a visible license file in the source repo clone. Keep it private until you decide the licensing you want for public release.

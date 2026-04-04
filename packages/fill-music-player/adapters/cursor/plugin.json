@@ -1,0 +1,6 @@
+{
+  "name": "fill-music-player",
+  "version": "0.1.0",
+  "description": "Fill a portable music player with a curated random selection from a source music library.",
+  "skills": "skills/"
+}

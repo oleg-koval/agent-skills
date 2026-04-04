@@ -1,0 +1,6 @@
+{
+  "name": "product-builder",
+  "version": "0.1.0",
+  "description": "Build a full-stack web application or SaaS product from a user description.",
+  "skills": "skills/"
+}

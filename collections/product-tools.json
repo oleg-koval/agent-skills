@@ -1,0 +1,5 @@
+{
+  "name": "product-tools",
+  "description": "Skills for building, shaping, and shipping full-stack products and SaaS applications.",
+  "packages": ["product-builder"]
+}

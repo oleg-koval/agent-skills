@@ -1,0 +1,10 @@
+{
+  "name": "product-builder",
+  "description": "Build a full-stack web application or SaaS product from a user description.",
+  "skills": [
+    {
+      "name": "product-builder",
+      "source": "../../SKILL.md"
+    }
+  ]
+}

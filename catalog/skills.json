@@ -49,6 +49,20 @@
       "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation.",
       "tags": ["prompts", "prompt-engineering", "cli", "templates"],
       "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "fill-music-player",
+      "path": "packages/fill-music-player",
+      "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity.",
+      "tags": ["music", "media", "copy", "curation", "cli"],
+      "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "product-builder",
+      "path": "packages/product-builder",
+      "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults.",
+      "tags": ["product", "full-stack", "saas", "web-app", "builder"],
+      "adapters": ["codex", "claude", "cursor"]
     }
   ]
 }
