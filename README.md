@@ -114,4 +114,4 @@ The semantic-release smoke test was intentionally self-contained and used a loca
 ## Licensing notes
 
 - `fill-music-player` includes an MIT license and is safe to carry as-is in this repository.
-- `product-builder` was imported from your repository but does not currently include a visible license file in the source repo clone. Keep it private until you decide the licensing you want for public release.
+- `product-builder` now has an MIT license file added in the source repo clone and in this catalog package, matching the existing MIT claim in its README.

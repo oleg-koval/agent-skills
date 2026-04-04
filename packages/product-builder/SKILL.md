@@ -1,6 +1,7 @@
 ---
 name: product-builder
 description: Use when a user asks to build a full-stack web application, SaaS product, dashboard, or any complete working app from a description. Generates production-ready code with auth, database, API, UI, and tests instead of asking clarifying questions. Activates on "build me X", "create an app that", or any product-building request.
+license: MIT
 compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires a writable application repository and a stack compatible with the generated implementation.
 metadata:
   author: Oleg Koval
