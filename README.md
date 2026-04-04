@@ -38,3 +38,57 @@ Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware
 - Cursor plugin index: `.cursor-plugin/index.json`
 
 These are generated from the neutral package inventory and kept in the repo for platform-specific consumption.
+
+## Install and test
+
+### Codex
+
+Install all canonical packages into your local Codex skills directory:
+
+```bash
+./scripts/install-codex-symlinks.sh
+```
+
+This creates symlinks from `packages/*` into `${CODEX_HOME:-~/.codex}/skills`.
+
+To test a skill in a fresh Codex session, mention it explicitly:
+
+```text
+Use the docs-index-keeper skill to set up docs index automation in this repo.
+```
+
+```text
+Use the semantic-release-beta skill to add prereleases on a beta branch.
+```
+
+### Claude
+
+The repository includes a generated root manifest at `.claude-plugin/marketplace.json` and per-package Claude adapter stubs under `packages/*/adapters/claude/`.
+
+Current status:
+
+- suitable for local packaging and iteration
+- not yet validated against a live Claude marketplace install flow
+
+### Cursor
+
+The repository includes a generated root plugin index at `.cursor-plugin/index.json` and per-package Cursor adapter stubs under `packages/*/adapters/cursor/`.
+
+Current status:
+
+- suitable for local packaging and iteration
+- not yet validated against a live Cursor plugin install flow
+
+## Local validation
+
+Rebuild generated manifests:
+
+```bash
+./scripts/build-adapters.sh
+```
+
+Validate the neutral catalog and generated root manifests:
+
+```bash
+./scripts/validate-catalog.sh
+```
