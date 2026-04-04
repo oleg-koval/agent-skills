@@ -1,0 +1,5 @@
+{
+  "name": "git-tools",
+  "description": "Skills for git workflows, commits, GitHub CLI usage, and related automation.",
+  "packages": ["gh-cli", "git-commit", "changelog-generator"]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "docs-tools",
+  "description": "Skills for documentation maintenance and docs automation.",
+  "packages": ["docs-index-keeper", "changelog-generator"]
+}

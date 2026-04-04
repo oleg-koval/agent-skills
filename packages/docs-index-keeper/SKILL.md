@@ -1,0 +1,62 @@
+---
+name: docs-index-keeper
+description: Keep a repository's Markdown docs index in sync by installing and running docs-index-keeper in pre-commit hooks, CI, or one-off maintenance flows.
+license: MIT
+compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires shell access and Node.js 18+ when installing from npm.
+metadata:
+  author: Oleg Koval
+  package: docs-index-keeper
+  tags:
+    - docs
+    - markdown
+    - documentation
+    - pre-commit
+    - ci
+    - index
+---
+
+# docs-index-keeper
+
+Use this skill when a repository keeps docs under `docs/` and needs a Markdown index table updated automatically as docs are added or changed.
+
+## Trigger phrases
+
+- keep a docs index up to date
+- auto-update `docs/README.md`
+- add a pre-commit hook for docs indexing
+- enforce docs index freshness in CI
+- add a specific `docs/*.md` file into a Markdown index table
+
+## Workflow
+
+1. Confirm the repo has a docs directory and an index table such as `| Doc | Purpose |`.
+2. Install the package if it is not already present:
+
+```bash
+npm install -D docs-index-keeper
+```
+
+3. Initialize the hook:
+
+```bash
+npx docs-index-keeper init
+```
+
+4. For CI enforcement, run:
+
+```bash
+npx docs-index-keeper check
+```
+
+5. For one-off staged maintenance, run:
+
+```bash
+npx docs-index-keeper update
+```
+
+## Notes
+
+- `update` operates on staged Markdown files.
+- `check` exits non-zero when the index is missing entries for staged docs.
+- Purpose text comes from the first Markdown heading when available.
+- New rows are inserted before an archive sentinel row when present.

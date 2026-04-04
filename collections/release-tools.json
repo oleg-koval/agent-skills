@@ -1,0 +1,5 @@
+{
+  "name": "release-tools",
+  "description": "Skills for release automation, versioning, and prerelease workflows.",
+  "packages": ["semantic-release-beta"]
+}

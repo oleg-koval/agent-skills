@@ -1,0 +1,5 @@
+{
+  "name": "creative-tools",
+  "description": "Skills for creative media curation and presentation workflows.",
+  "packages": ["gallery"]
+}

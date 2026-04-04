@@ -1,0 +1,6 @@
+{
+  "name": "git-commit",
+  "version": "0.1.0",
+  "description": "Create conventional commits with diff-aware staging and message generation.",
+  "skills": "skills/"
+}

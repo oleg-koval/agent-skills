@@ -1,0 +1,54 @@
+{
+  "name": "olko-skills",
+  "packages": [
+    {
+      "name": "docs-index-keeper",
+      "path": "packages/docs-index-keeper",
+      "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows.",
+      "tags": ["docs", "markdown", "index", "ci", "pre-commit"],
+      "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "semantic-release-beta",
+      "path": "packages/semantic-release-beta",
+      "description": "Set up semantic-release with stable main releases and prerelease beta releases on a beta branch.",
+      "tags": ["semantic-release", "release", "beta", "github-actions", "npm"],
+      "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "changelog-generator",
+      "path": "packages/changelog-generator",
+      "description": "Generate user-facing changelogs and release notes from git history.",
+      "tags": ["changelog", "release-notes", "git", "docs"],
+      "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "gh-cli",
+      "path": "packages/gh-cli",
+      "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more.",
+      "tags": ["github", "gh", "cli", "pull-requests", "actions"],
+      "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "git-commit",
+      "path": "packages/git-commit",
+      "description": "Create conventional commits with diff-aware staging and message generation.",
+      "tags": ["git", "commit", "conventional-commits"],
+      "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "gallery",
+      "path": "packages/gallery",
+      "description": "Create photo galleries with AI-assisted layout curation and sequencing.",
+      "tags": ["photos", "gallery", "layout", "curation"],
+      "adapters": ["codex", "claude", "cursor"]
+    },
+    {
+      "name": "promptctl",
+      "path": "packages/promptctl",
+      "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation.",
+      "tags": ["prompts", "prompt-engineering", "cli", "templates"],
+      "adapters": ["codex", "claude", "cursor"]
+    }
+  ]
+}

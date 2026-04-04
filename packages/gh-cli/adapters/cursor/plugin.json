@@ -1,0 +1,6 @@
+{
+  "name": "gh-cli",
+  "version": "0.1.0",
+  "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more.",
+  "skills": "skills/"
+}

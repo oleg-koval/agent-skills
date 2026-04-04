@@ -1,0 +1,6 @@
+{
+  "name": "gallery",
+  "version": "0.1.0",
+  "description": "Create photo galleries with AI-assisted layout curation and sequencing.",
+  "skills": "skills/"
+}

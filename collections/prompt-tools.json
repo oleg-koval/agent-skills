@@ -1,0 +1,5 @@
+{
+  "name": "prompt-tools",
+  "description": "Skills for prompt engineering, prompt quality, and prompt workflow automation.",
+  "packages": ["promptctl"]
+}
