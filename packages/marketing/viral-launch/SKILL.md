@@ -1,0 +1,99 @@
+---
+name: viral-launch
+description: Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops without pretending virality is guaranteed.
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, and other Agent Skills compatible tools. Useful for product repos, open-source packages, SaaS launches, waitlists, and creator tools.
+metadata:
+  author: Oleg Koval
+  tags:
+    - marketing
+    - launch
+    - growth
+    - virality
+    - positioning
+    - github
+---
+
+# viral-launch
+
+Use this skill when a user wants to launch a project, make a repo marketable, improve discoverability, or build shareable launch assets.
+
+This skill is opinionated: virality is not a promise. The goal is to make the project easy to understand, easy to share, and easy to act on.
+
+## Trigger phrases
+
+- make this repo launch-ready
+- set this up to go viral
+- prepare a product launch
+- create marketing assets for this project
+- improve the README for launch
+- prepare Product Hunt / Hacker News / X / LinkedIn launch copy
+- set up an open-source repo for growth
+
+## Workflow
+
+1. Inspect the project first:
+   - product purpose
+   - target user
+   - core use case
+   - current README and docs
+   - install or demo path
+   - screenshots, videos, or visual proof
+   - analytics or waitlist capture if present
+2. Define the launch angle in one sentence:
+   - who it is for
+   - what painful job it solves
+   - why now
+   - what makes it different
+3. Make the repo launch-ready:
+   - clear README headline and first paragraph
+   - demo or quickstart within the first screen
+   - installation steps that work from a clean checkout
+   - screenshots, GIF, or demo link where possible
+   - feature list based on outcomes, not implementation trivia
+   - examples for the highest-intent use cases
+   - badges only when they add trust
+   - license, contributing notes, and issue templates when useful
+4. Create launch assets:
+   - short tagline
+   - 1-paragraph announcement
+   - 5 social post variants
+   - Product Hunt tagline and description when relevant
+   - Hacker News title candidates when relevant
+   - launch email or DM when relevant
+   - creator/influencer outreach list criteria, not spam copy
+5. Design share loops:
+   - a reason users would show the output to someone else
+   - a public artifact worth linking
+   - a before/after demo
+   - a template, benchmark, checklist, or gallery that can travel
+   - referral or waitlist loop only if it fits the product
+6. Define proof and metrics:
+   - activation event
+   - share event
+   - conversion event
+   - retention proxy
+   - launch-day dashboard or simple tracking checklist
+7. Keep claims grounded:
+   - do not invent traction, logos, benchmarks, testimonials, or user counts
+   - mark assumptions explicitly
+   - prefer specific proof over hype
+   - avoid dark patterns and spam
+
+## Output format
+
+When planning, produce:
+
+- Launch angle
+- Repo changes
+- Launch assets
+- Share loops
+- Metrics
+- Risks and assumptions
+- Next actions
+
+When editing a repository, make the smallest useful set of changes first, then validate by reading the README from a new user's perspective.
+
+## References
+
+- `references/launch-checklist.md`
+- `references/external-skills.md`

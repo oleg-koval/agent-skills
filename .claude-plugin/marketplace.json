@@ -48,6 +48,11 @@
       "name": "olko:product-builder",
       "source": "./packages/software-development/product-builder/adapters/claude",
       "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
+    },
+    {
+      "name": "olko:viral-launch",
+      "source": "./packages/marketing/viral-launch/adapters/claude",
+      "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops."
     }
   ]
 }

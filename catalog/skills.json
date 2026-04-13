@@ -176,6 +176,27 @@
         "cursor",
         "copilot"
       ]
+    },
+    {
+      "name": "viral-launch",
+      "lookupName": "olko:viral-launch",
+      "category": "marketing",
+      "path": "packages/marketing/viral-launch",
+      "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops.",
+      "tags": [
+        "marketing",
+        "launch",
+        "growth",
+        "virality",
+        "positioning",
+        "github"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     }
   ]
 }

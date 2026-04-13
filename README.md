@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-9-2563eb" alt="9 skills">
+    <img src="https://img.shields.io/badge/skills-10-2563eb" alt="10 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot-111827" alt="Codex Claude Cursor Copilot">
     <img src="https://img.shields.io/badge/status-private%20beta-7c3aed" alt="Private beta">
   </p>
@@ -43,6 +43,10 @@ These skills are opinionated by design. They encode working defaults, preferred 
 
 - `fill-music-player`
 
+### Marketing
+
+- `viral-launch`
+
 ### Photography
 
 - `gallery`
@@ -61,6 +65,10 @@ Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
 
 ```text
 Use the olko:gallery skill to build a photo gallery from this image folder.
+```
+
+```text
+Use the olko:viral-launch skill to make this project launch-ready.
 ```
 
 Each package has a canonical `SKILL.md` under `packages/{category}/{skill}/`. Agent-specific wrappers live under that package's `adapters/` directory.

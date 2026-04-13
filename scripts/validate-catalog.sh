@@ -3,6 +3,7 @@ set -eu
 
 test -f catalog/skills.json
 test -f collections/software-development.json
+test -f collections/marketing.json
 test -f collections/music.json
 test -f collections/photography.json
 test -f collections/docs-tools.json
@@ -15,7 +16,7 @@ node <<'EOF'
 const fs = require('fs')
 const path = require('path')
 
-const categories = new Set(['software-development', 'music', 'photography'])
+const categories = new Set(['software-development', 'marketing', 'music', 'photography'])
 const adapterFiles = {
   claude: (pkg) => path.join(pkg.path, 'adapters', 'claude', 'plugin.json'),
   codex: (pkg) => path.join(pkg.path, 'adapters', 'codex', 'README.md'),
