@@ -1,0 +1,10 @@
+{
+  "name": "olko:gallery",
+  "description": "Create photo galleries with AI-assisted layout curation and sequencing.",
+  "skills": [
+    {
+      "name": "olko:gallery",
+      "source": "../../SKILL.md"
+    }
+  ]
+}

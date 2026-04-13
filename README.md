@@ -1,19 +1,21 @@
 <div align="center">
-  <h1>olko-skills</h1>
+  <h1>agent skills</h1>
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
     <img src="https://img.shields.io/badge/skills-9-2563eb" alt="9 skills">
-    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor-111827" alt="Codex Claude Cursor">
+    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot-111827" alt="Codex Claude Cursor Copilot">
     <img src="https://img.shields.io/badge/status-private%20beta-7c3aed" alt="Private beta">
   </p>
 </div>
 
 Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware tools.
 
+These skills are opinionated by design. They encode working defaults, preferred tools, and repeatable workflows instead of trying to be neutral snippets. Treat them as starting points with taste: useful out of the box, easy to inspect, and specific enough for an agent to execute consistently.
+
 ## Structure
 
-- `packages/` — canonical skill packages
+- `packages/` — canonical skill packages organized by category
 - `catalog/` — machine-readable inventory
 - `collections/` — grouped package bundles
 - `scripts/` — sync and validation helpers
@@ -25,28 +27,58 @@ Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware
 - Keep catalogs neutral and machine-readable.
 - Add marketplace-specific metadata on top of the canonical package, not instead of it.
 
-## Initial packages
+## Packages
+
+### Software development
 
 - `docs-index-keeper`
 - `semantic-release-beta`
 - `changelog-generator`
 - `gh-cli`
 - `git-commit`
-- `gallery`
-- `fill-music-player`
 - `promptctl`
 - `product-builder`
 
-## Planned next steps
+### Music
 
-1. Copy more skills from the incubator into `packages/`.
-2. Add sync tooling from source repos.
-3. Add marketplace-ready metadata where the target platform is known.
+- `fill-music-player`
+
+### Photography
+
+- `gallery`
+
+## How to use skills
+
+Install the Codex symlinks, then mention a skill by its lookup name in a new agent session:
+
+```bash
+./scripts/install-codex-symlinks.sh
+```
+
+```text
+Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
+```
+
+```text
+Use the olko:gallery skill to build a photo gallery from this image folder.
+```
+
+Each package has a canonical `SKILL.md` under `packages/{category}/{skill}/`. Agent-specific wrappers live under that package's `adapters/` directory.
+
+When adding or changing a skill:
+
+1. Update the canonical `SKILL.md` first.
+2. Keep instructions concrete and operational.
+3. Add references only when the agent needs extra detail to execute the workflow.
+4. Update `catalog/skills.json` if the skill name, category, description, path, tags, or adapters change.
+5. Run local validation before publishing changes.
 
 ## Root manifests
 
 - Claude marketplace manifest: `.claude-plugin/marketplace.json`
 - Cursor plugin index: `.cursor-plugin/index.json`
+- Copilot repository instructions: `.github/copilot-instructions.md`
+- Copilot prompt files: `.github/prompts/*.prompt.md`
 
 These are generated from the neutral package inventory and kept in the repo for platform-specific consumption.
 
@@ -60,21 +92,21 @@ Install all canonical packages into your local Codex skills directory:
 ./scripts/install-codex-symlinks.sh
 ```
 
-This creates symlinks from `packages/*` into `${CODEX_HOME:-~/.codex}/skills`.
+This creates symlinks from the package catalog into `${CODEX_HOME:-~/.codex}/skills` using the lookup format `olko:{skill_name}`.
 
 To test a skill in a fresh Codex session, mention it explicitly:
 
 ```text
-Use the docs-index-keeper skill to set up docs index automation in this repo.
+Use the olko:docs-index-keeper skill to set up docs index automation in this repo.
 ```
 
 ```text
-Use the semantic-release-beta skill to add prereleases on a beta branch.
+Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
 ```
 
 ### Claude
 
-The repository includes a generated root manifest at `.claude-plugin/marketplace.json` and per-package Claude adapter stubs under `packages/*/adapters/claude/`.
+The repository includes a generated root manifest at `.claude-plugin/marketplace.json` and per-package Claude adapter stubs under `packages/*/*/adapters/claude/`.
 
 Current status:
 
@@ -83,12 +115,26 @@ Current status:
 
 ### Cursor
 
-The repository includes a generated root plugin index at `.cursor-plugin/index.json` and per-package Cursor adapter stubs under `packages/*/adapters/cursor/`.
+The repository includes a generated root plugin index at `.cursor-plugin/index.json` and per-package Cursor adapter stubs under `packages/*/*/adapters/cursor/`.
 
 Current status:
 
 - suitable for local packaging and iteration
 - not yet validated against a live Cursor plugin install flow
+
+### GitHub Copilot
+
+The repository includes generated Copilot repository instructions at `.github/copilot-instructions.md` and one reusable prompt file per skill under `.github/prompts/`.
+
+Current status:
+
+- suitable for repository-level Copilot customization
+- generated from the canonical package catalog
+- not yet validated against GitHub Copilot in a live GitHub workspace
+
+### Source sync
+
+`./scripts/sync-from-sources.sh` syncs package content only for catalog entries that explicitly define `sourcePath`. If no package has `sourcePath`, the script exits successfully and reports that there is nothing to sync.
 
 ## Local validation
 
@@ -115,6 +161,7 @@ The following package workflows have been smoke-tested locally before first push
   - passed `docs-index-keeper check`
 - `semantic-release-beta`
   - configured a temporary git repo with `main` and `beta` branches
+  - used `semantic-release-npm-github-publish` as the release preset
   - ran `semantic-release --dry-run --no-ci` on `beta`
   - verified prerelease calculation to `1.0.0-beta.1`
 

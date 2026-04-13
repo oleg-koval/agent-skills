@@ -1,6 +1,0 @@
-{
-  "name": "semantic-release-beta",
-  "version": "0.1.0",
-  "description": "Set up semantic-release with stable main releases and prerelease beta releases on a beta branch.",
-  "skills": "skills/"
-}

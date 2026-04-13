@@ -1,0 +1,13 @@
+{
+  "name": "software-development",
+  "description": "Skills for software development, release automation, git workflows, documentation, prompt tooling, and product building.",
+  "packages": [
+    "docs-index-keeper",
+    "semantic-release-beta",
+    "changelog-generator",
+    "gh-cli",
+    "git-commit",
+    "promptctl",
+    "product-builder"
+  ]
+}

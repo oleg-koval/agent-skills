@@ -1,0 +1,10 @@
+{
+  "name": "olko:changelog-generator",
+  "description": "Generate user-facing changelogs and release notes from git history.",
+  "skills": [
+    {
+      "name": "olko:changelog-generator",
+      "source": "../../SKILL.md"
+    }
+  ]
+}

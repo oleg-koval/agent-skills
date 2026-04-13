@@ -1,6 +1,0 @@
-{
-  "name": "changelog-generator",
-  "version": "0.1.0",
-  "description": "Generate user-facing changelogs and release notes from git history.",
-  "skills": "skills/"
-}

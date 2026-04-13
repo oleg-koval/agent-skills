@@ -1,0 +1,5 @@
+{
+  "name": "photography",
+  "description": "Skills for photography curation and gallery presentation workflows.",
+  "packages": ["gallery"]
+}

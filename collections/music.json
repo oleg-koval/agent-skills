@@ -1,0 +1,5 @@
+{
+  "name": "music",
+  "description": "Skills for music library curation and portable music player workflows.",
+  "packages": ["fill-music-player"]
+}

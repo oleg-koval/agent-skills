@@ -1,6 +1,0 @@
-{
-  "name": "docs-index-keeper",
-  "version": "0.1.0",
-  "description": "Keep Markdown docs indexes in sync with staged docs changes using a portable skill and npm CLI.",
-  "skills": "skills/"
-}

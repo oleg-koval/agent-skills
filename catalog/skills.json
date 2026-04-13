@@ -1,68 +1,181 @@
 {
-  "name": "olko-skills",
+  "name": "agent skills",
   "packages": [
     {
       "name": "docs-index-keeper",
-      "path": "packages/docs-index-keeper",
+      "lookupName": "olko:docs-index-keeper",
+      "category": "software-development",
+      "path": "packages/software-development/docs-index-keeper",
       "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows.",
-      "tags": ["docs", "markdown", "index", "ci", "pre-commit"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "docs",
+        "markdown",
+        "index",
+        "ci",
+        "pre-commit"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "semantic-release-beta",
-      "path": "packages/semantic-release-beta",
-      "description": "Set up semantic-release with stable main releases and prerelease beta releases on a beta branch.",
-      "tags": ["semantic-release", "release", "beta", "github-actions", "npm"],
-      "adapters": ["codex", "claude", "cursor"]
+      "lookupName": "olko:semantic-release-beta",
+      "category": "software-development",
+      "path": "packages/software-development/semantic-release-beta",
+      "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch.",
+      "tags": [
+        "semantic-release",
+        "semantic-release-npm-github-publish",
+        "release",
+        "beta",
+        "github-actions",
+        "npm"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "changelog-generator",
-      "path": "packages/changelog-generator",
+      "lookupName": "olko:changelog-generator",
+      "category": "software-development",
+      "path": "packages/software-development/changelog-generator",
       "description": "Generate user-facing changelogs and release notes from git history.",
-      "tags": ["changelog", "release-notes", "git", "docs"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "changelog",
+        "release-notes",
+        "git",
+        "docs"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "gh-cli",
-      "path": "packages/gh-cli",
+      "lookupName": "olko:gh-cli",
+      "category": "software-development",
+      "path": "packages/software-development/gh-cli",
       "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more.",
-      "tags": ["github", "gh", "cli", "pull-requests", "actions"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "github",
+        "gh",
+        "cli",
+        "pull-requests",
+        "actions"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "git-commit",
-      "path": "packages/git-commit",
+      "lookupName": "olko:git-commit",
+      "category": "software-development",
+      "path": "packages/software-development/git-commit",
       "description": "Create conventional commits with diff-aware staging and message generation.",
-      "tags": ["git", "commit", "conventional-commits"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "git",
+        "commit",
+        "conventional-commits"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "gallery",
-      "path": "packages/gallery",
+      "lookupName": "olko:gallery",
+      "category": "photography",
+      "path": "packages/photography/gallery",
       "description": "Create photo galleries with AI-assisted layout curation and sequencing.",
-      "tags": ["photos", "gallery", "layout", "curation"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "photos",
+        "gallery",
+        "layout",
+        "curation"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "promptctl",
-      "path": "packages/promptctl",
+      "lookupName": "olko:promptctl",
+      "category": "software-development",
+      "path": "packages/software-development/promptctl",
       "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation.",
-      "tags": ["prompts", "prompt-engineering", "cli", "templates"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "prompts",
+        "prompt-engineering",
+        "cli",
+        "templates"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "fill-music-player",
-      "path": "packages/fill-music-player",
+      "lookupName": "olko:fill-music-player",
+      "category": "music",
+      "path": "packages/music/fill-music-player",
       "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity.",
-      "tags": ["music", "media", "copy", "curation", "cli"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "music",
+        "media",
+        "copy",
+        "curation",
+        "cli"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     },
     {
       "name": "product-builder",
-      "path": "packages/product-builder",
+      "lookupName": "olko:product-builder",
+      "category": "software-development",
+      "path": "packages/software-development/product-builder",
       "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults.",
-      "tags": ["product", "full-stack", "saas", "web-app", "builder"],
-      "adapters": ["codex", "claude", "cursor"]
+      "tags": [
+        "product",
+        "full-stack",
+        "saas",
+        "web-app",
+        "builder"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     }
   ]
 }

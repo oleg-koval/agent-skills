@@ -1,0 +1,10 @@
+{
+  "name": "olko:semantic-release-beta",
+  "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases.",
+  "skills": [
+    {
+      "name": "olko:semantic-release-beta",
+      "source": "../../SKILL.md"
+    }
+  ]
+}

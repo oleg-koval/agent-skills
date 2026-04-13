@@ -1,0 +1,10 @@
+{
+  "name": "olko:gh-cli",
+  "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more.",
+  "skills": [
+    {
+      "name": "olko:gh-cli",
+      "source": "../../SKILL.md"
+    }
+  ]
+}
