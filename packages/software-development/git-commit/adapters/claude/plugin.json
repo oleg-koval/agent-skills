@@ -1,10 +1,5 @@
 {
-  "name": "olko:git-commit",
+  "name": "olko-git-commit",
   "description": "Create conventional commits with diff-aware staging and message generation.",
-  "skills": [
-    {
-      "name": "olko:git-commit",
-      "source": "../../SKILL.md"
-    }
-  ]
+  "skills": "./skills"
 }

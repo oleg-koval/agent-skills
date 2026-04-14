@@ -21,6 +21,7 @@
   "files": [
     "catalog",
     "collections",
+    "docs",
     "packages",
     ".claude-plugin",
     ".cursor-plugin",

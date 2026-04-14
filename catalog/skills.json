@@ -1,5 +1,5 @@
 {
-  "name": "agent skills",
+  "name": "agent-skills",
   "packages": [
     {
       "name": "docs-index-keeper",

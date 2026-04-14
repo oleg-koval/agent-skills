@@ -1,5 +1,5 @@
 {
-  "name": "agent skills",
+  "name": "agent-skills",
   "plugins": [
     {
       "name": "olko:docs-index-keeper",
