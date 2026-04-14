@@ -1,3 +1,40 @@
+# 1.0.0 (2026-04-14)
+
+
+### ♻️ Chores
+
+* **marketing:** tighten viral-launch skill and public README ([6fe7d5d](https://github.com/oleg-koval/agent-skills/commit/6fe7d5df577e13d5c419426165ce2dc2e6cd7ac4))
+* **repo:** add codex skill install helper ([0a63172](https://github.com/oleg-koval/agent-skills/commit/0a63172787208169ba0386a826d4ebfd87749503))
+
+
+### ⚙️ Continuous Integrations
+
+* **release:** set NODE_AUTH_TOKEN on release job  setup-node registry-url ignores NPM_TOKEN; whoami needs NODE_AUTH_TOKEN. ([8dc142e](https://github.com/oleg-koval/agent-skills/commit/8dc142eb88d58e8e2e19b87a7e25a57ea6e02585)), closes [#1](https://github.com/oleg-koval/agent-skills/issues/1) [#4](https://github.com/oleg-koval/agent-skills/issues/4)
+
+
+### ✨ Features
+
+* **catalog:** add imported builder and media skills ([d5486ba](https://github.com/oleg-koval/agent-skills/commit/d5486ba0f92b8cb0789c09d5fe0375546cf920b1))
+* **catalog:** organize skills and add copilot prompts ([4c555c0](https://github.com/oleg-koval/agent-skills/commit/4c555c0ed4e7f3f411822c474bf6f12f0f112b03))
+* **marketing:** add viral launch skill ([0cc222e](https://github.com/oleg-koval/agent-skills/commit/0cc222e979081f3d41972d0eb919c38c52dc37b0))
+* **release:** add changelog changes ([52a74e6](https://github.com/oleg-koval/agent-skills/commit/52a74e673792be05198e8050add816ec776352ad)), closes [#5](https://github.com/oleg-koval/agent-skills/issues/5) [#1](https://github.com/oleg-koval/agent-skills/issues/1)
+* **repo:** initialize olko-skills catalog ([07aad7d](https://github.com/oleg-koval/agent-skills/commit/07aad7d40085095a6b24993aa2f7ad2be6b4423f))
+
+
+### 📚 Documentation
+
+* add Claude marketplace setup ([8923d67](https://github.com/oleg-koval/agent-skills/commit/8923d673a1d8b073f148427d20e71f6a70b6c672))
+* **catalog:** add product-builder license metadata ([6b1b00a](https://github.com/oleg-koval/agent-skills/commit/6b1b00a5bea49435568c168895ca70088095d370))
+* **repo:** add install and test guidance ([862c6a6](https://github.com/oleg-koval/agent-skills/commit/862c6a6ec808731134f038d5750263c505fe0395))
+* **repo:** add readme badge summary ([1e63c89](https://github.com/oleg-koval/agent-skills/commit/1e63c895cc162ce6c0d877156f6a7fb8e4a17148))
+* **repo:** add root MIT license ([68b5c24](https://github.com/oleg-koval/agent-skills/commit/68b5c245f2ff9a9cb7edab5190a8277ea2b48b96))
+* **repo:** normalize skill metadata ([f42cbef](https://github.com/oleg-koval/agent-skills/commit/f42cbef28382a24171ef6858f42c9f38b17e762b))
+
+
+### 🛠 Builds
+
+* **scripts:** sync Cursor adapter SKILL from canonical ([d3d21f5](https://github.com/oleg-koval/agent-skills/commit/d3d21f5193fce5af302a066c4f96766c218e0aec))
+
 # 1.0.0-beta.1 (2026-04-14)
 
 
