@@ -9,6 +9,7 @@ test -f collections/photography.json
 test -f collections/docs-tools.json
 test -f collections/release-tools.json
 test -f .claude-plugin/marketplace.json
+test -f .claude-plugin/plugin.json
 test -f .cursor-plugin/index.json
 test -f .github/copilot-instructions.md
 
@@ -27,7 +28,17 @@ const adapterFiles = {
 const catalog = JSON.parse(fs.readFileSync('catalog/skills.json', 'utf8'))
 const packagesByName = new Map(catalog.packages.map((pkg) => [pkg.name, pkg]))
 const claudeManifest = JSON.parse(fs.readFileSync('.claude-plugin/marketplace.json', 'utf8'))
+const claudePluginManifest = JSON.parse(fs.readFileSync('.claude-plugin/plugin.json', 'utf8'))
 const cursorManifest = JSON.parse(fs.readFileSync('.cursor-plugin/index.json', 'utf8'))
+const kebabCasePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+if (!kebabCasePattern.test(claudeManifest.name)) {
+  throw new Error(`Claude marketplace name must be kebab-case: ${claudeManifest.name}`)
+}
+
+if (!kebabCasePattern.test(claudePluginManifest.name)) {
+  throw new Error(`Claude plugin name must be kebab-case: ${claudePluginManifest.name}`)
+}
 
 for (const pkg of catalog.packages) {
   if (!pkg.name || !pkg.lookupName || !pkg.path || !pkg.description) {
@@ -53,6 +64,13 @@ for (const pkg of catalog.packages) {
     if (!fs.existsSync(adapterFile)) {
       throw new Error(`missing ${adapter} adapter for ${pkg.name}: ${adapterFile}`)
     }
+
+    if (adapter === 'claude') {
+      const adapterManifest = JSON.parse(fs.readFileSync(adapterFile, 'utf8'))
+      if (!kebabCasePattern.test(adapterManifest.name)) {
+        throw new Error(`Claude adapter plugin name must be kebab-case for ${pkg.name}: ${adapterManifest.name}`)
+      }
+    }
   }
 }
 
@@ -66,9 +84,20 @@ for (const collectionPath of fs.readdirSync('collections').map((name) => path.jo
 }
 
 for (const plugin of claudeManifest.plugins || []) {
-  const source = plugin.source.replace(/^\.\//, '')
+  if (!kebabCasePattern.test(plugin.name)) {
+    throw new Error(`Claude manifest plugin name must be kebab-case: ${plugin.name}`)
+  }
+
+  const source = plugin.source.replace(/^\.\//, '') || '.'
   if (!fs.existsSync(source)) {
     throw new Error(`Claude manifest source does not exist: ${plugin.source}`)
+  }
+}
+
+for (const skillPath of claudePluginManifest.skills || []) {
+  const source = skillPath.replace(/^\.\//, '')
+  if (!fs.existsSync(path.join(source, 'SKILL.md'))) {
+    throw new Error(`Claude root plugin skill path is invalid: ${skillPath}`)
   }
 }
 

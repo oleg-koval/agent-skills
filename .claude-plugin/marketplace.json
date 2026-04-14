@@ -1,58 +1,16 @@
 {
-  "name": "agent skills",
+  "name": "olko-agent-skills",
   "owner": {
     "name": "Oleg Koval"
   },
+  "metadata": {
+    "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools."
+  },
   "plugins": [
     {
-      "name": "olko:docs-index-keeper",
-      "source": "./packages/software-development/docs-index-keeper/adapters/claude",
-      "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows."
-    },
-    {
-      "name": "olko:semantic-release-beta",
-      "source": "./packages/software-development/semantic-release-beta/adapters/claude",
-      "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch."
-    },
-    {
-      "name": "olko:changelog-generator",
-      "source": "./packages/software-development/changelog-generator/adapters/claude",
-      "description": "Generate user-facing changelogs and release notes from git history."
-    },
-    {
-      "name": "olko:gh-cli",
-      "source": "./packages/software-development/gh-cli/adapters/claude",
-      "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more."
-    },
-    {
-      "name": "olko:git-commit",
-      "source": "./packages/software-development/git-commit/adapters/claude",
-      "description": "Create conventional commits with diff-aware staging and message generation."
-    },
-    {
-      "name": "olko:gallery",
-      "source": "./packages/photography/gallery/adapters/claude",
-      "description": "Create photo galleries with AI-assisted layout curation and sequencing."
-    },
-    {
-      "name": "olko:promptctl",
-      "source": "./packages/software-development/promptctl/adapters/claude",
-      "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation."
-    },
-    {
-      "name": "olko:fill-music-player",
-      "source": "./packages/music/fill-music-player/adapters/claude",
-      "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity."
-    },
-    {
-      "name": "olko:product-builder",
-      "source": "./packages/software-development/product-builder/adapters/claude",
-      "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
-    },
-    {
-      "name": "olko:viral-launch",
-      "source": "./packages/marketing/viral-launch/adapters/claude",
-      "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops."
+      "name": "olko-agent-skills",
+      "source": "./",
+      "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools."
     }
   ]
 }

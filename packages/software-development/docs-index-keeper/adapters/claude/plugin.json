@@ -1,10 +1,5 @@
 {
-  "name": "olko:docs-index-keeper",
-  "description": "Keep Markdown docs indexes in sync through hooks, CI, or one-off maintenance.",
-  "skills": [
-    {
-      "name": "olko:docs-index-keeper",
-      "source": "../../SKILL.md"
-    }
-  ]
+  "name": "olko-docs-index-keeper",
+  "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows.",
+  "skills": "./skills"
 }

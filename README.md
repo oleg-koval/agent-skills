@@ -27,29 +27,128 @@ These skills are opinionated by design. They encode working defaults, preferred 
 - Keep catalogs neutral and machine-readable.
 - Add marketplace-specific metadata on top of the canonical package, not instead of it.
 
-## Packages
+## Quick Start
+
+<details>
+<summary><b>Codex</b></summary>
+
+Install all package symlinks into your local Codex skills directory:
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+cd agent-skills
+./scripts/install-codex-symlinks.sh
+```
+
+Then mention a lookup name in a new Codex session:
+
+```text
+Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
+```
+
+</details>
+
+<details>
+<summary><b>Claude Code</b></summary>
+
+The repository includes a generated Claude marketplace manifest at `.claude-plugin/marketplace.json`.
+
+For local development, clone the repo and point Claude Code at the plugin directory:
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+claude --plugin-dir /path/to/agent-skills
+```
+
+If your Claude Code environment supports GitHub marketplace installs for this repo, add the marketplace source first:
+
+```text
+/plugin marketplace add oleg-koval/agent-skills
+```
+
+Then install the catalog plugin:
+
+```text
+/plugin install olko-agent-skills@olko-agent-skills
+```
+
+Live Claude marketplace install is not yet validated for this repo.
+
+</details>
+
+<details>
+<summary><b>Cursor</b></summary>
+
+The repository includes a generated Cursor plugin index at `.cursor-plugin/index.json` and per-package Cursor adapters under `packages/*/*/adapters/cursor/`.
+
+For a single project, copy the relevant `SKILL.md` or adapter content into `.cursor/rules/`, or reference the full package directory from your Cursor rules.
+
+</details>
+
+<details>
+<summary><b>GitHub Copilot</b></summary>
+
+Use the generated repository instructions and prompt files:
+
+```text
+.github/copilot-instructions.md
+.github/prompts/*.prompt.md
+```
+
+These files are generated from `catalog/skills.json` and can be copied into a repository that should use the same skill guidance.
+
+</details>
+
+<details>
+<summary><b>Other agents</b></summary>
+
+Skills are plain Markdown. Use the canonical package file directly:
+
+```text
+packages/{category}/{skill}/SKILL.md
+```
+
+Agent-specific wrappers live under:
+
+```text
+packages/{category}/{skill}/adapters/
+```
+
+</details>
+
+## All 10 Skills
+
+These packages are the entry points. Each one is a structured workflow with concrete trigger conditions and execution steps. You can reference any skill directly by its `olko:*` lookup name.
 
 ### Software development
 
-- `docs-index-keeper`
-- `semantic-release-beta`
-- `changelog-generator`
-- `gh-cli`
-- `git-commit`
-- `promptctl`
-- `product-builder`
+| Skill | What It Does | Use When |
+|-------|-------------|----------|
+| [docs-index-keeper](packages/software-development/docs-index-keeper/SKILL.md) | Keeps a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows | A repo has `docs/` and needs `docs/README.md` or another Markdown index updated automatically |
+| [semantic-release-beta](packages/software-development/semantic-release-beta/SKILL.md) | Sets up `semantic-release-npm-github-publish` with stable `main` releases and beta prereleases | A Node package needs stable npm publishing plus beta prereleases from a `beta` branch |
+| [changelog-generator](packages/software-development/changelog-generator/SKILL.md) | Generates user-facing changelogs and release notes from git history | Preparing release notes, app store update text, customer changelogs, or internal release summaries |
+| [gh-cli](packages/software-development/gh-cli/SKILL.md) | Guides GitHub CLI usage for repos, PRs, Actions, releases, issues, and related GitHub operations | Working with GitHub from the command line and needing reliable `gh` commands |
+| [git-commit](packages/software-development/git-commit/SKILL.md) | Creates conventional commits with diff-aware staging and message generation | The user asks to commit changes or wants a conventional commit message from the current diff |
+| [promptctl](packages/software-development/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, prompt review, prompt scoring, or reusable prompt workflows |
+| [product-builder](packages/software-development/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | The user asks to build a complete app, SaaS, dashboard, or product rather than a prototype |
 
 ### Music
 
-- `fill-music-player`
+| Skill | What It Does | Use When |
+|-------|-------------|----------|
+| [fill-music-player](packages/music/fill-music-player/SKILL.md) | Fills a portable music player with a curated random music selection while balancing formats, artists, albums, and capacity | Copying music from a NAS or local library to a Walkman, iPod, USB drive, or similar device |
 
 ### Marketing
 
-- `viral-launch`
+| Skill | What It Does | Use When |
+|-------|-------------|----------|
+| [viral-launch](packages/marketing/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, waitlist, or creator tool for public launch |
 
 ### Photography
 
-- `gallery`
+| Skill | What It Does | Use When |
+|-------|-------------|----------|
+| [gallery](packages/photography/gallery/SKILL.md) | Creates photo galleries with AI-assisted layout curation and sequencing | Building a gallery from photos or planning photo layout, sequencing, and curation |
 
 ## How to use skills
 
@@ -89,6 +188,57 @@ When adding or changing a skill:
 - Copilot prompt files: `.github/prompts/*.prompt.md`
 
 These are generated from the neutral package inventory and kept in the repo for platform-specific consumption.
+
+## How Skills Work
+
+Every package follows a consistent anatomy:
+
+```text
+packages/{category}/{skill}/
+├── SKILL.md              # Required canonical skill definition
+├── references/           # Optional supporting material loaded only when needed
+└── adapters/             # Optional agent-specific wrappers
+    ├── codex/
+    ├── claude/
+    └── cursor/
+```
+
+Key design choices:
+
+- Process over prose: skills are workflows agents follow, not generic reference essays.
+- Progressive disclosure: `SKILL.md` is the entry point; supporting files load only when needed.
+- Adapter separation: Codex, Claude, Cursor, and Copilot metadata wrap the canonical package instead of forking it.
+- Verifiable changes: catalog and manifest changes should pass `./scripts/validate-catalog.sh`.
+
+See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
+
+## Project Structure
+
+```text
+agent-skills/
+├── packages/                         # Canonical skill packages
+│   ├── software-development/
+│   │   ├── docs-index-keeper/
+│   │   ├── semantic-release-beta/
+│   │   ├── changelog-generator/
+│   │   ├── gh-cli/
+│   │   ├── git-commit/
+│   │   ├── promptctl/
+│   │   └── product-builder/
+│   ├── music/
+│   │   └── fill-music-player/
+│   ├── marketing/
+│   │   └── viral-launch/
+│   └── photography/
+│       └── gallery/
+├── catalog/                          # Machine-readable package inventory
+├── collections/                      # Grouped package bundles
+├── scripts/                          # Build, validation, sync, and install helpers
+├── .claude-plugin/                   # Generated Claude marketplace manifest
+├── .cursor-plugin/                   # Generated Cursor plugin index
+├── .github/prompts/                  # Generated GitHub Copilot prompt files
+└── docs/                             # Contributor and package format docs
+```
 
 ## Install and test
 
