@@ -32,7 +32,7 @@
     "build": "sh ./scripts/build-adapters.sh",
     "test": "sh ./scripts/validate-catalog.sh",
     "semantic-release": "semantic-release",
-    "release:dry-run": "semantic-release --dry-run --no-ci"
+    "release:dry-run": "semantic-release --dry-run --no-ci --verify-conditions=@semantic-release/changelog --verify-conditions=@semantic-release/git --verify-conditions=@semantic-release/github"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
