@@ -66,7 +66,7 @@ const copilotInstructions = [
   '',
   '- Treat `catalog/skills.json` as the source of truth for package metadata.',
   '- Keep canonical skill instructions in `packages/{category}/{skill}/SKILL.md`.',
-  '- Keep generated adapter files in sync by running `./scripts/build-adapters.sh` after catalog or skill metadata changes.',
+  '- Keep generated adapter files in sync by running `./scripts/build-adapters.sh` after catalog or skill metadata changes (includes Cursor `skills/*/SKILL.md` copies from each canonical `SKILL.md`).',
   '- Run `./scripts/validate-catalog.sh` before release.',
   '- Prefer small, scoped updates that preserve existing package structure.',
   '',
@@ -99,5 +99,17 @@ for (const pkg of catalog.packages) {
   fs.writeFileSync(path.join(root, '.github', 'prompts', promptNameFor(pkg)), prompt)
 }
 
-console.log('generated marketplace manifests and Copilot prompts')
+for (const pkg of catalog.packages) {
+  if (!pkg.adapters.includes('cursor')) {
+    continue
+  }
+
+  const canonical = fs.readFileSync(skillPathFor(pkg), 'utf8').trimEnd()
+  const destDir = path.join(root, pkg.path, 'adapters', 'cursor', 'skills', pkg.name)
+  const destPath = path.join(destDir, 'SKILL.md')
+  fs.mkdirSync(destDir, { recursive: true })
+  fs.writeFileSync(destPath, [generatedHeader, '', canonical, ''].join('\n'))
+}
+
+console.log('generated marketplace manifests, Copilot prompts, and Cursor adapter SKILL.md files')
 EOF
