@@ -1,0 +1,47 @@
+{
+  "name": "@olegkoval/agent-skills",
+  "version": "0.0.0",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oleg-koval/agent-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oleg-koval/agent-skills/issues"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills#readme",
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "catalog",
+    "collections",
+    "packages",
+    ".claude-plugin",
+    ".cursor-plugin",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "sh ./scripts/build-adapters.sh",
+    "test": "sh ./scripts/validate-catalog.sh",
+    "semantic-release": "semantic-release",
+    "release:dry-run": "semantic-release --dry-run --no-ci"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.6",
+    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "semantic-release": "^25.0.3",
+    "semantic-release-npm-github-publish": "^1.7.3"
+  }
+}
