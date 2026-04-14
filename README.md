@@ -5,7 +5,7 @@
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
     <img src="https://img.shields.io/badge/skills-10-2563eb" alt="10 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot-111827" alt="Codex Claude Cursor Copilot">
-    <img src="https://img.shields.io/badge/status-private%20beta-7c3aed" alt="Private beta">
+    <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
 </div>
 
