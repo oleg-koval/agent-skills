@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/oleg-koval/agent-skills/compare/v1.0.0...v1.0.1) (2026-04-26)
+
+
+### ⚙️ Continuous Integrations
+
+* add bot automerge workflow ([3cb0de3](https://github.com/oleg-koval/agent-skills/commit/3cb0de323e77a4cf1b7f14dd3c937214514f9c0b))
+
 # 1.0.0 (2026-04-14)
 
 
