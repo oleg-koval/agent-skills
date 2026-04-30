@@ -197,6 +197,27 @@
         "cursor",
         "copilot"
       ]
+    },
+    {
+      "name": "search-console-indexing-audit",
+      "lookupName": "olko:search-console-indexing-audit",
+      "category": "marketing",
+      "path": "packages/marketing/search-console-indexing-audit",
+      "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals.",
+      "tags": [
+        "seo",
+        "google-search-console",
+        "indexing",
+        "sitemap",
+        "canonical",
+        "robots"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     }
   ]
 }

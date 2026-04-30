@@ -1,5 +1,5 @@
 {
   "name": "marketing",
-  "description": "Skills for project marketing, public launches, positioning, and shareable growth workflows.",
-  "packages": ["viral-launch"]
+  "description": "Skills for project marketing, public launches, positioning, SEO, indexing, and shareable growth workflows.",
+  "packages": ["viral-launch", "search-console-indexing-audit"]
 }

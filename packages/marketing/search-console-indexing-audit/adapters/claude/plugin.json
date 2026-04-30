@@ -1,0 +1,5 @@
+{
+  "name": "olko-search-console-indexing-audit",
+  "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals.",
+  "skills": "./skills"
+}

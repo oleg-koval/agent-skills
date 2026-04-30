@@ -50,6 +50,11 @@
       "name": "olko:viral-launch",
       "source": "./packages/marketing/viral-launch/adapters/cursor",
       "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops."
+    },
+    {
+      "name": "olko:search-console-indexing-audit",
+      "source": "./packages/marketing/search-console-indexing-audit/adapters/cursor",
+      "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals."
     }
   ]
 }
