@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-10-2563eb" alt="10 skills">
+    <img src="https://img.shields.io/badge/skills-11-2563eb" alt="11 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot-111827" alt="Codex Claude Cursor Copilot">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -116,7 +116,7 @@ packages/{category}/{skill}/adapters/
 
 </details>
 
-## All 10 Skills
+## All 11 Skills
 
 These packages are the entry points. Each one is a structured workflow with concrete trigger conditions and execution steps. You can reference any skill directly by its `olko:*` lookup name.
 
@@ -143,6 +143,7 @@ These packages are the entry points. Each one is a structured workflow with conc
 | Skill | What It Does | Use When |
 |-------|-------------|----------|
 | [viral-launch](packages/marketing/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, waitlist, or creator tool for public launch |
+| [search-console-indexing-audit](packages/marketing/search-console-indexing-audit/SKILL.md) | Audits Google Search Console Coverage exports against sitemap, robots, canonical, redirect, and noindex signals | Diagnosing GSC indexing issues such as redirects, canonical alternates, and discovered but not indexed pages |
 
 ### Photography
 

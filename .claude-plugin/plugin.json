@@ -18,6 +18,7 @@
     "./packages/software-development/promptctl",
     "./packages/music/fill-music-player",
     "./packages/software-development/product-builder",
-    "./packages/marketing/viral-launch"
+    "./packages/marketing/viral-launch",
+    "./packages/marketing/search-console-indexing-audit"
   ]
 }

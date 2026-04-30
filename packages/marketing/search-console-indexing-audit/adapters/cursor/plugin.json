@@ -1,0 +1,6 @@
+{
+  "name": "olko:search-console-indexing-audit",
+  "version": "0.1.0",
+  "description": "Analyze Google Search Console Coverage CSV exports against sitemap, robots, canonical, redirect, and noindex signals.",
+  "skills": "skills/"
+}
