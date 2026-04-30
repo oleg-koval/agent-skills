@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/oleg-koval/agent-skills/compare/v1.0.1...v1.1.0) (2026-04-30)
+
+
+### ✨ Features
+
+* **marketing:** add search console indexing audit skill ([6c869d6](https://github.com/oleg-koval/agent-skills/commit/6c869d69a725040f41a7db4426d6b27b649e2264))
+
 ## [1.0.1](https://github.com/oleg-koval/agent-skills/compare/v1.0.0...v1.0.1) (2026-04-26)
 
 
