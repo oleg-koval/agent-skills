@@ -18,7 +18,7 @@ metadata:
 
 # open-source-publisher
 
-Use this skill to turn a useful OSS repository into a clean public package: recognizable icon, shareable social image, GitHub Pages site, standardized README, CI/CD hygiene, release readiness, and optional donation links.
+Use this skill to audit whether an OSS repository is ready to publish, then help only with missing or weak pieces: recognizable icon, shareable social image, GitHub Pages site, standardized README, CI/CD hygiene, release readiness, and optional donation links.
 
 ## Workflow
 
@@ -26,19 +26,74 @@ Use this skill to turn a useful OSS repository into a clean public package: reco
    - package/tooling files: `go.mod`, `package.json`, `pyproject.toml`, `Cargo.toml`, `Makefile`, etc.
    - current README, docs, website files, images, workflows, releases, license, funding files
    - existing product purpose, author, install paths, examples, and public URLs
-2. Ask only the choices that cannot be inferred:
-   - GitHub Pages style: `oldschool linux`, `terminal`, `modern`, `brutalist`, `glassmorphism`, `y2k`, `hacker`, or a custom style.
-   - Donations: `none`, `GitHub Sponsors`, `Ko-fi`, `Buy Me a Coffee`, `Open Collective`, `Thanks.dev`, or custom URL.
+2. Produce a readiness audit before asking for changes:
+   - `Ready`: publish-critical pieces that already exist and look usable
+   - `Weak`: existing pieces that are present but incomplete, stale, broken, inconsistent, or below the house standard
+   - `Missing`: publish-critical pieces that do not exist
+   - `Optional`: nice-to-have pieces such as donations or extra badges
+3. For existing usable pieces, do not propose replacement by default. Ask a change-oriented question only when useful, for example:
+   - "You already have a terminal-style GitHub Pages site. Do you want to keep it or restyle it?"
+   - "You already have an icon and social card. Do you want a refresh, or should I leave them as-is?"
+   - "You already have release automation. Do you want me to audit only, or also tighten it?"
+4. Ask only for choices needed to fix missing or weak pieces:
+   - If GitHub Pages is missing or weak, ask for style: `oldschool linux`, `terminal`, `modern`, `brutalist`, `glassmorphism`, `y2k`, `hacker`, or custom.
+   - If donation wiring is missing, ask whether to enable it: `none`, `GitHub Sponsors`, `Ko-fi`, `Buy Me a Coffee`, `Open Collective`, `Thanks.dev`, or custom URL.
    - If the repo has no clear product essence, ask for a one-sentence positioning statement.
-3. Implement in this order:
+5. Implement only approved, missing, or weak work in this order:
    - minimal icon
    - social preview image
    - README standard
    - GitHub Pages landing page
    - CI/CD and release audit/fixes
    - donation wiring, if requested
-4. Validate locally and with browser/screenshots when possible.
-5. Commit/push only when the user asks or the current task explicitly requires it.
+6. Validate locally and with browser/screenshots when possible.
+7. Commit/push only when the user asks or the current task explicitly requires it.
+
+## Readiness Audit
+
+Treat this skill as an OSS publishing readiness checker first and an implementer second. The first response after inspection should be a concise audit with concrete evidence from the repo.
+
+Publish-critical checklist:
+
+- repository identity: clear project name, description, topic/keywords, author, license
+- install path: package manager, release assets, source build, or direct download instructions
+- README standard: centered shields, icon, title, short description, horizontal rule, essential sections
+- icon: simple SVG mark, renders at small sizes, committed in a predictable path
+- social image: 1200x630 image with matching metadata, committed source when practical
+- GitHub Pages or docs site: essential install/examples/links/SEO/Open Graph metadata
+- CI quality gates: formatter, linter/static analysis, tests, build/package check
+- release automation: tags/releases/artifacts/package update flow, docs-only changes excluded where needed
+- security posture: license, security notes or policy, OpenSSF Scorecard or equivalent when appropriate
+- contribution path: issues/PR guidance, support expectations, project status
+- donations: explicitly absent, declined, or configured
+
+Audit output format:
+
+```md
+## OSS Publish Readiness
+
+Ready
+- README uses the house top block with test, Go Report Card, and OpenSSF shields.
+- Release workflow builds darwin arm64/amd64 binaries and updates the Homebrew tap.
+
+Weak
+- Direct download examples point at a fixed release tag; latest-release URLs would age better.
+
+Missing
+- No `.github/FUNDING.yml`; donations are not configured.
+
+Questions
+- You already have a terminal-style GitHub Pages site. Keep it, or restyle it?
+- Donations are not configured. Enable them or leave them off?
+```
+
+Rules:
+
+- Do not ask for style, donations, or redesign choices before the audit.
+- Do not overwrite existing icon, social image, README, site, workflows, or funding files unless the user approves a change or the audit classifies the item as weak.
+- If everything publish-critical is ready, say so and offer only optional improvements.
+- If the user asks to "run the skill" without more detail, audit first, then wait for approval before making non-trivial visual or workflow changes.
+- Keep the audit evidence-based. Reference filenames, workflow names, package metadata, or command outputs.
 
 ## Minimal Icon
 
