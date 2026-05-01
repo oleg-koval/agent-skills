@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/oleg-koval/agent-skills/compare/v1.1.0...v1.2.0) (2026-05-01)
+
+
+### ✨ Features
+
+* **skills:** add open-source-publisher ([4cd00fb](https://github.com/oleg-koval/agent-skills/commit/4cd00fb83ac23a2f4e624e9c6d3ccc59d33c44c4))
+
 # [1.1.0](https://github.com/oleg-koval/agent-skills/compare/v1.0.1...v1.1.0) (2026-04-30)
 
 
