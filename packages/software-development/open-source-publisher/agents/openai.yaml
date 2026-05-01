@@ -1,4 +1,4 @@
 interface:
   display_name: "Open Source Publisher"
   short_description: "Prepare an OSS repository for polished public publishing."
-  default_prompt: "Use open-source-publisher to prepare this repository for public release with a minimal icon, social image, GitHub Pages site, README standardization, CI/CD checks, and optional donation setup."
+  default_prompt: "Use open-source-publisher to audit OSS publishing readiness first, then help only with missing or weak pieces such as icon, social image, GitHub Pages, README standardization, CI/CD checks, release automation, and optional donations."
