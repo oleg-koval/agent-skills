@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/oleg-koval/agent-skills/compare/v1.2.0...v1.2.1) (2026-05-01)
+
+
+### 🐛 Bug Fixes
+
+* **skills:** audit oss readiness before publishing ([9effc23](https://github.com/oleg-koval/agent-skills/commit/9effc230837966491f4e6ba0f68cf3e0b0ce9a87))
+
 # [1.2.0](https://github.com/oleg-koval/agent-skills/compare/v1.1.0...v1.2.0) (2026-05-01)
 
 
