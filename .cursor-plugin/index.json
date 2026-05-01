@@ -47,6 +47,11 @@
       "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
     },
     {
+      "name": "olko:open-source-publisher",
+      "source": "./packages/software-development/open-source-publisher/adapters/cursor",
+      "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, and optional donation setup."
+    },
+    {
       "name": "olko:viral-launch",
       "source": "./packages/marketing/viral-launch/adapters/cursor",
       "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops."
