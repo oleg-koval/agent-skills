@@ -8,6 +8,7 @@
     "gh-cli",
     "git-commit",
     "promptctl",
+    "open-source-publisher",
     "product-builder"
   ]
 }

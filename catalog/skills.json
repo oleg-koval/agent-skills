@@ -178,6 +178,29 @@
       ]
     },
     {
+      "name": "open-source-publisher",
+      "lookupName": "olko:open-source-publisher",
+      "category": "software-development",
+      "path": "packages/software-development/open-source-publisher",
+      "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, and optional donation setup.",
+      "tags": [
+        "open-source",
+        "github",
+        "readme",
+        "branding",
+        "github-pages",
+        "ci",
+        "release",
+        "social-image"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
+    },
+    {
       "name": "viral-launch",
       "lookupName": "olko:viral-launch",
       "category": "marketing",
