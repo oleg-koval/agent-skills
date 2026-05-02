@@ -22,23 +22,27 @@ Use this skill to audit whether an OSS repository is ready to publish, then help
    - `Weak`: existing pieces that are present but incomplete, stale, broken, inconsistent, or below the house standard
    - `Missing`: publish-critical pieces that do not exist
    - `Optional`: nice-to-have pieces such as donations or extra badges
-3. For existing usable pieces, do not propose replacement by default. Ask a change-oriented question only when useful, for example:
+3. Classify the repository type before recommending changes:
+   - `library`, `CLI`, `web app`, `framework`, `docs site`, or `other`
+   - use the type to decide whether governance, packaging, or presentation work should come first
+4. For existing usable pieces, do not propose replacement by default. Ask a change-oriented question only when useful, for example:
    - "You already have a terminal-style GitHub Pages site. Do you want to keep it or restyle it?"
    - "You already have an icon and social card. Do you want a refresh, or should I leave them as-is?"
    - "You already have release automation. Do you want me to audit only, or also tighten it?"
-4. Ask only for choices needed to fix missing or weak pieces:
+5. Ask only for choices needed to fix missing or weak pieces:
    - If GitHub Pages is missing or weak, ask for style: `oldschool linux`, `terminal`, `modern`, `brutalist`, `glassmorphism`, `y2k`, `hacker`, or custom.
    - If donation wiring is missing, ask whether to enable it: `none`, `GitHub Sponsors`, `Ko-fi`, `Buy Me a Coffee`, `Open Collective`, `Thanks.dev`, or custom URL.
    - If the repo has no clear product essence, ask for a one-sentence positioning statement.
-5. Implement only approved, missing, or weak work in this order:
+6. Implement only approved, missing, or weak work in this order:
+   - OSS governance and support files
    - minimal icon
    - social preview image
    - README standard
    - GitHub Pages landing page
    - CI/CD and release audit/fixes
    - donation wiring, if requested
-6. Validate locally and with browser/screenshots when possible.
-7. Commit/push only when the user asks or the current task explicitly requires it.
+7. Validate locally and with browser/screenshots when possible.
+8. Commit/push only when the user asks or the current task explicitly requires it.
 
 ## Readiness Audit
 
@@ -48,6 +52,7 @@ Publish-critical checklist:
 
 - repository identity: clear project name, description, topic/keywords, author, license
 - install path: package manager, release assets, source build, or direct download instructions
+- OSS governance: `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, support policy, issue/PR templates, changelog or release notes path
 - README standard: centered shields, icon, title, short description, horizontal rule, essential sections
 - icon: simple SVG mark, renders at small sizes, committed in a predictable path
 - social image: 1200x630 image with matching metadata, committed source when practical
@@ -218,6 +223,29 @@ Rules:
 - Do not claim coverage, license, support, CI, or releases that are not actually present.
 - Add or fix `LICENSE` before saying MIT/Apache/etc.
 
+## OSS Governance
+
+Treat governance files as first-class publishing work, not optional paperwork.
+
+Check for, or add when appropriate:
+
+- `LICENSE`
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- `CODE_OF_CONDUCT.md`
+- `SUPPORT.md`
+- `.github/ISSUE_TEMPLATE/*`
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `CHANGELOG.md` or a release notes workflow
+- package metadata for homepage, repository, bugs, and funding links
+
+Rules:
+
+- For libraries and CLIs, prioritize governance and release path before visual polish.
+- For web apps or product sites, keep the governance checks but allow branding and landing page work to happen earlier when the public-facing experience is the main product.
+- If a repo already has governance docs that are good enough, mark them `Ready` and move on.
+- If the project has no maintainer/support policy, ask whether support should be community-only, maintainer-only, or commercial.
+
 ## GitHub Pages
 
 Create a simple essential GitHub Pages site when the project lacks one or the existing one is weak.
@@ -263,9 +291,15 @@ Check whether the repository has:
 - linter/static analysis
 - tests
 - build/package check
+- dependency review / lockfile integrity checks
+- secret scanning or secret prevention
+- license scanning / OSS compliance scan
+- SBOM or provenance generation where appropriate
 - security scan or OpenSSF Scorecard where appropriate
 - release automation
 - docs/site-only path filters when release runs on `main`
+- docs link checker or markdown validation for repo/docs sites
+- package-specific smoke install / publish dry-run matrix
 
 For Go projects, prefer:
 
@@ -293,6 +327,8 @@ Release automation rules:
 - Make Homebrew/package formulas update from real release artifacts and checksums.
 - Use least-privilege secrets and document required secret names.
 - If automation pushes tags, guard against rerun/version reuse.
+- Prefer signed or attestable releases where the ecosystem supports it.
+- Prefer release notes generation from tags or merged PRs instead of hand-written release bodies when the repo is release-heavy.
 
 ## Donations
 
