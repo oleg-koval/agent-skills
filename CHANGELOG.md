@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/oleg-koval/agent-skills/compare/v1.3.1...v1.3.2) (2026-05-02)
+
+
+### 📚 Documentation
+
+* **skill:** add maintainer identity checks ([6e5b458](https://github.com/oleg-koval/agent-skills/commit/6e5b45805bf3c68806157378f15c2b4e573bb9bd))
+
 ## [1.3.1](https://github.com/oleg-koval/agent-skills/compare/v1.3.0...v1.3.1) (2026-05-02)
 
 
