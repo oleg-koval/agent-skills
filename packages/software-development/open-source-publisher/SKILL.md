@@ -52,6 +52,7 @@ Use this skill to audit whether an OSS repository is ready to publish, then help
    - social preview image
    - README standard
    - GitHub Pages landing page
+   - GitHub Pages analytics setup, if requested
    - CI/CD and release audit/fixes
    - donation wiring, if requested
 8. Validate locally and with browser/screenshots when possible.
@@ -73,6 +74,7 @@ Publish-critical checklist:
 - icon: simple SVG mark plus rendered PNG, both committed in predictable paths
 - social image: 1200x630 image with matching metadata, with both SVG source and rendered PNG committed when practical
 - GitHub Pages or docs site: essential install/examples/links/SEO/Open Graph metadata
+- GitHub Pages analytics: optional setup to track visitor patterns and engagement
 - CI quality gates: formatter, linter/static analysis, tests, build/package check
 - release automation: tags/releases/artifacts/package update flow, docs-only changes excluded where needed
 - security posture: license, security notes or policy, OpenSSF Scorecard or equivalent when appropriate
@@ -303,6 +305,49 @@ Implementation defaults:
 - Add `.github/workflows/pages.yml` when Pages uses GitHub Actions or no deploy path exists.
 - Avoid marketing fluff and oversized hero sections for developer tools. Make the first viewport useful.
 - Use system UI fonts for body text and monospace only for commands, labels, or terminal-specific elements.
+
+## GitHub Pages Analytics
+
+Add basic analytics to track site visitor patterns and user behavior when the project has a GitHub Pages site.
+
+Setup options:
+
+- **Google Analytics** (free, detailed): Add UA or GA4 tracking ID to site `<head>`
+- **Plausible** (simple, privacy-first, paid): Lightweight script alternative
+- **Simple counter** (basic): Visitor count badge using Shields.io or statically-generated endpoint
+
+Minimal Google Analytics setup for static sites:
+
+```html
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YOUR_ID"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-YOUR_ID');
+</script>
+```
+
+Track these essential events:
+
+- **pageview** (automatic): Site visitors and page sections
+- **download_release**: Clicks on install/download links (track each platform/format)
+- **view_docs**: Navigation to documentation pages
+- **github_click**: Click through to GitHub repo
+- **copy_command**: Code snippet copies in examples
+
+Optional custom events for OSS projects:
+
+- **search_docs**: If docs site has search
+- **view_example**: Specific example/use-case sections viewed
+- **support_click**: Link clicks to issues, discussions, or support channels
+
+Rules:
+
+- Add analytics after publishing the site; do not gate site launch on analytics.
+- If the user prefers privacy-first or no analytics, skip this step.
+- Store analytics credentials as GitHub Pages environment secret or site config, never in git.
+- Review monthly to catch unusual patterns or broken tracking links.
 
 ## CI/CD And Release Audit
 
