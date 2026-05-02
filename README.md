@@ -169,6 +169,10 @@ Use the olko:gallery skill to build a photo gallery from this image folder.
 ```
 
 ```text
+Use the olko:add-to-my-skills skill to copy a skill from another repo into this catalog, update the README, and push the change.
+```
+
+```text
 Use the olko:viral-launch skill to make this project launch-ready.
 ```
 
