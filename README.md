@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-11-2563eb" alt="11 skills">
+    <img src="https://img.shields.io/badge/skills-12-2563eb" alt="12 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot-111827" alt="Codex Claude Cursor Copilot">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -116,7 +116,7 @@ packages/{category}/{skill}/adapters/
 
 </details>
 
-## All 11 Skills
+## All 12 Skills
 
 These packages are the entry points. Each one is a structured workflow with concrete trigger conditions and execution steps. You can reference any skill directly by its `olko:*` lookup name.
 
@@ -129,6 +129,7 @@ These packages are the entry points. Each one is a structured workflow with conc
 | [changelog-generator](packages/software-development/changelog-generator/SKILL.md) | Generates user-facing changelogs and release notes from git history | Preparing release notes, app store update text, customer changelogs, or internal release summaries |
 | [gh-cli](packages/software-development/gh-cli/SKILL.md) | Guides GitHub CLI usage for repos, PRs, Actions, releases, issues, and related GitHub operations | Working with GitHub from the command line and needing reliable `gh` commands |
 | [git-commit](packages/software-development/git-commit/SKILL.md) | Creates conventional commits with diff-aware staging and message generation | The user asks to commit changes or wants a conventional commit message from the current diff |
+| [add-to-my-skills](packages/software-development/add-to-my-skills/SKILL.md) | Copies a skill from another repo into this catalog, then refreshes docs, manifests, commit, and push | Bringing a newly created skill into this repository |
 | [promptctl](packages/software-development/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, prompt review, prompt scoring, or reusable prompt workflows |
 | [product-builder](packages/software-development/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | The user asks to build a complete app, SaaS, dashboard, or product rather than a prototype |
 
@@ -224,6 +225,7 @@ agent-skills/
 │   │   ├── changelog-generator/
 │   │   ├── gh-cli/
 │   │   ├── git-commit/
+│   │   ├── add-to-my-skills/
 │   │   ├── promptctl/
 │   │   └── product-builder/
 │   ├── music/
@@ -323,6 +325,11 @@ The following package workflows have been smoke-tested locally before first push
   - used `semantic-release-npm-github-publish` as the release preset
   - ran `semantic-release --dry-run --no-ci` on `beta`
   - verified prerelease calculation to `1.0.0-beta.1`
+
+- `add-to-my-skills`
+  - copied a source skill into `packages/software-development/`
+  - refreshed generated manifests with `./scripts/build-adapters.sh`
+  - validated catalog and generated files with `./scripts/validate-catalog.sh`
 
 The semantic-release smoke test was intentionally self-contained and used a local bare git remote plus a valid `file://` repository URL so dry-run behavior could be validated without real npm or GitHub publishing credentials.
 

@@ -178,6 +178,26 @@
       ]
     },
     {
+      "name": "add-to-my-skills",
+      "lookupName": "olko:add-to-my-skills",
+      "category": "software-development",
+      "path": "packages/software-development/add-to-my-skills",
+      "description": "Copy a newly created skill into this catalog, refresh manifests, and publish the change.",
+      "tags": [
+        "skills",
+        "skillshare",
+        "catalog",
+        "git",
+        "push"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
+    },
+    {
       "name": "open-source-publisher",
       "lookupName": "olko:open-source-publisher",
       "category": "software-development",

@@ -47,6 +47,11 @@
       "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
     },
     {
+      "name": "olko:add-to-my-skills",
+      "source": "./packages/software-development/add-to-my-skills/adapters/cursor",
+      "description": "Copy a newly created skill into this catalog, refresh manifests, and publish the change."
+    },
+    {
       "name": "olko:open-source-publisher",
       "source": "./packages/software-development/open-source-publisher/adapters/cursor",
       "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, and optional donation setup."
