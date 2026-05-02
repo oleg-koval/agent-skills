@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/oleg-koval/agent-skills/compare/v1.2.2...v1.3.0) (2026-05-02)
+
+
+### ✨ Features
+
+* **skills:** add add-to-my-skills package ([2c31c27](https://github.com/oleg-koval/agent-skills/commit/2c31c2725ac369c57111751b9e79c4c529657929))
+
+
+### 📚 Documentation
+
+* **readme:** add add-to-my-skills example ([60b46a0](https://github.com/oleg-koval/agent-skills/commit/60b46a088b3283aa6df0b5c0a22d730e5ed5b762))
+
 ## [1.2.2](https://github.com/oleg-koval/agent-skills/compare/v1.2.1...v1.2.2) (2026-05-02)
 
 
