@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/oleg-koval/agent-skills/compare/v1.2.1...v1.2.2) (2026-05-02)
+
+
+### 🐛 Bug Fixes
+
+* **adapters:** sync claude plugin version ([4dceccb](https://github.com/oleg-koval/agent-skills/commit/4dceccb3946613181735ad343fd0b38cb21a4281))
+
 ## [1.2.1](https://github.com/oleg-koval/agent-skills/compare/v1.2.0...v1.2.1) (2026-05-01)
 
 
