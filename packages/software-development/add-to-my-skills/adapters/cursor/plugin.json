@@ -1,0 +1,6 @@
+{
+  "name": "olko:add-to-my-skills",
+  "version": "0.1.0",
+  "description": "Copy a newly created skill into this catalog, refresh manifests, and publish the change.",
+  "skills": "skills/"
+}

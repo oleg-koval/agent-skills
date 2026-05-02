@@ -1,0 +1,5 @@
+{
+  "name": "olko-add-to-my-skills",
+  "description": "Copy a newly created skill into this catalog, refresh manifests, and publish the change.",
+  "skills": "./skills"
+}
