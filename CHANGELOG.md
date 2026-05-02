@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/oleg-koval/agent-skills/compare/v1.3.0...v1.3.1) (2026-05-02)
+
+
+### 📚 Documentation
+
+* **skill:** expand open-source publisher checks ([487d498](https://github.com/oleg-koval/agent-skills/commit/487d4987f7b34571de75ab28d70a64ab651e21a3))
+
 # [1.3.0](https://github.com/oleg-koval/agent-skills/compare/v1.2.2...v1.3.0) (2026-05-02)
 
 
