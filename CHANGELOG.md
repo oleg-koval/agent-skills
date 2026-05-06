@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/oleg-koval/agent-skills/compare/v1.3.2...v1.4.0) (2026-05-06)
+
+
+### ✨ Features
+
+* add starter-rules skill ([c0a3b7c](https://github.com/oleg-koval/agent-skills/commit/c0a3b7c52cc203a7f7cab900cf700946c8895da8))
+
 ## [1.3.2](https://github.com/oleg-koval/agent-skills/compare/v1.3.1...v1.3.2) (2026-05-02)
 
 
