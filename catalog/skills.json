@@ -198,6 +198,28 @@
       ]
     },
     {
+      "name": "starter-rules",
+      "lookupName": "olko:starter-rules",
+      "category": "software-development",
+      "path": "packages/software-development/starter-rules",
+      "description": "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID.",
+      "tags": [
+        "starters",
+        "rules",
+        "architecture",
+        "vertical-slice",
+        "linting",
+        "pre-commit",
+        "testing"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
+    },
+    {
       "name": "open-source-publisher",
       "lookupName": "olko:open-source-publisher",
       "category": "software-development",

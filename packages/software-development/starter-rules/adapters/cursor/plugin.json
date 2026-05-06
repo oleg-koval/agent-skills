@@ -1,0 +1,5 @@
+{
+  "name": "starter-rules",
+  "description": "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID.",
+  "rules": ["packages/software-development/starter-rules/adapters/cursor/skills/starter-rules/SKILL.md"]
+}
