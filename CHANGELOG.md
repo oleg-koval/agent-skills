@@ -1,3 +1,15 @@
+# [1.5.0](https://github.com/oleg-koval/agent-skills/compare/v1.4.0...v1.5.0) (2026-05-07)
+
+
+### ♻️ Chores
+
+* regenerate adapter manifests after rebase ([20017b5](https://github.com/oleg-koval/agent-skills/commit/20017b587d252ba7be5245f135ead650bb3fd31f))
+
+
+### ✨ Features
+
+* **software-development:** add ai-tools-setup skill ([543d91e](https://github.com/oleg-koval/agent-skills/commit/543d91efdf76919858df521d127a011ec094da28))
+
 # [1.4.0](https://github.com/oleg-koval/agent-skills/compare/v1.3.2...v1.4.0) (2026-05-06)
 
 
