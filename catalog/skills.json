@@ -178,6 +178,29 @@
       ]
     },
     {
+      "name": "ai-tools-setup",
+      "lookupName": "olko:ai-tools-setup",
+      "category": "software-development",
+      "path": "packages/software-development/ai-tools-setup",
+      "description": "Install, repair, and measure the RTK+ICM+Vox AI development toolkit. Fixes missing hooks and MCP config, and shows a weekly effectiveness digest of token savings and memory health.",
+      "tags": [
+        "rtk",
+        "icm",
+        "vox",
+        "setup",
+        "hooks",
+        "digest",
+        "ai-tools",
+        "productivity"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
+    },
+    {
       "name": "add-to-my-skills",
       "lookupName": "olko:add-to-my-skills",
       "category": "software-development",
