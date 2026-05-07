@@ -22,6 +22,7 @@ Available reusable prompt files:
 - product-builder: .github/prompts/product-builder.prompt.md
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
 - add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
+- starter-rules: .github/prompts/starter-rules.prompt.md
 - open-source-publisher: .github/prompts/open-source-publisher.prompt.md
 - viral-launch: .github/prompts/viral-launch.prompt.md
 - search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
