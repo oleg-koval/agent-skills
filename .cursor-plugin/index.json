@@ -75,6 +75,11 @@
       "name": "olko:search-console-indexing-audit",
       "source": "./packages/marketing/search-console-indexing-audit/adapters/cursor",
       "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals."
+    },
+    {
+      "name": "olko:cloudflare-block-countries",
+      "source": "./packages/software-development/cloudflare-block-countries/adapters/cursor",
+      "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones."
     }
   ]
 }
