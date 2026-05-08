@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/oleg-koval/agent-skills/compare/v1.5.0...v1.5.1) (2026-05-08)
+
+
+### 📚 Documentation
+
+* reorder README install instructions to lead with marketplace ([b20703a](https://github.com/oleg-koval/agent-skills/commit/b20703a9f7d977d8d777f6ed84a516f4994eb9bc))
+
 # [1.5.0](https://github.com/oleg-koval/agent-skills/compare/v1.4.0...v1.5.0) (2026-05-07)
 
 
