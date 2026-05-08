@@ -26,3 +26,4 @@ Available reusable prompt files:
 - open-source-publisher: .github/prompts/open-source-publisher.prompt.md
 - viral-launch: .github/prompts/viral-launch.prompt.md
 - search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
+- cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md

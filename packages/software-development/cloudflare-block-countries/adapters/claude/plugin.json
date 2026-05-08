@@ -1,0 +1,5 @@
+{
+  "name": "olko-cloudflare-block-countries",
+  "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones.",
+  "skills": "./skills"
+}

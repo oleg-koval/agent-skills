@@ -306,6 +306,26 @@
         "cursor",
         "copilot"
       ]
+    },
+    {
+      "name": "cloudflare-block-countries",
+      "lookupName": "olko:cloudflare-block-countries",
+      "category": "software-development",
+      "path": "packages/software-development/cloudflare-block-countries",
+      "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones.",
+      "tags": [
+        "cloudflare",
+        "waf",
+        "security",
+        "geo-blocking",
+        "firewall"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
     }
   ]
 }
