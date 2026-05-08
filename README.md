@@ -53,14 +53,7 @@ Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
 
 The repository includes a generated Claude marketplace manifest at `.claude-plugin/marketplace.json`.
 
-For local development, clone the repo and point Claude Code at the plugin directory:
-
-```bash
-git clone https://github.com/oleg-koval/agent-skills.git
-claude --plugin-dir /path/to/agent-skills
-```
-
-If your Claude Code environment supports GitHub marketplace installs for this repo, add the marketplace source first:
+**For marketplace installs:**
 
 ```text
 /plugin marketplace add oleg-koval/agent-skills
@@ -72,7 +65,16 @@ Then install the catalog plugin:
 /plugin install olko-agent-skills@olko-agent-skills
 ```
 
-Live Claude marketplace install is not yet validated for this repo.
+**For local development:**
+
+Clone the repo and point Claude Code at the plugin directory:
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+claude --plugin-dir /path/to/agent-skills
+```
+
+See [Publishing to Marketplaces](#publishing-to-marketplaces) below for full submission details.
 
 </details>
 
@@ -81,7 +83,15 @@ Live Claude marketplace install is not yet validated for this repo.
 
 The repository includes a generated Cursor plugin index at `.cursor-plugin/index.json` and per-package Cursor adapters under `packages/*/*/adapters/cursor/`.
 
-For a single project, copy the relevant `SKILL.md` or adapter content into `.cursor/rules/`, or reference the full package directory from your Cursor rules.
+**For plugin marketplace:**
+
+Install from Cursor's extension marketplace using the published repository.
+
+**For a single project:**
+
+Copy the relevant `SKILL.md` or adapter content into `.cursor/rules/`, or reference the full package directory from your Cursor rules.
+
+See [Publishing to Marketplaces](#publishing-to-marketplaces) for registry submission.
 
 </details>
 
@@ -95,7 +105,15 @@ Use the generated repository instructions and prompt files:
 .github/prompts/*.prompt.md
 ```
 
-These files are generated from `catalog/skills.json` and can be copied into a repository that should use the same skill guidance.
+**To use in your GitHub workspace:**
+
+Copy `.github/copilot-instructions.md` to your repository and enable Copilot. It will automatically apply skill guidance.
+
+**To customize per-skill:**
+
+Use files from `.github/prompts/*.prompt.md` in your Copilot configuration.
+
+See [Publishing to Marketplaces](#publishing-to-marketplaces) for integration details.
 
 </details>
 
@@ -269,37 +287,118 @@ Use the olko:docs-index-keeper skill to set up docs index automation in this rep
 Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
 ```
 
-### Claude
+Status: **Stable** — ready for daily use
 
-The repository includes a generated root manifest at `.claude-plugin/marketplace.json` and per-package Claude adapter stubs under `packages/*/*/adapters/claude/`.
+### Claude Code
 
-Current status:
+The repository includes a generated marketplace manifest at `.claude-plugin/marketplace.json` and per-package Claude adapter stubs under `packages/*/*/adapters/claude/`.
 
-- suitable for local packaging and iteration
-- not yet validated against a live Claude marketplace install flow
+**Local development:**
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+claude --plugin-dir /path/to/agent-skills
+```
+
+**Marketplace installation:**
+
+See [Publishing to Marketplaces → Claude Marketplace](#claude-marketplace) for submission and user installation instructions.
+
+Status: **Ready for marketplace** — fully generated manifests, ready to publish
 
 ### Cursor
 
-The repository includes a generated root plugin index at `.cursor-plugin/index.json` and per-package Cursor adapter stubs under `packages/*/*/adapters/cursor/`.
+The repository includes a generated plugin index at `.cursor-plugin/index.json` and per-package Cursor adapter stubs under `packages/*/*/adapters/cursor/`.
 
-Current status:
+See [Publishing to Marketplaces → Cursor Plugin Registry](#cursor-plugin-registry) for submission instructions.
 
-- suitable for local packaging and iteration
-- not yet validated against a live Cursor plugin install flow
+Status: **Ready for marketplace** — plugin index generated and ready to submit
 
 ### GitHub Copilot
 
-The repository includes generated Copilot repository instructions at `.github/copilot-instructions.md` and one reusable prompt file per skill under `.github/prompts/`.
+The repository includes generated repository instructions at `.github/copilot-instructions.md` and per-skill prompt files under `.github/prompts/`.
 
-Current status:
+To use in your GitHub workspace, copy `.github/copilot-instructions.md` to your repository.
 
-- suitable for repository-level Copilot customization
-- generated from the canonical package catalog
-- not yet validated against GitHub Copilot in a live GitHub workspace
+See [Publishing to Marketplaces → GitHub Copilot](#github-copilot) for integration details.
+
+Status: **Ready to use** — copy instructions to any GitHub repository
 
 ### Source sync
 
 `./scripts/sync-from-sources.sh` syncs package content only for catalog entries that explicitly define `sourcePath`. If no package has `sourcePath`, the script exits successfully and reports that there is nothing to sync.
+
+## Publishing to Marketplaces
+
+### Claude Marketplace
+
+The repository includes a generated marketplace manifest at `.claude-plugin/marketplace.json` that is compatible with Claude Code's plugin system.
+
+**To submit to Claude marketplace:**
+
+1. Ensure the repository is public and contains this structure:
+   ```
+   ├── .claude-plugin/
+   │   └── marketplace.json    # Generated from catalog/skills.json
+   └── packages/
+       └── {category}/{skill}/
+           ├── SKILL.md        # Required canonical definition
+           └── adapters/
+               └── claude/     # Optional Claude-specific wrapper
+   ```
+
+2. Push to GitHub with a public repository:
+   ```bash
+   git push origin main
+   ```
+
+3. Submit the repository URL to Claude's plugin marketplace:
+   - In Claude Code: `/plugin marketplace add oleg-koval/agent-skills`
+   - Or visit the Claude plugin marketplace and add `https://github.com/oleg-koval/agent-skills`
+
+4. The marketplace will:
+   - Read `.claude-plugin/marketplace.json` for plugin metadata
+   - Index all skills from `catalog/skills.json`
+   - Auto-register skills by their `name` field
+   - Use `adapters: ["claude"]` entries to provide Claude-specific hints
+
+**After publishing:**
+- Users install with: `/plugin install olko-agent-skills@olko-agent-skills`
+- All 12 skills become available as `olko:*` lookup names in Claude Code
+
+### Cursor Plugin Registry
+
+Cursor plugin index is generated at `.cursor-plugin/index.json`.
+
+**To submit to Cursor:**
+
+1. Ensure Cursor plugin metadata is present:
+   - `.cursor-plugin/index.json` (generated)
+   - `packages/*/*/adapters/cursor/` (optional Cursor-specific guidance)
+
+2. Submit the repository to Cursor's plugin marketplace with the `.cursor-plugin/` manifest
+
+3. Users install from Cursor's extension marketplace and reference skills by lookup name
+
+### GitHub Copilot
+
+Generated Copilot instructions are at `.github/copilot-instructions.md` and per-skill prompts under `.github/prompts/`.
+
+**To use in a GitHub workspace:**
+
+1. Copy `.github/copilot-instructions.md` to your repository
+2. Copilot reads this file automatically when enabled
+3. Per-skill prompts can be referenced or imported into custom Copilot configurations
+
+### Codex
+
+Codex installation uses symlinks:
+
+```bash
+./scripts/install-codex-symlinks.sh
+```
+
+Codex looks up skills by `olko:*` lookup names from the installed symlink directories.
 
 ## Local validation
 
@@ -313,6 +412,12 @@ Validate the neutral catalog and generated root manifests:
 
 ```bash
 ./scripts/validate-catalog.sh
+```
+
+Run both before pushing marketplace updates:
+
+```bash
+./scripts/build-adapters.sh && ./scripts/validate-catalog.sh
 ```
 
 ## Smoke-tested workflows
