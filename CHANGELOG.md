@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/oleg-koval/agent-skills/compare/v1.5.1...v1.6.0) (2026-05-08)
+
+
+### ✨ Features
+
+* **cloudflare:** add cloudflare-block-countries skill ([a0a68c1](https://github.com/oleg-koval/agent-skills/commit/a0a68c187cf6d1f0b6bab4eb864ea3e1c6a669c6))
+
 ## [1.5.1](https://github.com/oleg-koval/agent-skills/compare/v1.5.0...v1.5.1) (2026-05-08)
 
 
