@@ -2,7 +2,8 @@
 name: fill-music-player
 description: Use when a user wants to fill a portable music player (Walkman, iPod, USB drive) with a curated random selection from a music library on a NAS or local directory. Handles format filtering, artist/album diversity balancing, and size targeting.
 license: MIT
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires shell access and the fill-music-player CLI or underlying script in the target environment.
+allowed-tools: Bash
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires shell access and the fill-music-player CLI or underlying script in the target environment.
 metadata:
   author: Oleg Koval
   tags:

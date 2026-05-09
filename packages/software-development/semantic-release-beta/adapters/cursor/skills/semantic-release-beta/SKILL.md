@@ -3,7 +3,9 @@
 ---
 name: semantic-release-beta
 description: Set up or update a Node.js release pipeline that uses semantic-release-npm-github-publish with a stable main channel and a prerelease beta channel on a beta branch, including GitHub Actions validation and npm publishing behavior.
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires a Node.js package repository that uses git and GitHub Actions.
+license: MIT
+allowed-tools: Bash, Read, Write, Edit
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a Node.js package repository that uses git and GitHub Actions.
 metadata:
   author: Oleg Koval
   tags:

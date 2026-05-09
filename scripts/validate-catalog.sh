@@ -12,6 +12,8 @@ test -f .claude-plugin/marketplace.json
 test -f .claude-plugin/plugin.json
 test -f .cursor-plugin/index.json
 test -f .github/copilot-instructions.md
+test -d .windsurf/rules
+test -d .kiro/steering
 
 node <<'EOF'
 const fs = require('fs')
@@ -23,6 +25,8 @@ const adapterFiles = {
   codex: (pkg) => path.join(pkg.path, 'adapters', 'codex', 'README.md'),
   cursor: (pkg) => path.join(pkg.path, 'adapters', 'cursor', 'plugin.json'),
   copilot: (pkg) => path.join('.github', 'prompts', `${pkg.name}.prompt.md`),
+  windsurf: (pkg) => path.join(pkg.path, 'adapters', 'windsurf', 'rules', `${pkg.name}.md`),
+  kiro: (pkg) => path.join(pkg.path, 'adapters', 'kiro', 'steering', `${pkg.name}.md`),
 }
 
 const catalog = JSON.parse(fs.readFileSync('catalog/skills.json', 'utf8'))

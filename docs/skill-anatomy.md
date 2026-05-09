@@ -133,12 +133,16 @@ Adapters are wrappers for agent-specific packaging. They should point back to th
 
 Current adapter targets:
 
-- `adapters/codex/`
-- `adapters/claude/`
-- `adapters/cursor/`
-- generated GitHub Copilot prompt files in `.github/prompts/`
+| Adapter | Generated files | Root output |
+|---------|----------------|-------------|
+| `codex` | `adapters/codex/README.md` (static stub) | — |
+| `claude` | `adapters/claude/plugin.json` + `adapters/claude/skills/{name}/SKILL.md` | `.claude-plugin/` |
+| `cursor` | `adapters/cursor/plugin.json` + `adapters/cursor/skills/{name}/SKILL.md` | `.cursor-plugin/index.json` |
+| `copilot` | — | `.github/prompts/{name}.prompt.md` |
+| `windsurf` | `adapters/windsurf/rules/{name}.md` | `.windsurf/rules/{name}.md` |
+| `kiro` | `adapters/kiro/steering/{name}.md` | `.kiro/steering/{name}.md` |
 
-Claude plugin and marketplace identifiers must be kebab-case. Keep `olko:*` names for Codex lookup names, but do not use colons or spaces in Claude marketplace/plugin names.
+Claude plugin and marketplace identifiers must be kebab-case. Keep `olko:*` names for Codex and Cursor lookup names, but do not use colons or spaces in Claude marketplace/plugin names.
 
 After changing a package name, description, category, path, tags, or adapter support, update `catalog/skills.json` and rebuild generated files:
 

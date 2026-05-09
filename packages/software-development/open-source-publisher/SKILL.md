@@ -2,7 +2,8 @@
 name: open-source-publisher
 description: Prepare an open-source repository for polished public publishing. Use when a user asks to publish, open-source, launch, polish, package, brand, or make a GitHub project presentable with a minimal project icon, social preview image, GitHub Pages landing page, standardized README, essential shields, CI/CD quality gates, release automation checks, and optional donation setup.
 license: MIT
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires a writable git repository; browser or image rendering tools are useful for visual validation.
+allowed-tools: Bash, Read, Write, Edit, WebSearch, WebFetch
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable git repository; browser or image rendering tools are useful for visual validation.
 metadata:
   author: Oleg Koval
   tags:

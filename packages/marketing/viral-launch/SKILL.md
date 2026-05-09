@@ -2,7 +2,9 @@
 
 name: viral-launch
 description: Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops without pretending virality is guaranteed.
-compatibility: Codex, Claude Code, Cursor, GitHub Copilot, and other Agent Skills compatible tools. Useful for product repos, open-source packages, SaaS launches, waitlists, and creator tools.
+license: MIT
+allowed-tools: Bash, Read, Write, WebSearch, WebFetch
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Useful for product repos, open-source packages, SaaS launches, waitlists, and creator tools.
 metadata:
   author: Oleg Koval
   tags:

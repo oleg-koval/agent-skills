@@ -2,7 +2,8 @@
 name: docs-index-keeper
 description: Keep a repository's Markdown docs index in sync by installing and running docs-index-keeper in pre-commit hooks, CI, or one-off maintenance flows.
 license: MIT
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires shell access and Node.js 18+ when installing from npm.
+allowed-tools: Bash, Read, Write, Edit, Grep, Glob
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires shell access and Node.js 18+ when installing from npm.
 metadata:
   author: Oleg Koval
   package: docs-index-keeper

@@ -3,7 +3,7 @@ name: cloudflare-block-countries
 description: 'Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Use when user wants to geo-block traffic, block countries in Cloudflare, set up WAF country rules, or mentions blocking regions. Handles both creating new rulesets and updating existing ones.'
 license: MIT
 allowed-tools: Bash
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires curl and jq.
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires curl and jq.
 metadata:
   author: Oleg Koval
   tags:
