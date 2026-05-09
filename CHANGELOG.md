@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/oleg-koval/agent-skills/compare/v1.6.0...v1.7.0) (2026-05-09)
+
+
+### ✨ Features
+
+* **catalog:** add Windsurf and Kiro harnesses, standardize skill frontmatter ([6f52c4e](https://github.com/oleg-koval/agent-skills/commit/6f52c4e6c4da37cdc528924f624b4c763259f9a5))
+
 # [1.6.0](https://github.com/oleg-koval/agent-skills/compare/v1.5.1...v1.6.0) (2026-05-08)
 
 
