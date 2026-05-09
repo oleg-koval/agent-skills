@@ -50,6 +50,8 @@ const cursorPlugins = catalog.packages.map((pkg) => ({
 fs.mkdirSync(path.join(root, '.claude-plugin'), { recursive: true })
 fs.mkdirSync(path.join(root, '.cursor-plugin'), { recursive: true })
 fs.mkdirSync(path.join(root, '.github', 'prompts'), { recursive: true })
+fs.mkdirSync(path.join(root, '.windsurf', 'rules'), { recursive: true })
+fs.mkdirSync(path.join(root, '.kiro', 'steering'), { recursive: true })
 
 fs.writeFileSync(
   path.join(root, '.claude-plugin', 'marketplace.json'),
@@ -140,6 +142,47 @@ for (const pkg of catalog.packages) {
 }
 
 for (const pkg of catalog.packages) {
+  if (!pkg.adapters.includes('windsurf')) {
+    continue
+  }
+
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const content = stripTrailingLineWhitespace([
+    generatedHeader,
+    '',
+    '---',
+    `description: ${JSON.stringify(pkg.description)}`,
+    '---',
+    '',
+    skillBody,
+    '',
+  ].join('\n'))
+
+  fs.writeFileSync(path.join(root, '.windsurf', 'rules', `${pkg.name}.md`), content)
+}
+
+for (const pkg of catalog.packages) {
+  if (!pkg.adapters.includes('kiro')) {
+    continue
+  }
+
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const content = stripTrailingLineWhitespace([
+    generatedHeader,
+    '',
+    '---',
+    'inclusion: manual',
+    `description: ${JSON.stringify(pkg.description)}`,
+    '---',
+    '',
+    skillBody,
+    '',
+  ].join('\n'))
+
+  fs.writeFileSync(path.join(root, '.kiro', 'steering', `${pkg.name}.md`), content)
+}
+
+for (const pkg of catalog.packages) {
   const canonical = fs.readFileSync(skillPathFor(pkg), 'utf8').trimEnd()
 
   if (pkg.adapters.includes('claude')) {
@@ -161,16 +204,62 @@ for (const pkg of catalog.packages) {
     copySkillResources(pkg, claudeDestDir)
   }
 
-  if (!pkg.adapters.includes('cursor')) {
-    continue
+  if (pkg.adapters.includes('cursor')) {
+    const cursorAdapterDir = path.join(root, pkg.path, 'adapters', 'cursor')
+    const destDir = path.join(cursorAdapterDir, 'skills', pkg.name)
+    fs.mkdirSync(destDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(cursorAdapterDir, 'plugin.json'),
+      JSON.stringify(
+        {
+          name: lookupNameFor(pkg),
+          version: '0.1.0',
+          description: pkg.description,
+          skills: 'skills/',
+        },
+        null,
+        2,
+      ) + '\n',
+    )
+    fs.writeFileSync(path.join(destDir, 'SKILL.md'), [generatedHeader, '', canonical, ''].join('\n'))
+    copySkillResources(pkg, destDir)
   }
 
-  const destDir = path.join(root, pkg.path, 'adapters', 'cursor', 'skills', pkg.name)
-  const destPath = path.join(destDir, 'SKILL.md')
-  fs.mkdirSync(destDir, { recursive: true })
-  fs.writeFileSync(destPath, [generatedHeader, '', canonical, ''].join('\n'))
-  copySkillResources(pkg, destDir)
+  if (pkg.adapters.includes('windsurf')) {
+    const skillBody = stripFrontmatter(canonical).trimEnd()
+    const content = stripTrailingLineWhitespace([
+      generatedHeader,
+      '',
+      '---',
+      `description: ${JSON.stringify(pkg.description)}`,
+      '---',
+      '',
+      skillBody,
+      '',
+    ].join('\n'))
+    const destDir = path.join(root, pkg.path, 'adapters', 'windsurf', 'rules')
+    fs.mkdirSync(destDir, { recursive: true })
+    fs.writeFileSync(path.join(destDir, `${pkg.name}.md`), content)
+  }
+
+  if (pkg.adapters.includes('kiro')) {
+    const skillBody = stripFrontmatter(canonical).trimEnd()
+    const content = stripTrailingLineWhitespace([
+      generatedHeader,
+      '',
+      '---',
+      'inclusion: manual',
+      `description: ${JSON.stringify(pkg.description)}`,
+      '---',
+      '',
+      skillBody,
+      '',
+    ].join('\n'))
+    const destDir = path.join(root, pkg.path, 'adapters', 'kiro', 'steering')
+    fs.mkdirSync(destDir, { recursive: true })
+    fs.writeFileSync(path.join(destDir, `${pkg.name}.md`), content)
+  }
 }
 
-console.log('generated marketplace manifests, Copilot prompts, and Cursor adapter SKILL.md files')
+console.log('generated marketplace manifests, Copilot prompts, Cursor, Windsurf, and Kiro adapter files')
 EOF

@@ -1,10 +1,10 @@
 <div align="center">
   <h1>agent skills</h1>
-  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.</strong></p>
+  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-12-2563eb" alt="12 skills">
-    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot-111827" alt="Codex Claude Cursor Copilot">
+    <img src="https://img.shields.io/badge/skills-16-2563eb" alt="16 skills">
+    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
 </div>
@@ -118,6 +118,46 @@ See [Publishing to Marketplaces](#publishing-to-marketplaces) for integration de
 </details>
 
 <details>
+<summary><b>Windsurf</b></summary>
+
+The repository includes generated Windsurf Cascade Rules at `.windsurf/rules/`.
+
+**For a single project:**
+
+Copy the relevant `.windsurf/rules/{skill-name}.md` into your project's `.windsurf/rules/` directory. Windsurf picks them up automatically as Cascade Rules.
+
+**For all skills at once:**
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+cp agent-skills/.windsurf/rules/*.md /path/to/your/project/.windsurf/rules/
+```
+
+Each rule file has a `description` frontmatter field that Windsurf displays in the rules panel.
+
+</details>
+
+<details>
+<summary><b>Kiro</b></summary>
+
+The repository includes generated Kiro steering documents at `.kiro/steering/`.
+
+**For a single project:**
+
+Copy the relevant `.kiro/steering/{skill-name}.md` into your project's `.kiro/steering/` directory.
+
+**For all skills at once:**
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+cp agent-skills/.kiro/steering/*.md /path/to/your/project/.kiro/steering/
+```
+
+Each steering doc uses `inclusion: manual` so Kiro only loads it when you explicitly reference it, keeping context lean.
+
+</details>
+
+<details>
 <summary><b>Other agents</b></summary>
 
 Skills are plain Markdown. Use the canonical package file directly:
@@ -134,7 +174,7 @@ packages/{category}/{skill}/adapters/
 
 </details>
 
-## All 12 Skills
+## All 16 Skills
 
 These packages are the entry points. Each one is a structured workflow with concrete trigger conditions and execution steps. You can reference any skill directly by its `olko:*` lookup name.
 
@@ -150,6 +190,10 @@ These packages are the entry points. Each one is a structured workflow with conc
 | [add-to-my-skills](packages/software-development/add-to-my-skills/SKILL.md) | Copies a skill from another repo into this catalog, then refreshes docs, manifests, commit, and push | Bringing a newly created skill into this repository |
 | [promptctl](packages/software-development/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, prompt review, prompt scoring, or reusable prompt workflows |
 | [product-builder](packages/software-development/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | The user asks to build a complete app, SaaS, dashboard, or product rather than a prototype |
+| [cloudflare-block-countries](packages/software-development/cloudflare-block-countries/SKILL.md) | Blocks specific countries via Cloudflare WAF Custom Rules using the API | Geo-blocking traffic, setting up WAF country rules, or blocking regions across single or multiple zones |
+| [ai-tools-setup](packages/software-development/ai-tools-setup/SKILL.md) | Installs, repairs, and measures the RTK+ICM+Vox AI development toolkit | Setting up or repairing AI dev tooling hooks, MCP config, or reviewing a weekly token savings digest |
+| [starter-rules](packages/software-development/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
+| [open-source-publisher](packages/software-development/open-source-publisher/SKILL.md) | Prepares an open-source repository for public publishing with branding, CI/CD, and release hygiene | Releasing a private project publicly with proper GitHub Pages, README, and social preview |
 
 ### Music
 
@@ -206,12 +250,17 @@ When adding or changing a skill:
 
 ## Root manifests
 
-- Claude marketplace manifest: `.claude-plugin/marketplace.json`
-- Cursor plugin index: `.cursor-plugin/index.json`
-- Copilot repository instructions: `.github/copilot-instructions.md`
-- Copilot prompt files: `.github/prompts/*.prompt.md`
+| Harness | File | Format |
+|---------|------|--------|
+| Claude Code | `.claude-plugin/marketplace.json` | Marketplace plugin registry |
+| Claude Code | `.claude-plugin/plugin.json` | Plugin manifest |
+| Cursor | `.cursor-plugin/index.json` | Plugin index |
+| GitHub Copilot | `.github/copilot-instructions.md` | Repository instructions |
+| GitHub Copilot | `.github/prompts/*.prompt.md` | Per-skill prompt files |
+| Windsurf | `.windsurf/rules/*.md` | Cascade rules |
+| Kiro | `.kiro/steering/*.md` | Steering documents |
 
-These are generated from the neutral package inventory and kept in the repo for platform-specific consumption.
+All root manifests are generated from `catalog/skills.json` by `./scripts/build-adapters.sh`.
 
 ## How Skills Work
 
@@ -221,17 +270,19 @@ Every package follows a consistent anatomy:
 packages/{category}/{skill}/
 ├── SKILL.md              # Required canonical skill definition
 ├── references/           # Optional supporting material loaded only when needed
-└── adapters/             # Optional agent-specific wrappers
-    ├── codex/
-    ├── claude/
-    └── cursor/
+└── adapters/             # Agent-specific wrappers (all generated by build-adapters.sh)
+    ├── codex/            # OpenAI Codex — README.md stub
+    ├── claude/           # Claude Code — plugin.json + skills/SKILL.md copy
+    ├── cursor/           # Cursor — plugin.json + skills/SKILL.md copy
+    ├── windsurf/         # Windsurf — rules/{name}.md (Cascade Rules format)
+    └── kiro/             # Amazon Kiro — steering/{name}.md (steering doc format)
 ```
 
 Key design choices:
 
 - Process over prose: skills are workflows agents follow, not generic reference essays.
 - Progressive disclosure: `SKILL.md` is the entry point; supporting files load only when needed.
-- Adapter separation: Codex, Claude, Cursor, and Copilot metadata wrap the canonical package instead of forking it.
+- Adapter separation: Codex, Claude, Cursor, Copilot, Windsurf, and Kiro metadata wrap the canonical package instead of forking it.
 - Verifiable changes: catalog and manifest changes should pass `./scripts/validate-catalog.sh`.
 
 See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
@@ -262,6 +313,8 @@ agent-skills/
 ├── .claude-plugin/                   # Generated Claude marketplace manifest
 ├── .cursor-plugin/                   # Generated Cursor plugin index
 ├── .github/prompts/                  # Generated GitHub Copilot prompt files
+├── .windsurf/rules/                  # Generated Windsurf Cascade Rules
+├── .kiro/steering/                   # Generated Kiro steering documents
 └── docs/                             # Contributor and package format docs
 ```
 

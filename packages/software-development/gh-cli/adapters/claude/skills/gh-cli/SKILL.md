@@ -3,7 +3,9 @@
 ---
 name: gh-cli
 description: GitHub CLI (gh) comprehensive reference for repositories, issues, pull requests, Actions, projects, releases, gists, codespaces, organizations, extensions, and all GitHub operations from the command line.
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires the GitHub CLI and valid GitHub authentication.
+license: MIT
+allowed-tools: Bash
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires the GitHub CLI and valid GitHub authentication.
 metadata:
   author: Oleg Koval
   tags:

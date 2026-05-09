@@ -2,6 +2,9 @@
 
 name: search-console-indexing-audit
 description: Analyze Google Search Console Coverage or indexing CSV exports and correlate them with repo and live-site SEO signals. Use for Chart.csv, Metadata.csv, Critical issues.csv, Non-critical issues.csv, sitemap/robots/canonical indexing problems, "Discovered - currently not indexed", redirect indexing buckets, or requests to fix Google indexing coverage.
+license: MIT
+allowed-tools: Bash, Read, Write
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools.
 metadata:
   author: Oleg Koval
   tags:

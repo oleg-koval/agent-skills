@@ -25,6 +25,8 @@
     "packages",
     ".claude-plugin",
     ".cursor-plugin",
+    ".windsurf",
+    ".kiro",
     "scripts",
     "README.md",
     "LICENSE"

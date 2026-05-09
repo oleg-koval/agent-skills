@@ -3,7 +3,9 @@
 ---
 name: gallery
 description: Create photo galleries with AI-assisted layout curation. Orchestrates atomic scripts and sub-agents. Use when user wants to create a gallery from photos, mentions "/gallery", or asks about photo layout and sequencing.
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires a project that contains the gallery scripts and expected data layout.
+license: MIT
+allowed-tools: Bash, Read, Write, WebSearch, WebFetch
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a project that contains the gallery scripts and expected data layout.
 metadata:
   author: Oleg Koval
   tags:

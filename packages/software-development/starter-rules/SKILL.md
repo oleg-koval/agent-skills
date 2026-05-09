@@ -2,7 +2,8 @@
 name: starter-rules
 description: Load and enforce the hard rules every oleg-koval/* starter must obey. Use when starting or auditing work in saas-init, ts-npm-starter, go-starter, py-starter, or any future oleg-koval template repo. Covers functional style, 300-line file cap, E2E > unit tests, pre-commit hooks, no-comment policy, KISS/DRY/SOLID, and Vertical Slice as default architecture for SaaS/app starters.
 license: MIT
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools.
+allowed-tools: Read, Bash
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools.
 metadata:
   author: Oleg Koval
   tags:

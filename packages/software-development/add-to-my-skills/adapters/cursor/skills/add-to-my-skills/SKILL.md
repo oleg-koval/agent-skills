@@ -4,7 +4,8 @@
 name: add-to-my-skills
 description: Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push the change. Use when the user wants to bring a skill they built elsewhere into this repository.
 license: MIT
-compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools. Requires a writable git repository and access to the source skill repo.
+allowed-tools: Bash, Read, Write, Edit
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable git repository and access to the source skill repo.
 metadata:
   author: Oleg Koval
   tags:
