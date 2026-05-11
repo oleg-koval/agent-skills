@@ -1,0 +1,196 @@
+---
+name: obsidian-task-rollover
+description: >
+  Migrate unfinished tasks from a daily Obsidian note to the next workday's note,
+  bullet-journal style. Marks migrated tasks in the source note with [>] (the BJ
+  migration symbol) and copies them to the target note under "## Carried over".
+  Use this skill whenever the user says "roll over today's tasks", "migrate unfinished
+  tasks to tomorrow", "end of day task sync", "move open tasks to next workday",
+  or when a scheduled end-of-day / start-of-day routine fires. Fully idempotent —
+  safe to re-run; already-migrated tasks ([>]) are not touched again.
+license: MIT
+allowed-tools: Bash, Read, Write, Edit
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires daily notes at a configurable vault path.
+metadata:
+  author: Oleg Koval
+  tags:
+    - obsidian
+    - daily-note
+    - bullet-journal
+    - productivity
+    - task-rollover
+    - end-of-day
+---
+
+# Obsidian Task Rollover
+
+Bullet-journal–style end-of-day task migration. Unfinished tasks (`- [ ]`) from
+today's note get copied forward to the next workday, and marked as migrated in
+today's note.
+
+## Configuration
+
+- `VAULT_DAILY` — absolute path to the daily notes folder (e.g. `/Users/you/obsidian/vault/Lead/Daily`)
+
+If not specified, infer from context or ask.
+
+## Step 1 — Identify source note
+
+Default source = **today's note**. If the user specifies a date ("roll over Monday's
+tasks"), resolve that date instead.
+
+```bash
+SOURCE_DATE=$(date +%Y-%m-%d)
+SOURCE="${VAULT_DAILY}/${SOURCE_DATE}.md"
+```
+
+If the source note doesn't exist, report and stop — nothing to migrate.
+
+## Step 2 — Find next workday
+
+```bash
+TARGET_DATE=$(python3 -c "
+from datetime import date, timedelta
+d = date.fromisoformat('${SOURCE_DATE}') + timedelta(days=1)
+while d.weekday() >= 5:  # 5=Sat, 6=Sun
+    d += timedelta(days=1)
+print(d)
+")
+TARGET="${VAULT_DAILY}/${TARGET_DATE}.md"
+```
+
+Skips weekends. If today is Friday, tasks roll to Monday.
+
+## Step 3 — Extract incomplete tasks
+
+Read the source note and collect all lines matching `- [ ] ` that are:
+- **Not** inside the `## PRs to review` section (that section is auto-managed by
+  the `obsidian-pr-sync` skill — don't touch it)
+- **Not** already migrated (`- [>]` lines — idempotency guard)
+
+Sections to skip entirely: `## PRs to review`. Stop collecting at the nav footer
+(`*← [[...`).
+
+Collect both the task lines and which section (h2 heading) they belong to, so the
+target note can group them the same way.
+
+## Step 4 — Mark tasks as migrated in source note
+
+For each collected task line in the source note, replace:
+```
+- [ ] some task
+```
+with:
+```
+- [>] some task → [[Lead/Daily/TARGET_DATE|TARGET_DATE]]
+```
+
+The `[>]` is the bullet journal migration arrow — "moved forward". The link lets you
+jump to where the task landed.
+
+**Do not** replace tasks that are already checked (`- [x]`) or already migrated
+(`- [>`). Only unticked `- [ ]` tasks.
+
+## Step 5 — Write to target note
+
+### If the target note exists
+
+Check whether a `## Carried over` section already exists:
+- If yes: **replace** its content (idempotent — re-running a migration is safe)
+- If no: **insert** it before the nav footer line (`*← [[...`) or at end of file
+
+### If the target note doesn't exist
+
+Create it using the standard daily note template:
+```markdown
+---
+type: daily
+date: TARGET_DATE
+tags: [lead/daily]
+---
+
+# WEEKDAY, D MMM YYYY
+
+## Top 3 for today
+1. 
+2. 
+3. 
+
+## People check-in
+> Who needs something from me today?
+
+- [[]]
+
+## Notes / journal
+
+
+## Open loops
+> Things I started but didn't finish
+
+- 
+
+## Actions
+- [ ] 
+
+---
+*← [[Lead/Daily/SOURCE_DATE|Yesterday]]  |  [[Lead/Daily/NEXT_NEXT_DATE|Tomorrow]] →*
+```
+Then append the `## Carried over` section.
+
+### Carried over section format
+
+```markdown
+## Carried over
+
+> Migrated from [[Lead/Daily/SOURCE_DATE|SOURCE_DATE]]
+
+### SECTION_NAME (if tasks came from a named section)
+- [ ] task text ↩ [[Lead/Daily/SOURCE_DATE|SOURCE_DATE]]
+
+### Actions (if tasks came from ## Actions)
+- [ ] another task ↩ [[Lead/Daily/SOURCE_DATE|SOURCE_DATE]]
+```
+
+Rules:
+- Group tasks by the section they came from in the source note
+- If all tasks are from `## Actions`, omit the subsection header (keep it flat)
+- The `↩` link back to the source date lets you trace where the task originated
+
+## Step 6 — Report
+
+```
+Rolled over N tasks from SOURCE_DATE → TARGET_DATE
+  From ## Actions: X tasks
+  From ## Open loops: Y tasks
+  Marked [>] in: Lead/Daily/SOURCE_DATE.md
+  Written to:     Lead/Daily/TARGET_DATE.md
+```
+
+If there are zero incomplete tasks, report:
+```
+No incomplete tasks in SOURCE_DATE — nothing to roll over ✓
+```
+
+## Invocation patterns
+
+**Manual:**
+- "roll over today's tasks to tomorrow"
+- "migrate my open tasks, it's end of day"
+- "carry forward unfinished items from today"
+
+**Scheduled (end-of-day or start-of-morning):**
+Runs silently. Picks up today's note automatically.
+
+**In a remote CCR agent:**
+Clone the vault repo, run the rollover, commit and push. The local Obsidian Git
+plugin pulls the changes automatically.
+
+## Edge cases
+
+- **Tasks with sub-bullets**: Copy the full block (task + its indented children)
+- **Duplicate migration**: Re-running replaces the `## Carried over` section — never
+  duplicates. Tasks already marked `[>]` in source are not re-processed.
+- **Friday → Monday**: The weekend-skip logic handles this. The Monday note is created
+  if it doesn't exist.
+- **Task already in target**: No dedup check — if you manually added the same task to
+  tomorrow and then run migration, it'll appear twice. Acceptable — easy to clean up.
