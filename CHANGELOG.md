@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/oleg-koval/agent-skills/compare/v1.7.0...v1.8.0) (2026-05-12)
+
+
+### ✨ Features
+
+* **open-source-publisher:** add favicon generation step ([#10](https://github.com/oleg-koval/agent-skills/issues/10)) ([a737b77](https://github.com/oleg-koval/agent-skills/commit/a737b77e8b35a997810a1e06c058322f0c2d50d3))
+
 # [1.7.0](https://github.com/oleg-koval/agent-skills/compare/v1.6.0...v1.7.0) (2026-05-09)
 
 
