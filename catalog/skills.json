@@ -374,7 +374,6 @@
         "morning-routine"
       ],
       "adapters": [
-        "codex",
         "claude",
         "cursor",
         "copilot",
@@ -397,7 +396,6 @@
         "end-of-day"
       ],
       "adapters": [
-        "codex",
         "claude",
         "cursor",
         "copilot",
