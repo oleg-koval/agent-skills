@@ -80,6 +80,16 @@
       "name": "olko:cloudflare-block-countries",
       "source": "./packages/software-development/cloudflare-block-countries/adapters/cursor",
       "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones."
+    },
+    {
+      "name": "olko:obsidian-pr-sync",
+      "source": "./packages/software-development/obsidian-pr-sync/adapters/cursor",
+      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section."
+    },
+    {
+      "name": "olko:obsidian-task-rollover",
+      "source": "./packages/software-development/obsidian-task-rollover/adapters/cursor",
+      "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent."
     }
   ]
 }
