@@ -358,6 +358,50 @@
         "windsurf",
         "kiro"
       ]
+    },
+    {
+      "name": "obsidian-pr-sync",
+      "lookupName": "olko:obsidian-pr-sync",
+      "category": "software-development",
+      "path": "packages/software-development/obsidian-pr-sync",
+      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
+      "tags": [
+        "github",
+        "obsidian",
+        "daily-note",
+        "pull-requests",
+        "productivity",
+        "morning-routine"
+      ],
+      "adapters": [
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "obsidian-task-rollover",
+      "lookupName": "olko:obsidian-task-rollover",
+      "category": "software-development",
+      "path": "packages/software-development/obsidian-task-rollover",
+      "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent.",
+      "tags": [
+        "obsidian",
+        "daily-note",
+        "bullet-journal",
+        "productivity",
+        "task-rollover",
+        "end-of-day"
+      ],
+      "adapters": [
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
     }
   ]
 }

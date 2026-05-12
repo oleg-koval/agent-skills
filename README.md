@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-16-2563eb" alt="16 skills">
+    <img src="https://img.shields.io/badge/skills-18-2563eb" alt="18 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -174,7 +174,7 @@ packages/{category}/{skill}/adapters/
 
 </details>
 
-## All 16 Skills
+## All 18 Skills
 
 These packages are the entry points. Each one is a structured workflow with concrete trigger conditions and execution steps. You can reference any skill directly by its `olko:*` lookup name.
 
@@ -194,6 +194,8 @@ These packages are the entry points. Each one is a structured workflow with conc
 | [ai-tools-setup](packages/software-development/ai-tools-setup/SKILL.md) | Installs, repairs, and measures the RTK+ICM+Vox AI development toolkit | Setting up or repairing AI dev tooling hooks, MCP config, or reviewing a weekly token savings digest |
 | [starter-rules](packages/software-development/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
 | [open-source-publisher](packages/software-development/open-source-publisher/SKILL.md) | Prepares an open-source repository for public publishing with branding, CI/CD, and release hygiene | Releasing a private project publicly with proper GitHub Pages, README, and social preview |
+| [obsidian-pr-sync](packages/software-development/obsidian-pr-sync/SKILL.md) | Fetches open GitHub PRs assigned to you or requesting review, and writes a grouped age-sorted section into today's Obsidian daily note | Syncing GitHub review queue to Obsidian at the start of the day or on demand |
+| [obsidian-task-rollover](packages/software-development/obsidian-task-rollover/SKILL.md) | Migrates unchecked tasks from today's Obsidian daily note to the next workday under `## Carried over`, marking source tasks as `[>]` | End-of-day bullet-journal task migration, rolling unfinished work to the next workday |
 
 ### Music
 

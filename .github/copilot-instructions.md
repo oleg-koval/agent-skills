@@ -27,3 +27,5 @@ Available reusable prompt files:
 - viral-launch: .github/prompts/viral-launch.prompt.md
 - search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
 - cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
+- obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
+- obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
