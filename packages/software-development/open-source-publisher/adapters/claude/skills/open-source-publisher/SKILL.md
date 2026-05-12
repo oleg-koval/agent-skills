@@ -52,9 +52,10 @@ Use this skill to audit whether an OSS repository is ready to publish, then help
 7. Implement only approved, missing, or weak work in this order:
    - OSS governance and support files
    - minimal icon
+   - favicon (generate via RealFaviconGenerator or derive from `logo.svg`)
    - social preview image
    - README standard
-   - GitHub Pages landing page
+   - GitHub Pages landing page (include favicon `<link>` tags in `<head>`)
    - GitHub Pages analytics setup, if requested
    - CI/CD and release audit/fixes
    - donation wiring, if requested
@@ -75,6 +76,7 @@ Publish-critical checklist:
 - OSS governance: `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, support policy, issue/PR templates, changelog or release notes path
 - README standard: centered shields, icon, title, short description, horizontal rule, essential sections
 - icon: simple SVG mark plus rendered PNG, both committed in predictable paths
+- favicon: multi-format favicon set (`favicon.svg`, `favicon.ico`, `favicon-96x96.png`, `apple-touch-icon.png`, web manifest icons, `site.webmanifest`) with `<link>` tags wired in all HTML pages
 - social image: 1200x630 image with matching metadata, with both SVG source and rendered PNG committed when practical
 - GitHub Pages or docs site: essential install/examples/links/SEO/Open Graph metadata
 - GitHub Pages analytics: optional setup to track visitor patterns and engagement
@@ -351,6 +353,79 @@ Rules:
 - If the user prefers privacy-first or no analytics, skip this step.
 - Store analytics credentials as GitHub Pages environment secret or site config, never in git.
 - Review monthly to catch unusual patterns or broken tracking links.
+
+## Favicon
+
+Generate a complete multi-format favicon set and wire it into all HTML pages.
+
+**Preferred workflow — RealFaviconGenerator:**
+
+1. Open https://realfavicongenerator.net/your-favicon-is-ready in a browser (or instruct the user to do so if browser access is unavailable).
+2. Upload `logo.svg` (or the project icon) and configure options.
+3. Download the generated package. Files to save to the site's public folder (e.g., `docs/`, `public/`, `static/`):
+   - `favicon.svg`
+   - `favicon-96x96.png`
+   - `favicon.ico`
+   - `apple-touch-icon.png`
+   - `web-app-manifest-192x192.png`
+   - `web-app-manifest-512x512.png`
+   - `site.webmanifest`
+4. Files can also be downloaded directly from the RealFaviconGenerator CDN when a package ID is known:
+   ```bash
+   BASE="https://realfavicongenerator.net/files/<package-id>"
+   curl -fsSL "$BASE/favicon.svg"           -o docs/favicon.svg
+   curl -fsSL "$BASE/favicon-96x96.png"     -o docs/favicon-96x96.png
+   curl -fsSL "$BASE/favicon.ico"           -o docs/favicon.ico
+   curl -fsSL "$BASE/apple-touch-icon.png"  -o docs/apple-touch-icon.png
+   curl -fsSL "$BASE/web-app-manifest-192x192.png" -o docs/web-app-manifest-192x192.png
+   curl -fsSL "$BASE/web-app-manifest-512x512.png" -o docs/web-app-manifest-512x512.png
+   curl -fsSL "$BASE/site.webmanifest"      -o docs/site.webmanifest
+   ```
+5. Add to every HTML page's `<head>` (do not duplicate if already present):
+   ```html
+   <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+   <link rel="shortcut icon" href="/favicon.ico" />
+   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+   <link rel="manifest" href="/site.webmanifest" />
+   ```
+
+**Fallback — derive from `logo.svg` without RealFaviconGenerator:**
+
+When the user cannot use RealFaviconGenerator, render the favicon set from `logo.svg`:
+
+```bash
+# Requires ImageMagick
+magick logo.svg -resize 96x96 docs/favicon-96x96.png
+magick logo.svg -resize 180x180 docs/apple-touch-icon.png
+magick logo.svg -resize 192x192 docs/web-app-manifest-192x192.png
+magick logo.svg -resize 512x512 docs/web-app-manifest-512x512.png
+magick logo.svg -define icon:auto-resize=16,32,48 docs/favicon.ico
+cp logo.svg docs/favicon.svg
+```
+
+Generate a minimal `site.webmanifest`:
+
+```json
+{
+  "name": "project-name",
+  "icons": [
+    { "src": "/web-app-manifest-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/web-app-manifest-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#08080f",
+  "background_color": "#08080f",
+  "display": "standalone"
+}
+```
+
+Rules:
+
+- Favicon files live in the same public folder as `index.html`, not in a subfolder.
+- `href` paths in `<link>` tags use root-relative `/favicon.svg` not relative `./favicon.svg` for GitHub Pages compatibility.
+- Do not commit generated favicon files if the project's `.gitignore` excludes them — add an exception or untrack the rule.
+- If a favicon set already exists and looks current, mark it `Ready` in the audit and skip.
+- Validate: `file docs/favicon.ico` should show `MS Windows icon`.
 
 ## CI/CD And Release Audit
 
