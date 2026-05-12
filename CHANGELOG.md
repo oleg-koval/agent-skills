@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/oleg-koval/agent-skills/compare/v1.8.0...v1.9.0) (2026-05-12)
+
+
+### ✨ Features
+
+* add obsidian-pr-sync and obsidian-task-rollover skills ([#9](https://github.com/oleg-koval/agent-skills/issues/9)) ([9d499f5](https://github.com/oleg-koval/agent-skills/commit/9d499f58b627071fe540ef66c32a05e55c50af22)), closes [#11](https://github.com/oleg-koval/agent-skills/issues/11)
+
 # [1.8.0](https://github.com/oleg-koval/agent-skills/compare/v1.7.0...v1.8.0) (2026-05-12)
 
 
