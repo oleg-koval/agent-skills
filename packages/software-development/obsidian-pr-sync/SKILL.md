@@ -1,14 +1,15 @@
 ---
 name: obsidian-pr-sync
 description: >
-  Morning daily sync for Obsidian: fetches open GitHub PRs (review-requested + assigned)
-  and today's Google Calendar events, then writes or refreshes "## Schedule" and
-  "## PRs to review" sections in today's daily note at
-  /Users/oleg.koval/obsidian/cloud-opus/Lead/Daily/YYYY-MM-DD.md.
+  Morning daily sync for Obsidian: fetches open GitHub PRs (review-requested + assigned),
+  today's Google Calendar events, and auto-creates People stubs for new meeting attendees.
+  Writes or refreshes "## Schedule" and "## PRs to review" sections in today's daily note
+  at /Users/oleg.koval/obsidian/cloud-opus/Lead/Daily/YYYY-MM-DD.md.
   Use this skill whenever the user asks to sync PRs to Obsidian, update their daily note
-  with GitHub reviews or calendar, check what needs attention today, or run a morning sync.
+  with GitHub reviews or calendar, check what needs attention today, run a morning sync,
+  or create people notes from calendar meetings.
   Also suitable for scheduled/automated runs — fully idempotent (re-running replaces
-  sections, never appends).
+  sections, never appends; people stubs are only created once).
 compatibility: Requires `gh` CLI authenticated, Google Calendar MCP available, and daily note vault at the path above.
 metadata:
   author: Oleg Koval
@@ -18,14 +19,15 @@ metadata:
     - daily-note
     - pull-requests
     - google-calendar
+    - people
     - productivity
     - morning-routine
 ---
 
 # Obsidian Morning Sync
 
-Two sections written to today's daily note: today's calendar and the PR review queue.
-Run both every time; they're independent and idempotent.
+Three things per run: today's calendar, PR review queue, and People stubs for new meeting attendees.
+All three are idempotent — safe to re-run.
 
 ---
 
@@ -198,12 +200,110 @@ Then append both sections.
 
 ---
 
+---
+
+## Part C — People stubs for new meeting attendees
+
+Run this after Part A (calendar events are already in memory). No additional API calls needed.
+
+### Step C1 — Collect attendees
+
+From the events fetched in Step A1, collect all attendees across all events:
+- Skip `oleg.koval@teifi.com` (self)
+- Skip attendees whose `responseStatus` is `declined`
+- Skip attendees with no `displayName` and no `email` (calendar noise)
+- Deduplicate by email across all events
+
+For each attendee, note:
+- `displayName` (from calendar) — fall back to the part before `@` in their email if absent
+- `email`
+- Which event(s) they appear in (for the stub's first `## Meetings` entry)
+
+### Step C2 — Check for existing People notes
+
+The vault stores People notes under `Lead/People/` in three subdirectories:
+- `Lead/People/Peers/` — first name only (e.g. `Tim.md`, `Marc.md`)
+- `Lead/People/Reports/` — full name (e.g. `Merlijn Mac Gillavry.md`)
+- `Lead/People/Stakeholders/` — external people, full name
+
+For each attendee, check whether a file already exists:
+
+```bash
+find /Users/oleg.koval/obsidian/cloud-opus/Lead/People -name "*.md" | \
+  xargs -I{} basename {} .md
+```
+
+Match against the attendee's `displayName` using case-insensitive substring: if any existing filename **contains** one of the words in the display name (or vice versa), treat it as a match and skip creation. This handles first-name-only files: if `Tim` exists and the attendee is `Tim Horton`, that's a match — don't create a duplicate.
+
+Only create a stub when **no match is found at all**.
+
+### Step C3 — Create stub
+
+For each new attendee (no match found), create:
+
+```
+/Users/oleg.koval/obsidian/cloud-opus/Lead/People/<DisplayName>.md
+```
+
+Place it in the vault root of `Lead/People/` — unclassified, so the user can move it to Peers/Reports/Stakeholders later.
+
+**Stub template:**
+
+```markdown
+---
+type: person
+role: ""
+team: ""
+last-1-1: 
+next-1-1: 
+---
+
+# <DisplayName>
+
+## Context
+
+- Email: <email>
+
+## Strengths
+
+## Growth areas
+
+## Recent 1:1s
+
+## Running notes
+
+## Meetings
+
+- [[Lead/Daily/<TODAY>]] — <Event title>
+```
+
+Rules:
+- `<DisplayName>` = the calendar `displayName` (or email-prefix fallback)
+- `<email>` = attendee email
+- `<TODAY>` = today's date in `YYYY-MM-DD` format
+- `<Event title>` = name of the first event this person appears in
+- If the person appears in multiple events today, list each as a separate `- [[...]] — title` line under `## Meetings`
+- Do NOT add a `## Code Review Signals` section (that's for direct reports only)
+
+**Classification hint** (write as a comment at bottom of file, so the user sees it on first open):
+
+```markdown
+<!-- Classify: teifi.com email → Peers or Reports · external email → Stakeholders -->
+```
+
+### Step C4 — Skip silently if already exists
+
+If all attendees already have People notes, emit nothing about Part C in the output summary. Only mention new stubs that were created.
+
+---
+
 ## Output to user
 
 ```
 Morning sync complete → Lead/Daily/YYYY-MM-DD.md
   Schedule: N events
   PRs — Work (Teifi-Digital): X  |  Personal: Y  |  Skipped: Z bots/drafts
+  People: N new stubs created (or "all known")
 ```
 
 If any tool call fails (gh auth expired, Calendar MCP unavailable), report which part
