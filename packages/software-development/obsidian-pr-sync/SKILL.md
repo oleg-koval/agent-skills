@@ -1,15 +1,15 @@
 ---
 name: obsidian-pr-sync
 description: >
-  Fetch open GitHub PRs where the user is an assignee or review-requested reviewer,
-  then write or refresh a "## PRs to review" section in today's Obsidian daily note.
+  Morning daily sync for Obsidian: fetches open GitHub PRs (review-requested + assigned)
+  and today's Google Calendar events, then writes or refreshes "## Schedule" and
+  "## PRs to review" sections in today's daily note at
+  /Users/oleg.koval/obsidian/cloud-opus/Lead/Daily/YYYY-MM-DD.md.
   Use this skill whenever the user asks to sync PRs to Obsidian, update their daily note
-  with GitHub reviews, check what PRs need attention, or run a morning PR sync routine.
+  with GitHub reviews or calendar, check what needs attention today, or run a morning sync.
   Also suitable for scheduled/automated runs — fully idempotent (re-running replaces
-  the section, never appends).
-license: MIT
-allowed-tools: Bash, Read, Write, Edit
-compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires the GitHub CLI (`gh`) authenticated and a daily note vault.
+  sections, never appends).
+compatibility: Requires `gh` CLI authenticated, Google Calendar MCP available, and daily note vault at the path above.
 metadata:
   author: Oleg Koval
   tags:
@@ -17,49 +17,95 @@ metadata:
     - obsidian
     - daily-note
     - pull-requests
+    - google-calendar
     - productivity
     - morning-routine
 ---
 
-# Obsidian PR Sync
+# Obsidian Morning Sync
 
-Fetch all open PRs where the user is assigned or requested as reviewer, filter out
-noise (bots, drafts, self-authored), and write a clean grouped section into today's
-daily note.
+Two sections written to today's daily note: today's calendar and the PR review queue.
+Run both every time; they're independent and idempotent.
 
-## Configuration
+---
 
-Before running, confirm:
-- `VAULT_DAILY` — absolute path to the daily notes folder (e.g. `/Users/you/obsidian/vault/Lead/Daily`)
-- `GH_USERNAME` — GitHub login to exclude self-authored PRs (e.g. `oleg-koval`)
-- `ORG_PREFIX` — org name to group as "Work" (e.g. `Teifi-Digital`); everything else goes to "Personal"
+## Part A — Google Calendar
 
-If not specified by the user, infer from context (git config, existing vault files).
+### Step A1 — Fetch today's events
 
-## Step 1 — Fetch PRs
+Use the Google Calendar MCP tool to list today's events:
+
+```
+mcp__claude_ai_Google_Calendar__list_events
+  calendarId: "primary"
+  timeMin: TODAY at 00:00:00 local time (ISO 8601)
+  timeMax: TODAY at 23:59:59 local time (ISO 8601)
+  singleEvents: true
+  orderBy: "startTime"
+```
+
+If the MCP tool is not available (e.g. running headless without MCP), skip Part A silently and note it in the output.
+
+### Step A2 — Format the section
+
+```markdown
+## Schedule
+
+- HH:MM–HH:MM Event title (location or link if present)
+- HH:MM–HH:MM Another event
+```
+
+Rules:
+- All-day events: `- All day  Event title`
+- Format times in 24h (`09:00`, `14:30`)
+- Include video link (Google Meet / Zoom / Teams URL) if present in event description or location — use the bare URL, no markdown link syntax
+- Omit calendar noise: "OOO", declined events, events where attendee status is `declined`
+- If no events today: `## Schedule\n\n_No events today_`
+
+**Example:**
+```
+## Schedule
+
+- 09:00–09:30  Standup (meet.google.com/abc-defg-hij)
+- 14:00–15:00  1:1 Frank
+- 16:00–16:30  RFC review — postgres-job-resource
+```
+
+### Step A3 — Write to note (idempotent)
+
+Replace `## Schedule` section if it exists, otherwise insert it **before** `## PRs to review`
+(or before the nav footer `*← [[...` if PRs section not present).
+
+---
+
+## Part B — GitHub PRs
+
+### Step B1 — Fetch PRs
 
 Run two `gh` queries and merge results, deduplicating by URL:
 
 ```bash
-# Review-requested
+# Review-requested (someone explicitly asked for your review)
 gh search prs --review-requested=@me --state=open \
   --json title,url,repository,author,createdAt,isDraft --limit 50
 
-# Assigned
+# Assigned (you're the assignee but may not be review-requested)
 gh search prs --assignee=@me --state=open \
   --json title,url,repository,author,createdAt,isDraft --limit 50
 ```
 
-Merge both lists, deduplicate by `url`. The union is what needs attention.
+Track the source for each PR: a PR can appear in both lists. After dedup by URL, mark each as:
+- `review` — present in review-requested results
+- `assigned` — present in assigned results only
 
-## Step 2 — Filter
+### Step B2 — Filter
 
 Discard entries where:
 - `isDraft` is `true`
 - `author.login` matches any bot pattern: `dependabot`, `copilot`, `renovate`, `github-actions`, or `author.is_bot` is `true`
-- `author.login` equals `GH_USERNAME` — self-authored PRs are not reviews; they're your own work
+- `author.login` is `oleg-koval` — self-authored PRs are not reviews; they belong in a separate "My PRs" workflow
 
-## Step 3 — Enrich authors
+### Step B3 — Enrich authors
 
 For each unique author login, resolve a display name for the Obsidian wiki-link:
 
@@ -67,24 +113,19 @@ For each unique author login, resolve a display name for the Obsidian wiki-link:
 gh api /users/<login> --jq '.name // .login'
 ```
 
-If the API returns a name, use it (e.g. `Rutger Klaassen`). If it returns null, fall
-back to the login with first letter uppercased. This gives `[[Rutger Klaassen]]` or
-`[[Merlijnmacgillavry]]`.
+Fall back to login with first letter uppercased if name is null.
+Batch these lookups in parallel to keep the sync fast.
 
-Batch these lookups — run them in parallel if possible to keep the sync fast.
+### Step B4 — Calculate age
 
-## Step 4 — Calculate age
+For each PR: `days_old = (today - createdAt).days`. Use today's date.
 
-For each PR: `days_old = (today - createdAt).days`. Use today's date in local time.
-
-## Step 5 — Build the section
-
-Format the section exactly as:
+### Step B5 — Build the section
 
 ```markdown
 ## PRs to review
 
-### Work (<ORG_PREFIX>)
+### Work (Teifi-Digital)
 - [ ] [TITLE](url) by [[Author Name]] (N days old)
 
 ### Personal
@@ -92,61 +133,78 @@ Format the section exactly as:
 ```
 
 Rules:
-- **Work**: `repository.nameWithOwner` starts with `<ORG_PREFIX>/`
+- **Work**: `repository.nameWithOwner` starts with `Teifi-Digital/`
 - **Personal**: everything else
 - Within each group, sort by `createdAt` ascending (oldest first — most overdue at top)
-- If a group has no PRs, omit that subsection entirely (don't render an empty `### Work` header)
-- If there are zero PRs total, write: `## PRs to review\n\n_No open PRs — clear queue! 🎉_`
-- Add `⚠️` after the age if `days_old >= 7`
+- Omit empty subsections (no empty `### Work` header if no work PRs)
+- Add `⚠️` after age if `days_old >= 7`
+- If zero PRs total: `## PRs to review\n\n_No open PRs — clear queue! 🎉_`
 
 **Example line:**
 ```
 - [ ] [RSL-108] Image sync from InRiver by [[Merlijn Mac Gillavry]] (12 days old ⚠️)
 ```
 
-## Step 6 — Write to today's daily note
+### Step B6 — Write to note (idempotent)
 
 **Find today's note:**
 ```bash
 TODAY=$(date +%Y-%m-%d)
-NOTE="${VAULT_DAILY}/${TODAY}.md"
+NOTE="/Users/oleg.koval/obsidian/cloud-opus/Lead/Daily/${TODAY}.md"
 ```
 
-If the file doesn't exist, create it with standard daily template frontmatter first,
-then append the section. If the file exists:
+If the file doesn't exist, create it with the standard daily template first:
 
-**Replacement logic (idempotent):**
-- If `## PRs to review` already exists: replace everything from that line up to (but not
-  including) the next `## ` heading or end-of-file with the newly built section.
-- If it doesn't exist: append the section at the end of the file (before the nav footer
-  line `*← [[...` if present, otherwise at the very end).
+```markdown
+---
+type: daily
+date: YYYY-MM-DD
+tags: [lead/daily]
+---
 
-This ensures re-running the skill produces the same result, not a growing list.
+# WEEKDAY, D MMM YYYY
 
-## Invocation patterns
+## Top 3 for today
+1. 
+2. 
+3. 
 
-**Manual (user-triggered):**
-The user says something like "sync my PRs to today's note" or "update obsidian with my reviews".
-Run the full flow and confirm how many PRs were written.
+## People check-in
+> Who needs something from me today?
 
-**Scheduled morning routine:**
-Same flow. No user prompt needed — just run, update the note, and report a one-line
-summary: `"PR sync: 3 work PRs, 2 personal PRs written to 2026-05-11.md"`.
 
-**In a remote CCR agent:**
-Clone the vault repo, run the sync, commit and push. The local Obsidian Git plugin
-pulls the changes automatically.
+
+## Notes / journal
+
+
+## Open loops
+> Things I started but didn't finish
+
+
+
+## Actions
+- [ ] 
+
+---
+*← [[Lead/Daily/YESTERDAY|YESTERDAY]]  |  [[Lead/Daily/TOMORROW|TOMORROW]] →*
+```
+
+Then append both sections.
+
+**Replacement logic (idempotent) for each section:**
+- If the section (`## Schedule` or `## PRs to review`) already exists: replace everything
+  from that heading line up to (not including) the next `## ` heading or end-of-file.
+- If it doesn't exist: append before `*← [[...` nav footer (or at file end).
+
+---
 
 ## Output to user
 
-After writing the file, show a brief confirmation:
-
 ```
-Synced N PRs to Lead/Daily/YYYY-MM-DD.md
-  Work (<ORG_PREFIX>): X PRs
-  Personal: Y PRs
-  Skipped: Z bots/drafts
+Morning sync complete → Lead/Daily/YYYY-MM-DD.md
+  Schedule: N events
+  PRs — Work (Teifi-Digital): X  |  Personal: Y  |  Skipped: Z bots/drafts
 ```
 
-If any `gh` call fails (e.g. auth expired), surface the error clearly rather than
-writing a partial/corrupt section.
+If any tool call fails (gh auth expired, Calendar MCP unavailable), report which part
+failed and write what succeeded — never leave a partial corrupt section.
