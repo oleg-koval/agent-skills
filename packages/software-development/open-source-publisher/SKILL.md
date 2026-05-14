@@ -5,6 +5,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, Edit, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable git repository; browser or image rendering tools are useful for visual validation.
 metadata:
+  targets: [_source-only]
   author: Oleg Koval
   tags:
     - open-source

@@ -7,6 +7,7 @@ license: MIT
 allowed-tools: Bash
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires shell access and the fill-music-player CLI or underlying script in the target environment.
 metadata:
+  targets: ["cursor"]
   author: Oleg Koval
   tags:
     - music

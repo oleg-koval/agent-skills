@@ -6,6 +6,7 @@ license: MIT
 allowed-tools: Bash, Read, Write
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools.
 metadata:
+  targets: [_source-only]
   author: Oleg Koval
   tags:
     - seo

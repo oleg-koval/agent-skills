@@ -8,6 +8,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Useful for product repos, open-source packages, SaaS launches, waitlists, and creator tools.
 metadata:
+  targets: ["claude"]
   author: Oleg Koval
   tags:
     - marketing

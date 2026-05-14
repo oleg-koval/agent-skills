@@ -7,6 +7,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a project that contains the gallery scripts and expected data layout.
 metadata:
+  targets: ["cursor"]
   author: Oleg Koval
   tags:
     - photos

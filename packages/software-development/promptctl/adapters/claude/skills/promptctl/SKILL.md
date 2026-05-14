@@ -7,6 +7,7 @@ license: MIT
 allowed-tools: Bash, Read, Write
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires promptctl to be installed when the workflow depends on the CLI.
 metadata:
+  targets: ["claude"]
   author: Oleg Koval
   tags:
     - prompts

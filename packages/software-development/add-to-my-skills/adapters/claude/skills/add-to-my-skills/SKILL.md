@@ -7,6 +7,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable git repository and access to the source skill repo.
 metadata:
+  targets: ["claude"]
   author: Oleg Koval
   tags:
     - skills
