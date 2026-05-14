@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/oleg-koval/agent-skills/compare/v1.9.0...v1.9.1) (2026-05-14)
+
+
+### 🐛 Bug Fixes
+
+* add metadata.targets to prevent skill duplication across AI tools ([a5c8404](https://github.com/oleg-koval/agent-skills/commit/a5c84048fa4e514fecf37ae4c58c9255b4228954))
+
 # [1.9.0](https://github.com/oleg-koval/agent-skills/compare/v1.8.0...v1.9.0) (2026-05-12)
 
 
