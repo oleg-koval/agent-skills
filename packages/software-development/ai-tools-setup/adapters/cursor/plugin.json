@@ -1,6 +1,0 @@
-{
-  "name": "olko:ai-tools-setup",
-  "version": "0.1.0",
-  "description": "Install, repair, and measure the RTK+ICM+Vox AI development toolkit. Fixes missing hooks and MCP config, and shows a weekly effectiveness digest of token savings and memory health.",
-  "skills": "skills/"
-}
