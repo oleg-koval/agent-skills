@@ -7,6 +7,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires shell access and Node.js 18+ when installing from npm.
 metadata:
+  targets: ["cursor"]
   author: Oleg Koval
   package: docs-index-keeper
   tags:

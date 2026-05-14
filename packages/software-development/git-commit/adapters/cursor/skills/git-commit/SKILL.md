@@ -7,6 +7,7 @@ license: MIT
 allowed-tools: Bash
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires git and a writable repository.
 metadata:
+  targets: ["cursor"]
   author: Oleg Koval
   tags:
     - git

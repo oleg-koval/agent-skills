@@ -5,6 +5,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a Node.js package repository that uses git and GitHub Actions.
 metadata:
+  targets: [_source-only]
   author: Oleg Koval
   tags:
     - semantic-release
