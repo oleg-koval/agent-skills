@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/oleg-koval/agent-skills/compare/v1.9.1...v1.9.2) (2026-05-14)
+
+
+### 🐛 Bug Fixes
+
+* mark obsidian-pr-sync and obsidian-task-rollover root skills as source-only ([b0fdb71](https://github.com/oleg-koval/agent-skills/commit/b0fdb71e7e12c266d4c9ed00f64427c5f48debe6))
+
 ## [1.9.1](https://github.com/oleg-koval/agent-skills/compare/v1.9.0...v1.9.1) (2026-05-14)
 
 
