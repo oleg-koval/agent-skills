@@ -12,6 +12,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires daily notes at a configurable vault path.
 metadata:
+  targets: [_source-only]
   author: Oleg Koval
   tags:
     - obsidian
