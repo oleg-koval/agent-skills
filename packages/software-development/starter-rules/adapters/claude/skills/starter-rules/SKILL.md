@@ -5,7 +5,7 @@ license: MIT
 allowed-tools: Read, Bash
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools.
 metadata:
-  targets: ["claude"]
+  targets: [_source-only]
   author: Oleg Koval
   tags:
     - starters
