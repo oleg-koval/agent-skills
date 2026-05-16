@@ -47,27 +47,6 @@
       ]
     },
     {
-      "name": "changelog-generator",
-      "lookupName": "olko:changelog-generator",
-      "category": "software-development",
-      "path": "packages/software-development/changelog-generator",
-      "description": "Generate user-facing changelogs and release notes from git history.",
-      "tags": [
-        "changelog",
-        "release-notes",
-        "git",
-        "docs"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
       "name": "gh-cli",
       "lookupName": "olko:gh-cli",
       "category": "software-development",
@@ -185,53 +164,6 @@
         "saas",
         "web-app",
         "builder"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "ai-tools-setup",
-      "lookupName": "olko:ai-tools-setup",
-      "category": "software-development",
-      "path": "packages/software-development/ai-tools-setup",
-      "description": "Install, repair, and measure the RTK+ICM+Vox AI development toolkit. Fixes missing hooks and MCP config, and shows a weekly effectiveness digest of token savings and memory health.",
-      "tags": [
-        "rtk",
-        "icm",
-        "vox",
-        "setup",
-        "hooks",
-        "digest",
-        "ai-tools",
-        "productivity"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "add-to-my-skills",
-      "lookupName": "olko:add-to-my-skills",
-      "category": "software-development",
-      "path": "packages/software-development/add-to-my-skills",
-      "description": "Copy a newly created skill into this catalog, refresh manifests, and publish the change.",
-      "tags": [
-        "skills",
-        "skillshare",
-        "catalog",
-        "git",
-        "push"
       ],
       "adapters": [
         "codex",

@@ -184,14 +184,11 @@ These packages are the entry points. Each one is a structured workflow with conc
 |-------|-------------|----------|
 | [docs-index-keeper](packages/software-development/docs-index-keeper/SKILL.md) | Keeps a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows | A repo has `docs/` and needs `docs/README.md` or another Markdown index updated automatically |
 | [semantic-release-beta](packages/software-development/semantic-release-beta/SKILL.md) | Sets up `semantic-release-npm-github-publish` with stable `main` releases and beta prereleases | A Node package needs stable npm publishing plus beta prereleases from a `beta` branch |
-| [changelog-generator](packages/software-development/changelog-generator/SKILL.md) | Generates user-facing changelogs and release notes from git history | Preparing release notes, app store update text, customer changelogs, or internal release summaries |
 | [gh-cli](packages/software-development/gh-cli/SKILL.md) | Guides GitHub CLI usage for repos, PRs, Actions, releases, issues, and related GitHub operations | Working with GitHub from the command line and needing reliable `gh` commands |
 | [git-commit](packages/software-development/git-commit/SKILL.md) | Creates conventional commits with diff-aware staging and message generation | The user asks to commit changes or wants a conventional commit message from the current diff |
-| [add-to-my-skills](packages/software-development/add-to-my-skills/SKILL.md) | Copies a skill from another repo into this catalog, then refreshes docs, manifests, commit, and push | Bringing a newly created skill into this repository |
 | [promptctl](packages/software-development/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, prompt review, prompt scoring, or reusable prompt workflows |
 | [product-builder](packages/software-development/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | The user asks to build a complete app, SaaS, dashboard, or product rather than a prototype |
 | [cloudflare-block-countries](packages/software-development/cloudflare-block-countries/SKILL.md) | Blocks specific countries via Cloudflare WAF Custom Rules using the API | Geo-blocking traffic, setting up WAF country rules, or blocking regions across single or multiple zones |
-| [ai-tools-setup](packages/software-development/ai-tools-setup/SKILL.md) | Installs, repairs, and measures the RTK+ICM+Vox AI development toolkit | Setting up or repairing AI dev tooling hooks, MCP config, or reviewing a weekly token savings digest |
 | [starter-rules](packages/software-development/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
 | [open-source-publisher](packages/software-development/open-source-publisher/SKILL.md) | Prepares an open-source repository for public publishing with branding, CI/CD, and release hygiene | Releasing a private project publicly with proper GitHub Pages, README, and social preview |
 | [obsidian-pr-sync](packages/software-development/obsidian-pr-sync/SKILL.md) | Fetches open GitHub PRs assigned to you or requesting review, and writes a grouped age-sorted section into today's Obsidian daily note | Syncing GitHub review queue to Obsidian at the start of the day or on demand |
@@ -297,10 +294,8 @@ agent-skills/
 │   ├── software-development/
 │   │   ├── docs-index-keeper/
 │   │   ├── semantic-release-beta/
-│   │   ├── changelog-generator/
 │   │   ├── gh-cli/
 │   │   ├── git-commit/
-│   │   ├── add-to-my-skills/
 │   │   ├── promptctl/
 │   │   └── product-builder/
 │   ├── music/
@@ -489,11 +484,6 @@ The following package workflows have been smoke-tested locally before first push
   - used `semantic-release-npm-github-publish` as the release preset
   - ran `semantic-release --dry-run --no-ci` on `beta`
   - verified prerelease calculation to `1.0.0-beta.1`
-
-- `add-to-my-skills`
-  - copied a source skill into `packages/software-development/`
-  - refreshed generated manifests with `./scripts/build-adapters.sh`
-  - validated catalog and generated files with `./scripts/validate-catalog.sh`
 
 The semantic-release smoke test was intentionally self-contained and used a local bare git remote plus a valid `file://` repository URL so dry-run behavior could be validated without real npm or GitHub publishing credentials.
 
