@@ -1,3 +1,15 @@
+# [1.10.0](https://github.com/oleg-koval/agent-skills/compare/v1.9.2...v1.10.0) (2026-05-16)
+
+
+### ✨ Features
+
+* fix adapter SKILL.md frontmatter ordering in build-adapters.sh ([bf06805](https://github.com/oleg-koval/agent-skills/commit/bf06805394bb6f72148dc23ff34c824afc9318fc))
+
+
+### 🐛 Bug Fixes
+
+* remove duplicate skill syncs by marking root skills with targets: [_source-only] ([6b1db5e](https://github.com/oleg-koval/agent-skills/commit/6b1db5e1ce6694e13eda83baa2f133784479c7ba))
+
 ## [1.9.2](https://github.com/oleg-koval/agent-skills/compare/v1.9.1...v1.9.2) (2026-05-14)
 
 
