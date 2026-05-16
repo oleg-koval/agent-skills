@@ -21,6 +21,15 @@ const extractFrontmatter = (content) => {
   if (!m) return ''
   return m[1].endsWith('\n') ? m[1] : m[1] + '\n'
 }
+const injectTargets = (content, targets) => {
+  const targetsYaml = targets.length > 0
+    ? `  targets: [${targets.map(t => JSON.stringify(t)).join(', ')}]`
+    : '  targets: []'
+  if (/^  targets:/m.test(content)) {
+    return content.replace(/^  targets:.*$/m, targetsYaml)
+  }
+  return content.replace(/^(metadata:)$/m, `$1\n${targetsYaml}`)
+}
 const stripTrailingLineWhitespace = (content) => content.replace(/[ \t]+$/gm, '')
 const copySkillResources = (pkg, destDir) => {
   for (const resourceDir of ['scripts']) {
@@ -229,7 +238,10 @@ for (const pkg of catalog.packages) {
         2,
       ) + '\n',
     )
-    fs.writeFileSync(path.join(destDir, 'SKILL.md'), [fm + generatedHeader, '', body, ''].join('\n'))
+    const cursorCanonical = injectTargets(canonical, ['cursor'])
+    const cursorFrontmatter = extractFrontmatter(cursorCanonical)
+    const cursorBody = stripTrailingLineWhitespace(stripFrontmatter(cursorCanonical).trimStart().trimEnd())
+    fs.writeFileSync(path.join(destDir, 'SKILL.md'), [cursorFrontmatter + generatedHeader, '', cursorBody, ''].join('\n'))
     copySkillResources(pkg, destDir)
   }
 

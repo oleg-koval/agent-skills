@@ -1,7 +1,7 @@
 {
   "name": "olko-agent-skills",
   "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "author": {
     "name": "Oleg Koval"
   },
@@ -11,15 +11,12 @@
   "skills": [
     "./packages/software-development/docs-index-keeper",
     "./packages/software-development/semantic-release-beta",
-    "./packages/software-development/changelog-generator",
     "./packages/software-development/gh-cli",
     "./packages/software-development/git-commit",
     "./packages/photography/gallery",
     "./packages/software-development/promptctl",
     "./packages/music/fill-music-player",
     "./packages/software-development/product-builder",
-    "./packages/software-development/ai-tools-setup",
-    "./packages/software-development/add-to-my-skills",
     "./packages/software-development/starter-rules",
     "./packages/software-development/open-source-publisher",
     "./packages/marketing/viral-launch",

@@ -5,7 +5,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, Edit, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable application repository and a stack compatible with the generated implementation.
 metadata:
-  targets: [_source-only]
+  targets: ["cursor"]
   author: Oleg Koval
   tags:
     - product

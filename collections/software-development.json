@@ -4,11 +4,9 @@
   "packages": [
     "docs-index-keeper",
     "semantic-release-beta",
-    "changelog-generator",
     "gh-cli",
     "git-commit",
     "promptctl",
-    "add-to-my-skills",
     "open-source-publisher",
     "product-builder"
   ]

@@ -13,15 +13,12 @@ This repository is an opinionated agent skill catalog. Skills encode concrete de
 Available reusable prompt files:
 - docs-index-keeper: .github/prompts/docs-index-keeper.prompt.md
 - semantic-release-beta: .github/prompts/semantic-release-beta.prompt.md
-- changelog-generator: .github/prompts/changelog-generator.prompt.md
 - gh-cli: .github/prompts/gh-cli.prompt.md
 - git-commit: .github/prompts/git-commit.prompt.md
 - gallery: .github/prompts/gallery.prompt.md
 - promptctl: .github/prompts/promptctl.prompt.md
 - fill-music-player: .github/prompts/fill-music-player.prompt.md
 - product-builder: .github/prompts/product-builder.prompt.md
-- ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
-- add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
 - starter-rules: .github/prompts/starter-rules.prompt.md
 - open-source-publisher: .github/prompts/open-source-publisher.prompt.md
 - viral-launch: .github/prompts/viral-launch.prompt.md

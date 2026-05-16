@@ -11,7 +11,7 @@ license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires the GitHub CLI (`gh`) authenticated and a daily note vault.
 metadata:
-  targets: [_source-only]
+  targets: ["cursor"]
   author: Oleg Koval
   tags:
     - github
