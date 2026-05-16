@@ -14,10 +14,10 @@ Key changes:
 
 ### Task 3: Verify the fix
 Test plan:
-- [ ] Run `./scripts/build-adapters.sh`.
-- [ ] Run `./scripts/validate-catalog.sh`.
-- [ ] Spot-check a few generated cursor wrappers to confirm the first line is `---` and the provenance comment is no longer before frontmatter.
-- [ ] Reopen Skillshare/Cursor once the updated files are installed to confirm the warnings disappear.
+- [x] Run `./scripts/build-adapters.sh`.
+- [x] Run `./scripts/validate-catalog.sh`.
+- [x] Spot-check a few generated cursor wrappers to confirm the first line is `---` and the provenance comment is no longer before frontmatter.
+- [x] Reopen Skillshare/Cursor once the updated files are installed to confirm the warnings disappear.
 
 ### Task 4: Confirm assumptions
 - [ ] The canonical `packages/*/SKILL.md` files are already valid; the issue is only in generated wrapper files.
