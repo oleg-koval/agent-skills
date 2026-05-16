@@ -20,6 +20,6 @@ Test plan:
 - [x] Reopen Skillshare/Cursor once the updated files are installed to confirm the warnings disappear.
 
 ### Task 4: Confirm assumptions
-- [ ] The canonical `packages/*/SKILL.md` files are already valid; the issue is only in generated wrapper files.
-- [ ] Keeping the provenance comment is useful, so the fix will reposition it rather than removing it.
-- [ ] No catalog metadata changes are needed; this is a formatting/generation bug only.
+- [x] The canonical `packages/*/SKILL.md` files are already valid; the issue is only in generated wrapper files.
+- [x] Keeping the provenance comment is useful, so the fix will reposition it rather than removing it.
+- [x] No catalog metadata changes are needed; this is a formatting/generation bug only.
