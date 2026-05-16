@@ -5,7 +5,6 @@ inclusion: manual
 description: "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones."
 ---
 
-
 # Cloudflare Country Block via WAF Custom Rules
 
 Block traffic from specific countries using Cloudflare WAF Custom Rules and the Cloudflare API.

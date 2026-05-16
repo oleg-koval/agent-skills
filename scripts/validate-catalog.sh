@@ -118,6 +118,22 @@ for (const pkg of catalog.packages) {
     throw new Error(`stale flat package path exists: ${oldFlatPath}`)
   }
 }
+
+// Assert every SKILL.md (canonical + adapter wrappers) has a valid closed frontmatter block
+// Codex adapter files use README.md and are validated separately above
+const walk = (dir) => {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) walk(full)
+    else if (entry.name === 'SKILL.md') {
+      const content = fs.readFileSync(full, 'utf8')
+      if (!content.match(/^---\n[\s\S]*?\n---\n?/)) {
+        throw new Error(`SKILL.md does not have valid closed frontmatter: ${full}`)
+      }
+    }
+  }
+}
+walk('packages')
 EOF
 
 echo "catalog validation passed"

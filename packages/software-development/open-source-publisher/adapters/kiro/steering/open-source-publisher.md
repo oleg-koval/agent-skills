@@ -5,7 +5,6 @@ inclusion: manual
 description: "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, and optional donation setup."
 ---
 
-
 # open-source-publisher
 
 Use this skill to audit whether an OSS repository is ready to publish, then help only with missing or weak pieces: recognizable icon, shareable social image, GitHub Pages site, standardized README, CI/CD hygiene, release readiness, and optional donation links.
