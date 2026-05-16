@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/oleg-koval/agent-skills/compare/v1.10.0...v1.10.1) (2026-05-16)
+
+
+### 🐛 Bug Fixes
+
+* repair cursor skill frontmatter ([bdeab04](https://github.com/oleg-koval/agent-skills/commit/bdeab048a92c4e406364d16d5caa106fa1b52499))
+
 # [1.10.0](https://github.com/oleg-koval/agent-skills/compare/v1.9.2...v1.10.0) (2026-05-16)
 
 
