@@ -9,8 +9,8 @@ Key changes:
 
 ### Task 2: Regenerate tracked adapters and add validation
 Key changes:
-- [ ] Regenerate the tracked adapter files under `packages/*/adapters/{cursor,claude}/skills/*/SKILL.md` so the repo matches the fixed generator.
-- [ ] Add a validation check in `scripts/validate-catalog.sh` that asserts every `SKILL.md` starts with `---`, so this regression fails fast in CI.
+- [x] Regenerate the tracked adapter files under `packages/*/adapters/{cursor,claude}/skills/*/SKILL.md` so the repo matches the fixed generator.
+- [x] Add a validation check in `scripts/validate-catalog.sh` that asserts every `SKILL.md` starts with `---`, so this regression fails fast in CI.
 
 ### Task 3: Verify the fix
 Test plan:
