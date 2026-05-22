@@ -20,6 +20,7 @@ Available reusable prompt files:
 - fill-music-player: .github/prompts/fill-music-player.prompt.md
 - product-builder: .github/prompts/product-builder.prompt.md
 - starter-rules: .github/prompts/starter-rules.prompt.md
+- review-past-performance: .github/prompts/review-past-performance.prompt.md
 - open-source-publisher: .github/prompts/open-source-publisher.prompt.md
 - viral-launch: .github/prompts/viral-launch.prompt.md
 - search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
