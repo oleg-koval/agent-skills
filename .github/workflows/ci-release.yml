@@ -47,10 +47,6 @@ jobs:
     needs: release-readiness
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
     runs-on: ubuntu-latest
-    env:
-      # setup-node with registry-url writes auth from NODE_AUTH_TOKEN; npm CLI uses it for whoami/publish
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     permissions:
       contents: write
       issues: write
@@ -68,8 +64,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - name: npm auth preflight
-        run: npm whoami --registry=https://registry.npmjs.org/
       - run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
