@@ -1,3 +1,15 @@
+# [1.11.0](https://github.com/oleg-koval/agent-skills/compare/v1.10.1...v1.11.0) (2026-05-23)
+
+
+### ⚙️ Continuous Integrations
+
+* switch npm publish to OIDC trusted publishing ([eb1a216](https://github.com/oleg-koval/agent-skills/commit/eb1a216111e9d1ef70557325ad9a31986977428a))
+
+
+### ✨ Features
+
+* **skills:** add review-past-performance skill ([fd45444](https://github.com/oleg-koval/agent-skills/commit/fd454443e83a58c2b6f285792f5ff143a4f16ce7))
+
 ## [1.10.1](https://github.com/oleg-koval/agent-skills/compare/v1.10.0...v1.10.1) (2026-05-16)
 
 
