@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/oleg-koval/agent-skills/compare/v1.12.0...v1.13.0) (2026-06-15)
+
+
+### ✨ Features
+
+* **skills:** auto-generate 2026-06-15 [weekly-pattern-learner] ([#16](https://github.com/oleg-koval/agent-skills/issues/16)) ([af7709f](https://github.com/oleg-koval/agent-skills/commit/af7709feeda6400c450b2c77541f8b0127899f0f))
+
 # [1.12.0](https://github.com/oleg-koval/agent-skills/compare/v1.11.1...v1.12.0) (2026-06-15)
 
 
