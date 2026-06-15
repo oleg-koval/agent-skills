@@ -1,15 +1,17 @@
 <div align="center">
   <h1>agent skills</h1>
-  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Pi, Hermes, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
+  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
     <img src="https://img.shields.io/badge/skills-19-2563eb" alt="19 skills">
-    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Pi%20%7C%20Hermes%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Pi Hermes Copilot Windsurf Kiro">
+    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
 </div>
 
-Agent-agnostic skill collection for Codex, Claude, Cursor, Pi, Hermes, and other skill-aware tools.
+Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware tools.
+
+Pi and Hermes adapters currently exist for `search-console-indexing-audit` only.
 
 These skills are opinionated by design. They encode working defaults, preferred tools, and repeatable workflows instead of trying to be neutral snippets. Treat them as starting points with taste: useful out of the box, easy to inspect, and specific enough for an agent to execute consistently.
 
@@ -274,8 +276,8 @@ packages/{category}/{skill}/
     ├── codex/            # OpenAI Codex — README.md stub
     ├── claude/           # Claude Code — plugin.json + skills/SKILL.md copy
     ├── cursor/           # Cursor — plugin.json + skills/SKILL.md copy
-    ├── pi/               # Pi — README.md stub
-    ├── hermes/           # Hermes — README.md stub
+    ├── pi/               # Pi — README.md stub, where supported
+    ├── hermes/           # Hermes — README.md stub, where supported
     ├── windsurf/         # Windsurf — rules/{name}.md (Cascade Rules format)
     └── kiro/             # Amazon Kiro — steering/{name}.md (steering doc format)
 ```
@@ -284,7 +286,7 @@ Key design choices:
 
 - Process over prose: skills are workflows agents follow, not generic reference essays.
 - Progressive disclosure: `SKILL.md` is the entry point; supporting files load only when needed.
-- Adapter separation: Codex, Claude, Cursor, Pi, Hermes, Copilot, Windsurf, and Kiro metadata wrap the canonical package instead of forking it.
+- Adapter separation: Codex, Claude, Cursor, Copilot, Windsurf, Kiro, and any package-specific adapters wrap the canonical package instead of forking it.
 - Verifiable changes: catalog and manifest changes should pass `./scripts/validate-catalog.sh`.
 
 See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
