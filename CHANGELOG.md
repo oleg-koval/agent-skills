@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/oleg-koval/agent-skills/compare/v1.11.1...v1.12.0) (2026-06-15)
+
+
+### ✨ Features
+
+* add first-time contributor gate workflow ([#18](https://github.com/oleg-koval/agent-skills/issues/18)) ([77bd8b3](https://github.com/oleg-koval/agent-skills/commit/77bd8b37c8c4ff7bca1b7f885c7f0c15b5048616))
+
 ## [1.11.1](https://github.com/oleg-koval/agent-skills/compare/v1.11.0...v1.11.1) (2026-06-15)
 
 
