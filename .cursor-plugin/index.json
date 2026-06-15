@@ -80,6 +80,16 @@
       "name": "olko:obsidian-task-rollover",
       "source": "./packages/software-development/obsidian-task-rollover/adapters/cursor",
       "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent."
+    },
+    {
+      "name": "olko:apple-store-submit",
+      "source": "./packages/software-development/apple-store-submit/adapters/cursor",
+      "description": "Handle Apple App Store rejection emails end-to-end: parse rejection reasons, plan fixes, implement code changes, navigate App Store Connect, and resubmit."
+    },
+    {
+      "name": "olko:macos-menubar-app",
+      "source": "./packages/software-development/macos-menubar-app/adapters/cursor",
+      "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation."
     }
   ]
 }
