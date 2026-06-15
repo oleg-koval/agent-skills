@@ -91,10 +91,5 @@
       "source": "./packages/software-development/macos-menubar-app/adapters/cursor",
       "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation."
     },
-    {
-      "name": "olko:skill-budget-audit",
-      "source": "./packages/software-development/skill-budget-audit/adapters/cursor",
-      "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability."
-    }
   ]
 }
