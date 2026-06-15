@@ -6,6 +6,7 @@ on:
 
 permissions:
   pull-requests: write
+  issues: write
   contents: read
 
 jobs:
@@ -22,6 +23,13 @@ jobs:
             // OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR = has prior merged PRs
             const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
             if (trusted.includes(association)) return;
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: ['needs-issue'],
+            });
 
             const body = [
               `Hi @${login}! 👋`,
