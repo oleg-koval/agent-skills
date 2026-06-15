@@ -1,6 +1,6 @@
 ---
 name: open-source-publisher
-description: Prepare an open-source repository for polished public publishing. Use when a user asks to publish, open-source, launch, polish, package, brand, or make a GitHub project presentable with a minimal project icon, social preview image, GitHub Pages landing page, standardized README, essential shields, CI/CD quality gates, release automation checks, and optional donation setup. Use the installed `logo-generator` skill for icon generation.
+description: Prepare an open-source repository for polished public publishing. Use when a user asks to publish, open-source, launch, polish, package, brand, or make a GitHub project presentable with a minimal project icon, social preview image, GitHub Pages landing page, standardized README, essential shields, CI/CD quality gates, release automation checks, and optional donation setup. Prefer the external `logo-generator` skill for icon generation when available.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable git repository; browser or image rendering tools are useful for visual validation.
@@ -118,7 +118,7 @@ Rules:
 
 Create a simple, recognizable SVG logo from the repository's essence. Prefer `logo.svg` and also render `logo.png` so the icon can be reused in README assets, release artifacts, and platform-specific previews.
 
-Use the installed `logo-generator` skill first for icon generation. Treat it as the default path for concepting and exporting the minimal icon before any manual SVG polish.
+Use the external `logo-generator` skill first for icon generation when it is installed from <https://github.com/op7418/logo-generator-skill>. If it is not installed, follow the manual SVG guidance below and commit both the editable SVG and rendered PNG when practical.
 
 Icon rules:
 

@@ -106,6 +106,8 @@ Rules:
 
 Create a simple, recognizable SVG logo from the repository's essence. Prefer `logo.svg` and also render `logo.png` so the icon can be reused in README assets, release artifacts, and platform-specific previews.
 
+Use the external `logo-generator` skill first for icon generation when it is installed from <https://github.com/op7418/logo-generator-skill>. If it is not installed, follow the manual SVG guidance below and commit both the editable SVG and rendered PNG when practical.
+
 Icon rules:
 
 - Use one clear metaphor from the project domain, not a collage.
