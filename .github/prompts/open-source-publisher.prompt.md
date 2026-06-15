@@ -106,7 +106,26 @@ Rules:
 
 Create a simple, recognizable SVG logo from the repository's essence. Prefer `logo.svg` and also render `logo.png` so the icon can be reused in README assets, release artifacts, and platform-specific previews.
 
-Use the external `logo-generator` skill first for icon generation when it is installed from <https://github.com/op7418/logo-generator-skill>. If it is not installed, follow the manual SVG guidance below and commit both the editable SVG and rendered PNG when practical.
+Use the external `logo-generator` skill first for icon generation when it is installed (see `logo-generator` Installation below). If it is not installed, follow the manual SVG guidance below and commit both the editable SVG and rendered PNG when practical.
+
+### `logo-generator` Installation
+
+The `logo-generator` skill is external and is not bundled with this repository. Install it separately from <https://github.com/op7418/logo-generator-skill> before relying on it:
+
+```bash
+npx skills add https://github.com/op7418/logo-generator-skill.git
+```
+
+If automatic installation is unavailable, clone it into the Claude skills directory:
+
+```bash
+git clone https://github.com/op7418/logo-generator-skill.git ~/.claude/skills/logo-generator
+cd ~/.claude/skills/logo-generator
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Then add `GEMINI_API_KEY` to `.env` and restart the agent runtime so the skill is discoverable.
 
 Icon rules:
 
