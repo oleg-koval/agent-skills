@@ -1,6 +1,6 @@
 ---
 name: open-source-publisher
-description: Prepare an open-source repository for polished public publishing. Use when a user asks to publish, open-source, launch, polish, package, brand, or make a GitHub project presentable with a minimal project icon, social preview image, GitHub Pages landing page, standardized README, essential shields, CI/CD quality gates, release automation checks, and optional donation setup.
+description: Prepare an open-source repository for polished public publishing. Use when a user asks to publish, open-source, launch, polish, package, brand, or make a GitHub project presentable with a minimal project icon, social preview image, GitHub Pages landing page, standardized README, essential shields, CI/CD quality gates, release automation checks, and optional donation setup. Prefer the external `logo-generator` skill for icon generation when available.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable git repository; browser or image rendering tools are useful for visual validation.
@@ -117,6 +117,27 @@ Rules:
 ## Minimal Icon
 
 Create a simple, recognizable SVG logo from the repository's essence. Prefer `logo.svg` and also render `logo.png` so the icon can be reused in README assets, release artifacts, and platform-specific previews.
+
+Use the external `logo-generator` skill first for icon generation when it is installed (see `logo-generator` Installation below). If it is not installed, follow the manual SVG guidance below and commit both the editable SVG and rendered PNG when practical.
+
+### `logo-generator` Installation
+
+The `logo-generator` skill is external and is not bundled with this repository. Install it separately from <https://github.com/op7418/logo-generator-skill> before relying on it:
+
+```bash
+npx skills add https://github.com/op7418/logo-generator-skill.git
+```
+
+If automatic installation is unavailable, clone it into the Claude skills directory:
+
+```bash
+git clone https://github.com/op7418/logo-generator-skill.git ~/.claude/skills/logo-generator
+cd ~/.claude/skills/logo-generator
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Then add `GEMINI_API_KEY` to `.env` and restart the agent runtime so the skill is discoverable.
 
 Icon rules:
 
