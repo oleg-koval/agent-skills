@@ -27,3 +27,4 @@ Available reusable prompt files:
 - cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
 - obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
 - obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
+- xquik-x-automation: .github/prompts/xquik-x-automation.prompt.md

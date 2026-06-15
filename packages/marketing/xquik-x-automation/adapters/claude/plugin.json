@@ -1,0 +1,5 @@
+{
+  "name": "olko-xquik-x-automation",
+  "description": "Use Xquik for source-backed X/Twitter research, monitoring, exports, and posting workflows.",
+  "skills": "./skills"
+}

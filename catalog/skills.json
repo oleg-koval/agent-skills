@@ -321,7 +321,7 @@
       "lookupName": "olko:obsidian-pr-sync",
       "category": "software-development",
       "path": "packages/software-development/obsidian-pr-sync",
-      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
+      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent - re-running replaces the section.",
       "tags": [
         "github",
         "obsidian",
@@ -353,6 +353,29 @@
         "end-of-day"
       ],
       "adapters": [
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "xquik-x-automation",
+      "lookupName": "olko:xquik-x-automation",
+      "category": "marketing",
+      "path": "packages/marketing/xquik-x-automation",
+      "description": "Use Xquik for source-backed X/Twitter research, monitoring, exports, and posting workflows.",
+      "tags": [
+        "x",
+        "twitter",
+        "social",
+        "automation",
+        "mcp",
+        "api"
+      ],
+      "adapters": [
+        "codex",
         "claude",
         "cursor",
         "copilot",
