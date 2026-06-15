@@ -1,0 +1,55 @@
+name: First-Time Contributor Gate
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const association = pr.author_association;
+            const login = pr.user.login;
+
+            // OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR = has prior merged PRs
+            const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
+            if (trusted.includes(association)) return;
+
+            const body = [
+              `Hi @${login}! 👋`,
+              ``,
+              `Thank you for your first contribution to agent-skills — really appreciate the time you put into this! 🙏`,
+              ``,
+              `To keep the review process healthy, we ask that all contributors follow these steps:`,
+              ``,
+              `1. **Open an issue first** describing what you'd like to add or change`,
+              `2. Wait for the issue to be discussed and approved`,
+              `3. Reference the approved issue in your PR`,
+              ``,
+              `This ensures everyone is aligned before code is written and avoids wasted effort on both sides.`,
+              `Please feel free to open an issue — we'd love to collaborate from there!`,
+              ``,
+              `_This PR has been closed automatically. Open an issue and we'll get back to you shortly._`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body,
+            });
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              state: 'closed',
+            });
