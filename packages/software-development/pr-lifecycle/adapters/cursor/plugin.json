@@ -1,0 +1,6 @@
+{
+  "name": "olko:pr-lifecycle",
+  "version": "0.1.0",
+  "description": "End-to-end workflow from committed code to merged pull request: push branch, create PR, monitor CI, respond to review, and merge cleanly.",
+  "skills": "skills/"
+}

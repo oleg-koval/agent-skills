@@ -1,0 +1,5 @@
+{
+  "name": "olko-pr-lifecycle",
+  "description": "End-to-end workflow from committed code to merged pull request: push branch, create PR, monitor CI, respond to review, and merge cleanly.",
+  "skills": "./skills"
+}

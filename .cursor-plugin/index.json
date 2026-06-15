@@ -80,6 +80,21 @@
       "name": "olko:obsidian-task-rollover",
       "source": "./packages/software-development/obsidian-task-rollover/adapters/cursor",
       "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent."
+    },
+    {
+      "name": "olko:daily-startup",
+      "source": "./packages/software-development/daily-startup/adapters/cursor",
+      "description": "Run the full morning routine in one command: carry forward yesterday's unfinished Obsidian tasks then refresh today's PR review queue. Chains olko:obsidian-task-rollover → olko:obsidian-pr-sync."
+    },
+    {
+      "name": "olko:pr-lifecycle",
+      "source": "./packages/software-development/pr-lifecycle/adapters/cursor",
+      "description": "End-to-end workflow from committed code to merged pull request: push branch, create PR, monitor CI, respond to review, and merge cleanly."
+    },
+    {
+      "name": "olko:ci-debug",
+      "source": "./packages/software-development/ci-debug/adapters/cursor",
+      "description": "Diagnose a failing GitHub Actions run: fetch logs, identify the root cause, apply a fix, and watch the re-run until green."
     }
   ]
 }

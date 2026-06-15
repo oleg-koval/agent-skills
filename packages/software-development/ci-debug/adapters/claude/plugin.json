@@ -1,0 +1,5 @@
+{
+  "name": "olko-ci-debug",
+  "description": "Diagnose a failing GitHub Actions run: fetch logs, identify the root cause, apply a fix, and watch the re-run until green.",
+  "skills": "./skills"
+}

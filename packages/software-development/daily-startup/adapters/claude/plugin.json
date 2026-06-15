@@ -1,0 +1,5 @@
+{
+  "name": "olko-daily-startup",
+  "description": "Run the full morning routine in one command: carry forward yesterday's unfinished Obsidian tasks then refresh today's PR review queue. Chains olko:obsidian-task-rollover → olko:obsidian-pr-sync.",
+  "skills": "./skills"
+}

@@ -357,6 +357,75 @@
         "windsurf",
         "kiro"
       ]
+    },
+    {
+      "name": "daily-startup",
+      "lookupName": "olko:daily-startup",
+      "category": "software-development",
+      "path": "packages/software-development/daily-startup",
+      "description": "Run the full morning routine in one command: carry forward yesterday's unfinished Obsidian tasks then refresh today's PR review queue. Chains olko:obsidian-task-rollover → olko:obsidian-pr-sync.",
+      "tags": [
+        "obsidian",
+        "daily-note",
+        "morning-routine",
+        "productivity",
+        "github",
+        "pr-sync",
+        "task-rollover"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "pr-lifecycle",
+      "lookupName": "olko:pr-lifecycle",
+      "category": "software-development",
+      "path": "packages/software-development/pr-lifecycle",
+      "description": "End-to-end workflow from committed code to merged pull request: push branch, create PR, monitor CI, respond to review, and merge cleanly.",
+      "tags": [
+        "github",
+        "pull-requests",
+        "gh",
+        "git",
+        "ci",
+        "code-review"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "ci-debug",
+      "lookupName": "olko:ci-debug",
+      "category": "software-development",
+      "path": "packages/software-development/ci-debug",
+      "description": "Diagnose a failing GitHub Actions run: fetch logs, identify the root cause, apply a fix, and watch the re-run until green.",
+      "tags": [
+        "github-actions",
+        "ci",
+        "debugging",
+        "github",
+        "workflows"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
     }
   ]
 }
