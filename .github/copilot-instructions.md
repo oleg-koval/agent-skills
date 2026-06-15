@@ -27,3 +27,6 @@ Available reusable prompt files:
 - cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
 - obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
 - obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
+- apple-store-submit: .github/prompts/apple-store-submit.prompt.md
+- macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
+- skill-budget-audit: .github/prompts/skill-budget-audit.prompt.md
