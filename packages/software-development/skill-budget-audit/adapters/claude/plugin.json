@@ -1,0 +1,5 @@
+{
+  "name": "olko-skill-budget-audit",
+  "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
+  "skills": "./skills"
+}
