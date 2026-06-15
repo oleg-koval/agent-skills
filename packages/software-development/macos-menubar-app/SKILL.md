@@ -192,6 +192,8 @@ For complex state, use `UserDefaults` with a suite name to share across extensio
 
 After each implementation slice:
 
+> **Optional skills**: Steps 1 and 3 require `/critique` and `/whimsy-injector` from the agent-skills catalog. Install them via `skillshare` if not already available; skip these steps if not installed.
+
 1. Run `/critique` — evaluate against Apple HIG, WCAG contrast, interaction consistency
 2. Fix all P0/P1 findings
 3. Run `/whimsy-injector` on completion screens and idle states

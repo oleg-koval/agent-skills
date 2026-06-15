@@ -423,12 +423,7 @@
         "performance"
       ],
       "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro"
+        "claude"
       ]
     }
   ]
