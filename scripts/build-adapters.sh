@@ -55,11 +55,13 @@ const plugins = [
   },
 ]
 
-const cursorPlugins = catalog.packages.map((pkg) => ({
-  name: lookupNameFor(pkg),
-  source: `./${pkg.path}/adapters/cursor`,
-  description: pkg.description,
-}))
+const cursorPlugins = catalog.packages
+  .filter((pkg) => pkg.adapters.includes('cursor'))
+  .map((pkg) => ({
+    name: lookupNameFor(pkg),
+    source: `./${pkg.path}/adapters/cursor`,
+    description: pkg.description,
+  }))
 
 fs.mkdirSync(path.join(root, '.claude-plugin'), { recursive: true })
 fs.mkdirSync(path.join(root, '.cursor-plugin'), { recursive: true })
