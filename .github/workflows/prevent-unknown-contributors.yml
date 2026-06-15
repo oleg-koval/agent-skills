@@ -21,6 +21,7 @@ jobs:
             const { owner, repo } = context.repo;
             const issue_number = pr.number;
             const labelName = 'needs-issue';
+            const commentMarker = '<!-- first-time-contributor-gate -->';
 
             // OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR = has prior commits to the repo
             const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
@@ -51,6 +52,7 @@ jobs:
             }
 
             const body = [
+              commentMarker,
               `Hi @${login}! 👋`,
               ``,
               `Thank you for your first contribution to ${repo} — really appreciate the time you put into this! 🙏`,
@@ -77,12 +79,24 @@ jobs:
                 labels: [labelName],
               });
 
-              await github.rest.issues.createComment({
+              const { data: comments } = await github.rest.issues.listComments({
                 owner,
                 repo,
                 issue_number,
-                body,
               });
+
+              const hasGateComment = comments.some((comment) =>
+                comment.body?.includes(commentMarker)
+              );
+
+              if (!hasGateComment) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body,
+                });
+              }
 
               await github.rest.pulls.update({
                 owner,
