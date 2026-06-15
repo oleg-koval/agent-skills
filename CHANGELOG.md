@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/oleg-koval/agent-skills/compare/v1.11.0...v1.11.1) (2026-06-15)
+
+
+### 🐛 Bug Fixes
+
+* use logo-generator for OSS icon generation ([#13](https://github.com/oleg-koval/agent-skills/issues/13)) ([82b0cab](https://github.com/oleg-koval/agent-skills/commit/82b0cab389ed2002a314d068733934f1c3c2db8f))
+
 # [1.11.0](https://github.com/oleg-koval/agent-skills/compare/v1.10.1...v1.11.0) (2026-05-23)
 
 
