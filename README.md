@@ -11,6 +11,8 @@
 
 Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware tools.
 
+Pi and Hermes adapters currently exist for `search-console-indexing-audit` only.
+
 These skills are opinionated by design. They encode working defaults, preferred tools, and repeatable workflows instead of trying to be neutral snippets. Treat them as starting points with taste: useful out of the box, easy to inspect, and specific enough for an agent to execute consistently.
 
 ## Structure
@@ -274,6 +276,8 @@ packages/{category}/{skill}/
     ├── codex/            # OpenAI Codex — README.md stub
     ├── claude/           # Claude Code — plugin.json + skills/SKILL.md copy
     ├── cursor/           # Cursor — plugin.json + skills/SKILL.md copy
+    ├── pi/               # Pi — README.md stub, where supported
+    ├── hermes/           # Hermes — README.md stub, where supported
     ├── windsurf/         # Windsurf — rules/{name}.md (Cascade Rules format)
     └── kiro/             # Amazon Kiro — steering/{name}.md (steering doc format)
 ```
@@ -282,7 +286,7 @@ Key design choices:
 
 - Process over prose: skills are workflows agents follow, not generic reference essays.
 - Progressive disclosure: `SKILL.md` is the entry point; supporting files load only when needed.
-- Adapter separation: Codex, Claude, Cursor, Copilot, Windsurf, and Kiro metadata wrap the canonical package instead of forking it.
+- Adapter separation: Codex, Claude, Cursor, Copilot, Windsurf, Kiro, and any package-specific adapters wrap the canonical package instead of forking it.
 - Verifiable changes: catalog and manifest changes should pass `./scripts/validate-catalog.sh`.
 
 See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
