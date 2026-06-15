@@ -1,0 +1,111 @@
+name: First-Time Contributor Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const association = pr.author_association;
+            const login = pr.user.login;
+            const { owner, repo } = context.repo;
+            const issue_number = pr.number;
+            const labelName = 'needs-issue';
+            const commentMarker = '<!-- first-time-contributor-gate -->';
+
+            // OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR = has prior commits to the repo
+            const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
+            if (trusted.includes(association)) return;
+
+            async function ensureLabelExists() {
+              try {
+                await github.rest.issues.getLabel({
+                  owner,
+                  repo,
+                  name: labelName,
+                });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+
+                try {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: 'D93F0B',
+                    description: 'PR requires an approved issue before review',
+                  });
+                } catch (createError) {
+                  if (createError.status !== 422) throw createError;
+                }
+              }
+            }
+
+            const body = [
+              commentMarker,
+              `Hi @${login}! 👋`,
+              ``,
+              `Thank you for your first contribution to ${repo} — really appreciate the time you put into this! 🙏`,
+              ``,
+              `To keep the review process healthy, we ask that all contributors follow these steps:`,
+              ``,
+              `1. **Open an issue first** describing what you'd like to add or change`,
+              `2. Wait for the issue to be discussed and approved`,
+              `3. Reference the approved issue in your PR`,
+              ``,
+              `This ensures everyone is aligned before code is written and avoids wasted effort on both sides.`,
+              `Please feel free to open an issue — we'd love to collaborate from there!`,
+              ``,
+              `_This PR will be closed automatically. Open an issue and we'll get back to you shortly._`,
+            ].join('\n');
+
+            try {
+              await ensureLabelExists();
+
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: [labelName],
+              });
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number,
+                per_page: 100,
+              });
+
+              const hasGateComment = comments.some((comment) =>
+                comment.body?.includes(commentMarker)
+              );
+
+              if (!hasGateComment) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body,
+                });
+              }
+
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: pr.number,
+                state: 'closed',
+              });
+            } catch (error) {
+              core.setFailed(`Failed to gate PR #${pr.number}: ${error.message}`);
+              throw error;
+            }
