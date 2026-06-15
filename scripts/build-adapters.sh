@@ -129,7 +129,7 @@ const copilotInstructions = [
   '- Prefer small, scoped updates that preserve existing package structure.',
   '',
   'Available reusable prompt files:',
-  ...catalog.packages.map((pkg) => `- ${pkg.name}: .github/prompts/${promptNameFor(pkg)}`),
+  ...catalog.packages.filter((pkg) => pkg.adapters.includes('copilot')).map((pkg) => `- ${pkg.name}: .github/prompts/${promptNameFor(pkg)}`),
   '',
 ].join('\n')
 

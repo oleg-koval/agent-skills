@@ -96,7 +96,10 @@ cp ~/.claude/settings.json ~/.claude/settings.json.bak
 Remove cached plugin directories:
 
 ```bash
-rm -rf ~/.claude/plugins/cache/<bundle-name>/
+cache_dir="$HOME/.claude/plugins/cache/<bundle-name>"
+if [ -d "$cache_dir" ]; then
+  rm -rf "$cache_dir"
+fi
 ```
 
 ### 5. Conditionally Load Heavy Skill Sets
