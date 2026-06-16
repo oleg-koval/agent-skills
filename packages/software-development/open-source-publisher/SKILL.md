@@ -1,6 +1,6 @@
 ---
 name: open-source-publisher
-description: Prepare an open-source repository for polished public publishing. Use when a user asks to publish, open-source, launch, polish, package, brand, or make a GitHub project presentable with a minimal project icon, social preview image, GitHub Pages landing page, standardized README, essential shields, CI/CD quality gates, release automation checks, and optional donation setup. Prefer the external `logo-generator` skill for icon generation when available.
+description: Prepare an open-source repository for polished public publishing. Use when a user asks to publish, open-source, launch, polish, package, brand, or make a GitHub project presentable with a minimal project icon, social preview image, GitHub Pages landing page, standardized README, essential shields, CI/CD quality gates, release automation checks, and optional donation setup. Prefer the external `logo-generator` skill for icon generation when available, and `nolangz/pixel2motion` for optional motion previews of generated static images.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a writable git repository; browser or image rendering tools are useful for visual validation.
@@ -43,10 +43,12 @@ Use this skill to audit whether an OSS repository is ready to publish, then help
 5. For existing usable pieces, do not propose replacement by default. Ask a change-oriented question only when useful, for example:
    - "You already have a terminal-style GitHub Pages site. Do you want to keep it or restyle it?"
    - "You already have an icon and social card. Do you want a refresh, or should I leave them as-is?"
+   - "You already have a static social card. Do you want me to animate it with pixel2motion, or leave it static?"
    - "You already have release automation. Do you want me to audit only, or also tighten it?"
 6. Ask only for choices needed to fix missing or weak pieces:
    - If GitHub Pages is missing or weak, ask for style: `oldschool linux`, `terminal`, `modern`, `brutalist`, `glassmorphism`, `y2k`, `hacker`, or custom.
    - If donation wiring is missing, ask whether to enable it: `none`, `GitHub Sponsors`, `Ko-fi`, `Buy Me a Coffee`, `Open Collective`, `Thanks.dev`, or custom URL.
+   - If the repo has a generated static social image or hero card, ask whether to animate it using `nolangz/pixel2motion`.
    - If the repo has no clear product essence, ask for a one-sentence positioning statement.
 7. Implement only approved, missing, or weak work in this order:
    - OSS governance and support files
@@ -205,6 +207,14 @@ file social-card.png
 ```
 
 Use `magick` or another renderer when `rsvg-convert` is unavailable.
+
+## Motion Preview
+
+Some repos benefit from a short animated preview. Keep this opt-in.
+
+- If you already generated a static image, ask: `Do you want me to animate the static image using pixel2motion?`
+- If the user says yes, use `nolangz/pixel2motion` as the optional dependency for logo animation, animated HTML demos, and GIF/video previews.
+- Do not auto-animate by default.
 
 ## README Standard
 
