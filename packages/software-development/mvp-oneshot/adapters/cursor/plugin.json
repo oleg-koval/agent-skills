@@ -1,0 +1,6 @@
+{
+  "name": "olko:mvp-oneshot",
+  "version": "0.1.0",
+  "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain.",
+  "skills": "skills/"
+}

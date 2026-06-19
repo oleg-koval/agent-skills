@@ -47,6 +47,11 @@
       "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
     },
     {
+      "name": "olko:mvp-oneshot",
+      "source": "./packages/software-development/mvp-oneshot/adapters/cursor",
+      "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice."
+    },
+    {
       "name": "olko:add-to-my-skills",
       "source": "./packages/software-development/add-to-my-skills/adapters/cursor",
       "description": "Copy a newly created skill into this catalog, refresh manifests, and publish the change."
