@@ -17,6 +17,7 @@
     "./packages/software-development/promptctl",
     "./packages/music/fill-music-player",
     "./packages/software-development/product-builder",
+    "./packages/software-development/mvp-oneshot",
     "./packages/software-development/starter-rules",
     "./packages/software-development/review-past-performance",
     "./packages/software-development/open-source-publisher",

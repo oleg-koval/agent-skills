@@ -19,6 +19,7 @@ Available reusable prompt files:
 - promptctl: .github/prompts/promptctl.prompt.md
 - fill-music-player: .github/prompts/fill-music-player.prompt.md
 - product-builder: .github/prompts/product-builder.prompt.md
+- mvp-oneshot: .github/prompts/mvp-oneshot.prompt.md
 - starter-rules: .github/prompts/starter-rules.prompt.md
 - review-past-performance: .github/prompts/review-past-performance.prompt.md
 - open-source-publisher: .github/prompts/open-source-publisher.prompt.md

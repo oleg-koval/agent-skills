@@ -1,0 +1,5 @@
+{
+  "name": "olko-mvp-oneshot",
+  "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice.",
+  "skills": "./skills"
+}

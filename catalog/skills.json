@@ -175,6 +175,30 @@
       ]
     },
     {
+      "name": "mvp-oneshot",
+      "lookupName": "olko:mvp-oneshot",
+      "category": "software-development",
+      "path": "packages/software-development/mvp-oneshot",
+      "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice.",
+      "tags": [
+        "mvp",
+        "product",
+        "scoping",
+        "prompt-chain",
+        "planning",
+        "startup",
+        "oneshot"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
       "name": "starter-rules",
       "lookupName": "olko:starter-rules",
       "category": "software-development",
