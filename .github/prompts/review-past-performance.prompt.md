@@ -6,7 +6,6 @@ description: "Self-improvement loop that pulls the last 24h of ICM memories, git
 
 Use the olko:review-past-performance skill.
 
-
 # /review-past-performance
 
 Self-improvement loop. Analyze recent sessions, find durable patterns, propose fixes.
