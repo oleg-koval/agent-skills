@@ -250,7 +250,7 @@
       "lookupName": "olko:open-source-publisher",
       "category": "software-development",
       "path": "packages/software-development/open-source-publisher",
-      "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, and optional donation setup.",
+      "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, optional donation setup, and optional motion previews for generated static images.",
       "tags": [
         "open-source",
         "github",
