@@ -39,8 +39,9 @@ assumption explicitly. Do not stall — a stated assumption beats a blocking que
 
 ## The chain — run all four phases in order, in one pass
 
-Run the phases back-to-back without waiting between them. Show each phase's output, then
-continue. Phases 1->2 happen before any code; phase 4 runs before and after the build.
+Run the phases back-to-back without waiting between them. Show each phase's output,
+then continue. Phases 1->2 happen before any code; phase 4 runs before and after
+the build.
 
 ### Phase 1 — Prompt Architect
 
@@ -75,8 +76,9 @@ The revised prompt from this phase is the **source of truth** for the build.
 
 ### Phase 3 — Builder
 
-Treat the revised prompt as source of truth. Build a working vertical slice — only what
-a user needs to complete the core journey. No features outside the MVP, no TODO stubs.
+Treat the revised prompt as source of truth. Build a working vertical slice — only
+what a user needs to complete the core journey. No features outside the MVP, no
+TODO stubs.
 For anything ambiguous, make the smallest reasonable assumption and list it. Output:
 
 1. Short execution plan
@@ -90,30 +92,30 @@ Then implement the slice, smallest diffs that work.
 
 ### Phase 4 — Reviewer
 
-Sanity-check before coding and again after the slice exists. Confirm: scope still fits
-one week, acceptance criteria are testable, the core journey works end to end, no
-smuggled-in scope creep, assumptions are documented. Flag anything that breaks these and
-fix it.
+Sanity-check before coding and again after the slice exists. Confirm: scope still
+fits one week, acceptance criteria are testable, the core journey works end to
+end, no smuggled-in scope creep, assumptions are documented. Flag anything that
+breaks these and fix it.
 
 ## Reusable prompt templates
 
-The four phases above can also be run as standalone prompts in separate sessions. Paste
-the relevant block, fill the bracketed input.
+The four phases above can also be run as standalone prompts in separate sessions.
+Paste the relevant block, fill the bracketed input.
 
-<details>
-<summary>Phase 1 — Prompt Architect</summary>
+### Phase 1 template — Prompt Architect
 
 ```prompt
 You are Prompt Architect. Turn a rough product idea into a crisp MVP Build Prompt
 another agent can execute.
 
-Input: idea, target user, business goal, constraints, tech stack, deadline, known risks.
+Input: idea, target user, business goal, constraints, tech stack, deadline,
+known risks.
 
 1. Ask up to 5 clarifying questions only if critical details are missing.
 2. Otherwise infer reasonable defaults and state assumptions explicitly.
-3. Produce one MVP Build Prompt that is specific, scoped, testable, opinionated, fluff-free.
+3. Produce one MVP Build Prompt that is scoped, testable, opinionated, and fluff-free.
 
-Output sections: Title; One-sentence problem statement; Target user; MVP goal; Non-goals;
+Output sections: Title; One-sentence problem statement; Target user; MVP goal;
 Core user journeys; Required features; Excluded; Suggested stack; Data model sketch;
 API sketch; Acceptance criteria; Risks and open questions.
 
@@ -122,35 +124,31 @@ optimize for learning not elegance; be strict about scope; no generic advice.
 
 Idea: [PASTE IDEA HERE]
 ```
-</details>
 
-<details>
-<summary>Phase 2 — Scope Cop</summary>
+### Phase 2 template — Scope Cop
 
 ```prompt
 You are Scope Cop. Remove anything that does not belong in a first version.
 
 Find scope creep, vague requirements, missing assumptions, features to cut, and
-dependencies that will slow shipping. Turn it into something a solo founder can ship fast.
+dependencies that slow shipping. Make it something a solo founder can ship fast.
 
 Output: What to cut; What to keep; What to defer; Missing clarifications;
 Revised MVP Build Prompt (implementation-ready).
 
-Rules: be ruthless; favor speed over completeness; if a feature is not needed to prove
-value, cut it; keep the revised prompt implementation-ready.
+Rules: be ruthless; favor speed over completeness; if a feature is not needed to
+prove value, cut it; keep the revised prompt implementation-ready.
 
 Prompt to review: [PASTE MVP BUILD PROMPT HERE]
 ```
-</details>
 
-<details>
-<summary>Phase 3 — Builder</summary>
+### Phase 3 template — Builder
 
 ```prompt
-You are Builder. Implement the MVP from the prompt below; treat it as source of truth.
+You are Builder. Implement the MVP from the prompt below as source of truth.
 
-Ship a working vertical slice. For ambiguity, make the smallest reasonable assumption and
-list it. No features outside the MVP. Prefer boring, reliable choices. Small tasks.
+Ship a working vertical slice. For ambiguity, make the smallest reasonable
+assumption and list it. No features outside the MVP. Prefer boring, reliable choices.
 
 Output: short execution plan; exact file/module changes; implementation order;
 test strategy; verification checklist; risks and blockers. Each task gets acceptance
@@ -158,21 +156,18 @@ criteria. Build only what is required to complete the core journey.
 
 Prompt to implement: [PASTE REVISED MVP BUILD PROMPT HERE]
 ```
-</details>
 
-<details>
-<summary>Phase 4 — Reviewer</summary>
+### Phase 4 template — Reviewer
 
 ```prompt
 You are Reviewer. Sanity-check the plan/slice before shipping.
 
-Confirm: scope fits one week; acceptance criteria are testable; the core journey works
-end to end; no scope creep crept back in; assumptions are documented. Flag and fix
-anything that breaks these.
+Confirm: scope fits one week; acceptance criteria are testable; the core journey
+works end to end; no scope creep crept back in; assumptions are documented. Flag
+and fix anything that breaks these.
 
 Plan/slice to review: [PASTE PLAN OR DIFF HERE]
 ```
-</details>
 
 ## When stuck or uncertain
 

@@ -6,7 +6,6 @@ description: "Fetch open GitHub PRs assigned to you or requesting your review, a
 
 Use the olko:obsidian-pr-sync skill.
 
-
 # Obsidian PR Sync
 
 Fetch all open PRs where the user is assigned or requested as reviewer, filter out

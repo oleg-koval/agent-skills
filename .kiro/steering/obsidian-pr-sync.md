@@ -5,7 +5,6 @@ inclusion: manual
 description: "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section."
 ---
 
-
 # Obsidian PR Sync
 
 Fetch all open PRs where the user is assigned or requested as reviewer, filter out

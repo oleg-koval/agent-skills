@@ -6,7 +6,6 @@ description: "Set up semantic-release-npm-github-publish with stable main releas
 
 Use the olko:semantic-release-beta skill.
 
-
 # semantic-release-beta
 
 Use this skill when a project needs a reusable beta prerelease workflow with:
