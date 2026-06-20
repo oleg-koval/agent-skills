@@ -5,7 +5,6 @@ inclusion: manual
 description: "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch."
 ---
 
-
 # semantic-release-beta
 
 Use this skill when a project needs a reusable beta prerelease workflow with:

@@ -6,7 +6,6 @@ description: "Bullet-journal end-of-day task migration: copy unchecked tasks fro
 
 Use the olko:obsidian-task-rollover skill.
 
-
 # Obsidian Task Rollover
 
 Bullet-journal–style end-of-day task migration. Unfinished tasks (`- [ ]`) from

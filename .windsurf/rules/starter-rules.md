@@ -4,7 +4,6 @@
 description: "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID."
 ---
 
-
 # Starter Rules
 
 ## Overview

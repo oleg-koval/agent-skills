@@ -111,6 +111,7 @@ optimize for learning not elegance; be strict about scope; no generic advice.
 
 Idea: [PASTE IDEA HERE]
 ```
+
 </details>
 
 <details>
@@ -130,6 +131,7 @@ value, cut it; keep the revised prompt implementation-ready.
 
 Prompt to review: [PASTE MVP BUILD PROMPT HERE]
 ```
+
 </details>
 
 <details>
@@ -147,6 +149,7 @@ criteria. Build only what is required to complete the core journey.
 
 Prompt to implement: [PASTE REVISED MVP BUILD PROMPT HERE]
 ```
+
 </details>
 
 <details>
@@ -161,6 +164,7 @@ anything that breaks these.
 
 Plan/slice to review: [PASTE PLAN OR DIFF HERE]
 ```
+
 </details>
 
 ## When stuck or uncertain

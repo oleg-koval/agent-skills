@@ -5,7 +5,6 @@ inclusion: manual
 description: "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more."
 ---
 
-
 # GitHub CLI (gh)
 
 Comprehensive reference for GitHub CLI (gh) - work seamlessly with GitHub from the command line.

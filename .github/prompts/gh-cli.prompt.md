@@ -6,7 +6,6 @@ description: "Use the GitHub CLI effectively for repositories, PRs, Actions, rel
 
 Use the olko:gh-cli skill.
 
-
 # GitHub CLI (gh)
 
 Comprehensive reference for GitHub CLI (gh) - work seamlessly with GitHub from the command line.

@@ -4,7 +4,6 @@
 description: "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice."
 ---
 
-
 # MVP Oneshot
 
 You are a senior startup engineer running a four-role prompt chain in a single pass.
@@ -111,6 +110,7 @@ optimize for learning not elegance; be strict about scope; no generic advice.
 
 Idea: [PASTE IDEA HERE]
 ```
+
 </details>
 
 <details>
@@ -130,6 +130,7 @@ value, cut it; keep the revised prompt implementation-ready.
 
 Prompt to review: [PASTE MVP BUILD PROMPT HERE]
 ```
+
 </details>
 
 <details>
@@ -147,6 +148,7 @@ criteria. Build only what is required to complete the core journey.
 
 Prompt to implement: [PASTE REVISED MVP BUILD PROMPT HERE]
 ```
+
 </details>
 
 <details>
@@ -161,6 +163,7 @@ anything that breaks these.
 
 Plan/slice to review: [PASTE PLAN OR DIFF HERE]
 ```
+
 </details>
 
 ## When stuck or uncertain

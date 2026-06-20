@@ -5,7 +5,6 @@ inclusion: manual
 description: "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent."
 ---
 
-
 # Obsidian Task Rollover
 
 Bullet-journal–style end-of-day task migration. Unfinished tasks (`- [ ]`) from
