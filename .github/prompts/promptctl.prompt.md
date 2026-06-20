@@ -6,7 +6,6 @@ description: "Use promptctl for template-based prompt engineering, scoring, and 
 
 Use the olko:promptctl skill.
 
-
 # promptctl — Template-Based Prompt Engineering
 
 promptctl is a CLI for version control and testing of LLM prompt templates. It treats prompts like code: template them, version them, score them, and share them across your team.

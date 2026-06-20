@@ -6,7 +6,6 @@ description: "Fill a portable music player with a curated random selection from 
 
 Use the olko:fill-music-player skill.
 
-
 # fill-music-player
 
 Curates a DJ-balanced selection of tracks from a source music library and copies them to a portable player, respecting device capacity and supported formats.

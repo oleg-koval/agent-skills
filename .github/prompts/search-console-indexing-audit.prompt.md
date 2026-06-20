@@ -6,7 +6,6 @@ description: "Analyze Google Search Console Coverage CSV exports and correlate t
 
 Use the olko:search-console-indexing-audit skill.
 
-
 # search-console-indexing-audit
 
 Use this skill to turn Google Search Console Coverage exports into a concrete indexing fix plan.

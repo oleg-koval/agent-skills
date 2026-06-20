@@ -140,7 +140,7 @@ for (const pkg of catalog.packages) {
     continue
   }
 
-  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimStart().trimEnd()
   const prompt = stripTrailingLineWhitespace([
     generatedHeader,
     '',
@@ -162,7 +162,7 @@ for (const pkg of catalog.packages) {
     continue
   }
 
-  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimStart().trimEnd()
   const content = stripTrailingLineWhitespace([
     generatedHeader,
     '',
@@ -182,7 +182,7 @@ for (const pkg of catalog.packages) {
     continue
   }
 
-  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimStart().trimEnd()
   const content = stripTrailingLineWhitespace([
     generatedHeader,
     '',

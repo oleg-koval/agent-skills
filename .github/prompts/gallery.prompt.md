@@ -6,7 +6,6 @@ description: "Create photo galleries with AI-assisted layout curation and sequen
 
 Use the olko:gallery skill.
 
-
 # Gallery Workflow
 
 Composed skill that creates photo galleries by orchestrating atomic scripts and sub-agents.

@@ -5,7 +5,6 @@ inclusion: manual
 description: "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity."
 ---
 
-
 # fill-music-player
 
 Curates a DJ-balanced selection of tracks from a source music library and copies them to a portable player, respecting device capacity and supported formats.

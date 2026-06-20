@@ -6,7 +6,6 @@ description: "Create conventional commits with diff-aware staging and message ge
 
 Use the olko:git-commit skill.
 
-
 # Git Commit with Conventional Commits
 
 ## Overview

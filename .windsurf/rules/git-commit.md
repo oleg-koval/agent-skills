@@ -4,7 +4,6 @@
 description: "Create conventional commits with diff-aware staging and message generation."
 ---
 
-
 # Git Commit with Conventional Commits
 
 ## Overview

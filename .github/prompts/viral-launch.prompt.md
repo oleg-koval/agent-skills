@@ -6,7 +6,6 @@ description: "Set up a project repository and launch plan for shareable marketin
 
 Use the olko:viral-launch skill.
 
-
 # viral-launch
 
 Use this skill when a user wants to launch a project, make a repo marketable, improve discoverability, or build shareable launch assets.

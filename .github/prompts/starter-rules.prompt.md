@@ -6,7 +6,6 @@ description: "Load and enforce hard rules for every oleg-koval/* starter: 300-li
 
 Use the olko:starter-rules skill.
 
-
 # Starter Rules
 
 ## Overview

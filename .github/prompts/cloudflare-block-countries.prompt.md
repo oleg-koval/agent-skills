@@ -6,7 +6,6 @@ description: "Block specific countries via Cloudflare WAF Custom Rules using the
 
 Use the olko:cloudflare-block-countries skill.
 
-
 # Cloudflare Country Block via WAF Custom Rules
 
 Block traffic from specific countries using Cloudflare WAF Custom Rules and the Cloudflare API.

@@ -6,7 +6,6 @@ description: "Keep a Markdown docs index in sync through pre-commit, CI, or one-
 
 Use the olko:docs-index-keeper skill.
 
-
 # docs-index-keeper
 
 Use this skill when a repository keeps docs under `docs/` and needs a Markdown index table updated automatically as docs are added or changed.

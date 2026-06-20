@@ -42,6 +42,11 @@
       "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
     },
     {
+      "name": "olko:mvp-oneshot",
+      "source": "./packages/software-development/mvp-oneshot/adapters/cursor",
+      "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice."
+    },
+    {
       "name": "olko:starter-rules",
       "source": "./packages/software-development/starter-rules/adapters/cursor",
       "description": "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID."

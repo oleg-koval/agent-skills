@@ -5,7 +5,6 @@ inclusion: manual
 description: "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals."
 ---
 
-
 # search-console-indexing-audit
 
 Use this skill to turn Google Search Console Coverage exports into a concrete indexing fix plan.

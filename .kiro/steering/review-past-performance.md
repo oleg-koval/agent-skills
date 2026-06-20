@@ -5,7 +5,6 @@ inclusion: manual
 description: "Self-improvement loop that pulls the last 24h of ICM memories, git history, and skill analytics to detect repeated mistakes, slow workflows, and missing coverage, then proposes 1-3 concrete improvements."
 ---
 
-
 # /review-past-performance
 
 Self-improvement loop. Analyze recent sessions, find durable patterns, propose fixes.
