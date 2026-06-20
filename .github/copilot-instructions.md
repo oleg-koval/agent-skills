@@ -30,4 +30,3 @@ Available reusable prompt files:
 - obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
 - apple-store-submit: .github/prompts/apple-store-submit.prompt.md
 - macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
-- skill-budget-audit: .github/prompts/skill-budget-audit.prompt.md

@@ -94,7 +94,7 @@ the relevant block, fill the bracketed input.
 <details>
 <summary>Phase 1 — Prompt Architect</summary>
 
-```
+```prompt
 You are Prompt Architect. Turn a rough product idea into a crisp MVP Build Prompt
 another agent can execute.
 
@@ -118,7 +118,7 @@ Idea: [PASTE IDEA HERE]
 <details>
 <summary>Phase 2 — Scope Cop</summary>
 
-```
+```prompt
 You are Scope Cop. Remove anything that does not belong in a first version.
 
 Find scope creep, vague requirements, missing assumptions, features to cut, and
@@ -137,7 +137,7 @@ Prompt to review: [PASTE MVP BUILD PROMPT HERE]
 <details>
 <summary>Phase 3 — Builder</summary>
 
-```
+```prompt
 You are Builder. Implement the MVP from the prompt below; treat it as source of truth.
 
 Ship a working vertical slice. For ambiguity, make the smallest reasonable assumption and
@@ -154,7 +154,7 @@ Prompt to implement: [PASTE REVISED MVP BUILD PROMPT HERE]
 <details>
 <summary>Phase 4 — Reviewer</summary>
 
-```
+```prompt
 You are Reviewer. Sanity-check the plan/slice before shipping.
 
 Confirm: scope fits one week; acceptance criteria are testable; the core journey works
