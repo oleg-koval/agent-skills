@@ -1,0 +1,5 @@
+{
+  "name": "olko-apple-store-submit",
+  "description": "Handle Apple App Store rejection emails end-to-end: parse rejection reasons, plan fixes, implement code changes, navigate App Store Connect, and resubmit.",
+  "skills": "./skills"
+}

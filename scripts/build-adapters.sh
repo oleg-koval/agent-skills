@@ -55,11 +55,13 @@ const plugins = [
   },
 ]
 
-const cursorPlugins = catalog.packages.map((pkg) => ({
-  name: lookupNameFor(pkg),
-  source: `./${pkg.path}/adapters/cursor`,
-  description: pkg.description,
-}))
+const cursorPlugins = catalog.packages
+  .filter((pkg) => pkg.adapters.includes('cursor'))
+  .map((pkg) => ({
+    name: lookupNameFor(pkg),
+    source: `./${pkg.path}/adapters/cursor`,
+    description: pkg.description,
+  }))
 
 fs.mkdirSync(path.join(root, '.claude-plugin'), { recursive: true })
 fs.mkdirSync(path.join(root, '.cursor-plugin'), { recursive: true })
@@ -127,7 +129,7 @@ const copilotInstructions = [
   '- Prefer small, scoped updates that preserve existing package structure.',
   '',
   'Available reusable prompt files:',
-  ...catalog.packages.map((pkg) => `- ${pkg.name}: .github/prompts/${promptNameFor(pkg)}`),
+  ...catalog.packages.filter((pkg) => pkg.adapters.includes('copilot')).map((pkg) => `- ${pkg.name}: .github/prompts/${promptNameFor(pkg)}`),
   '',
 ].join('\n')
 
@@ -138,7 +140,7 @@ for (const pkg of catalog.packages) {
     continue
   }
 
-  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimStart().trimEnd()
   const prompt = stripTrailingLineWhitespace([
     generatedHeader,
     '',
@@ -160,7 +162,7 @@ for (const pkg of catalog.packages) {
     continue
   }
 
-  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimStart().trimEnd()
   const content = stripTrailingLineWhitespace([
     generatedHeader,
     '',
@@ -180,7 +182,7 @@ for (const pkg of catalog.packages) {
     continue
   }
 
-  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimEnd()
+  const skillBody = stripFrontmatter(fs.readFileSync(skillPathFor(pkg), 'utf8')).trimStart().trimEnd()
   const content = stripTrailingLineWhitespace([
     generatedHeader,
     '',

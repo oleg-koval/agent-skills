@@ -1,3 +1,24 @@
+# [1.14.0](https://github.com/oleg-koval/agent-skills/compare/v1.13.0...v1.14.0) (2026-06-20)
+
+
+### ✨ Features
+
+* add mvp-oneshot skill ([#21](https://github.com/oleg-koval/agent-skills/issues/21)) ([73b3e2d](https://github.com/oleg-koval/agent-skills/commit/73b3e2de25a43e7503085dc0d3253ffa5581692d)), closes [#24](https://github.com/oleg-koval/agent-skills/issues/24)
+
+# [1.13.0](https://github.com/oleg-koval/agent-skills/compare/v1.12.0...v1.13.0) (2026-06-15)
+
+
+### ✨ Features
+
+* **skills:** auto-generate 2026-06-15 [weekly-pattern-learner] ([#16](https://github.com/oleg-koval/agent-skills/issues/16)) ([af7709f](https://github.com/oleg-koval/agent-skills/commit/af7709feeda6400c450b2c77541f8b0127899f0f))
+
+# [1.12.0](https://github.com/oleg-koval/agent-skills/compare/v1.11.1...v1.12.0) (2026-06-15)
+
+
+### ✨ Features
+
+* add first-time contributor gate workflow ([#18](https://github.com/oleg-koval/agent-skills/issues/18)) ([77bd8b3](https://github.com/oleg-koval/agent-skills/commit/77bd8b37c8c4ff7bca1b7f885c7f0c15b5048616))
+
 ## [1.11.1](https://github.com/oleg-koval/agent-skills/compare/v1.11.0...v1.11.1) (2026-06-15)
 
 
