@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/oleg-koval/agent-skills/compare/v1.14.0...v1.14.1) (2026-06-21)
+
+
+### 📚 Documentation
+
+* update README to list all 23 skills (was 19) ([812a53c](https://github.com/oleg-koval/agent-skills/commit/812a53c3c7a307933513e9651287a6378743aa67))
+
 # [1.14.0](https://github.com/oleg-koval/agent-skills/compare/v1.13.0...v1.14.0) (2026-06-20)
 
 
