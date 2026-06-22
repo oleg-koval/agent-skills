@@ -2,6 +2,11 @@
   "name": "agent-skills",
   "plugins": [
     {
+      "name": "olko:self-critique",
+      "source": "./packages/software-development/self-critique/adapters/cursor",
+      "description": "Adversarially critique your own last answer: spawn a critic agent that verifies claims against live sources, finds the related issue or pattern you missed, then loop until satisfied and report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score."
+    },
+    {
       "name": "olko:docs-index-keeper",
       "source": "./packages/software-development/docs-index-keeper/adapters/cursor",
       "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows."
