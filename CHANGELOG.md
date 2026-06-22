@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/oleg-koval/agent-skills/compare/v1.14.1...v1.15.0) (2026-06-22)
+
+
+### ✨ Features
+
+* **self-critique:** add adversarial self-review skill with Claude Stop-hook ([#30](https://github.com/oleg-koval/agent-skills/issues/30)) ([3c85e6f](https://github.com/oleg-koval/agent-skills/commit/3c85e6f915cdbc949accde45041471415362bc75))
+
 ## [1.14.1](https://github.com/oleg-koval/agent-skills/compare/v1.14.0...v1.14.1) (2026-06-21)
 
 
