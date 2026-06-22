@@ -9,6 +9,7 @@
   "repository": "https://github.com/oleg-koval/agent-skills",
   "license": "MIT",
   "skills": [
+    "./packages/software-development/self-critique",
     "./packages/software-development/docs-index-keeper",
     "./packages/software-development/semantic-release-beta",
     "./packages/software-development/gh-cli",
