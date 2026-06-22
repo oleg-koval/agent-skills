@@ -11,6 +11,7 @@ This repository is an opinionated agent skill catalog. Skills encode concrete de
 - Prefer small, scoped updates that preserve existing package structure.
 
 Available reusable prompt files:
+- self-critique: .github/prompts/self-critique.prompt.md
 - docs-index-keeper: .github/prompts/docs-index-keeper.prompt.md
 - semantic-release-beta: .github/prompts/semantic-release-beta.prompt.md
 - gh-cli: .github/prompts/gh-cli.prompt.md

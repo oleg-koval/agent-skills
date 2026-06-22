@@ -2,6 +2,27 @@
   "name": "agent-skills",
   "packages": [
     {
+      "name": "self-critique",
+      "lookupName": "olko:self-critique",
+      "category": "software-development",
+      "path": "packages/software-development/self-critique",
+      "description": "Adversarially critique your own last answer: spawn a critic agent that verifies claims against live sources, finds the related issue or pattern you missed, then loop until satisfied and report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score.",
+      "tags": [
+        "critical-thinking",
+        "self-review",
+        "verification",
+        "adversarial",
+        "agents",
+        "quality"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot"
+      ]
+    },
+    {
       "name": "docs-index-keeper",
       "lookupName": "olko:docs-index-keeper",
       "category": "software-development",

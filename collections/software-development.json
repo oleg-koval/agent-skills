@@ -2,6 +2,7 @@
   "name": "software-development",
   "description": "Skills for software development, release automation, git workflows, documentation, prompt tooling, and product building.",
   "packages": [
+    "self-critique",
     "docs-index-keeper",
     "semantic-release-beta",
     "gh-cli",
