@@ -29,6 +29,7 @@
     "./packages/software-development/obsidian-task-rollover",
     "./packages/software-development/apple-store-submit",
     "./packages/software-development/macos-menubar-app",
-    "./packages/software-development/skill-budget-audit"
+    "./packages/software-development/skill-budget-audit",
+    "./packages/software-development/relay"
   ]
 }
