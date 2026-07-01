@@ -1,3 +1,16 @@
+# [1.16.0](https://github.com/oleg-koval/agent-skills/compare/v1.15.0...v1.16.0) (2026-07-01)
+
+
+### ✨ Features
+
+* **skills:** add relay skill for claude-relay autonomous task runner ([ab6919b](https://github.com/oleg-koval/agent-skills/commit/ab6919b8cf1d27af8ccc8e6460951baf3881e228))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump js-yaml ([#33](https://github.com/oleg-koval/agent-skills/issues/33)) ([272e0ea](https://github.com/oleg-koval/agent-skills/commit/272e0ea6b23c074c0d5542b58fc7458f51b45c06))
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#32](https://github.com/oleg-koval/agent-skills/issues/32)) ([74570e0](https://github.com/oleg-koval/agent-skills/commit/74570e0f8e0a8af9e933aa2e0d652517a73bd392))
+
 # [1.15.0](https://github.com/oleg-koval/agent-skills/compare/v1.14.1...v1.15.0) (2026-06-22)
 
 
