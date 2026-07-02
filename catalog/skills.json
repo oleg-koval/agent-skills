@@ -470,6 +470,29 @@
       "adapters": [
         "claude"
       ]
+    },
+    {
+      "name": "crash-course",
+      "lookupName": "olko:crash-course",
+      "category": "software-development",
+      "path": "packages/software-development/crash-course",
+      "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes.",
+      "tags": [
+        "learning",
+        "tutor",
+        "onboarding",
+        "study",
+        "feynman",
+        "active-recall"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro"
+      ]
     }
   ]
 }
