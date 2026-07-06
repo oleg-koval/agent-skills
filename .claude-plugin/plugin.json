@@ -21,6 +21,7 @@
     "./packages/software-development/mvp-oneshot",
     "./packages/software-development/starter-rules",
     "./packages/software-development/review-past-performance",
+    "./packages/software-development/relay",
     "./packages/software-development/open-source-publisher",
     "./packages/marketing/viral-launch",
     "./packages/marketing/search-console-indexing-audit",

@@ -267,6 +267,22 @@
       ]
     },
     {
+      "name": "relay",
+      "lookupName": "olko:relay",
+      "category": "software-development",
+      "path": "packages/software-development/relay",
+      "description": "Use claude-relay to run long or rate-limit-prone tasks autonomously across subscription accounts.",
+      "tags": [
+        "relay",
+        "autonomous",
+        "rate-limits",
+        "claude-relay"
+      ],
+      "adapters": [
+        "claude"
+      ]
+    },
+    {
       "name": "open-source-publisher",
       "lookupName": "olko:open-source-publisher",
       "category": "software-development",
