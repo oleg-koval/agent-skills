@@ -1,0 +1,6 @@
+{
+  "name": "olko:crash-course",
+  "version": "0.1.0",
+  "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes.",
+  "skills": "skills/"
+}
