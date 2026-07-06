@@ -100,6 +100,11 @@
       "name": "olko:macos-menubar-app",
       "source": "./packages/software-development/macos-menubar-app/adapters/cursor",
       "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation."
+    },
+    {
+      "name": "olko:crash-course",
+      "source": "./packages/software-development/crash-course/adapters/cursor",
+      "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes."
     }
   ]
 }

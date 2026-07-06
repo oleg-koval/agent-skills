@@ -1,0 +1,5 @@
+{
+  "name": "olko-relay",
+  "description": "Use claude-relay to run long or rate-limit-prone tasks autonomously across subscription accounts.",
+  "skills": "./skills"
+}
