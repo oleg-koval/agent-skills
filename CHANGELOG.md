@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/oleg-koval/agent-skills/compare/v1.16.0...v1.17.0) (2026-07-06)
+
+
+### ✨ Features
+
+* **software-development:** add crash-course learning tutor skill ([#34](https://github.com/oleg-koval/agent-skills/issues/34)) ([a38729b](https://github.com/oleg-koval/agent-skills/commit/a38729bb8b8f19633b3abcf1393163f79f802ba1))
+
 # [1.16.0](https://github.com/oleg-koval/agent-skills/compare/v1.15.0...v1.16.0) (2026-07-01)
 
 
