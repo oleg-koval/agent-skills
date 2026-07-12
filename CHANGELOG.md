@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/oleg-koval/agent-skills/compare/v1.17.0...v1.18.0) (2026-07-12)
+
+
+### ✨ Features
+
+* add first-class Grok (xAI) support ([#35](https://github.com/oleg-koval/agent-skills/issues/35)) ([3ed4b7c](https://github.com/oleg-koval/agent-skills/commit/3ed4b7cd03a86b038d3580047aefda35906ef788))
+
 # [1.17.0](https://github.com/oleg-koval/agent-skills/compare/v1.16.0...v1.17.0) (2026-07-06)
 
 
