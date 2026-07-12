@@ -1,0 +1,6 @@
+{
+  "name": "olko:obsidian-pr-sync",
+  "version": "0.1.0",
+  "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
+  "skills": "skills/"
+}

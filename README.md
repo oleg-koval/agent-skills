@@ -1,15 +1,15 @@
 <div align="center">
   <h1>agent skills</h1>
-  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
+  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
     <img src="https://img.shields.io/badge/skills-23-2563eb" alt="23 skills">
-    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Copilot Windsurf Kiro">
+    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
 </div>
 
-Agent-agnostic skill collection for Codex, Claude, Cursor, and other skill-aware tools.
+Agent-agnostic skill collection for Codex, Claude, Cursor, Grok, and other skill-aware tools.
 
 These skills are opinionated by design. They encode working defaults, preferred tools, and repeatable workflows instead of trying to be neutral snippets. Treat them as starting points with taste: useful out of the box, easy to inspect, and specific enough for an agent to execute consistently.
 
@@ -73,6 +73,27 @@ Clone the repo and point Claude Code at the plugin directory:
 git clone https://github.com/oleg-koval/agent-skills.git
 claude --plugin-dir /path/to/agent-skills
 ```
+
+</details>
+
+<details>
+<summary><b>Grok</b></summary>
+
+Grok (xAI) supports plugins via marketplace or direct path. Add this catalog as a marketplace source:
+
+```bash
+grok plugin marketplace add oleg-koval/agent-skills
+```
+
+Or for local development / direct use:
+
+```bash
+grok agent --plugin-dir /path/to/agent-skills
+```
+
+Skills are available via their `olko:*` names or through the installed plugin. Grok discovers `plugin.json` + `skills/` (and falls back to `.claude-plugin/` manifests for compatibility).
+
+The repo generates `.grok-plugin/index.json` for structured plugin discovery.
 
 </details>
 
@@ -204,6 +225,7 @@ When adding or changing a skill:
 | Claude Code | `.claude-plugin/marketplace.json` | Marketplace plugin registry |
 | Claude Code | `.claude-plugin/plugin.json` | Plugin manifest |
 | Cursor | `.cursor-plugin/index.json` | Plugin index |
+| Grok | `.grok-plugin/index.json` | Plugin index (plus `.claude-plugin/` compatibility) |
 | GitHub Copilot | `.github/copilot-instructions.md` | Repository instructions |
 | GitHub Copilot | `.github/prompts/*.prompt.md` | Per-skill prompt files |
 | Windsurf | `.windsurf/rules/*.md` | Cascade rules |
@@ -223,6 +245,7 @@ packages/{category}/{skill}/
     ├── codex/
     ├── claude/
     ├── cursor/
+    ├── grok/
     ├── windsurf/
     └── kiro/
 ```

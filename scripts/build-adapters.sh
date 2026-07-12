@@ -51,7 +51,7 @@ const plugins = [
   {
     name: claudeMarketplaceName,
     source: './',
-    description: 'Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.',
+    description: 'Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.',
   },
 ]
 
@@ -63,8 +63,17 @@ const cursorPlugins = catalog.packages
     description: pkg.description,
   }))
 
+const grokPlugins = catalog.packages
+  .filter((pkg) => pkg.adapters.includes('grok'))
+  .map((pkg) => ({
+    name: lookupNameFor(pkg),
+    source: `./${pkg.path}/adapters/grok`,
+    description: pkg.description,
+  }))
+
 fs.mkdirSync(path.join(root, '.claude-plugin'), { recursive: true })
 fs.mkdirSync(path.join(root, '.cursor-plugin'), { recursive: true })
+fs.mkdirSync(path.join(root, '.grok-plugin'), { recursive: true })
 fs.mkdirSync(path.join(root, '.github', 'prompts'), { recursive: true })
 fs.mkdirSync(path.join(root, '.windsurf', 'rules'), { recursive: true })
 fs.mkdirSync(path.join(root, '.kiro', 'steering'), { recursive: true })
@@ -76,7 +85,7 @@ fs.writeFileSync(
       name: claudeMarketplaceName,
       owner: { name: 'Oleg Koval' },
       metadata: {
-        description: 'Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.',
+        description: 'Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.',
       },
       plugins,
     },
@@ -98,11 +107,23 @@ fs.writeFileSync(
 )
 
 fs.writeFileSync(
+  path.join(root, '.grok-plugin', 'index.json'),
+  JSON.stringify(
+    {
+      name: projectName,
+      plugins: grokPlugins,
+    },
+    null,
+    2,
+  ) + '\n',
+)
+
+fs.writeFileSync(
   path.join(root, '.claude-plugin', 'plugin.json'),
   JSON.stringify(
     {
       name: claudeMarketplaceName,
-      description: 'Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.',
+      description: 'Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.',
       version: packageJson.version,
       author: { name: 'Oleg Koval' },
       homepage: 'https://github.com/oleg-koval/agent-skills',
@@ -247,6 +268,28 @@ for (const pkg of catalog.packages) {
     copySkillResources(pkg, destDir)
   }
 
+  if (pkg.adapters.includes('grok')) {
+    const grokAdapterDir = path.join(root, pkg.path, 'adapters', 'grok')
+    const destDir = path.join(grokAdapterDir, 'skills', pkg.name)
+    fs.mkdirSync(destDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(grokAdapterDir, 'plugin.json'),
+      JSON.stringify(
+        {
+          name: lookupNameFor(pkg),
+          version: '0.1.0',
+          description: pkg.description,
+          skills: 'skills/',
+        },
+        null,
+        2,
+      ) + '\n',
+    )
+    // Grok uses standard SKILL.md (no special targets injection like cursor)
+    fs.writeFileSync(path.join(destDir, 'SKILL.md'), [fm + generatedHeader, '', body, ''].join('\n'))
+    copySkillResources(pkg, destDir)
+  }
+
   if (pkg.adapters.includes('windsurf')) {
     const skillBody = stripFrontmatter(canonical).trimStart().trimEnd()
     const content = stripTrailingLineWhitespace([
@@ -283,5 +326,5 @@ for (const pkg of catalog.packages) {
   }
 }
 
-console.log('generated marketplace manifests, Copilot prompts, Cursor, Windsurf, and Kiro adapter files')
+console.log('generated marketplace manifests, Copilot prompts, Cursor, Grok, Windsurf, and Kiro adapter files')
 EOF

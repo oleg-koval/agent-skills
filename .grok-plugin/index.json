@@ -1,0 +1,120 @@
+{
+  "name": "agent-skills",
+  "plugins": [
+    {
+      "name": "olko:self-critique",
+      "source": "./packages/software-development/self-critique/adapters/grok",
+      "description": "Adversarially critique your own last answer: spawn a critic agent that verifies claims against live sources, finds the related issue or pattern you missed, then loop until satisfied and report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score."
+    },
+    {
+      "name": "olko:docs-index-keeper",
+      "source": "./packages/software-development/docs-index-keeper/adapters/grok",
+      "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows."
+    },
+    {
+      "name": "olko:semantic-release-beta",
+      "source": "./packages/software-development/semantic-release-beta/adapters/grok",
+      "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch."
+    },
+    {
+      "name": "olko:gh-cli",
+      "source": "./packages/software-development/gh-cli/adapters/grok",
+      "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more."
+    },
+    {
+      "name": "olko:git-commit",
+      "source": "./packages/software-development/git-commit/adapters/grok",
+      "description": "Create conventional commits with diff-aware staging and message generation."
+    },
+    {
+      "name": "olko:gallery",
+      "source": "./packages/photography/gallery/adapters/grok",
+      "description": "Create photo galleries with AI-assisted layout curation and sequencing."
+    },
+    {
+      "name": "olko:promptctl",
+      "source": "./packages/software-development/promptctl/adapters/grok",
+      "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation."
+    },
+    {
+      "name": "olko:fill-music-player",
+      "source": "./packages/music/fill-music-player/adapters/grok",
+      "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity."
+    },
+    {
+      "name": "olko:product-builder",
+      "source": "./packages/software-development/product-builder/adapters/grok",
+      "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
+    },
+    {
+      "name": "olko:mvp-oneshot",
+      "source": "./packages/software-development/mvp-oneshot/adapters/grok",
+      "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice."
+    },
+    {
+      "name": "olko:starter-rules",
+      "source": "./packages/software-development/starter-rules/adapters/grok",
+      "description": "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID."
+    },
+    {
+      "name": "olko:review-past-performance",
+      "source": "./packages/software-development/review-past-performance/adapters/grok",
+      "description": "Self-improvement loop that pulls the last 24h of ICM memories, git history, and skill analytics to detect repeated mistakes, slow workflows, and missing coverage, then proposes 1-3 concrete improvements."
+    },
+    {
+      "name": "olko:relay",
+      "source": "./packages/software-development/relay/adapters/grok",
+      "description": "Use claude-relay to run long or rate-limit-prone tasks autonomously across subscription accounts."
+    },
+    {
+      "name": "olko:open-source-publisher",
+      "source": "./packages/software-development/open-source-publisher/adapters/grok",
+      "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, optional donation setup, and optional motion previews for generated static images."
+    },
+    {
+      "name": "olko:viral-launch",
+      "source": "./packages/marketing/viral-launch/adapters/grok",
+      "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops."
+    },
+    {
+      "name": "olko:search-console-indexing-audit",
+      "source": "./packages/marketing/search-console-indexing-audit/adapters/grok",
+      "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals."
+    },
+    {
+      "name": "olko:cloudflare-block-countries",
+      "source": "./packages/software-development/cloudflare-block-countries/adapters/grok",
+      "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones."
+    },
+    {
+      "name": "olko:obsidian-pr-sync",
+      "source": "./packages/software-development/obsidian-pr-sync/adapters/grok",
+      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section."
+    },
+    {
+      "name": "olko:obsidian-task-rollover",
+      "source": "./packages/software-development/obsidian-task-rollover/adapters/grok",
+      "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent."
+    },
+    {
+      "name": "olko:apple-store-submit",
+      "source": "./packages/software-development/apple-store-submit/adapters/grok",
+      "description": "Handle Apple App Store rejection emails end-to-end: parse rejection reasons, plan fixes, implement code changes, navigate App Store Connect, and resubmit."
+    },
+    {
+      "name": "olko:macos-menubar-app",
+      "source": "./packages/software-development/macos-menubar-app/adapters/grok",
+      "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation."
+    },
+    {
+      "name": "olko:skill-budget-audit",
+      "source": "./packages/software-development/skill-budget-audit/adapters/grok",
+      "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability."
+    },
+    {
+      "name": "olko:crash-course",
+      "source": "./packages/software-development/crash-course/adapters/grok",
+      "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes."
+    }
+  ]
+}

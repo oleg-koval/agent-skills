@@ -11,6 +11,7 @@ test -f collections/release-tools.json
 test -f .claude-plugin/marketplace.json
 test -f .claude-plugin/plugin.json
 test -f .cursor-plugin/index.json
+test -f .grok-plugin/index.json
 test -f .github/copilot-instructions.md
 test -d .windsurf/rules
 test -d .kiro/steering
@@ -24,6 +25,7 @@ const adapterFiles = {
   claude: (pkg) => path.join(pkg.path, 'adapters', 'claude', 'plugin.json'),
   codex: (pkg) => path.join(pkg.path, 'adapters', 'codex', 'README.md'),
   cursor: (pkg) => path.join(pkg.path, 'adapters', 'cursor', 'plugin.json'),
+  grok: (pkg) => path.join(pkg.path, 'adapters', 'grok', 'plugin.json'),
   pi: (pkg) => path.join(pkg.path, 'adapters', 'pi', 'README.md'),
   hermes: (pkg) => path.join(pkg.path, 'adapters', 'hermes', 'README.md'),
   copilot: (pkg) => path.join('.github', 'prompts', `${pkg.name}.prompt.md`),
@@ -36,6 +38,7 @@ const packagesByName = new Map(catalog.packages.map((pkg) => [pkg.name, pkg]))
 const claudeManifest = JSON.parse(fs.readFileSync('.claude-plugin/marketplace.json', 'utf8'))
 const claudePluginManifest = JSON.parse(fs.readFileSync('.claude-plugin/plugin.json', 'utf8'))
 const cursorManifest = JSON.parse(fs.readFileSync('.cursor-plugin/index.json', 'utf8'))
+const grokManifest = JSON.parse(fs.readFileSync('.grok-plugin/index.json', 'utf8'))
 const kebabCasePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 if (!kebabCasePattern.test(claudeManifest.name)) {
@@ -111,6 +114,13 @@ for (const plugin of cursorManifest.plugins || []) {
   const source = plugin.source.replace(/^\.\//, '')
   if (!fs.existsSync(source)) {
     throw new Error(`Cursor manifest source does not exist: ${plugin.source}`)
+  }
+}
+
+for (const plugin of grokManifest.plugins || []) {
+  const source = plugin.source.replace(/^\.\//, '')
+  if (!fs.existsSync(source)) {
+    throw new Error(`Grok manifest source does not exist: ${plugin.source}`)
   }
 }
 
