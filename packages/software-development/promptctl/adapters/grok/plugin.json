@@ -1,0 +1,6 @@
+{
+  "name": "olko:promptctl",
+  "version": "0.1.0",
+  "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation.",
+  "skills": "skills/"
+}

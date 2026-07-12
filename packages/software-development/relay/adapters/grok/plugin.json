@@ -1,0 +1,6 @@
+{
+  "name": "olko:relay",
+  "version": "0.1.0",
+  "description": "Use claude-relay to run long or rate-limit-prone tasks autonomously across subscription accounts.",
+  "skills": "skills/"
+}

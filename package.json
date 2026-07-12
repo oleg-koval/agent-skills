@@ -5,7 +5,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.",
+  "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
     "packages",
     ".claude-plugin",
     ".cursor-plugin",
+    ".grok-plugin",
     ".windsurf",
     ".kiro",
     "scripts",
