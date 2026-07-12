@@ -4,13 +4,13 @@
     "name": "Oleg Koval"
   },
   "metadata": {
-    "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools."
+    "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools."
   },
   "plugins": [
     {
       "name": "olko-agent-skills",
       "source": "./",
-      "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools."
+      "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools."
     }
   ]
 }

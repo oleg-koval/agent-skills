@@ -1,0 +1,6 @@
+{
+  "name": "olko:cloudflare-block-countries",
+  "version": "0.1.0",
+  "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones.",
+  "skills": "skills/"
+}

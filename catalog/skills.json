@@ -19,7 +19,8 @@
         "codex",
         "claude",
         "cursor",
-        "copilot"
+        "copilot",
+        "grok"
       ]
     },
     {
@@ -41,7 +42,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -64,7 +66,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -86,7 +89,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -106,7 +110,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -127,7 +132,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -148,7 +154,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -170,7 +177,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -192,7 +200,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -216,7 +225,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -240,7 +250,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -263,7 +274,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -279,7 +291,8 @@
         "claude-relay"
       ],
       "adapters": [
-        "claude"
+        "claude",
+        "grok"
       ]
     },
     {
@@ -304,7 +317,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -327,7 +341,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -352,7 +367,8 @@
         "hermes",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -374,7 +390,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -396,7 +413,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -418,7 +436,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -442,7 +461,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -466,7 +486,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     },
     {
@@ -484,7 +505,8 @@
         "performance"
       ],
       "adapters": [
-        "claude"
+        "claude",
+        "grok"
       ]
     },
     {
@@ -507,7 +529,8 @@
         "cursor",
         "copilot",
         "windsurf",
-        "kiro"
+        "kiro",
+        "grok"
       ]
     }
   ]
