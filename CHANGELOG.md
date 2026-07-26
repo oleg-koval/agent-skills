@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/oleg-koval/agent-skills/compare/v1.19.1...v1.20.0) (2026-07-26)
+
+
+### ✨ Features
+
+* **wearables:** add garmin-watchface skill ([#40](https://github.com/oleg-koval/agent-skills/issues/40)) ([7e5702b](https://github.com/oleg-koval/agent-skills/commit/7e5702bb37ccf9b46803a320bf80c2604e9d270e))
+
 ## [1.19.1](https://github.com/oleg-koval/agent-skills/compare/v1.19.0...v1.19.1) (2026-07-26)
 
 
