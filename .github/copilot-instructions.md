@@ -34,3 +34,4 @@ Available reusable prompt files:
 - crash-course: .github/prompts/crash-course.prompt.md
 - qodoloop: .github/prompts/qodoloop.prompt.md
 - garmin-watchface: .github/prompts/garmin-watchface.prompt.md
+- coderabbitloop: .github/prompts/coderabbitloop.prompt.md

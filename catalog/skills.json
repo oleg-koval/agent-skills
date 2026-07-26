@@ -580,6 +580,30 @@
         "kiro",
         "grok"
       ]
+    },
+    {
+      "name": "coderabbitloop",
+      "lookupName": "olko:coderabbitloop",
+      "category": "software-development",
+      "path": "packages/software-development/coderabbitloop",
+      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings \u2014 reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
+      "tags": [
+        "code-review",
+        "coderabbit",
+        "github",
+        "pull-requests",
+        "automation",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
     }
   ]
 }

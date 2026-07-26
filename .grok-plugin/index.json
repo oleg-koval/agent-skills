@@ -125,6 +125,11 @@
       "name": "olko:garmin-watchface",
       "source": "./packages/wearables/garmin-watchface/adapters/grok",
       "description": "Build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C."
+    },
+    {
+      "name": "olko:coderabbitloop",
+      "source": "./packages/software-development/coderabbitloop/adapters/grok",
+      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit."
     }
   ]
 }
