@@ -115,6 +115,11 @@
       "name": "olko:crash-course",
       "source": "./packages/software-development/crash-course/adapters/grok",
       "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes."
+    },
+    {
+      "name": "olko:qodoloop",
+      "source": "./packages/software-development/qodoloop/adapters/grok",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass."
     }
   ]
 }
