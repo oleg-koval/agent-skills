@@ -32,6 +32,7 @@
     "./packages/software-development/macos-menubar-app",
     "./packages/software-development/skill-budget-audit",
     "./packages/software-development/crash-course",
-    "./packages/software-development/qodoloop"
+    "./packages/software-development/qodoloop",
+    "./packages/wearables/garmin-watchface"
   ]
 }

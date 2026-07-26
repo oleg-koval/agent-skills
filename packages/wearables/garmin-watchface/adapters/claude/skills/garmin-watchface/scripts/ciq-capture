@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+"""Screenshot the Connect IQ simulator's display, reliably.
+
+Three things make the naive approach fail silently, each producing a plausible
+PNG of the wrong thing:
+
+  1. `screencapture -R` grabs a screen REGION, not a window. If the simulator is
+     not in front you photograph whatever is -- a terminal, a browser.
+  2. The simulator window MOVES between restarts, so a hardcoded region drifts
+     onto the desktop.
+  3. The device display is a sub-rectangle of the window at a fixed offset. Guess
+     it and you crop in bezel skin or clip the face.
+
+So: raise the window, verify it actually came forward, read its live bounds,
+capture, then sanity check the pixels before believing the result.
+
+    ciq-capture out.png                  # whole simulator window
+    ciq-capture out.png --face           # cropped to the device display
+    ciq-capture out.png --face --size 260 --mask   # + masked to a round bezel
+
+Calibration (the display rect inside the window) is stored in
+~/.cache/ciq-capture/calibration.json. Run `ciq-calibrate` to (re)derive it.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+CACHE = Path.home() / ".cache" / "ciq-capture"
+CALIBRATION = CACHE / "calibration.json"
+
+# Measured on a 2x Retina Mac with the fenix 6 Pro skin. Overridden by
+# calibration.json when present; re-derive with ciq-calibrate for other skins.
+DEFAULT_RECT = {"left": 155, "top": 345, "size": 518, "scale": 2}
+
+
+def osa(script):
+    r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def frontmost():
+    return osa(
+        'tell application "System Events" to get name of first process '
+        "whose frontmost is true"
+    )
+
+
+def raise_simulator():
+    osa(
+        'tell application "System Events" to tell process "simulator" '
+        "to set frontmost to true"
+    )
+
+
+def window_bounds():
+    """Live bounds, because the window moves between simulator restarts."""
+    out = osa(
+        'tell application "System Events" to tell process "simulator" to get '
+        '{position, size} of (first window whose name contains "CIQ Simulator")'
+    )
+    parts = [p.strip() for p in out.split(",") if p.strip()]
+    if len(parts) != 4:
+        return None
+    try:
+        return tuple(int(p) for p in parts)
+    except ValueError:
+        return None
+
+
+def load_rect():
+    if CALIBRATION.is_file():
+        try:
+            return json.loads(CALIBRATION.read_text())
+        except (OSError, json.JSONDecodeError):
+            pass
+    return DEFAULT_RECT
+
+
+def screencapture(x, y, w, h, path):
+    subprocess.run(
+        ["screencapture", "-x", f"-R{x},{y},{w},{h}", str(path)], check=True
+    )
+
+
+def looks_like_a_face(path, rect):
+    """Reject captures of the wrong window.
+
+    A watch face is neither a blank white document nor a solid black screen. A
+    real one lands in a band of darkness; anything outside it means we
+    photographed a terminal, a browser, or a simulator with no app loaded.
+    Returns the dark percentage, or None if the image is too small to judge.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+
+    im = Image.open(path).convert("RGB")
+    l, t, s = rect["left"], rect["top"], rect["size"]
+    if im.width < l + s or im.height < t + s:
+        return None
+
+    px = im.load()
+    xs = range(l, l + s, 6)
+    ys = range(t, t + s, 6)
+    dark = sum(1 for yy in ys for xx in xs if sum(px[xx, yy]) < 150)
+    return 100 * dark // (len(list(xs)) * len(list(ys)))
+
+
+def crop_face(path, rect, size, mask, supersample=4):
+    from PIL import Image, ImageDraw
+
+    im = Image.open(path).convert("RGB")
+    l, t, s = rect["left"], rect["top"], rect["size"]
+    face = im.crop((l, t, l + s, t + s))
+
+    if size:
+        if mask:
+            # Mask at high resolution then downsample, or the display edge
+            # stair-steps. The captured square holds a few pixels of the
+            # simulator's bezel skin in its corners; the real device has
+            # nothing there but black.
+            big = face.resize((size * supersample,) * 2, Image.LANCZOS)
+            m = Image.new("L", big.size, 0)
+            ImageDraw.Draw(m).ellipse([0, 0, big.width - 1, big.height - 1], fill=255)
+            out = Image.new("RGB", big.size, (0, 0, 0))
+            out.paste(big, (0, 0), m)
+            face = out.resize((size, size), Image.LANCZOS)
+        else:
+            face = face.resize((size, size), Image.LANCZOS)
+    elif mask:
+        m = Image.new("L", face.size, 0)
+        ImageDraw.Draw(m).ellipse([0, 0, face.width - 1, face.height - 1], fill=255)
+        out = Image.new("RGB", face.size, (0, 0, 0))
+        out.paste(face, (0, 0), m)
+        face = out
+
+    face.save(path)
+    return face.size
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument("output", help="PNG path to write")
+    ap.add_argument("--face", action="store_true",
+                    help="crop to the device display rather than the whole window")
+    ap.add_argument("--size", type=int,
+                    help="resize the cropped face to NxN (implies --face)")
+    ap.add_argument("--mask", action="store_true",
+                    help="mask to a circle for round devices (implies --face)")
+    ap.add_argument("--tries", type=int, default=5)
+    ap.add_argument("--no-verify", action="store_true",
+                    help="skip the content sanity check")
+    args = ap.parse_args()
+
+    if args.size or args.mask:
+        args.face = True
+
+    rect = load_rect()
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    for attempt in range(1, args.tries + 1):
+        raise_simulator()
+        time.sleep(2)
+
+        if frontmost() != "simulator":
+            print(f"try {attempt}: simulator did not come forward", file=sys.stderr)
+            continue
+
+        bounds = window_bounds()
+        if not bounds:
+            print(f"try {attempt}: no CIQ Simulator window (is a device loaded?)",
+                  file=sys.stderr)
+            continue
+
+        screencapture(*bounds, out)
+
+        if not args.no_verify:
+            dark = looks_like_a_face(out, rect)
+            if dark is None:
+                pass  # Pillow missing or window smaller than the rect; trust it.
+            elif not 25 <= dark <= 90:
+                print(f"try {attempt}: capture looks wrong (dark={dark}%)",
+                      file=sys.stderr)
+                continue
+
+        if args.face:
+            try:
+                size = crop_face(out, rect, args.size, args.mask)
+            except ImportError:
+                sys.exit("--face needs Pillow: pip install pillow")
+            print(f"{out}  {size[0]}x{size[1]}  window={bounds[0]},{bounds[1]}")
+        else:
+            print(f"{out}  window={bounds[0]},{bounds[1]}")
+        return 0
+
+    sys.exit(
+        "Capture failed.\n"
+        "  - Is the simulator running with an app loaded? (make sim)\n"
+        "  - monkeydo wedges often; kill it and the simulator, relaunch, re-push.\n"
+        "  - If the crop looks wrong for this device skin, run ciq-calibrate."
+    )
+
+
+if __name__ == "__main__":
+    sys.exit(main())
