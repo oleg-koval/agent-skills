@@ -40,24 +40,30 @@ Check out the branch if not already on it.
 
 ### 2. Loop (max 5 iterations)
 
-#### A. Push and wait
+#### A. Wait for a review of the current head
+
+On **iteration 1**, if there is nothing to push yet (you haven't fixed anything in this loop), don't wait for a brand-new review — use whatever Qodo has already posted as your starting point and go straight to step B. Otherwise:
 
 ```bash
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 git push
 ```
 
-Poll (every ~10s, timeout ~5min) for a new comment from `qodo-code-review[bot]` whose body starts with `<h3>Code Review by Qodo</h3>`, created after this push's timestamp:
+Poll (every ~10s, timeout ~5min), fetching **every page** of comments, not just the first:
 
 ```bash
-gh api "repos/{owner}/{repo}/issues/<PR_NUMBER>/comments" --jq \
-  '[.[] | select(.user.login == "qodo-code-review[bot]") | select(.body | startswith("<h3>Code Review by Qodo</h3>"))] | last'
+gh api --paginate "repos/{owner}/{repo}/issues/<PR_NUMBER>/comments?per_page=100" | jq -s '
+  add | map(select(.user.login == "qodo-code-review[bot]")) | sort_by(.created_at)'
 ```
 
-If instead you see "Qodo is busy working", keep polling. If you see a rate-limit/paused message, **stop the loop now** and go to Report with `blocked: rate-limited`.
+From the comments created **after `$SINCE`** (ignore anything older — that's leftover from a prior push, not this one):
+- Any of them contains "review limit" or "paused" → **stop the loop now**, go to Report with `blocked: rate-limited`.
+- The latest one starts with `<h3>Code Review by Qodo</h3>` → proceed to step B.
+- Otherwise (nothing yet, or only "Qodo is busy working") → sleep 10s and poll again, up to the 5-minute timeout.
 
 #### B. Fetch unresolved findings
 
-Run the GraphQL query in `references/graphql-queries.md` (`unresolvedQodoThreads`). For each unresolved thread from `qodo-code-review[bot]`: parse the finding title, severity (recommended/optional), file/line, and the **Agent Prompt** block.
+Run the paginated GraphQL query in `references/graphql-queries.md` (`unresolvedQodoThreads`) — **follow `pageInfo.hasNextPage`/`endCursor` until it's exhausted**; a PR with more than 100 Qodo threads silently loses every finding past the first page otherwise. For each unresolved thread from `qodo-code-review[bot]`: parse the finding title, severity (recommended/optional), file/line, and the **Agent Prompt** block.
 
 Build the working set: all `recommended` threads, plus `optional` ones too if `--include-optional`.
 
@@ -67,25 +73,35 @@ Stop if the working set is empty, or max iterations reached.
 
 #### D. Fix each finding
 
-For each thread in the working set, in order: read the Agent Prompt in full — it already names the issue, the context, the fix focus files/lines, and often the suggested fix. Apply it. Do not go beyond its stated scope. If the prompt's suggestion is wrong, unsafe, or needs a product decision, do not force a fix — note that in step E instead.
+For each thread in the working set, in order: read the Agent Prompt in full — it already names the issue, the context, the fix focus files/lines, and often the suggested fix. Apply it. Do not go beyond its stated scope. Track two lists as you go: **fixed** (thread id + the exact files you touched for it) and **blocked** (thread id + why — the prompt's suggestion was wrong, unsafe, or needs a product decision). Do not force a fix into the blocked list; do not resolve anything yet.
 
-#### E. Answer and resolve
+#### E. Commit and push
 
-**Reply to the thread first, then resolve it** — this is the "answer to the comments" half of the job, not optional cleanup:
-
-```bash
-gh api graphql -f query='mutation { addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: "<THREAD_ID>", body: "<REPLY>"}) { comment { id } } }'
-```
-
-Reply body: one or two sentences — what you changed (file/function) and why, or, if you didn't fix it, exactly why not (false positive / needs a human call) so a person reading the thread later understands the outcome without re-deriving it. Then resolve (`resolveReviewThread` — see references file). A finding you deliberately skip still gets a reply and gets resolved; an unresolved thread with no explanation is worse than not running this loop at all.
-
-#### F. Commit and push
+If **fixed** is empty, skip straight to F (nothing to commit). Otherwise, stage **only the files you touched in D** — never `git add -A`, which can sweep in unrelated local changes or secrets that have nothing to do with this loop:
 
 ```bash
-git add -A
+git add <files touched by this iteration's fixes>
 git commit -m "address Qodo review feedback (qodoloop iteration N)"
 git push
 ```
+
+Confirm the push actually succeeded before moving on — a resolved thread whose fix never made it to the branch is worse than an unresolved one.
+
+#### F. Answer each finding
+
+This is the "answer to the comments" half of the job, not optional cleanup — and it only runs **after** E's push is confirmed durable, so a thread is never marked resolved while its fix still only exists locally:
+
+- **Fixed** findings: reply with one or two sentences (what you changed and why), **then** resolve:
+  ```bash
+  gh api graphql -f query='
+    mutation($threadId: ID!, $body: String!) {
+      addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: $threadId, body: $body}) {
+        comment { id }
+      }
+    }' -f threadId="$THREAD_ID" -f body="$REPLY_TEXT"
+  ```
+  Pass the thread id and reply text as GraphQL **variables** (`-f threadId=... -f body=...`), never interpolated into the query string itself — a reply containing a quote, backtick, or newline breaks (or worse, injects into) a hand-built query. Then resolve with `resolveReviewThread` (see references file).
+- **Blocked** findings: reply explaining exactly why (false positive / needs a human call), but **do not resolve** — leave the thread open. A blocked finding that gets silently resolved is a false "done".
 
 Go back to step A.
 
@@ -95,14 +111,15 @@ Go back to step A.
 |--------------------|-------|
 | Iterations         | N     |
 | Findings resolved  | N     |
-| Findings skipped   | N (with reasons) |
+| Findings blocked   | N (with reasons, left unresolved) |
 | Remaining          | N (if any) |
-| Blocked            | rate-limited / max-iterations / none |
+| Blocked            | rate-limited / human-intervention / max-iterations / none |
 
-```
+```text
 Qodoloop complete.
   Iterations:  2
-  Resolved:    5 (4 fixed, 1 false-positive, replied + resolved)
+  Resolved:    4 (fixed, replied + resolved)
+  Blocked:     1 (needs a human call, replied, left unresolved)
   Remaining:   0
 ```
 

@@ -140,7 +140,7 @@ packages/{category}/{skill}/SKILL.md
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (20)
+### Software development (21)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
