@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""Survey the Connect IQ devices installed by the SDK Manager.
+
+A watch face written against one resolution ports for free to every device that
+shares it -- a manifest edit, no code. This finds them, and flags the two things
+that break that assumption: minimum API level, and launcher icon size.
+
+    ciq-devices                        # all resolutions, most common first
+    ciq-devices --same-as fenix6pro    # products you can add with no code change
+    ciq-devices --min-api 3.1.0        # filter to devices supporting an API level
+    ciq-devices --device fenix6pro     # everything known about one device
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+DEVICES = (
+    Path.home()
+    / "Library/Application Support/Garmin/ConnectIQ/Devices"
+)
+
+
+def api_tuple(text):
+    try:
+        return tuple(int(p) for p in str(text).split("."))
+    except (ValueError, AttributeError):
+        return (0,)
+
+
+def load():
+    """Read every compiler.json. Layout has shifted between SDK versions, so
+    each field is looked up in more than one place."""
+    if not DEVICES.is_dir():
+        sys.exit(
+            f"No devices found at {DEVICES}\n"
+            "Open SdkManager.app, sign in, and install at least one device."
+        )
+
+    out = []
+    for entry in sorted(os.listdir(DEVICES)):
+        path = DEVICES / entry / "compiler.json"
+        if not path.is_file():
+            continue
+        try:
+            j = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        res = j.get("resolution") or {}
+        w, h = res.get("width"), res.get("height")
+        if w is None:
+            disp = j.get("display") or {}
+            w, h = disp.get("width"), disp.get("height")
+        if w is None:
+            continue
+
+        icon = j.get("launcherIcon") or {}
+
+        # Highest API this device supports lives in a per-part list on newer
+        # SDKs and at the top level on older ones.
+        api = j.get("connectIQVersion") or j.get("apiLevel")
+        parts = j.get("partNumbers") or []
+        if parts:
+            levels = [p.get("connectIQVersion") for p in parts if p.get("connectIQVersion")]
+            if levels:
+                api = max(levels, key=api_tuple)
+
+        out.append(
+            {
+                "id": entry,
+                "w": w,
+                "h": h,
+                "icon": (icon.get("width"), icon.get("height")),
+                "api": api,
+                "shape": "round" if w == h else "rect",
+            }
+        )
+    return out
+
+
+def cmd_same_as(devs, target, min_api):
+    match = next((d for d in devs if d["id"] == target), None)
+    if not match:
+        sys.exit(f"Unknown device '{target}'. Run without --same-as to list them.")
+
+    w, h = match["w"], match["h"]
+    peers = [d for d in devs if (d["w"], d["h"]) == (w, h)]
+
+    print(f"{target} is {w}x{h}. {len(peers)} installed device(s) share it.\n")
+
+    ok, blocked = [], []
+    for d in peers:
+        if min_api and api_tuple(d["api"]) < api_tuple(min_api):
+            blocked.append(d)
+        else:
+            ok.append(d)
+
+    icons = defaultdict(list)
+    for d in ok:
+        icons[d["icon"]].append(d["id"])
+
+    print("Add to manifest.xml:\n")
+    for d in ok:
+        print(f'            <iq:product id="{d["id"]}"/>')
+
+    if len(icons) > 1:
+        print("\nLauncher icon sizes differ -- these need their own resource path")
+        print("in monkey.jungle, or the compiler will scale and blur one of them:")
+        for (iw, ih), ids in sorted(icons.items()):
+            print(f"  {iw}x{ih}: {', '.join(ids)}")
+
+    if blocked:
+        print(f"\nExcluded, below --min-api {min_api}:")
+        for d in blocked:
+            print(f"  {d['id']:<26} supports {d['api']}")
+
+    print(
+        "\nBuild each one before trusting it:\n"
+        "  for d in <ids>; do monkeyc -f monkey.jungle -d $d -o bin/t.prg "
+        "-y $KEY -w -l 3; done"
+    )
+
+
+def cmd_device(devs, target):
+    d = next((x for x in devs if x["id"] == target), None)
+    if not d:
+        sys.exit(f"Unknown device '{target}'.")
+    print(f"{d['id']}")
+    print(f"  resolution   {d['w']}x{d['h']} ({d['shape']})")
+    print(f"  launcher     {d['icon'][0]}x{d['icon'][1]}")
+    print(f"  max API      {d['api']}")
+
+
+def cmd_list(devs, min_api):
+    if min_api:
+        devs = [d for d in devs if api_tuple(d["api"]) >= api_tuple(min_api)]
+
+    groups = defaultdict(list)
+    for d in devs:
+        groups[(d["w"], d["h"])].append(d)
+
+    print(f"{len(devs)} device(s) installed\n")
+    print(f"{'resolution':<14}{'shape':<8}{'count':<8}example")
+    print("-" * 60)
+    for (w, h), members in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        shape = members[0]["shape"]
+        print(f"{f'{w}x{h}':<14}{shape:<8}{len(members):<8}{members[0]['id']}")
+    print("\nUse --same-as <device> for the manifest lines to add.")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--same-as", metavar="DEVICE",
+                    help="list products sharing this device's resolution")
+    ap.add_argument("--device", metavar="DEVICE", help="details for one device")
+    ap.add_argument("--min-api", metavar="X.Y.Z", default="3.1.0",
+                    help="minimum API level to accept (default 3.1.0)")
+    args = ap.parse_args()
+
+    devs = load()
+    if args.device:
+        cmd_device(devs, args.device)
+    elif args.same_as:
+        cmd_same_as(devs, args.same_as, args.min_api)
+    else:
+        cmd_list(devs, None)
+
+
+if __name__ == "__main__":
+    main()

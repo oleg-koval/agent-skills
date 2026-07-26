@@ -1,0 +1,13 @@
+project.manifest = manifest.xml
+
+base.sourcePath = source;tests
+base.resourcePath = resources
+
+# Strips (:test) code from the shipping build. It also strips it from the
+# unit-test build, which is why monkey.test.jungle exists -- without that,
+# `make test` compiles zero tests and reports success.
+base.excludeAnnotations = test
+
+# Devices whose launcher icon is a different size need their own resource path,
+# listed second so it wins. Delete if you only target one icon size.
+# vivoactive4.resourcePath = $(base.resourcePath);resources-35

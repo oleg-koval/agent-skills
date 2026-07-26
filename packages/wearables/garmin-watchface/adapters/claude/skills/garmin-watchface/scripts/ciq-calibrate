@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Find where the device display sits inside the simulator window.
+
+Guessing this crops in bezel skin or clips the face. Instead: build a throwaway
+app that floods the whole screen with one unmistakable colour, push it, capture,
+and take the bounding box of that colour. That box IS the display rect, to the
+pixel, for whatever device skin is loaded.
+
+    ciq-calibrate                 # uses the fenix6pro device by default
+    ciq-calibrate --device fr955
+
+Writes ~/.cache/ciq-capture/calibration.json, which ciq-capture then uses.
+Re-run when switching to a device whose skin is a different size.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+CACHE = Path.home() / ".cache" / "ciq-capture"
+CIQ = Path.home() / "Library/Application Support/Garmin/ConnectIQ"
+HERE = Path(__file__).resolve().parent
+
+MARKER_RGB = (0xFF, 0x00, 0xFF)
+
+APP = """import Toybox.Application;
+import Toybox.Graphics;
+import Toybox.Lang;
+import Toybox.WatchUi;
+
+class CalApp extends Application.AppBase {
+    function initialize() { AppBase.initialize(); }
+    function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
+        return [new CalView()];
+    }
+}
+
+class CalView extends WatchUi.WatchFace {
+    function initialize() { WatchFace.initialize(); }
+    function onUpdate(dc as Dc) as Void {
+        dc.setColor(0xFF00FF, 0xFF00FF);
+        dc.clear();
+    }
+}
+"""
+
+MANIFEST = """<?xml version="1.0" encoding="UTF-8"?>
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
+    <iq:application entry="CalApp" id="{appid}" launcherIcon="@Drawables.LauncherIcon"
+        minApiLevel="3.1.0" name="@Strings.AppName" type="watchface">
+        <iq:products><iq:product id="{device}"/></iq:products>
+        <iq:permissions/>
+        <iq:languages><iq:language>eng</iq:language></iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
+"""
+
+JUNGLE = "project.manifest = manifest.xml\nbase.sourcePath = source\nbase.resourcePath = resources\n"
+STRINGS = '<?xml version="1.0" encoding="UTF-8"?>\n<strings><string id="AppName">cal</string></strings>\n'
+DRAWABLES = ('<?xml version="1.0" encoding="UTF-8"?>\n<drawables>'
+             '<bitmap id="LauncherIcon" filename="icon.png"/></drawables>\n')
+
+
+def sdk_bin():
+    cfg = CIQ / "current-sdk.cfg"
+    if not cfg.is_file():
+        sys.exit("No SDK selected. Open SdkManager.app and install/select an SDK.")
+    return Path(cfg.read_text().strip()) / "bin"
+
+
+def osa(script):
+    r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--device", default="fenix6pro")
+    ap.add_argument("--key", default=str(Path.home() / ".Garmin/ConnectIQ/developer_key.der"))
+    args = ap.parse_args()
+
+    try:
+        from PIL import Image
+    except ImportError:
+        sys.exit("Needs Pillow: pip install pillow")
+
+    key = Path(args.key)
+    if not key.is_file():
+        sys.exit(f"No developer key at {key}. Generate one with `make key`.")
+
+    sdk = sdk_bin()
+    import uuid
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "source").mkdir()
+        (root / "resources/drawables").mkdir(parents=True)
+        (root / "resources/strings").mkdir(parents=True)
+
+        (root / "source/CalApp.mc").write_text(APP)
+        (root / "manifest.xml").write_text(
+            MANIFEST.format(appid=uuid.uuid4().hex, device=args.device))
+        (root / "monkey.jungle").write_text(JUNGLE)
+        (root / "resources/strings/strings.xml").write_text(STRINGS)
+        (root / "resources/drawables/drawables.xml").write_text(DRAWABLES)
+        Image.new("RGB", (40, 40), (0, 0, 0)).save(root / "resources/drawables/icon.png")
+
+        prg = root / "cal.prg"
+        print(f"building marker app for {args.device} ...")
+        r = subprocess.run(
+            [str(sdk / "monkeyc"), "-f", str(root / "monkey.jungle"),
+             "-d", args.device, "-o", str(prg), "-y", str(key), "-w"],
+            capture_output=True, text=True, cwd=root)
+        if "BUILD SUCCESSFUL" not in (r.stdout + r.stderr):
+            sys.exit("marker build failed:\n" + r.stdout + r.stderr)
+
+        subprocess.run(["pkill", "-f", "monkeydo"], capture_output=True)
+        subprocess.Popen([str(sdk / "connectiq")],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(10)
+        subprocess.Popen([str(sdk / "monkeydo"), str(prg), args.device],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("pushing to simulator ...")
+        time.sleep(20)
+
+        osa('tell application "System Events" to tell process "simulator" '
+            "to set frontmost to true")
+        time.sleep(2)
+
+        out = osa('tell application "System Events" to tell process "simulator" to get '
+                  '{position, size} of (first window whose name contains "CIQ Simulator")')
+        parts = [p.strip() for p in out.split(",") if p.strip()]
+        if len(parts) != 4:
+            sys.exit("could not read the simulator window bounds")
+        x, y, w, h = (int(p) for p in parts)
+
+        shot = root / "cal.png"
+        subprocess.run(["screencapture", "-x", f"-R{x},{y},{w},{h}", str(shot)], check=True)
+
+        im = Image.open(shot).convert("RGB")
+        px = im.load()
+        xs, ys = [], []
+        for yy in range(im.height):
+            for xx in range(im.width):
+                r_, g_, b_ = px[xx, yy]
+                if r_ > 200 and b_ > 200 and g_ < 60:
+                    xs.append(xx)
+                    ys.append(yy)
+
+        if not xs:
+            sys.exit(
+                "marker not found in the capture.\n"
+                "The simulator was probably not in front, or the app did not load."
+            )
+
+        left, top = min(xs), min(ys)
+        width, height = max(xs) - left + 1, max(ys) - top + 1
+        if abs(width - height) > 2:
+            print(f"warning: marker is {width}x{height}, not square -- "
+                  "non-square display or a partial capture", file=sys.stderr)
+
+        scale = round(width / max(im.width and 1, 1)) or 1
+        rect = {"left": left, "top": top, "size": max(width, height),
+                "scale": 2 if width > 300 else 1, "device": args.device}
+
+        CACHE.mkdir(parents=True, exist_ok=True)
+        CALIB = CACHE / "calibration.json"
+        CALIB.write_text(json.dumps(rect, indent=2) + "\n")
+        print(f"\ndisplay rect: {width}x{height} at ({left},{top}) in a "
+              f"{im.width}x{im.height} capture")
+        print(f"written to {CALIB}")
+
+
+if __name__ == "__main__":
+    main()

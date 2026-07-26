@@ -399,7 +399,7 @@
       "lookupName": "olko:obsidian-pr-sync",
       "category": "software-development",
       "path": "packages/software-development/obsidian-pr-sync",
-      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
+      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent \u2014 re-running replaces the section.",
       "tags": [
         "github",
         "obsidian",
@@ -470,7 +470,7 @@
       "lookupName": "olko:macos-menubar-app",
       "category": "software-development",
       "path": "packages/software-development/macos-menubar-app",
-      "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
+      "description": "Build a production-quality macOS menubar or notch app in SwiftUI \u2014 MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
       "tags": [
         "macos",
         "swiftui",
@@ -495,7 +495,7 @@
       "lookupName": "olko:skill-budget-audit",
       "category": "software-development",
       "path": "packages/software-development/skill-budget-audit",
-      "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
+      "description": "Diagnose and fix Claude Code skill context budget overflow \u2014 identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
       "tags": [
         "claude-code",
         "skills",
@@ -538,7 +538,7 @@
       "lookupName": "olko:qodoloop",
       "category": "software-development",
       "path": "packages/software-development/qodoloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings \u2014 reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
       "tags": [
         "code-review",
         "qodo",
@@ -555,6 +555,30 @@
         "grok",
         "windsurf",
         "kiro"
+      ]
+    },
+    {
+      "name": "garmin-watchface",
+      "lookupName": "olko:garmin-watchface",
+      "category": "wearables",
+      "path": "packages/wearables/garmin-watchface",
+      "description": "Build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C.",
+      "tags": [
+        "garmin",
+        "connect-iq",
+        "monkey-c",
+        "watch-face",
+        "wearables",
+        "embedded"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
       ]
     }
   ]

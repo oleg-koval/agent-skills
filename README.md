@@ -136,7 +136,7 @@ packages/{category}/{skill}/SKILL.md
 
 </details>
 
-## All 24 Skills
+## All 25 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
@@ -184,6 +184,12 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [gallery](packages/photography/gallery/SKILL.md) | Creates photo galleries with AI-assisted layout curation and sequencing | Building a gallery from photos or planning photo layout, sequencing, and curation |
+
+### Wearables (1)
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [garmin-watchface](packages/wearables/garmin-watchface/SKILL.md) | Builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face — layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
 
 ## How to use skills
 

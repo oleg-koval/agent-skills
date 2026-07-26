@@ -110,6 +110,11 @@
       "name": "olko:qodoloop",
       "source": "./packages/software-development/qodoloop/adapters/cursor",
       "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass."
+    },
+    {
+      "name": "olko:garmin-watchface",
+      "source": "./packages/wearables/garmin-watchface/adapters/cursor",
+      "description": "Build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C."
     }
   ]
 }
