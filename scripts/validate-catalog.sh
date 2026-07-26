@@ -6,6 +6,7 @@ test -f collections/software-development.json
 test -f collections/marketing.json
 test -f collections/music.json
 test -f collections/photography.json
+test -f collections/wearables.json
 test -f collections/docs-tools.json
 test -f collections/release-tools.json
 test -f .claude-plugin/marketplace.json
@@ -20,7 +21,7 @@ node <<'EOF'
 const fs = require('fs')
 const path = require('path')
 
-const categories = new Set(['software-development', 'marketing', 'music', 'photography'])
+const categories = new Set(['software-development', 'marketing', 'music', 'photography', 'wearables'])
 const adapterFiles = {
   claude: (pkg) => path.join(pkg.path, 'adapters', 'claude', 'plugin.json'),
   codex: (pkg) => path.join(pkg.path, 'adapters', 'codex', 'README.md'),

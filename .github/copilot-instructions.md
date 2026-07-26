@@ -33,3 +33,4 @@ Available reusable prompt files:
 - macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
 - crash-course: .github/prompts/crash-course.prompt.md
 - qodoloop: .github/prompts/qodoloop.prompt.md
+- garmin-watchface: .github/prompts/garmin-watchface.prompt.md
