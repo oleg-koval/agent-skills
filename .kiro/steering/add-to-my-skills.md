@@ -2,9 +2,8 @@
 
 ---
 inclusion: manual
-description: "Copy a newly created skill into this catalog, refresh manifests, and publish the change."
+description: "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push."
 ---
-
 
 # Add to My Skills
 

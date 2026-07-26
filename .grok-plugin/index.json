@@ -130,6 +130,21 @@
       "name": "olko:coderabbitloop",
       "source": "./packages/software-development/coderabbitloop/adapters/grok",
       "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit."
+    },
+    {
+      "name": "olko:add-to-my-skills",
+      "source": "./packages/software-development/add-to-my-skills/adapters/grok",
+      "description": "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push."
+    },
+    {
+      "name": "olko:ai-tools-setup",
+      "source": "./packages/software-development/ai-tools-setup/adapters/grok",
+      "description": "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration."
+    },
+    {
+      "name": "olko:changelog-generator",
+      "source": "./packages/software-development/changelog-generator/adapters/grok",
+      "description": "Create user-facing changelogs from git history by categorising commits and rewriting them for readers rather than developers."
     }
   ]
 }
