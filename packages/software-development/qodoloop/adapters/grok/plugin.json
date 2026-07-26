@@ -1,0 +1,6 @@
+{
+  "name": "olko:qodoloop",
+  "version": "0.1.0",
+  "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
+  "skills": "skills/"
+}
