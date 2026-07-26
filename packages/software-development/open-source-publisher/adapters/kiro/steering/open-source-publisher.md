@@ -2,7 +2,7 @@
 
 ---
 inclusion: manual
-description: "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, optional donation setup, and optional motion previews for generated static images."
+description: "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, and optional donation setup."
 ---
 
 # open-source-publisher

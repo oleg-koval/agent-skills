@@ -1,7 +1,7 @@
 {
   "name": "olko-agent-skills",
   "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, and other skill-aware tools.",
-  "version": "1.10.1",
+  "version": "1.11.1",
   "author": {
     "name": "Oleg Koval"
   },
@@ -9,21 +9,22 @@
   "repository": "https://github.com/oleg-koval/agent-skills",
   "license": "MIT",
   "skills": [
+    "./packages/marketing/search-console-indexing-audit",
+    "./packages/marketing/viral-launch",
+    "./packages/music/fill-music-player",
+    "./packages/photography/gallery",
+    "./packages/software-development/cloudflare-block-countries",
     "./packages/software-development/docs-index-keeper",
-    "./packages/software-development/semantic-release-beta",
     "./packages/software-development/gh-cli",
     "./packages/software-development/git-commit",
-    "./packages/photography/gallery",
-    "./packages/software-development/promptctl",
-    "./packages/music/fill-music-player",
-    "./packages/software-development/product-builder",
-    "./packages/software-development/starter-rules",
-    "./packages/software-development/review-past-performance",
-    "./packages/software-development/open-source-publisher",
-    "./packages/marketing/viral-launch",
-    "./packages/marketing/search-console-indexing-audit",
-    "./packages/software-development/cloudflare-block-countries",
     "./packages/software-development/obsidian-pr-sync",
-    "./packages/software-development/obsidian-task-rollover"
+    "./packages/software-development/obsidian-task-rollover",
+    "./packages/software-development/open-source-publisher",
+    "./packages/software-development/product-builder",
+    "./packages/software-development/promptctl",
+    "./packages/software-development/review-past-performance",
+    "./packages/software-development/semantic-release-beta",
+    "./packages/software-development/starter-rules",
+    "./packages/wearables/garmin-watchface"
   ]
 }

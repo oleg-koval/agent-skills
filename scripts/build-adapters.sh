@@ -32,7 +32,7 @@ const injectTargets = (content, targets) => {
 }
 const stripTrailingLineWhitespace = (content) => content.replace(/[ \t]+$/gm, '')
 const copySkillResources = (pkg, destDir) => {
-  for (const resourceDir of ['scripts']) {
+  for (const resourceDir of ['scripts', 'references', 'templates']) {
     const source = path.join(root, pkg.path, resourceDir)
     const dest = path.join(destDir, resourceDir)
     if (!fs.existsSync(source)) {

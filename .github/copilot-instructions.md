@@ -11,19 +11,20 @@ This repository is an opinionated agent skill catalog. Skills encode concrete de
 - Prefer small, scoped updates that preserve existing package structure.
 
 Available reusable prompt files:
+- search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
+- viral-launch: .github/prompts/viral-launch.prompt.md
+- fill-music-player: .github/prompts/fill-music-player.prompt.md
+- gallery: .github/prompts/gallery.prompt.md
+- cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
 - docs-index-keeper: .github/prompts/docs-index-keeper.prompt.md
-- semantic-release-beta: .github/prompts/semantic-release-beta.prompt.md
 - gh-cli: .github/prompts/gh-cli.prompt.md
 - git-commit: .github/prompts/git-commit.prompt.md
-- gallery: .github/prompts/gallery.prompt.md
-- promptctl: .github/prompts/promptctl.prompt.md
-- fill-music-player: .github/prompts/fill-music-player.prompt.md
-- product-builder: .github/prompts/product-builder.prompt.md
-- starter-rules: .github/prompts/starter-rules.prompt.md
-- review-past-performance: .github/prompts/review-past-performance.prompt.md
-- open-source-publisher: .github/prompts/open-source-publisher.prompt.md
-- viral-launch: .github/prompts/viral-launch.prompt.md
-- search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
-- cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
 - obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
 - obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
+- open-source-publisher: .github/prompts/open-source-publisher.prompt.md
+- product-builder: .github/prompts/product-builder.prompt.md
+- promptctl: .github/prompts/promptctl.prompt.md
+- review-past-performance: .github/prompts/review-past-performance.prompt.md
+- semantic-release-beta: .github/prompts/semantic-release-beta.prompt.md
+- starter-rules: .github/prompts/starter-rules.prompt.md
+- garmin-watchface: .github/prompts/garmin-watchface.prompt.md

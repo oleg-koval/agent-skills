@@ -176,7 +176,7 @@ packages/{category}/{skill}/adapters/
 
 </details>
 
-## All 19 Skills
+## All 20 Skills
 
 These packages are the entry points. Each one is a structured workflow with concrete trigger conditions and execution steps. You can reference any skill directly by its `olko:*` lookup name.
 
@@ -215,6 +215,12 @@ These packages are the entry points. Each one is a structured workflow with conc
 | Skill | What It Does | Use When |
 |-------|-------------|----------|
 | [gallery](packages/photography/gallery/SKILL.md) | Creates photo galleries with AI-assisted layout curation and sequencing | Building a gallery from photos or planning photo layout, sequencing, and curation |
+
+### Wearables
+
+| Skill | What It Does | Use When |
+|-------|-------------|----------|
+| [garmin-watchface](packages/wearables/garmin-watchface/SKILL.md) | Builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face — layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
 
 ## How to use skills
 
