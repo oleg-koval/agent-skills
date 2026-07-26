@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/oleg-koval/agent-skills/compare/v1.20.0...v1.21.0) (2026-07-26)
+
+
+### ✨ Features
+
+* add coderabbitloop skill ([#37](https://github.com/oleg-koval/agent-skills/issues/37)) ([562831a](https://github.com/oleg-koval/agent-skills/commit/562831a0d0bf470e740f89e771e7f5ea4518c5ea))
+
 # [1.20.0](https://github.com/oleg-koval/agent-skills/compare/v1.19.1...v1.20.0) (2026-07-26)
 
 
