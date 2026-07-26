@@ -2,9 +2,8 @@
 
 ---
 inclusion: manual
-description: "Install, repair, and measure the RTK+ICM+Vox AI development toolkit. Fixes missing hooks and MCP config, and shows a weekly effectiveness digest of token savings and memory health."
+description: "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration."
 ---
-
 
 # AI Tools Setup — RTK + ICM + Vox
 

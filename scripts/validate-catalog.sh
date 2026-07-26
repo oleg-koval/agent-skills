@@ -84,6 +84,44 @@ for (const pkg of catalog.packages) {
   }
 }
 
+// Reverse check: every skill on disk must be registered in the catalog.
+// Everything else in this file walks outward FROM the catalog, so a package the
+// catalog does not know about was invisible to validation -- which is how
+// add-to-my-skills, ai-tools-setup and changelog-generator sat unregistered
+// while still appearing in the README. Unregistered skills are absent from every
+// plugin manifest, so they cannot be installed from any marketplace.
+const registeredPaths = new Set(catalog.packages.map((pkg) => pkg.path))
+for (const category of fs.readdirSync('packages')) {
+  const categoryDir = path.join('packages', category)
+  if (!fs.statSync(categoryDir).isDirectory()) {
+    continue
+  }
+  for (const skill of fs.readdirSync(categoryDir)) {
+    const skillDir = path.join(categoryDir, skill)
+    if (!fs.statSync(skillDir).isDirectory()) {
+      continue
+    }
+    if (!fs.existsSync(path.join(skillDir, 'SKILL.md'))) {
+      continue
+    }
+    if (!registeredPaths.has(skillDir)) {
+      throw new Error(
+        `skill on disk is not registered in catalog/skills.json: ${skillDir}\n` +
+        '  Unregistered skills are missing from every plugin manifest and cannot be installed.'
+      )
+    }
+  }
+}
+
+// Every catalog package must appear in the README table, so the two inventories
+// cannot drift apart in the other direction either.
+const readme = fs.readFileSync('README.md', 'utf8')
+for (const pkg of catalog.packages) {
+  if (!readme.includes(`${pkg.path}/SKILL.md`)) {
+    throw new Error(`catalog package is missing from the README table: ${pkg.name}`)
+  }
+}
+
 for (const collectionPath of fs.readdirSync('collections').map((name) => path.join('collections', name))) {
   const collection = JSON.parse(fs.readFileSync(collectionPath, 'utf8'))
   for (const packageName of collection.packages || []) {

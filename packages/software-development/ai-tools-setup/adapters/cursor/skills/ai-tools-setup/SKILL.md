@@ -5,7 +5,7 @@ license: MIT
 allowed-tools: Bash, Read, Edit, Write
 compatibility: Claude Code on macOS (Homebrew required)
 metadata:
-  targets: [_source-only]
+  targets: ["cursor"]
   author: Oleg Koval
   tags:
     - rtk
