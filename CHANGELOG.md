@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/oleg-koval/agent-skills/compare/v1.18.0...v1.19.0) (2026-07-26)
+
+
+### ✨ Features
+
+* add qodoloop skill ([#36](https://github.com/oleg-koval/agent-skills/issues/36)) ([78eb958](https://github.com/oleg-koval/agent-skills/commit/78eb95826e705ea156cf0a7e2f44cd02ad13f173))
+
 # [1.18.0](https://github.com/oleg-koval/agent-skills/compare/v1.17.0...v1.18.0) (2026-07-12)
 
 
