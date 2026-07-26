@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/oleg-koval/agent-skills/compare/v1.19.0...v1.19.1) (2026-07-26)
+
+
+### 🐛 Bug Fixes
+
+* **qodoloop:** require a clean working tree before staging fixes ([#38](https://github.com/oleg-koval/agent-skills/issues/38)) ([4f1bcbe](https://github.com/oleg-koval/agent-skills/commit/4f1bcbeb2d650532d2b94cb7194cb9f8c8d9bab9))
+
 # [1.19.0](https://github.com/oleg-koval/agent-skills/compare/v1.18.0...v1.19.0) (2026-07-26)
 
 
