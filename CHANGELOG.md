@@ -1,3 +1,10 @@
+## [1.21.1](https://github.com/oleg-koval/agent-skills/compare/v1.21.0...v1.21.1) (2026-07-26)
+
+
+### 🐛 Bug Fixes
+
+* register orphaned skills and guard against inventory drift ([#41](https://github.com/oleg-koval/agent-skills/issues/41)) ([a505225](https://github.com/oleg-koval/agent-skills/commit/a505225fcc1b7ab688ba97a1ac99bbfe0fcaba94))
+
 # [1.21.0](https://github.com/oleg-koval/agent-skills/compare/v1.20.0...v1.21.0) (2026-07-26)
 
 
