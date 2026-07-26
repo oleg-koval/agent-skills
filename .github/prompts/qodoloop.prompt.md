@@ -36,7 +36,19 @@ Qodo has **no check run to poll** — there is nothing in `gh pr checks` to wait
 gh pr view --json number,headRefName,headRefOid -q '{number, branch: .headRefName, sha: .headRefOid}'
 ```
 
-Check out the branch if not already on it.
+Check out the branch if not already on it, **then require a clean working
+tree** (`git status --porcelain` empty) before touching anything:
+
+```bash
+[ -z "$(git status --porcelain)" ] || { echo "working tree not clean — refusing to start, would risk committing unrelated changes"; exit 1; }
+```
+
+This is the precondition step E's scoped `git add <file>` depends on: staging
+only the files a fix touched is safe *because* the tree started clean, so
+nothing else could be sitting in those files. Skip this check and a file
+with pre-existing local edits will have those edits swept into the fix
+commit right along with it — the exact failure `git add -A` had, just
+narrower.
 
 ### 2. Loop (max 5 iterations)
 
