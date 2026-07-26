@@ -34,6 +34,9 @@
     "./packages/software-development/crash-course",
     "./packages/software-development/qodoloop",
     "./packages/wearables/garmin-watchface",
-    "./packages/software-development/coderabbitloop"
+    "./packages/software-development/coderabbitloop",
+    "./packages/software-development/add-to-my-skills",
+    "./packages/software-development/ai-tools-setup",
+    "./packages/software-development/changelog-generator"
   ]
 }

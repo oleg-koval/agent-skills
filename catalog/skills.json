@@ -604,6 +604,74 @@
         "windsurf",
         "kiro"
       ]
+    },
+    {
+      "name": "add-to-my-skills",
+      "lookupName": "olko:add-to-my-skills",
+      "category": "software-development",
+      "path": "packages/software-development/add-to-my-skills",
+      "description": "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push.",
+      "tags": [
+        "skills",
+        "catalog",
+        "automation",
+        "git",
+        "maintenance"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
+      ]
+    },
+    {
+      "name": "ai-tools-setup",
+      "lookupName": "olko:ai-tools-setup",
+      "category": "software-development",
+      "path": "packages/software-development/ai-tools-setup",
+      "description": "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration.",
+      "tags": [
+        "setup",
+        "tooling",
+        "mcp",
+        "hooks",
+        "developer-experience"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
+      ]
+    },
+    {
+      "name": "changelog-generator",
+      "lookupName": "olko:changelog-generator",
+      "category": "software-development",
+      "path": "packages/software-development/changelog-generator",
+      "description": "Create user-facing changelogs from git history by categorising commits and rewriting them for readers rather than developers.",
+      "tags": [
+        "changelog",
+        "git",
+        "release",
+        "documentation"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
+      ]
     }
   ]
 }
