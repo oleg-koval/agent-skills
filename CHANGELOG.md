@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/oleg-koval/agent-skills/compare/v1.21.1...v1.22.0) (2026-07-27)
+
+
+### ✨ Features
+
+* add wikipedia-uk-editor skill ([#42](https://github.com/oleg-koval/agent-skills/issues/42)) ([f3acecf](https://github.com/oleg-koval/agent-skills/commit/f3acecf3a319f100a987398c2bd50394e9f6d761))
+
 ## [1.21.1](https://github.com/oleg-koval/agent-skills/compare/v1.21.0...v1.21.1) (2026-07-26)
 
 
