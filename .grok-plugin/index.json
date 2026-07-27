@@ -145,6 +145,11 @@
       "name": "olko:changelog-generator",
       "source": "./packages/software-development/changelog-generator/adapters/grok",
       "description": "Create user-facing changelogs from git history by categorising commits and rewriting them for readers rather than developers."
+    },
+    {
+      "name": "olko:wikipedia-uk-editor",
+      "source": "./packages/software-development/wikipedia-uk-editor/adapters/grok",
+      "description": "Draft policy-compliant Ukrainian Wikipedia edits — translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item — and return ready-to-paste wikitext plus an edit summary."
     }
   ]
 }
