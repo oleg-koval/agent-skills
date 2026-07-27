@@ -672,6 +672,32 @@
         "kiro",
         "grok"
       ]
+    },
+    {
+      "name": "wikipedia-uk-editor",
+      "lookupName": "olko:wikipedia-uk-editor",
+      "category": "software-development",
+      "path": "packages/software-development/wikipedia-uk-editor",
+      "description": "Draft policy-compliant Ukrainian Wikipedia edits \u2014 translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item \u2014 and return ready-to-paste wikitext plus an edit summary.",
+      "tags": [
+        "wikipedia",
+        "ukrainian",
+        "wikitext",
+        "translation",
+        "sourcing",
+        "editing"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro",
+        "hermes",
+        "pi"
+      ]
     }
   ]
 }
