@@ -698,6 +698,50 @@
         "hermes",
         "pi"
       ]
+    },
+    {
+      "name": "pr-description-writer",
+      "lookupName": "olko:pr-description-writer",
+      "category": "software-development",
+      "path": "packages/software-development/pr-description-writer",
+      "description": "Draft and post a GitHub PR title and body from git diff and commit history. Chains after git-commit and before qodoloop / coderabbitloop.",
+      "tags": [
+        "git",
+        "github",
+        "pull-request",
+        "description",
+        "pr",
+        "workflow"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
+    },
+    {
+      "name": "ci-fix-loop",
+      "lookupName": "olko:ci-fix-loop",
+      "category": "software-development",
+      "path": "packages/software-development/ci-fix-loop",
+      "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures.",
+      "tags": [
+        "github-actions",
+        "ci",
+        "testing",
+        "automation",
+        "loop",
+        "fix"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
     }
   ]
 }
