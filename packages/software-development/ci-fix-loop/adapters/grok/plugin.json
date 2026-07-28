@@ -1,0 +1,6 @@
+{
+  "name": "olko:ci-fix-loop",
+  "version": "0.1.0",
+  "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures.",
+  "skills": "skills/"
+}
