@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/oleg-koval/agent-skills/compare/v1.23.0...v1.24.0) (2026-07-28)
+
+
+### ✨ Features
+
+* **garmin-watchface:** add store publishing workflow and release preflight ([#44](https://github.com/oleg-koval/agent-skills/issues/44)) ([ecfcad9](https://github.com/oleg-koval/agent-skills/commit/ecfcad9805b418464fdf24d676dd1ce9c83b323a))
+
 # [1.23.0](https://github.com/oleg-koval/agent-skills/compare/v1.22.0...v1.23.0) (2026-07-28)
 
 
