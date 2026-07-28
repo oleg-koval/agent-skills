@@ -25,6 +25,8 @@ The checks are the ones that have actually gone wrong, not a generic lint:
   * a package older than the sources it was built from.
 """
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import re
@@ -92,11 +94,11 @@ def check_manifest(root: Path, r: Report) -> None:
 
 
 def check_package(root: Path, r: Report) -> Path | None:
-    packages = sorted((root / "bin").glob("*.iq")) if (root / "bin").is_dir() else []
+    packages = list((root / "bin").glob("*.iq")) if (root / "bin").is_dir() else []
     if not packages:
         r.fail("no .iq package", "run: make package")
         return None
-    iq = packages[-1]
+    iq = max(packages, key=lambda p: p.stat().st_mtime)
     built = iq.stat().st_mtime
 
     sources = list((root / "source").rglob("*.mc"))
@@ -118,17 +120,17 @@ def check_screenshots(root: Path, _iq: Path | None, r: Report) -> None:
         r.warn("no screenshots in docs/store/", "the listing form needs at least one")
         return
 
-    # Compared against the SOURCES, not against the package.
-    #
-    # The question is "do these images show the current face?", and only a
-    # source or resource change can make them stale. Comparing against the .iq
-    # instead flags a perfectly good set of screenshots simply because
-    # `make package` happened to run last -- which is the normal order.
+    # Screenshots are checked against their source files (source/*.mc and
+    # resources/*) rather than the package they claim to show. The question is
+    # "do these images show the current face?", and only a source or resource
+    # change can make them stale. Stale screenshots misrepresent the version
+    # under review, which is a review rejection, not a cosmetic slip.
     sources = list((root / "source").rglob("*.mc"))
     sources += [p for p in (root / "resources").rglob("*") if p.is_file()]
     changed = newest(sources)
-    if changed > newest(shots):
-        stale = [p.name for p in sources if p.stat().st_mtime > newest(shots)]
+    newest_shot = newest(shots)
+    if changed > newest_shot:
+        stale = [p.name for p in sources if p.stat().st_mtime > newest_shot]
         r.fail(
             f"{len(shots)} screenshot(s) predate the current sources",
             "changed since capture: " + ", ".join(sorted(stale)[:4])
@@ -162,11 +164,42 @@ def check_icon(root: Path, r: Report) -> None:
 
 
 def check_keys(root: Path, r: Report) -> None:
-    stray = [p for p in root.rglob("*") if p.suffix in (".der", ".pem") and p.is_file()]
-    if stray:
+    candidates = [p for p in root.rglob("*") if p.suffix in (".der", ".pem") and p.is_file()]
+
+    # Inspect file contents to confirm they contain private key material
+    private_keys = []
+    for p in candidates:
+        if p.suffix == ".pem":
+            try:
+                content = p.read_text(errors="replace")
+                # Check for private key PEM headers
+                if any(marker in content for marker in [
+                    "BEGIN PRIVATE KEY",
+                    "BEGIN RSA PRIVATE KEY",
+                    "BEGIN EC PRIVATE KEY",
+                    "BEGIN ENCRYPTED PRIVATE KEY",
+                ]):
+                    private_keys.append(p)
+            except Exception:
+                pass
+        elif p.suffix == ".der":
+            # DER files are binary; use a simple heuristic: assume .der files
+            # in typical key locations are keys unless they're obviously certs
+            # (this is a best-effort check; DER format inspection is complex)
+            try:
+                data = p.read_bytes()
+                # Very basic heuristic: if file is small and doesn't contain
+                # obvious certificate markers, treat as potential private key
+                # This is imperfect but better than blanket rejection
+                if len(data) < 10000:  # Private keys are typically smaller than cert bundles
+                    private_keys.append(p)
+            except Exception:
+                pass
+
+    if private_keys:
         r.fail(
             "signing key material inside the project",
-            "\n         ".join(str(p) for p in stray),
+            "\n         ".join(str(p) for p in private_keys),
         )
         return
 
@@ -205,7 +238,7 @@ def check_listing(root: Path, r: Report) -> None:
     raw = "\n".join(re.findall(r"^```\n(.*?)^```", doc, re.S | re.M))
     if not raw:
         r.warn("listing.md has no fenced copy blocks to check")
-        raw = ""
+        return
 
     # The store's description validator rejects two things, and both are
     # discovered the slow way -- by filling the whole form and being bounced:
@@ -224,7 +257,20 @@ def check_listing(root: Path, r: Report) -> None:
     else:
         r.ok("no angle brackets in the copy")
 
-    emoji = sorted({c for c in raw if ord(c) > 0x2100 and not 0x2010 <= ord(c) <= 0x2027})
+    # Explicit emoji Unicode ranges (common blocks that Garmin store rejects)
+    def is_emoji(c: str) -> bool:
+        o = ord(c)
+        return (
+            (0x1F300 <= o <= 0x1F9FF) or  # Miscellaneous Symbols and Pictographs, Emoticons, etc.
+            (0x2600 <= o <= 0x27BF) or    # Miscellaneous Symbols, Dingbats
+            (0x2300 <= o <= 0x23FF) or    # Miscellaneous Technical (includes gear U+2699)
+            (0x2190 <= o <= 0x21FF) or    # Arrows (includes U+2192)
+            (0x2900 <= o <= 0x297F) or    # Supplemental Arrows-B
+            (0x2B00 <= o <= 0x2BFF) or    # Miscellaneous Symbols and Arrows
+            (0x3030 <= o <= 0x303F) or    # CJK Symbols and Punctuation (wavy dash, etc.)
+            (0xFE00 <= o <= 0xFE0F)       # Variation Selectors
+        )
+    emoji = sorted({c for c in raw if is_emoji(c)})
     if emoji:
         r.fail(
             "listing copy contains symbols the store reads as emoji",

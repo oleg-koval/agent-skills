@@ -68,8 +68,8 @@ the next one.
 
 ```bash
 $B upload "input[type=file]" "$(pwd)/bin/<name>.iq"
-$B fill @e43 "2.0"
-$B click @e46                      # "Upload and publish"
+$B fill "input[id*='version'],input[name*='version']" "2.0"
+$B click "button:has-text('Upload and publish')"
 ```
 
 On success the page reports **Status: Verified, Signature: Verified** and
@@ -115,7 +115,7 @@ Submit:
   same symbol space.
 
 Write settings paths in words: *"Garmin Connect app, then: your device, Connect
-IQ Apps, Watch Faces, <app>, settings"*. `scripts/ciq-release` checks the fenced
+IQ Apps, Watch Faces, the app name, settings"*. `scripts/ciq-release` checks the fenced
 blocks of `listing.md` for both classes before you open a browser.
 
 The error text renders as a leaf node with no `aria-invalid` anywhere, so find
