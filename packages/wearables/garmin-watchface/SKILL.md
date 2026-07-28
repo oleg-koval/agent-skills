@@ -25,6 +25,7 @@ looked like success first.
 | `references/simulator.md` | Screenshots, settings not applying, monkeydo hanging |
 | `references/devices.md` | Adding device support, launcher icons, API levels |
 | `references/store.md` | Publishing, listing copy, IP questions |
+| `references/publishing.md` | Driving the store portal in a browser; upload/update flow, validator rejections |
 
 ## Tools
 
@@ -37,7 +38,13 @@ Run these rather than reinventing them. All are standalone.
 <skill-dir>/scripts/ciq-capture out.png           # calibrated simulator screenshot
 <skill-dir>/scripts/ciq-capture out.png --face --size 260   # cropped + masked to the round display
 <skill-dir>/scripts/ciq-calibrate                 # re-derive the display rect if capture looks wrong
+<skill-dir>/scripts/ciq-release       # pre-submission check: package, screenshots, icon, keys, copy
 ```
+
+`<skill-dir>/scripts/ciq-release` is what you run before opening the store
+portal. Every check in it is something otherwise discovered halfway through the
+submission form -- a stale screenshot set, an icon still copied from the last
+project, or copy containing a character the description validator rejects.
 
 `<skill-dir>/scripts/ciq-capture` exists because `screencapture -R` grabs a screen *region*, not
 a window: without a frontmost check it silently photographs whatever is on top,

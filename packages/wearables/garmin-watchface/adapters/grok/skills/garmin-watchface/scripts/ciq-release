@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""Pre-submission check for a Connect IQ project.
+
+Everything that can be verified WITHOUT logging into the store, verified here,
+so the browser session is spent on the form rather than on discovering that the
+package is stale.
+
+    ciq-release              # check ./ and print the verdict
+    ciq-release path/to/proj
+    ciq-release --quiet      # exit code only
+
+Exit 0 when submittable, 1 when something is wrong.
+
+The checks are the ones that have actually gone wrong, not a generic lint:
+
+  * screenshots older than the package they claim to show. store.md calls stale
+    screenshots the most common thing to forget after a redesign, and they
+    misrepresent the version under review -- which is a review rejection, not a
+    cosmetic slip.
+  * a launcher icon that is byte-identical to another project's. Copying a
+    scaffold and forgetting the icon ships someone else's mark.
+  * signing keys inside the project. The key signs your app id: commit it and
+    anyone can impersonate the app; lose it and you can never update the
+    listing.
+  * a package older than the sources it was built from.
+"""
+
+import argparse
+import hashlib
+import re
+import sys
+from pathlib import Path
+
+RESET = "\033[0m"
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+
+
+class Report:
+    def __init__(self, quiet: bool) -> None:
+        self.quiet = quiet
+        self.failed = 0
+        self.warned = 0
+
+    def _line(self, colour: str, tag: str, msg: str, detail: str) -> None:
+        if self.quiet:
+            return
+        pad = f"  {colour}{tag}{RESET}   {msg}"
+        print(pad if not detail else f"{pad}\n         {detail}")
+
+    def ok(self, msg: str, detail: str = "") -> None:
+        self._line(GREEN, "ok  ", msg, detail)
+
+    def warn(self, msg: str, detail: str = "") -> None:
+        self.warned += 1
+        self._line(YELLOW, "warn", msg, detail)
+
+    def fail(self, msg: str, detail: str = "") -> None:
+        self.failed += 1
+        self._line(RED, "FAIL", msg, detail)
+
+
+def newest(paths) -> float:
+    stamps = [p.stat().st_mtime for p in paths if p.is_file()]
+    return max(stamps) if stamps else 0.0
+
+
+def check_manifest(root: Path, r: Report) -> None:
+    manifest = root / "manifest.xml"
+    if not manifest.is_file():
+        r.fail("no manifest.xml", f"looked in {root}")
+        return
+    text = manifest.read_text(encoding="utf-8", errors="replace")
+
+    app_id = re.search(r'id="([0-9a-fA-F]{32})"', text)
+    if not app_id:
+        r.fail("manifest has no 32-hex application id")
+    else:
+        r.ok(f"app id {app_id.group(1)}")
+
+    products = re.findall(r'<iq:product\s+id="([^"]+)"', text)
+    if not products:
+        r.fail("manifest declares no products")
+    else:
+        r.ok(f"{len(products)} product(s): {', '.join(products)}")
+
+    # A watch face that forgot its permissions still builds, then reads null
+    # from every sensor on the watch and nowhere else.
+    perms = re.findall(r'uses-permission\s+id="([^"]+)"', text)
+    r.ok(f"permissions: {', '.join(perms) if perms else 'none'}")
+
+
+def check_package(root: Path, r: Report) -> Path | None:
+    packages = sorted((root / "bin").glob("*.iq")) if (root / "bin").is_dir() else []
+    if not packages:
+        r.fail("no .iq package", "run: make package")
+        return None
+    iq = packages[-1]
+    built = iq.stat().st_mtime
+
+    sources = list((root / "source").rglob("*.mc"))
+    sources += list((root / "resources").rglob("*"))
+    if newest(sources) > built:
+        r.fail(
+            f"{iq.name} is older than the sources it was built from",
+            "run: make package",
+        )
+    else:
+        r.ok(f"{iq.name} ({iq.stat().st_size // 1024} KB) is current")
+    return iq
+
+
+def check_screenshots(root: Path, _iq: Path | None, r: Report) -> None:
+    store = root / "docs" / "store"
+    shots = sorted(store.glob("*.png")) if store.is_dir() else []
+    if not shots:
+        r.warn("no screenshots in docs/store/", "the listing form needs at least one")
+        return
+
+    # Compared against the SOURCES, not against the package.
+    #
+    # The question is "do these images show the current face?", and only a
+    # source or resource change can make them stale. Comparing against the .iq
+    # instead flags a perfectly good set of screenshots simply because
+    # `make package` happened to run last -- which is the normal order.
+    sources = list((root / "source").rglob("*.mc"))
+    sources += [p for p in (root / "resources").rglob("*") if p.is_file()]
+    changed = newest(sources)
+    if changed > newest(shots):
+        stale = [p.name for p in sources if p.stat().st_mtime > newest(shots)]
+        r.fail(
+            f"{len(shots)} screenshot(s) predate the current sources",
+            "changed since capture: " + ", ".join(sorted(stale)[:4])
+            + ("..." if len(stale) > 4 else ""),
+        )
+    else:
+        r.ok(f"{len(shots)} screenshot(s), current with the sources")
+
+
+def check_icon(root: Path, r: Report) -> None:
+    icons = list((root / "resources").rglob("launcher_icon.png"))
+    if not icons:
+        r.warn("no launcher_icon.png found")
+        return
+
+    digest = hashlib.sha256(icons[0].read_bytes()).hexdigest()
+
+    # Compare against every sibling project. A scaffold copied from the last
+    # face keeps its icon, and nothing in the build complains.
+    for sibling in root.parent.iterdir():
+        if not sibling.is_dir() or sibling.resolve() == root.resolve():
+            continue
+        for other in sibling.rglob("launcher_icon.png"):
+            if hashlib.sha256(other.read_bytes()).hexdigest() == digest:
+                r.fail(
+                    "launcher icon is byte-identical to another project's",
+                    f"same file as {other}",
+                )
+                return
+    r.ok("launcher icon is unique to this project")
+
+
+def check_keys(root: Path, r: Report) -> None:
+    stray = [p for p in root.rglob("*") if p.suffix in (".der", ".pem") and p.is_file()]
+    if stray:
+        r.fail(
+            "signing key material inside the project",
+            "\n         ".join(str(p) for p in stray),
+        )
+        return
+
+    gitignore = root / ".gitignore"
+    ignored = gitignore.read_text(errors="replace") if gitignore.is_file() else ""
+    if "*.der" not in ignored or "*.pem" not in ignored:
+        r.warn(".gitignore does not cover *.der / *.pem")
+    else:
+        r.ok("no keys in the tree, and both extensions are ignored")
+
+
+def check_tests(root: Path, r: Report) -> None:
+    log = root / "bin" / "test.log"
+    if not log.is_file():
+        r.warn("no bin/test.log", "run: make test")
+        return
+    text = log.read_text(errors="replace")
+    if re.search(r"^PASSED \(passed=\d+, failed=0, errors=0\)", text, re.M):
+        count = re.search(r"passed=(\d+)", text)
+        r.ok(f"{count.group(1) if count else '?'} tests passed")
+    else:
+        r.fail("bin/test.log does not end in a clean PASSED line")
+
+
+def check_listing(root: Path, r: Report) -> None:
+    listing = root / "docs" / "store" / "listing.md"
+    if not listing.is_file():
+        r.warn("no docs/store/listing.md", "the form wants copy ready to paste")
+        return
+    doc = listing.read_text(errors="replace")
+
+    # Only the FENCED blocks are checked -- those are what gets pasted into the
+    # store form. The surrounding prose is notes for a human and legitimately
+    # contains things the store would reject, like an autolinked <https://...>
+    # portal URL. Scanning the whole file flags the documentation.
+    raw = "\n".join(re.findall(r"^```\n(.*?)^```", doc, re.S | re.M))
+    if not raw:
+        r.warn("listing.md has no fenced copy blocks to check")
+        raw = ""
+
+    # The store's description validator rejects two things, and both are
+    # discovered the slow way -- by filling the whole form and being bounced:
+    #
+    #   "Illegal characters found: <, >."
+    #   "The app description is invalid. It should not contain emojis."
+    #
+    # A GEAR (U+2699) counts as an emoji, which is easy to reach for when
+    # writing "tap the gear icon". Arrows (U+2192) pass today, but they sit in
+    # the same symbol space and cost nothing to avoid.
+    if "<" in raw or ">" in raw:
+        r.fail(
+            "listing copy contains < or >",
+            "the store rejects them: \"Illegal characters found\"",
+        )
+    else:
+        r.ok("no angle brackets in the copy")
+
+    emoji = sorted({c for c in raw if ord(c) > 0x2100 and not 0x2010 <= ord(c) <= 0x2027})
+    if emoji:
+        r.fail(
+            "listing copy contains symbols the store reads as emoji",
+            " ".join(f"{c!r} (U+{ord(c):04X})" for c in emoji),
+        )
+    else:
+        r.ok("no emoji in the copy")
+
+    text = doc.lower()
+    # Watch face settings are unreachable from the watch. Omitting this reads as
+    # a missing feature to every reviewer and every user.
+    if "garmin connect" not in text:
+        r.warn(
+            "listing never mentions the Garmin Connect app",
+            "watch face settings are not reachable from the watch; say so or "
+            "it reads as a missing feature",
+        )
+    else:
+        r.ok("listing explains where settings live")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(add_help=True)
+    ap.add_argument("project", nargs="?", default=".")
+    ap.add_argument("--quiet", action="store_true")
+    args = ap.parse_args()
+
+    root = Path(args.project).resolve()
+    r = Report(args.quiet)
+
+    if not args.quiet:
+        print(f"Connect IQ release check\n  {root}\n")
+
+    check_manifest(root, r)
+    iq = check_package(root, r)
+    check_screenshots(root, iq, r)
+    check_icon(root, r)
+    check_keys(root, r)
+    check_tests(root, r)
+    check_listing(root, r)
+
+    if not args.quiet:
+        print()
+        if r.failed:
+            print(f"  {RED}{r.failed} blocking problem(s){RESET}, {r.warned} warning(s)")
+        elif r.warned:
+            print(f"  {YELLOW}submittable, {r.warned} warning(s){RESET}")
+        else:
+            print(f"  {GREEN}submittable{RESET}")
+        if not r.failed:
+            print(
+                "\n  Upload: apps.garmin.com/developer/dashboard\n"
+                "  The portal IS drivable headlessly once the session cookies are\n"
+                "  imported from a signed-in browser. See references/publishing.md."
+            )
+    return 1 if r.failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
