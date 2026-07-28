@@ -150,6 +150,16 @@
       "name": "olko:wikipedia-uk-editor",
       "source": "./packages/software-development/wikipedia-uk-editor/adapters/grok",
       "description": "Draft policy-compliant Ukrainian Wikipedia edits — translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item — and return ready-to-paste wikitext plus an edit summary."
+    },
+    {
+      "name": "olko:pr-description-writer",
+      "source": "./packages/software-development/pr-description-writer/adapters/grok",
+      "description": "Draft and post a GitHub PR title and body from git diff and commit history. Chains after git-commit and before qodoloop / coderabbitloop."
+    },
+    {
+      "name": "olko:ci-fix-loop",
+      "source": "./packages/software-development/ci-fix-loop/adapters/grok",
+      "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures."
     }
   ]
 }

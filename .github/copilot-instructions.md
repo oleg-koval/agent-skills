@@ -39,3 +39,5 @@ Available reusable prompt files:
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
 - changelog-generator: .github/prompts/changelog-generator.prompt.md
 - wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md
+- pr-description-writer: .github/prompts/pr-description-writer.prompt.md
+- ci-fix-loop: .github/prompts/ci-fix-loop.prompt.md

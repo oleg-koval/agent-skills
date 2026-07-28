@@ -140,7 +140,7 @@ packages/{category}/{skill}/SKILL.md
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (25)
+### Software development (27)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
@@ -148,6 +148,7 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [ai-tools-setup](packages/software-development/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit — installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine or diagnosing broken integrations |
 | [apple-store-submit](packages/software-development/apple-store-submit/SKILL.md) | Handles App Store rejection emails end-to-end — parses rejection reasons, creates a fix plan, implements code changes, and prepares resubmission | Responding to App Store rejections for privacy strings, entitlements, or guideline violations |
 | [changelog-generator](packages/software-development/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, app store update descriptions, or a public changelog |
+| [ci-fix-loop](packages/software-development/ci-fix-loop/SKILL.md) | Diagnoses GitHub Actions CI failures in a loop: fetches failing check logs, applies a targeted fix, pushes, and waits for the next run — repeating until green or a blocker needs a human | CI is red after a push and you want it driven to green automatically |
 | [cloudflare-block-countries](packages/software-development/cloudflare-block-countries/SKILL.md) | Blocks specific countries via Cloudflare WAF Custom Rules using the API | Geo-blocking traffic or setting up WAF country rules across single or multiple zones |
 | [coderabbitloop](packages/software-development/coderabbitloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings, reading each inline comment's own Prompt for AI Agents block, replying to the thread, and resolving it | Fully addressing a PR against CodeRabbit's review before merging |
 | [crash-course](packages/software-development/crash-course/SKILL.md) | Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes | Ramping up on an unfamiliar codebase, project, or concept under time pressure |
@@ -160,6 +161,7 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [obsidian-task-rollover](packages/software-development/obsidian-task-rollover/SKILL.md) | Migrates unchecked tasks from today's Obsidian daily note to the next workday under `## Carried over` | End-of-day bullet-journal task migration |
 | [open-source-publisher](packages/software-development/open-source-publisher/SKILL.md) | Prepares an open-source repository for public publishing with branding, CI/CD, and release hygiene | Releasing a private project publicly with proper GitHub Pages, README, and social preview |
 | [product-builder](packages/software-development/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | Building a complete app, SaaS, dashboard, or product rather than a prototype |
+| [pr-description-writer](packages/software-development/pr-description-writer/SKILL.md) | Drafts and posts a GitHub PR title and body from git diff and commit history, respecting existing PR templates | Opening a PR after pushing a branch or wanting a structured PR description written automatically |
 | [promptctl](packages/software-development/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, review, scoring, or reusable prompt workflows |
 | [qodoloop](packages/software-development/qodoloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved Qodo findings, reading each finding's own Agent Prompt, replying to the thread, and resolving it | Fully addressing a PR against Qodo's code review before merging |
 | [relay](packages/software-development/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
