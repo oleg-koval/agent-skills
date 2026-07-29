@@ -2,7 +2,7 @@
 
 ---
 inclusion: manual
-description: "Build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C."
+description: "Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C."
 ---
 
 # Garmin Connect IQ watch faces
@@ -23,6 +23,8 @@ looked like success first.
 | `references/devices.md` | Adding device support, launcher icons, API levels |
 | `references/store.md` | Publishing, listing copy, IP questions |
 | `references/publishing.md` | Driving the store portal in a browser; upload/update flow, validator rejections |
+| `references/design-proposals.md` | Proposing a face as SVG before writing Monkey C |
+| `references/inspiration-wizard.md` | The brief is a mood, not a design; gathering references and converging |
 
 ## Tools
 
@@ -35,6 +37,10 @@ Run these rather than reinventing them. All are standalone.
 <skill-dir>/scripts/ciq-capture out.png           # calibrated simulator screenshot
 <skill-dir>/scripts/ciq-capture out.png --face --size 260   # cropped + masked to the round display
 <skill-dir>/scripts/ciq-calibrate                 # re-derive the display rect if capture looks wrong
+<skill-dir>/scripts/ciq-inspire --brand acme.com     # design tokens from open APIs, pre-quantized
+<skill-dir>/scripts/ciq-inspire --image logo.png     # dominant colours from a file
+<skill-dir>/scripts/ciq-inspire --prior-art analog   # Monkey C faces on GitHub to read
+<skill-dir>/scripts/ciq-mock out.html a.svg b.svg --device fenix6pro   # SVG proposals + fidelity audit
 <skill-dir>/scripts/ciq-release       # pre-submission check: package, screenshots, icon, keys, copy
 ```
 
@@ -136,6 +142,33 @@ Reset also drops the loaded device, so relaunch and re-push afterwards.
 See `references/simulator.md`.
 
 ## Workflow
+
+### Designing a face, before any Monkey C exists
+
+A Monkey C iteration costs a build, a simulator launch and a screenshot. An SVG
+iteration costs a file write. Make every visual decision in SVG first.
+
+```bash
+<skill-dir>/scripts/ciq-inspire --image ~/logo.png --prior-art chronograph
+# write two or three SVG variants that differ on ONE axis
+<skill-dir>/scripts/ciq-mock /tmp/proposals.html a.svg b.svg c.svg --device fenix6pro
+```
+
+The trap is that SVG renders faces the panel cannot produce -- alpha, gradients,
+hairlines, 16 million colours -- and a mock that promises them gets approved and
+then cannot be implemented. `ciq-mock` renders every variant with colours
+quantized to the 4x4x4 lattice, inside the round bezel, and lists what will not
+survive; `--strict` exits non-zero on anything unrenderable. Read
+`references/design-proposals.md` before writing the SVG.
+
+When the brief is a mood rather than a design -- "something modern", "match my
+brand" -- follow `references/inspiration-wizard.md`: device constraints first,
+then gather, then **one** question about the axis that matters, three variants,
+one revision round, freeze into `Layout.mc` constants.
+
+`ciq-inspire` will hand you another company's colours and logo without
+complaint. Colours and proportions are fine to be inspired by; marks are not.
+See `references/store.md`.
 
 ### Starting a face
 

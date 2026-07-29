@@ -195,7 +195,7 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
-| [garmin-watchface](packages/wearables/garmin-watchface/SKILL.md) | Builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face — layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
+| [garmin-watchface](packages/wearables/garmin-watchface/SKILL.md) | Designs, builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face — SVG design proposals, inspiration gathering, layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
 
 ## How to use skills
 
