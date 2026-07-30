@@ -136,6 +136,15 @@ function init(width as Number) as Void {
 Call it from `onLayout(dc)` with `dc.getWidth()` — never from a device name, so
 a new product needs no code at all.
 
+**Constants outside `Layout.mc` are the trap.** Widget modules accumulate their
+own pixel values -- an arc radius, a digit cell, a gap -- and a design-grid
+conversion that only edits `Layout.mc` leaves every one of them at the old size.
+The result compiles, passes every test, and renders as a small face marooned in
+the middle of a larger screen. Grep the whole `source/` tree for numeric
+constants, not just the geometry module, and give each widget its own `build()`
+called from `onLayout` after `Layout.init`. Exclude angles and bit masks: a
+sweep is 270 degrees at every size.
+
 Three things this gets wrong if you are not careful:
 
 1. **Relational tests keep passing at the new size but prove nothing new.** Most

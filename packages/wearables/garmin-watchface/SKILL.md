@@ -1,11 +1,6 @@
 ---
 name: garmin-watchface
-description: Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C. Use when working on a Connect IQ watch face or app - proposing designs as SVG mockups, gathering inspiration from brand and prior-art APIs, creating one, fixing layout that clips or overlaps, capturing simulator screenshots, adding app settings, widening device support, or preparing a Connect IQ Store submission. Encodes the traps that silently produce a passing build and a broken face.
-license: MIT
-allowed-tools: Bash, Read, Write, Edit, Grep, Glob
-compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires macOS, the Connect IQ SDK, a JDK, and Python 3 (Pillow for screenshot cropping).
-metadata:
-  targets: [_source-only]
+description: Build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C. Use when working on a Connect IQ watch face or app - creating one, fixing layout that clips or overlaps, capturing simulator screenshots, adding app settings, widening device support, or preparing a Connect IQ Store submission. Encodes the traps that silently produce a passing build and a broken face.
 ---
 
 # Garmin Connect IQ watch faces
@@ -15,44 +10,38 @@ that draws off the bottom of the screen, a test suite that contains no tests, an
 a colour that is not the colour you get. Everything below is a failure mode that
 looked like success first.
 
-**Read `references/` files as needed — do not read them all up front.**
+**Read `reference/` files as needed — do not read them all up front.**
 
 | File | When |
 | --- | --- |
-| `references/display.md` | Choosing colours, brightness, legibility; **AMOLED always-on and burn-in** |
-| `references/layout.md` | Positioning anything; content clipped, overlapping, or off-screen |
-| `references/testing.md` | Writing tests; a suspiciously clean test run |
-| `references/simulator.md` | Screenshots, settings not applying, monkeydo hanging |
-| `references/devices.md` | Adding device support, launcher icons, API levels |
-| `references/store.md` | Publishing, listing copy, IP questions |
-| `references/publishing.md` | Driving the store portal in a browser; upload/update flow, validator rejections |
-| `references/design-proposals.md` | Proposing a face as SVG before writing Monkey C |
-| `references/inspiration-wizard.md` | The brief is a mood, not a design; gathering references and converging |
+| `reference/display.md` | Choosing colours, brightness, legibility; **AMOLED always-on and burn-in** |
+| `reference/layout.md` | Positioning anything; content clipped, overlapping, or off-screen |
+| `reference/testing.md` | Writing tests; a suspiciously clean test run |
+| `reference/simulator.md` | Screenshots, settings not applying, monkeydo hanging |
+| `reference/devices.md` | Adding device support, launcher icons, API levels |
+| `reference/store.md` | Publishing, listing copy, IP questions |
+| `reference/publishing.md` | Driving the store portal in a browser; upload/update flow, validator rejections |
 
 ## Tools
 
 Run these rather than reinventing them. All are standalone.
 
 ```bash
-<skill-dir>/scripts/ciq-doctor                    # toolchain check: SDK, JDK, key, devices
-<skill-dir>/scripts/ciq-devices                   # survey installed devices by resolution
-<skill-dir>/scripts/ciq-devices --same-as fenix6pro   # products you can add with no code change
-<skill-dir>/scripts/ciq-capture out.png           # calibrated simulator screenshot
-<skill-dir>/scripts/ciq-capture out.png --face --size 260   # cropped + masked to the round display
-<skill-dir>/scripts/ciq-calibrate                 # re-derive the display rect if capture looks wrong
-<skill-dir>/scripts/ciq-inspire --brand acme.com     # design tokens from open APIs, pre-quantized
-<skill-dir>/scripts/ciq-inspire --image logo.png     # dominant colours from a file
-<skill-dir>/scripts/ciq-inspire --prior-art analog   # Monkey C faces on GitHub to read
-<skill-dir>/scripts/ciq-mock out.html a.svg b.svg --device fenix6pro   # SVG proposals + fidelity audit
-<skill-dir>/scripts/ciq-release       # pre-submission check: package, screenshots, icon, keys, copy
+bin/ciq-doctor                    # toolchain check: SDK, JDK, key, devices
+bin/ciq-devices                   # survey installed devices by resolution
+bin/ciq-devices --same-as fenix6pro   # products you can add with no code change
+bin/ciq-capture out.png           # calibrated simulator screenshot
+bin/ciq-capture out.png --face --size 260   # cropped + masked to the round display
+bin/ciq-calibrate                 # re-derive the display rect if capture looks wrong
+bin/ciq-release                   # pre-submission check: package, screenshots, icon, keys, copy
 ```
 
-`<skill-dir>/scripts/ciq-release` is what you run before opening the store
-portal. Every check in it is something otherwise discovered halfway through the
-submission form -- a stale screenshot set, an icon still copied from the last
-project, or copy containing a character the description validator rejects.
+`bin/ciq-release` is what you run before opening the store portal. Every check
+in it is something otherwise discovered halfway through the submission form --
+a stale screenshot set, an icon still copied from the last project, or copy
+containing a character the description validator rejects.
 
-`<skill-dir>/scripts/ciq-capture` exists because `screencapture -R` grabs a screen *region*, not
+`bin/ciq-capture` exists because `screencapture -R` grabs a screen *region*, not
 a window: without a frontmost check it silently photographs whatever is on top,
 and the window moves between simulator restarts. Both failure modes produce a
 plausible PNG of the wrong thing.
@@ -67,7 +56,7 @@ get `BUILD SUCCESSFUL` and a green run with nothing compiled — even when the t
 files reference symbols that no longer exist.
 
 Fix: a second jungle passed as an additional `-f`. See
-`<skill-dir>/templates/monkey.test.jungle` and the `test` target in `<skill-dir>/templates/Makefile`.
+`templates/monkey.test.jungle` and the `test` target in `templates/Makefile`.
 
 **Prove it before you trust it.** Put a deliberately unresolvable symbol in one
 test and confirm the build fails:
@@ -88,6 +77,13 @@ they look. Measured on fenix 6 Pro:
 | `FONT_SMALL` | 32 |
 | `FONT_NUMBER_MEDIUM` | 74 |
 
+**Font tiers already scale with the device.** `FONT_XTINY` is a tier, not a
+pixel height: a 454px watch supplies a proportionately taller glyph than a
+260px one, unasked. So when text looks wrong at a new resolution, the bug is a
+LENGTH that failed to scale, never the font. Do not add screen-size branching
+to pick a bigger tier -- doing so double-scales, and labels end up wider than
+the containers naming them.
+
 Content drawn past the screen height is simply invisible — no error, no warning,
 no clipping indicator. A two-line `FONT_NUMBER_MEDIUM` block is 148px of a 260px
 face.
@@ -102,7 +98,7 @@ function clampRuleY(derived as Number, footerH as Number) as Number {
 }
 ```
 
-See `references/layout.md`.
+See `reference/layout.md`.
 
 ### 3. The screen is round; your layout is not
 
@@ -131,7 +127,7 @@ simulator's backlit LCD.
 Corollary: a saturated colour on a glyph reflects only its own channel, making
 the thing you want to read the *dimmest* thing on screen.
 
-See `references/display.md`.
+See `reference/display.md`.
 
 ### 5. The simulator lies about settings
 
@@ -142,7 +138,7 @@ settings code.
 
 Reset also drops the loaded device, so relaunch and re-push afterwards.
 
-See `references/simulator.md`.
+See `reference/simulator.md`.
 
 ### 6. On AMOLED, the face you designed is the one that fails review
 
@@ -191,37 +187,10 @@ about what "off" means — and check the fallbacks actually match
 
 ## Workflow
 
-### Designing a face, before any Monkey C exists
-
-A Monkey C iteration costs a build, a simulator launch and a screenshot. An SVG
-iteration costs a file write. Make every visual decision in SVG first.
-
-```bash
-<skill-dir>/scripts/ciq-inspire --image ~/logo.png --prior-art chronograph
-# write two or three SVG variants that differ on ONE axis
-<skill-dir>/scripts/ciq-mock /tmp/proposals.html a.svg b.svg c.svg --device fenix6pro
-```
-
-The trap is that SVG renders faces the panel cannot produce -- alpha, gradients,
-hairlines, 16 million colours -- and a mock that promises them gets approved and
-then cannot be implemented. `ciq-mock` renders every variant with colours
-quantized to the 4x4x4 lattice, inside the round bezel, and lists what will not
-survive; `--strict` exits non-zero on anything unrenderable. Read
-`references/design-proposals.md` before writing the SVG.
-
-When the brief is a mood rather than a design -- "something modern", "match my
-brand" -- follow `references/inspiration-wizard.md`: device constraints first,
-then gather, then **one** question about the axis that matters, three variants,
-one revision round, freeze into `Layout.mc` constants.
-
-`ciq-inspire` will hand you another company's colours and logo without
-complaint. Colours and proportions are fine to be inspired by; marks are not.
-See `references/store.md`.
-
 ### Starting a face
 
-1. `<skill-dir>/scripts/ciq-doctor` — confirm SDK, JDK, developer key, target device installed.
-2. Copy `<skill-dir>/templates/Makefile`, `<skill-dir>/templates/monkey.jungle`, `<skill-dir>/templates/monkey.test.jungle`.
+1. `bin/ciq-doctor` — confirm SDK, JDK, developer key, target device installed.
+2. Copy `templates/Makefile`, `templates/monkey.jungle`, `templates/monkey.test.jungle`.
 3. Generate a fresh app id: `python3 -c "import uuid;print(uuid.uuid4().hex)"`.
 4. Split source by responsibility. This structure has held up well:
 
@@ -250,7 +219,7 @@ Capture and *look at it*. Layout bugs are invisible in a passing test run:
 
 ```bash
 make build && make sim
-<skill-dir>/scripts/ciq-capture /tmp/face.png --face --size 260
+bin/ciq-capture /tmp/face.png --face --size 260
 ```
 
 Then Read the PNG. Every layout bug in this skill's history was found by looking,
@@ -283,7 +252,7 @@ are what makes it recognisable:
 - **Where the legends sit** — maker's name on the bezel, not the glass.
 
 No system font is a segment display. If you need one, draw it: see
-`references/layout.md` for a working seven-segment renderer, including the ghost
+`reference/layout.md` for a working seven-segment renderer, including the ghost
 (unlit) segments that are most of what sells the effect.
 
-**Do not print a real brand on the face.** See `references/store.md`.
+**Do not print a real brand on the face.** See `reference/store.md`.
