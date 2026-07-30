@@ -90,9 +90,69 @@ does not "helpfully" add products:
      bezel. Another size or shape will compile and look wrong, not fail. -->
 ```
 
+## Launcher icons differ within a resolution family
+
+`ciq-devices --same-as <device>` prints this, and it is easy to skip past. Sizes
+seen in practice: 35×35 (vivoactive 4, the legacy hero editions), 40×40 (fenix
+6/7 at 260×260), 60×60 (descent mk3 51mm, epix 2 pro 51mm), 65×65 (the 454×454
+AMOLED group).
+
+Give each size its own `resourcePath` in the jungle, listed *after* the base so
+its drawables win:
+
+```
+fr970.resourcePath = $(base.resourcePath);resources-65
+```
+
+**Do not upsample.** A 40×40 icon scaled to 65×65 turns 2px segment bars into
+grey smears. Draw it at size — render at 8× and downsample once with a good
+filter, which is what gives rounded corners and stroke ends clean edges at these
+sizes. Keep the generator in `tools/` so the next size is one command.
+
+## Making `Layout` resolution-aware
+
+Worth doing once a face has traction, and much less risky than it sounds if you
+treat the original numbers as a **design grid** rather than replacing them:
+
+```monkeyc
+const DESIGN = 260;              // a unit, not a screen size
+var FRAME_W as Number = 204;     // var, not const -- init() rewrites these
+
+// Round, don't truncate: truncation biases every constant down by up to a
+// pixel, and across a gasket and two insets that is a visible seam.
+function grid(value as Number) as Number {
+    return ((value * SCREEN) + (DESIGN / 2)) / DESIGN;
+}
+
+function init(width as Number) as Void {
+    SCREEN = width;
+    CENTER = width / 2;
+    FRAME_W = grid(204);
+    // ...
+    if (STROKE < 1) { STROKE = 1; }   // a stroke rounded to 0 draws nothing
+}
+```
+
+Call it from `onLayout(dc)` with `dc.getWidth()` — never from a device name, so
+a new product needs no code at all.
+
+Three things this gets wrong if you are not careful:
+
+1. **Relational tests keep passing at the new size but prove nothing new.** Most
+   layout assertions are written as comparisons, so they hold at any scale
+   *given whatever Layout currently holds*. Add a test that sweeps every shipped
+   resolution, calling `init()` for each and restoring the design grid on exit.
+2. **A scale function that ignored its argument would pass all of those.** Pin
+   growth explicitly: 204 on the grid must land near 356 at 454.
+3. **Rounding direction is untested by default.** Assert `grid(1) == 2` at 454,
+   not just `grid(1) >= 1`.
+
 ## Recommended order
 
 1. Ship one resolution, verified on your own wrist.
 2. Add the same-resolution family — biggest reach per unit of risk.
 3. Make `Layout` resolution-aware only if it gets traction. It is real work and
    it risks the pixel-exact look you tuned.
+4. Crossing to AMOLED is a *separate* step from crossing resolution, even though
+   the 454×454 group makes them arrive together. See the always-on section in
+   `reference/display.md` — that is the part that fails review, not the layout.

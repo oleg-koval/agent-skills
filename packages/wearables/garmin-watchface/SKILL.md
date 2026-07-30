@@ -19,7 +19,7 @@ looked like success first.
 
 | File | When |
 | --- | --- |
-| `references/display.md` | Choosing colours, anything about brightness or legibility |
+| `references/display.md` | Choosing colours, brightness, legibility; **AMOLED always-on and burn-in** |
 | `references/layout.md` | Positioning anything; content clipped, overlapping, or off-screen |
 | `references/testing.md` | Writing tests; a suspiciously clean test run |
 | `references/simulator.md` | Screenshots, settings not applying, monkeydo hanging |
@@ -57,7 +57,7 @@ a window: without a frontmost check it silently photographs whatever is on top,
 and the window moves between simulator restarts. Both failure modes produce a
 plausible PNG of the wrong thing.
 
-## The five things that will bite you
+## The seven things that will bite you
 
 ### 1. `make test` can compile zero tests and report success
 
@@ -143,6 +143,51 @@ settings code.
 Reset also drops the loaded device, so relaunch and re-push afterwards.
 
 See `references/simulator.md`.
+
+### 6. On AMOLED, the face you designed is the one that fails review
+
+`requiresBurnInProtection` devices must show a restricted always-on frame
+between wrist raises. The trap is that the *stronger* your face's identity —
+a bright panel, a filled dial — the worse a dimmed version of it performs,
+because it still lights most of the screen. The always-on frame has to be a
+different drawing: outlines where there were fills, and shifted a few pixels on
+a cycle so no pixel is driven continuously.
+
+Also note the flag can be **null** on older products, and a null propagating
+into a `Boolean` field throws at the first wrist drop.
+
+See the AMOLED section of `reference/display.md`.
+
+### 7. A watch face CAN have settings on the watch
+
+`AppBase.getSettingsView()` has existed since **API 3.2.0** and the SDK
+documents it as "only applicable to watch faces and data fields". Plenty of
+store copy — including, at one point, this author's own — claims settings are
+reachable only from the phone. They are not.
+
+The override signature must include `or Null` or the compiler rejects it as
+narrowing:
+
+```monkeyc
+function getSettingsView() as
+    [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] or Null {
+    return [new SettingsMenu(), new SettingsMenuDelegate()];
+}
+```
+
+Two things to get right in the menu itself:
+
+- `ToggleMenuItem` has **already flipped its own state** by the time `onSelect`
+  runs. Read `isEnabled()`; negating the stored value inverts the setting.
+- A picker should `setFocus()` the current choice, not open at the top of a long
+  list. If the list filters out unavailable options, item position is *not* the
+  option id — count the focus row as you build the list.
+
+Keep one module that owns every property read, each wrapped with a default, and
+have both the phone path and the on-watch menu go through it. Two readers with
+two sets of defaults is exactly how the watch and the phone come to disagree
+about what "off" means — and check the fallbacks actually match
+`properties.xml`, because nothing enforces that.
 
 ## Workflow
 

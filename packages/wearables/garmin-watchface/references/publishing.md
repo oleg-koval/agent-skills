@@ -84,6 +84,28 @@ The description arrives pre-filled with the copy from the PREVIOUS version.
 After a redesign it describes a face that no longer exists, and nothing prompts
 you about it. Re-paste from `docs/store/listing.md` every time.
 
+### Step 2 can fail silently — verify the live page
+
+Observed on a real submission: the package uploaded, the version went live, and
+*Submit* on step 2 **saved nothing**. No error, no validation message; the page
+simply stayed on `/update` instead of redirecting. The listing kept the previous
+description for as long as nobody looked.
+
+Treat uploading a version and updating its listing as two independent
+operations, whatever the form implies:
+
+1. After *Submit*, check that the URL actually changed to `/apps/<uuid>`.
+   Sitting on `/update` is the failure signature.
+2. Re-fetch the **public** page and string-match something distinctive from the
+   new copy. This is the only real confirmation.
+3. If it did not save, go back and use the separate **Edit Details** flow, which
+   does work.
+
+A long description may also be truncated behind a read-more on the public page,
+so a missing string near the *end* of the copy is not automatically a failed
+save — check a distinctive phrase from early in the text too before concluding
+either way.
+
 ## Image slots, in DOM order
 
 There are seven `input[type=file]` elements and none of them carry a name, id
