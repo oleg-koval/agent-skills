@@ -156,6 +156,49 @@ Three things this gets wrong if you are not careful:
 3. **Rounding direction is untested by default.** Assert `grid(1) == 2` at 454,
    not just `grid(1) >= 1`.
 
+### Derived constants are baked at compile time
+
+This is the one that will cost you an afternoon. A constant defined in terms of
+another constant is evaluated ONCE, at build time, from the design-grid values:
+
+```monkeyc
+const SUB_N_X = CENTER;              // baked as 130, forever
+const SUB_N_Y = CENTER - SUB_OFFSET; // baked as 78
+```
+
+`init()` rewriting `CENTER` does not move them. On a 454 screen every one of
+those subdials stayed clustered in the top-left corner, on top of each other and
+the crest, while the chapter ring and hands scaled perfectly. It compiled, and
+every test passed.
+
+Convert them to `var` and recompute them at the END of `init()`, after
+everything they depend on is set.
+
+**Give them real design-grid defaults, not 0.** Unit tests never call `init()`,
+so a derived var initialised to 0 reads as `band 0` in assertions that were
+previously passing for the right reason. Four layout tests failed that way, and
+the failure looks like a geometry regression rather than an initialisation
+order problem.
+
+### A checklist for the whole conversion
+
+Grep the entire `source/` tree, not just `Layout.mc`:
+
+```bash
+grep -rn "const [A-Z_0-9]* = -\?[0-9]" source/
+```
+
+Then sort what you find into three buckets:
+
+| Bucket | Examples | Scale? |
+| --- | --- | --- |
+| Lengths | radii, widths, offsets, gaps, Y positions | **yes** |
+| Counts | station count, rows, bars, ticks | never |
+| Angles and masks | sweep degrees, start angle, `SEG_A = 0x01` | never |
+
+Scaling a count deforms the dial rather than resizing it, and scaling a bitmask
+produces garbage. Both compile.
+
 ## Recommended order
 
 1. Ship one resolution, verified on your own wrist.
