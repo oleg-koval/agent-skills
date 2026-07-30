@@ -26,9 +26,28 @@ Regularly. Symptoms: exit 124, no output, or a hang with no push.
 ```bash
 pkill -f monkeydo
 pkill -x simulator            # NOT `pkill -f simulator` -- see below
-"$SDK/bin/connectiq" &
-sleep 12
+open -a "$SDK/bin/ConnectIQ.app"   # NOT "$SDK/bin/connectiq" -- see below
+sleep 15
 "$SDK/bin/monkeydo" bin/app.prg fenix6pro
+```
+
+**Launch the `.app` bundle, not the `bin/connectiq` shell script.** Started via
+the script from a non-interactive context, the simulator runs as a GUI process
+that never creates a window:
+
+```
+count of windows -> 0
+```
+
+Every capture then fails with "simulator did not come forward", which reads
+exactly like the frontmost-check being broken and sends you off calibrating
+something that was never wrong. `open -a "$SDK/bin/ConnectIQ.app"` opens a real
+window and everything downstream works. Confirm before pushing:
+
+```bash
+osascript -e 'tell application "System Events" to tell process "simulator" \
+  to get {count of windows, name of window 1}'
+# -> 1, CIQ Simulator - Forerunner® 970 (6.0.2)
 ```
 
 **Use `pkill -x simulator`, not `pkill -f simulator`.** The `-f` form matches the
@@ -96,12 +115,77 @@ osascript -e 'tell application "System Events" to tell process "simulator" to ge
 | Settings | Set Battery Status | test battery thresholds |
 | Settings | Set User Profile | resting HR and similar |
 | Settings | Trigger App Settings | fire `onSettingsChanged` |
+| Settings | Display Mode → Always-Active | **the AMOLED always-on frame** |
 | Simulation | Activity Data | non-zero steps/calories |
 | Simulation | Time Simulation | check other times of day |
 
 The simulator reports zero steps and calories by default, because it has no
 activity data — not because your render path is broken. Use Simulation →
 Activity Data before concluding anything.
+
+**Settings → Display Mode → Always-Active is how you see the always-on frame**,
+and it is a submenu, not a checkbox. The two items are *High Power* and
+*Always-Active* — NOT "Normal" and "Always-On", which is what the naming
+everywhere else in the SDK leads you to type. Enumerate rather than guess:
+
+```bash
+osascript -e 'tell application "System Events" to tell process "simulator" \
+  to get name of menu items of menu 1 of menu item "Display Mode" \
+  of menu 1 of menu bar item "Settings" of menu bar 1'
+```
+
+Settings → *Sleep Mode* is a different thing
+entirely — the user's sleep window, not the watch-face power state — and
+clicking it leaves the face fully lit, which looks like `onEnterSleep` never
+firing:
+
+```bash
+osascript -e 'tell application "System Events" to tell process "simulator" \
+  to click menu item "Always-Active" of menu 1 of menu item "Display Mode" \
+  of menu 1 of menu bar item "Settings" of menu bar 1'
+```
+
+Check both directions. Switching an AMOLED product to Always-On should give the
+restricted frame; switching a MIP product to Always-On should change **nothing**,
+because it carries no `requiresBurnInProtection` and has no reason to dim.
+
+Measure rather than eyeball the result — the budget is a number:
+
+```python
+# lit fraction and centroid inside the round glass, from a raw capture
+lit = sum(1 for p in glass_pixels if max(p) > 40)
+print(100 * lit / len(glass_pixels))     # keep well under 10%
+```
+
+The centroid is the more useful of the two. It caught a blanked leading digit
+cell leaving the time 106px right of centre — invisible in a passing test suite,
+and easy to look straight past in a screenshot.
+
+### Stale monkeydo processes wedge the next run
+
+`make test` hanging forever, or `Unable to connect to simulator`, is usually an
+earlier `monkeydo` still holding the port rather than anything wrong with the
+build. They accumulate silently across a session — several were found alive
+here from runs an hour old.
+
+```bash
+pgrep -lf "monkeydo|bin/shell"      # look before blaming the test
+pkill -f monkeydo; pkill -f "bin/shell"
+```
+
+Kill the simulator too if it will not come forward, then relaunch with
+`open -a "$SDK/bin/ConnectIQ.app"` and re-push.
+
+### A locked Mac silently defeats every capture
+
+`screencapture` on a locked machine photographs the login screen, and the
+AppleScript menu clicks report success while going nowhere. The result is a
+plausible PNG containing a desktop wallpaper, and analysis of it produces
+confident nonsense — a lit-pixel fraction of 0.0005 rather than an error.
+
+Assert the capture contains a display before measuring it: the round glass is
+a large dark disc, so a near-zero dark fraction over any 454-square window
+means there is no watch in the frame.
 
 ## Sensor data
 
