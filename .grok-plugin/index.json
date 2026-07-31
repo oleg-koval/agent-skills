@@ -160,6 +160,21 @@
       "name": "olko:ci-fix-loop",
       "source": "./packages/software-development/ci-fix-loop/adapters/grok",
       "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures."
+    },
+    {
+      "name": "olko:pr-to-green",
+      "source": "./packages/software-development/pr-to-green/adapters/grok",
+      "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads."
+    },
+    {
+      "name": "olko:dependabot-triage",
+      "source": "./packages/software-development/dependabot-triage/adapters/grok",
+      "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest."
+    },
+    {
+      "name": "olko:store-listing-copy",
+      "source": "./packages/software-development/store-listing-copy/adapters/grok",
+      "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes."
     }
   ]
 }

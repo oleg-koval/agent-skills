@@ -1,0 +1,5 @@
+{
+  "name": "olko-dependabot-triage",
+  "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest.",
+  "skills": "./skills"
+}
