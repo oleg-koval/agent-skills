@@ -399,7 +399,7 @@
       "lookupName": "olko:obsidian-pr-sync",
       "category": "software-development",
       "path": "packages/software-development/obsidian-pr-sync",
-      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent \u2014 re-running replaces the section.",
+      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
       "tags": [
         "github",
         "obsidian",
@@ -470,7 +470,7 @@
       "lookupName": "olko:macos-menubar-app",
       "category": "software-development",
       "path": "packages/software-development/macos-menubar-app",
-      "description": "Build a production-quality macOS menubar or notch app in SwiftUI \u2014 MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
+      "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
       "tags": [
         "macos",
         "swiftui",
@@ -495,7 +495,7 @@
       "lookupName": "olko:skill-budget-audit",
       "category": "software-development",
       "path": "packages/software-development/skill-budget-audit",
-      "description": "Diagnose and fix Claude Code skill context budget overflow \u2014 identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
+      "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
       "tags": [
         "claude-code",
         "skills",
@@ -534,11 +534,35 @@
       ]
     },
     {
+      "name": "pr-finalize",
+      "lookupName": "olko:pr-finalize",
+      "category": "software-development",
+      "path": "packages/software-development/pr-finalize",
+      "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human.",
+      "tags": [
+        "code-review",
+        "pull-requests",
+        "github",
+        "testing",
+        "automation",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
       "name": "qodoloop",
       "lookupName": "olko:qodoloop",
       "category": "software-development",
       "path": "packages/software-development/qodoloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings \u2014 reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
       "tags": [
         "code-review",
         "qodo",
@@ -586,7 +610,7 @@
       "lookupName": "olko:coderabbitloop",
       "category": "software-development",
       "path": "packages/software-development/coderabbitloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings \u2014 reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
+      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
       "tags": [
         "code-review",
         "coderabbit",
@@ -678,7 +702,7 @@
       "lookupName": "olko:wikipedia-uk-editor",
       "category": "software-development",
       "path": "packages/software-development/wikipedia-uk-editor",
-      "description": "Draft policy-compliant Ukrainian Wikipedia edits \u2014 translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item \u2014 and return ready-to-paste wikitext plus an edit summary.",
+      "description": "Draft policy-compliant Ukrainian Wikipedia edits — translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item — and return ready-to-paste wikitext plus an edit summary.",
       "tags": [
         "wikipedia",
         "ukrainian",

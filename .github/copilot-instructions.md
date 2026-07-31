@@ -32,6 +32,7 @@ Available reusable prompt files:
 - apple-store-submit: .github/prompts/apple-store-submit.prompt.md
 - macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
 - crash-course: .github/prompts/crash-course.prompt.md
+- pr-finalize: .github/prompts/pr-finalize.prompt.md
 - qodoloop: .github/prompts/qodoloop.prompt.md
 - garmin-watchface: .github/prompts/garmin-watchface.prompt.md
 - coderabbitloop: .github/prompts/coderabbitloop.prompt.md
