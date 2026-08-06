@@ -21,7 +21,7 @@ extras gets approved and then cannot be implemented, and the gap is discovered
 after the geometry is already committed.
 
 `scripts/ciq-mock` exists to close that gap: it renders each proposal with every
-colour quantized to the lattice, inside the round bezel, and lists what will not
+colour quantised to the lattice, inside the round bezel, and lists what will not
 survive.
 
 ```bash
@@ -64,8 +64,9 @@ reflectance. See `display.md`.
 
 `ciq-mock` checks the farthest point of every `rect`, `circle`, `ellipse`,
 `line`, `polygon` and `polyline` against the glass radius. It does **not** check
-`<path>` -- that needs a real path renderer -- and it does not know how large
-your text will be.
+`<path>` shapes -- that needs a real path renderer and remains unchecked -- and
+it does not validate text extents (font metrics come from the device, not the
+browser).
 
 The check that matters most is the rectangle one: a rectangle inscribed in a
 circle fails at its **corners** long before its sides, and the amount by which
@@ -75,7 +76,7 @@ problem: a marker of width `w` ending at radius `r` actually reaches
 
 ## Proposing to a human
 
-Three variants, not one and not seven. One is an ultimatum; seven is a survey.
+Exactly three variants, not one and not seven. One is an ultimatum; seven is a survey.
 
 Make the three differ on **one axis you actually want an answer about** --
 information density, or dial polarity, or analog versus digital -- and hold
@@ -84,7 +85,7 @@ everything else constant. Variants that differ in five ways at once produce
 
 State what is fixed by the device (resolution, colour count, no alpha) so the
 feedback lands on choices rather than constraints, and say plainly that colours
-shown are post-quantization.
+shown are post-quantisation.
 
 ## After approval
 

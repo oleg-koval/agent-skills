@@ -151,16 +151,18 @@ iteration costs a file write. Make every visual decision in SVG first.
 
 ```bash
 <skill-dir>/scripts/ciq-inspire --image ~/logo.png --prior-art chronograph
-# write two or three SVG variants that differ on ONE axis
+# write exactly three SVG variants that differ on ONE axis
 <skill-dir>/scripts/ciq-mock /tmp/proposals.html a.svg b.svg c.svg --device fenix6pro
 ```
 
 The trap is that SVG renders faces the panel cannot produce -- alpha, gradients,
 hairlines, 16 million colours -- and a mock that promises them gets approved and
 then cannot be implemented. `ciq-mock` renders every variant with colours
-quantized to the 4x4x4 lattice, inside the round bezel, and lists what will not
-survive; `--strict` exits non-zero on anything unrenderable. Read
-`references/design-proposals.md` before writing the SVG.
+quantised to the 4x4x4 lattice, inside the round bezel, and lists what will not
+survive; path shapes and text extents are not checked. `--strict` exits
+non-zero only on unsupported-feature and bezel findings -- path and text
+limits are reported but never block. Read `references/design-proposals.md`
+before writing the SVG.
 
 When the brief is a mood rather than a design -- "something modern", "match my
 brand" -- follow `references/inspiration-wizard.md`: device constraints first,
@@ -168,7 +170,9 @@ then gather, then **one** question about the axis that matters, three variants,
 one revision round, freeze into `Layout.mc` constants.
 
 `ciq-inspire` will hand you another company's colours and logo without
-complaint. Colours and proportions are fine to be inspired by; marks are not.
+complaint. Use it for inspiration only: implementations must be original,
+and distinctive creative elements or compositions must not be copied
+verbatim. Names, wordmarks, and logos are never fine.
 See `references/store.md`.
 
 ### Starting a face
