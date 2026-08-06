@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/oleg-koval/agent-skills/compare/v1.24.0...v1.25.0) (2026-07-31)
+
+
+### ✨ Features
+
+* **software-development:** add pr-finalize skill ([2c7b10c](https://github.com/oleg-koval/agent-skills/commit/2c7b10ce642192457cb45e24a91d2b1285ba0218))
+
 # [1.24.0](https://github.com/oleg-koval/agent-skills/compare/v1.23.0...v1.24.0) (2026-07-28)
 
 

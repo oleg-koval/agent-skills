@@ -1,0 +1,5 @@
+{
+  "name": "olko-pr-finalize",
+  "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human.",
+  "skills": "./skills"
+}
