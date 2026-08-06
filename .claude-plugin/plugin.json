@@ -41,6 +41,9 @@
     "./packages/software-development/changelog-generator",
     "./packages/software-development/wikipedia-uk-editor",
     "./packages/software-development/pr-description-writer",
-    "./packages/software-development/ci-fix-loop"
+    "./packages/software-development/ci-fix-loop",
+    "./packages/software-development/pr-to-green",
+    "./packages/software-development/dependabot-triage",
+    "./packages/software-development/store-listing-copy"
   ]
 }
