@@ -586,7 +586,7 @@
       "lookupName": "olko:garmin-watchface",
       "category": "wearables",
       "path": "packages/wearables/garmin-watchface",
-      "description": "Build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C.",
+      "description": "Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C.",
       "tags": [
         "garmin",
         "connect-iq",

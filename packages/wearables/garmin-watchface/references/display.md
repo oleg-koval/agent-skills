@@ -115,6 +115,81 @@ function panelIsLighterThanItsSegments(logger as Logger) as Boolean {
 
 ## AMOLED devices
 
-Venu and newer devices are emissive and do not share these constraints, but they
-do have burn-in protection requirements and an always-on mode with a pixel budget.
-Do not carry MIP palette reasoning onto them unexamined.
+Venu, Forerunner 265/965/970, fenix 8 (non-solar) and epix are **emissive**.
+Almost every rule above inverts, and the one that matters most is not about
+colour at all.
+
+Read the device rather than guessing — `compiler.json` carries `displayType`,
+`bitsPerPixel` and `alphaBlendingSupport`:
+
+| | fenix 6 Pro | Forerunner 970 |
+| --- | --- | --- |
+| `displayType` | `mip` | `amoled` |
+| Resolution | 260×260 | 454×454 |
+| `bitsPerPixel` | 8 | 16 |
+| `alphaBlendingSupport` | false | **true** |
+| Launcher icon | 40×40 | **65×65** |
+
+So on AMOLED you get anti-aliasing and real colour, and the 4×4×4 lattice stops
+being a constraint. Lattice colours still render correctly, so a palette tuned
+for MIP is safe to ship to both — it is merely conservative.
+
+### The always-on frame is the whole problem
+
+`System.getDeviceSettings().requiresBurnInProtection` is true on these devices.
+Between wrist raises the face must show a restricted frame: a small fraction of
+pixels lit, and not always the *same* pixels. Garmin rejects faces that ignore
+this.
+
+The property arrived after some supported products shipped and **can be null**,
+so check both the symbol and the value — a null flowing into a `Boolean` field
+throws at the first wrist drop:
+
+```monkeyc
+private function needsAlwaysOn() as Boolean {
+    var s = System.getDeviceSettings();
+    if (!(s has :requiresBurnInProtection)) { return false; }
+    var flag = s.requiresBurnInProtection;
+    return flag != null && flag;
+}
+```
+
+**The always-on frame is a different drawing, not a dimmed one.** This is the
+part that bites: if the face's identity is a large bright area — a lit LCD
+panel, a white dial, a filled gauge — then dimming it still lights most of the
+screen. Reach instead for what the real object looks like with the power off.
+An outline where there was a fill; strokes where there was a panel.
+
+Budget check: on 454×454 (206k pixels), seven-segment strokes for four digits
+plus a 1px frame outline is roughly 2% lit. A filled rounded rectangle the size
+of that frame alone is 40k pixels — 19%.
+
+### Move the lit pixels
+
+Static content burns the pixel even at low duty. Shift the whole block by a few
+pixels on a cycle, and make the horizontal and vertical periods **coprime** so
+the pair does not return to the same offset every few minutes:
+
+```monkeyc
+const SHIFT_PERIOD = 7;      // x
+const SHIFT_PERIOD_Y = 5;    // y  -> 35 distinct positions, not 7
+
+function shiftX(minute as Number) as Number {
+    return (minute % SHIFT_PERIOD) - (SHIFT_PERIOD / 2);
+}
+```
+
+Both periods dividing into 60 is the trap: with 6 and 3 you get 6 positions and
+park a segment edge on the same pixels ten times an hour.
+
+Test the arithmetic even though you cannot test the drawing — that the offsets
+stay small enough to keep content on screen, that **every** offset in range is
+actually visited (a `shiftX` stuck at 0 passes "stays small" and protects
+nothing), and that the (x, y) pair yields the full period.
+
+### Helpers that pick their own colour
+
+Segment and hand renderers commonly call `dc.setColor(Palette.SEGMENT, ...)`
+internally. Reusing them for the always-on frame silently repaints it in the
+lit-face colour. Either pass the colour in, or draw the always-on frame against
+the mask primitives directly.
