@@ -42,3 +42,6 @@ Available reusable prompt files:
 - wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md
 - pr-description-writer: .github/prompts/pr-description-writer.prompt.md
 - ci-fix-loop: .github/prompts/ci-fix-loop.prompt.md
+- pr-to-green: .github/prompts/pr-to-green.prompt.md
+- dependabot-triage: .github/prompts/dependabot-triage.prompt.md
+- store-listing-copy: .github/prompts/store-listing-copy.prompt.md

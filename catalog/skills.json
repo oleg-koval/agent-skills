@@ -766,6 +766,80 @@
         "copilot",
         "grok"
       ]
+    },
+    {
+      "name": "pr-to-green",
+      "lookupName": "olko:pr-to-green",
+      "category": "software-development",
+      "path": "packages/software-development/pr-to-green",
+      "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads.",
+      "tags": [
+        "github",
+        "pr",
+        "ci",
+        "loop",
+        "qodoloop",
+        "coderabbitloop",
+        "ci-fix-loop",
+        "workflow",
+        "automation"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
+    },
+    {
+      "name": "dependabot-triage",
+      "lookupName": "olko:dependabot-triage",
+      "category": "software-development",
+      "path": "packages/software-development/dependabot-triage",
+      "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest.",
+      "tags": [
+        "dependabot",
+        "renovate",
+        "dependencies",
+        "security",
+        "automation",
+        "triage",
+        "github"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
+    },
+    {
+      "name": "store-listing-copy",
+      "lookupName": "olko:store-listing-copy",
+      "category": "software-development",
+      "path": "packages/software-development/store-listing-copy",
+      "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes.",
+      "tags": [
+        "app-store",
+        "google-play",
+        "connect-iq",
+        "garmin",
+        "store",
+        "listing",
+        "copy",
+        "release-notes",
+        "ios",
+        "android"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
     }
   ]
 }

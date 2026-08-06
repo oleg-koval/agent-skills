@@ -140,7 +140,7 @@ packages/{category}/{skill}/SKILL.md
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (27)
+### Software development (30)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
@@ -172,6 +172,9 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [skill-budget-audit](packages/software-development/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow — identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
 | [starter-rules](packages/software-development/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
 | [wikipedia-uk-editor](packages/software-development/wikipedia-uk-editor/SKILL.md) | Drafts policy-compliant Ukrainian Wikipedia edits — en→uk translation, stub expansion, sourcing, backlog cleanup — returning ready-to-paste wikitext, an edit summary, and a verified source list | Editing, translating, or sourcing a uk.wikipedia.org article, or planning what to contribute next |
+| [pr-to-green](packages/software-development/pr-to-green/SKILL.md) | Orchestrates a GitHub PR from first push to merge-ready: runs ci-fix-loop until checks are green, detects active AI review bots, runs qodoloop and coderabbitloop in sequence, and confirms zero unresolved threads | Driving a PR to merge-ready in one pass without manually chaining the fix loops |
+| [dependabot-triage](packages/software-development/dependabot-triage/SKILL.md) | Triages open Dependabot and Renovate PRs in bulk: classifies by risk tier, auto-approves safe patch bumps, flags breaking major upgrades for human review, and posts a digest | Clearing a backlog of dependency update PRs during a maintenance window |
+| [store-listing-copy](packages/software-development/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
 
 ### Marketing (2)
 
@@ -277,7 +280,7 @@ See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
 ```text
 agent-skills/
 ├── packages/
-│   ├── software-development/   (19 skills)
+│   ├── software-development/   (22 skills)
 │   ├── marketing/              (2 skills)
 │   ├── music/                  (1 skill)
 │   └── photography/            (1 skill)
