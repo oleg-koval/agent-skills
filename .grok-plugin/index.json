@@ -180,6 +180,26 @@
       "name": "olko:store-listing-copy",
       "source": "./packages/software-development/store-listing-copy/adapters/grok",
       "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes."
+    },
+    {
+      "name": "olko:pr-finalize-complete",
+      "source": "./packages/software-development/pr-finalize-complete/adapters/grok",
+      "description": "Comprehensive PR finalization workflow for PRs that may already be partially addressed: checks each review comment's actual current status in code, distinguishes fixed vs. stale vs. still-present findings, verifies test coverage, runs real lint/test gates, and reports what still needs a human."
+    },
+    {
+      "name": "olko:morning-routine",
+      "source": "./packages/software-development/morning-routine/adapters/grok",
+      "description": "Run the complete start-of-day setup in one pass: roll over unfinished Obsidian tasks to today's daily note, sync open GitHub PRs that need your attention, and sweep Dependabot patch bumps. Chains obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage."
+    },
+    {
+      "name": "olko:release-day",
+      "source": "./packages/software-development/release-day/adapters/grok",
+      "description": "Orchestrate a full release-day workflow for iOS, Android, or Garmin apps: verify main branch CI is green, generate changelog, draft platform-ready store listing copy, trigger semantic-release or tag manually, wait for the build, and queue the App Store submission."
+    },
+    {
+      "name": "olko:branch-cleanup",
+      "source": "./packages/software-development/branch-cleanup/adapters/grok",
+      "description": "Prune stale git branches after a merge wave: delete closed/merged remote branches, remove local tracking refs that no longer exist on the remote, and optionally clean up merged local branches. Natural follow-up to dependabot-triage."
     }
   ]
 }

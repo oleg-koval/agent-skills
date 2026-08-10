@@ -140,7 +140,7 @@ packages/{category}/{skill}/SKILL.md
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (30)
+### Software development (34)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
@@ -175,6 +175,10 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [pr-to-green](packages/software-development/pr-to-green/SKILL.md) | Orchestrates a GitHub PR from first push to merge-ready: runs ci-fix-loop until checks are green, detects active AI review bots, runs qodoloop and coderabbitloop in sequence, and confirms zero unresolved threads | Driving a PR to merge-ready in one pass without manually chaining the fix loops |
 | [dependabot-triage](packages/software-development/dependabot-triage/SKILL.md) | Triages open Dependabot and Renovate PRs in bulk: classifies by risk tier, auto-approves safe patch bumps, flags breaking major upgrades for human review, and posts a digest | Clearing a backlog of dependency update PRs during a maintenance window |
 | [store-listing-copy](packages/software-development/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
+| [pr-finalize-complete](packages/software-development/pr-finalize-complete/SKILL.md) | Comprehensive PR finalization for branches that may already be partially addressed: checks each review comment's actual current status in code, distinguishes fixed vs. stale vs. still-present findings, verifies test coverage, and runs real lint/test gates | Confirming a PR is genuinely merge-ready when review tools show findings that may already be fixed |
+| [morning-routine](packages/software-development/morning-routine/SKILL.md) | Runs the complete start-of-day setup in one pass: rolls over unfinished Obsidian tasks, syncs open GitHub PRs into today's daily note, and sweeps safe Dependabot patch bumps | Starting the workday by chaining obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage in sequence |
+| [release-day](packages/software-development/release-day/SKILL.md) | Orchestrates a full release-day workflow for iOS, Android, or Garmin apps: verifies CI is green, generates a changelog, drafts store listing copy, triggers semantic-release or tags manually, waits for the build, and queues the App Store submission | Cutting a release from "code is ready" to "build submitted" in one orchestrated pass |
+| [branch-cleanup](packages/software-development/branch-cleanup/SKILL.md) | Prunes stale git branches after a merge wave: deletes closed/merged remote branches, removes local tracking refs that no longer exist on the remote, and optionally cleans up merged local branches | Tidying up after a Dependabot triage batch merge or a sprint wind-down |
 
 ### Marketing (2)
 
