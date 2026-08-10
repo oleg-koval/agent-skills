@@ -1,7 +1,7 @@
 # Codex Adapter for pr-finalize-complete
 
 This is a Codex-specific adapter for the `olko:pr-finalize-complete` skill.
-The canonical skill definition is in `../../../SKILL.md`.
+The canonical skill definition is in `../../SKILL.md`.
 
 ## Usage
 
@@ -13,7 +13,7 @@ Use the olko:pr-finalize-complete skill to verify this PR is actually merge-read
 
 ## Workflow
 
-See `../../../SKILL.md` for the full workflow: re-check every review-bot and human finding against
+See `../../SKILL.md` for the full workflow: re-check every review-bot and human finding against
 the code as it stands now, separating comments that are genuinely fixed from those that are merely
 stale (bot comments on moved or renamed files are common), run the repo's real lint and test gates
 and report actual exit codes, then prepare a clean push. The procedure is plain `git`/`gh` and is

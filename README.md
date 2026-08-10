@@ -136,11 +136,11 @@ packages/{category}/{skill}/SKILL.md
 
 </details>
 
-## All 29 Skills
+## All 39 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (30)
+### Software development (34)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|

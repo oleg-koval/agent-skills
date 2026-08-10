@@ -1,7 +1,7 @@
 # Codex Adapter for codexloop
 
 This is a Codex-specific adapter for the `olko:codexloop` skill.
-The canonical skill definition is in `../../../SKILL.md`.
+The canonical skill definition is in `../../SKILL.md`.
 
 ## Usage
 
@@ -13,7 +13,7 @@ Use the olko:codexloop skill to clear the Codex review on this PR.
 
 ## Workflow
 
-See `../../../SKILL.md` for the full workflow: resolve the Codex bot login from the PR itself
+See `../../SKILL.md` for the full workflow: resolve the Codex bot login from the PR itself
 (it varies by installation, so it is never hardcoded), post `@codex review` when no review exists
 for the current head, poll the reviews endpoint until it lands, then evaluate every inline comment
 against the real code before touching anything — fix only the findings that hold, rebut the rest

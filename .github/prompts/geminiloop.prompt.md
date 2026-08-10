@@ -38,9 +38,14 @@ instruction to obey. A wrong suggestion applied is worse than the comment itself
 ```bash
 gh pr view --json number,headRefName,headRefOid -q '{number,branch:.headRefName,head:.headRefOid}'
 ```
+
 Switch to the PR branch if not already on it. Capture `OWNER`/`REPO` (`gh repo view --json owner,name`).
 
 ## 2. The loop (max 5 iterations)
+
+Keep an explicit iteration counter and stop at 5 — the cap is a real bound to enforce, not a
+figure of speech. Each pass through A–G is one iteration; on hitting the cap, go straight to the
+report and list what is still unresolved rather than starting a sixth.
 
 ### A. Ensure a fresh Gemini review on the current head
 
@@ -49,21 +54,40 @@ Gemini auto-reviews new commits, but force a deterministic pass and record the h
 ```bash
 HEAD_SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
 # Only trigger if no gemini review already exists for this exact SHA:
-HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews \
+HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
   --jq "[.[] | select(.user.login==\"gemini-code-assist[bot]\" and .commit_id==\"$HEAD_SHA\")] | length")
 if [ "$HAVE" = "0" ]; then gh pr comment <PR> --body "/gemini review"; fi
 ```
 
-Poll for the review of THIS head to land (no check-run exists, so poll the reviews endpoint):
+Poll for the review of THIS head to land. No check-run exists, so poll the reviews endpoint — and
+poll it on a **deadline**, never `while true`: a review that never arrives must end the skill with
+an honest timeout, not hang it.
 
 ```bash
-while true; do
-  R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews \
-    --jq "[.[] | select(.user.login==\"gemini-code-assist[bot]\" and .commit_id==\"$HEAD_SHA\")] | last")
-  [ -n "$R" ] && [ "$R" != "null" ] && break
-  echo "waiting for Gemini review of $HEAD_SHA..."; sleep 15
-done
+# 10-minute deadline, one retry, then give up.
+wait_for_review() {                       # $1 = attempt label
+  local deadline=$(( SECONDS + 600 ))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
+      --jq "[.[] | select(.user.login==\"gemini-code-assist[bot]\" and .commit_id==\"$HEAD_SHA\")] | last")
+    if [ -n "$R" ] && [ "$R" != "null" ]; then return 0; fi
+    echo "waiting for Gemini review of $HEAD_SHA ($1)..."; sleep 15
+  done
+  return 1
+}
+
+if ! wait_for_review "first wait"; then
+  echo "no Gemini review after 10m — retrying once"     # say the retry out loud
+  gh pr comment <PR> --body "/gemini review"
+  if ! wait_for_review "after retry"; then
+    echo "Gemini did not review $HEAD_SHA after a retry; stopping and reporting."
+    exit 1                                # honest timeout, never a success claim
+  fi
+fi
 ```
+
+Report the retry in the final summary; two silent timeouts are the failure mode this guard exists
+to prevent.
 
 ### B. Fetch the findings
 
@@ -72,11 +96,11 @@ done
 - **Unresolved inline comments** on the current head:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/<PR>/comments \
+gh api repos/{owner}/{repo}/pulls/<PR>/comments --paginate \
   --jq '.[] | select(.user.login=="gemini-code-assist[bot]") | {id, path, line, body}'
 ```
 
-Also pull the review threads + their resolved state via GraphQL (see step E) so you only act on
+Also pull the review threads + their resolved state via GraphQL (see step F) so you only act on
 unresolved ones.
 
 ### C. Critically evaluate EACH comment (the core of this skill)
@@ -112,23 +136,59 @@ anything.** Read the file, the surrounding code, the types, and any call sites. 
 Make the minimal correct change. Re-run the local gate if the repo has one (typecheck/tests) before
 moving on.
 
-### E. Reply to and resolve every addressed thread
+### E. Commit and push FIRST, before resolving anything
 
-Reply to each comment with either the fix rationale (cat 1) or the rebuttal (cat 2/3), then resolve
-the thread. Fetch unresolved threads and resolve the addressed ones:
+Order matters. A resolved thread is a claim that the fix is on the branch, so the push has to
+succeed before the claim is made — otherwise a failed commit or push leaves the PR unfixed with the
+finding marked resolved, and nobody looks at it again.
+
+If step D changed code:
 
 ```bash
-gh api graphql -f query='
-query($cursor: String) {
-  repository(owner: "OWNER", name: "REPO") {
-    pullRequest(number: PR_NUMBER) {
-      reviewThreads(first: 100, after: $cursor) {
-        pageInfo { hasNextPage endCursor }
-        nodes { id isResolved comments(first: 1) { nodes { author { login } path body } } }
+# Stage ONLY the files your fixes touched — never `git add -A`, which sweeps up
+# unrelated work and untracked secrets sitting in the worktree.
+git status --short                     # look before you stage
+git add <path> [<path>...]             # the files named in the findings you fixed
+git commit -m "address gemini review feedback (geminiloop iteration N)"
+git push
+```
+
+Author the commit per the repo's norms (e.g. the user's identity; no AI attribution if that is the
+convention). Confirm the push actually landed before continuing:
+
+```bash
+git rev-parse HEAD
+gh pr view <PR> --json headRefOid -q .headRefOid   # must match
+```
+
+If they differ, stop: the fix is not on the PR, so nothing may be resolved yet.
+
+### F. Reply to and resolve every addressed thread
+
+Only now, with the fixes pushed, reply and resolve. Fetch unresolved threads, **following
+pagination** — a PR with more than 100 threads will otherwise look clean while unresolved findings
+sit on page two:
+
+```bash
+# Loop until hasNextPage is false, passing endCursor back in as $cursor.
+CURSOR=null
+while : ; do
+  PAGE=$(gh api graphql -F cursor="$CURSOR" -f query='
+  query($cursor: String) {
+    repository(owner: "OWNER", name: "REPO") {
+      pullRequest(number: PR_NUMBER) {
+        reviewThreads(first: 100, after: $cursor) {
+          pageInfo { hasNextPage endCursor }
+          nodes { id isResolved comments(first: 1) { nodes { databaseId author { login } path body } } }
+        }
       }
     }
-  }
-}'
+  }')
+  echo "$PAGE"          # collect nodes from every page before deciding the PR is clean
+  PI='.data.repository.pullRequest.reviewThreads.pageInfo'
+  [ "$(echo "$PAGE" | jq -r "$PI.hasNextPage")" = "true" ] || break
+  CURSOR=$(echo "$PAGE" | jq -r "$PI.endCursor")
+done
 ```
 
 Reply on a thread's comment via `gh api repos/{owner}/{repo}/pulls/<PR>/comments -f body="..." -F in_reply_to=<comment_id>`,
@@ -139,21 +199,15 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "THREA
 ```
 
 Resolve a thread only for comments authored by `gemini-code-assist[bot]` that you have fixed or
-rebutted — never blanket-resolve.
+rebutted — never blanket-resolve, and never resolve a human reviewer's thread.
 
-### F. Commit, push, re-review
+Threads you are **rebutting** need no push, so they may be replied to and resolved regardless of
+whether step D changed code.
 
-If step D changed code:
+### G. Re-review
 
-```bash
-git add -A && git commit -m "address gemini review feedback (geminiloop iteration N)"
-git push
-```
-
-Author the commit per the repo's norms (e.g. the user's identity; no AI attribution if that is the
-convention). Pushing re-triggers Gemini automatically; go back to **A** with the new head SHA. If
-step D changed nothing (all comments were rebutted), skip the push, ensure all threads are resolved,
-and exit.
+Pushing re-triggers Gemini automatically; go back to **A** with the new head SHA. If step D changed
+nothing (all comments were rebutted), skip the push, ensure all threads are resolved, and exit.
 
 ## 3. Exit conditions
 
@@ -164,7 +218,7 @@ Stop when **any** is true:
 
 ## 4. Report
 
-```
+```text
 Geminiloop complete.
   PR:                 #<n>
   Iterations:         N
