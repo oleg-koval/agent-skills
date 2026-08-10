@@ -33,9 +33,12 @@ Available reusable prompt files:
 - macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
 - crash-course: .github/prompts/crash-course.prompt.md
 - pr-finalize: .github/prompts/pr-finalize.prompt.md
+- pr-finalize-complete: .github/prompts/pr-finalize-complete.prompt.md
 - qodoloop: .github/prompts/qodoloop.prompt.md
 - garmin-watchface: .github/prompts/garmin-watchface.prompt.md
 - coderabbitloop: .github/prompts/coderabbitloop.prompt.md
+- codexloop: .github/prompts/codexloop.prompt.md
+- geminiloop: .github/prompts/geminiloop.prompt.md
 - add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
 - changelog-generator: .github/prompts/changelog-generator.prompt.md
