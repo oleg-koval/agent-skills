@@ -33,6 +33,7 @@
     "./packages/software-development/skill-budget-audit",
     "./packages/software-development/crash-course",
     "./packages/software-development/pr-finalize",
+    "./packages/software-development/pr-finalize-complete",
     "./packages/software-development/qodoloop",
     "./packages/wearables/garmin-watchface",
     "./packages/software-development/coderabbitloop",

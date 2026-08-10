@@ -112,6 +112,11 @@
       "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human."
     },
     {
+      "name": "olko:pr-finalize-complete",
+      "source": "./packages/software-development/pr-finalize-complete/adapters/cursor",
+      "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption."
+    },
+    {
       "name": "olko:qodoloop",
       "source": "./packages/software-development/qodoloop/adapters/cursor",
       "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass."
