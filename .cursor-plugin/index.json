@@ -127,6 +127,16 @@
       "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit."
     },
     {
+      "name": "olko:codexloop",
+      "source": "./packages/software-development/codexloop/adapters/cursor",
+      "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code."
+    },
+    {
+      "name": "olko:geminiloop",
+      "source": "./packages/software-development/geminiloop/adapters/cursor",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code."
+    },
+    {
       "name": "olko:add-to-my-skills",
       "source": "./packages/software-development/add-to-my-skills/adapters/cursor",
       "description": "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push."

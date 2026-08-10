@@ -630,6 +630,54 @@
       ]
     },
     {
+      "name": "codexloop",
+      "lookupName": "olko:codexloop",
+      "category": "software-development",
+      "path": "packages/software-development/codexloop",
+      "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
+      "tags": [
+        "code-review",
+        "codex",
+        "github",
+        "pull-requests",
+        "automation",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "geminiloop",
+      "lookupName": "olko:geminiloop",
+      "category": "software-development",
+      "path": "packages/software-development/geminiloop",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code.",
+      "tags": [
+        "code-review",
+        "gemini",
+        "github",
+        "pull-requests",
+        "automation",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
       "name": "add-to-my-skills",
       "lookupName": "olko:add-to-my-skills",
       "category": "software-development",

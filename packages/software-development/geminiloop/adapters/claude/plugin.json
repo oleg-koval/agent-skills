@@ -1,0 +1,5 @@
+{
+  "name": "olko-geminiloop",
+  "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code.",
+  "skills": "./skills"
+}
