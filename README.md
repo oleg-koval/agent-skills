@@ -11,6 +11,8 @@
 
 Agent-agnostic skill collection for Codex, Claude, Cursor, Grok, and other skill-aware tools.
 
+**Browse the catalog: [skills.olegkoval.com](https://skills.olegkoval.com)**
+
 These skills are opinionated by design. They encode working defaults, preferred tools, and repeatable workflows instead of trying to be neutral snippets. Treat them as starting points with taste: useful out of the box, easy to inspect, and specific enough for an agent to execute consistently.
 
 ## Structure
@@ -19,6 +21,7 @@ These skills are opinionated by design. They encode working defaults, preferred 
 - `catalog/` — machine-readable inventory
 - `collections/` — grouped package bundles
 - `scripts/` — sync and validation helpers
+- `site/` — generator for the browsable catalog at [skills.olegkoval.com](https://skills.olegkoval.com) (`npm run build:site`)
 
 ## Principles
 

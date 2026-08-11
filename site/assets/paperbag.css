@@ -1,0 +1,707 @@
+/*
+ * paperbag.css — lo-fi / grunge "brown paper bag" styling.
+ * Homage to p2output.com (late-1990s), documented in "Fresh Styles for Web
+ * Designers: Eye Candy from the Underground" for its busy background graphics
+ * and cursor-reactive text highlighting.
+ *
+ * Everything here is self-contained: no webfonts, no images, no network.
+ * The textures are procedural (SVG feTurbulence + gradients).
+ */
+
+/* ---------------------------------------------------------------- tokens */
+:root {
+  --bag: #c3ac84;
+  --bag-lit: #d6c19c;
+  --bag-dim: #a78f68;
+  --bag-deep: #8d7752;
+  --ink: #191410;
+  --ink-soft: #3d3225;
+  --ink-faint: #6b5b43;
+  --stamp: #a8321f;
+  --marker: #f6e14b;
+  --overprint: #1f6f7a;
+
+  --edge: 2px solid var(--ink);
+  --rule: 1px solid rgba(25, 20, 16, 0.28);
+
+  /* Period-correct: Impact was *the* late-90s display face and ships on both
+     macOS and Windows. Condensed grotesques stand in everywhere else. */
+  --display: "Impact", "Haettenschweiler", "Franklin Gothic Bold",
+    "Arial Narrow Bold", "Arial Narrow", "Liberation Sans Narrow",
+    "DejaVu Sans Condensed", sans-serif;
+  --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas,
+    "DejaVu Sans Mono", monospace;
+
+  --shadow-hard: 5px 5px 0 var(--ink);
+  --shadow-soft: 3px 3px 0 rgba(25, 20, 16, 0.55);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------ the paper */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background-color: var(--bag);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+/*
+ * Three stacked procedural layers make the "busy background": kraft fibre
+ * grain, a print halftone, and the soft blotches of a bag that has been
+ * folded and re-opened. They sit behind content and never intercept input.
+ */
+.grain,
+.halftone,
+.blotch {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.grain {
+  opacity: 0.42;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23f)' opacity='0.55'/></svg>");
+}
+
+.halftone {
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(25, 20, 16, 0.9) 0.7px,
+    transparent 1.1px
+  );
+  background-size: 5px 5px;
+}
+
+.blotch {
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(60% 42% at 12% 8%, rgba(120, 96, 60, 0.5), transparent 70%),
+    radial-gradient(48% 38% at 88% 22%, rgba(90, 72, 44, 0.42), transparent 70%),
+    radial-gradient(70% 46% at 30% 92%, rgba(122, 100, 66, 0.4), transparent 72%),
+    repeating-linear-gradient(
+      104deg,
+      transparent 0 78px,
+      rgba(25, 20, 16, 0.05) 78px 79px
+    );
+}
+
+/*
+ * The cursor drags a smudge of ink across the bag. Positioned from JS via
+ * --mx / --my; hidden entirely when the pointer is coarse or motion is
+ * reduced.
+ */
+.smudge {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  mix-blend-mode: multiply;
+  background: radial-gradient(
+    220px 220px at var(--mx, -999px) var(--my, -999px),
+    rgba(25, 20, 16, 0.28),
+    rgba(25, 20, 16, 0.1) 45%,
+    transparent 72%
+  );
+}
+
+body.pointer-fine .smudge {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------- layout */
+.shell {
+  position: relative;
+  z-index: 2;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 20px 96px;
+}
+
+a {
+  color: var(--ink);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  background: var(--marker);
+  color: var(--ink);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--overprint);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------- masthead */
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 18px 0 14px;
+  border-bottom: var(--edge);
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-size: clamp(22px, 3.4vw, 30px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.wordmark:hover {
+  background: none;
+}
+
+.masthead nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ----------------------------------------------------------------- hero */
+.hero {
+  position: relative;
+  padding: 54px 0 40px;
+  border-bottom: var(--edge);
+}
+
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 18px;
+}
+
+.hero h1 {
+  font-family: var(--display);
+  font-size: clamp(44px, 11vw, 128px);
+  line-height: 0.86;
+  max-width: 12ch;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  margin: 0;
+  /* Cheap offset-litho misregistration. */
+  text-shadow:
+    2px 0 0 rgba(168, 50, 31, 0.4),
+    -2px 1px 0 rgba(31, 111, 122, 0.3);
+}
+
+.hero p.lede {
+  max-width: 62ch;
+  margin: 26px 0 0;
+  font-size: 16px;
+}
+
+.stamp {
+  position: absolute;
+  top: 46px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 158px;
+  height: 158px;
+  padding: 14px;
+  border: 4px double var(--stamp);
+  border-radius: 50%;
+  background: rgba(195, 172, 132, 0.75);
+  color: var(--stamp);
+  font-family: var(--display);
+  font-size: 21px;
+  line-height: 1.02;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  opacity: 0.82;
+  transform: rotate(-13deg);
+  mix-blend-mode: multiply;
+}
+
+@media (max-width: 720px) {
+  .stamp {
+    position: static;
+    margin: 28px 0 0;
+    transform: rotate(-6deg);
+  }
+}
+
+/* --------------------------------------------------------------- strips */
+.ticker {
+  overflow: hidden;
+  border-bottom: var(--edge);
+  padding: 9px 0;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.ticker span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: drift 34s linear infinite;
+}
+
+@keyframes drift {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.statbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  border-bottom: var(--edge);
+}
+
+.statbar div {
+  padding: 16px 14px;
+  border-right: var(--rule);
+}
+
+.statbar div:last-child {
+  border-right: 0;
+}
+
+.statbar b {
+  display: block;
+  font-family: var(--display);
+  font-size: 40px;
+  line-height: 1;
+}
+
+.statbar small {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------- filter */
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 16px 0;
+  border-bottom: var(--edge);
+  background: var(--bag);
+  box-shadow: 0 10px 18px -14px rgba(25, 20, 16, 0.8);
+}
+
+.controls label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+#q {
+  width: 100%;
+  padding: 11px 13px;
+  border: var(--edge);
+  border-radius: 0;
+  background: var(--bag-lit);
+  color: var(--ink);
+  font: inherit;
+}
+
+#q::placeholder {
+  color: var(--ink-faint);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.chip {
+  padding: 5px 11px;
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--bag-lit);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bag-lit);
+}
+
+.count {
+  margin-top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------------- cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 20px;
+  padding: 28px 0 0;
+  list-style: none;
+  margin: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: var(--edge);
+  background: var(--bag-lit);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.card:hover,
+.card:focus-within {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-hard);
+}
+
+.card[hidden] {
+  display: none;
+}
+
+.card .cat {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--stamp);
+}
+
+.card h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 27px;
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.card h2 a {
+  text-decoration: none;
+}
+
+.card h2 a:hover {
+  background: none;
+}
+
+/* Full-card click target without nesting interactive elements. */
+.card h2 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.card {
+  position: relative;
+}
+
+.card p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.card .lookup {
+  font-size: 12px;
+  color: var(--overprint);
+  word-break: break-all;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: auto 0 0;
+  padding: 10px 0 0;
+  border-top: var(--rule);
+  list-style: none;
+}
+
+.tags li {
+  padding: 2px 7px;
+  border: 1px solid rgba(25, 20, 16, 0.45);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.empty {
+  padding: 48px 0;
+  font-family: var(--display);
+  font-size: 30px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.empty[hidden] {
+  display: none;
+}
+
+/* -------------------------------------------------------------- sections */
+section.band {
+  padding: 56px 0 0;
+}
+
+section.band > h2 {
+  font-family: var(--display);
+  font-size: clamp(30px, 6vw, 60px);
+  line-height: 0.94;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+
+section.band > .sub {
+  margin: 0 0 26px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------------ code slabs */
+.slab {
+  border: var(--edge);
+  background: var(--ink);
+  color: var(--bag-lit);
+  margin: 0 0 18px;
+}
+
+.slab header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(214, 193, 156, 0.3);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.slab pre {
+  margin: 0;
+  padding: 14px 12px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.copy {
+  padding: 3px 9px;
+  border: 1px solid var(--bag-lit);
+  background: transparent;
+  color: var(--bag-lit);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.copy:hover {
+  background: var(--bag-lit);
+  color: var(--ink);
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* --------------------------------------------------------------- detail */
+.crumb {
+  padding: 22px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.detail-head {
+  padding: 10px 0 34px;
+  border-bottom: var(--edge);
+}
+
+.detail-head h1 {
+  font-family: var(--display);
+  font-size: clamp(38px, 8.5vw, 96px);
+  line-height: 0.88;
+  text-transform: uppercase;
+  margin: 8px 0 0;
+  text-shadow:
+    2px 0 0 rgba(168, 50, 31, 0.36),
+    -2px 1px 0 rgba(31, 111, 122, 0.26);
+}
+
+.detail-head p {
+  max-width: 68ch;
+  margin: 20px 0 0;
+  font-size: 16px;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0;
+  border-bottom: var(--edge);
+}
+
+.meta div {
+  padding: 16px 14px 16px 0;
+}
+
+.meta dt {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+.meta dd {
+  margin: 0;
+  font-size: 13px;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: var(--edge);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------- footer */
+footer.colophon {
+  margin-top: 72px;
+  padding-top: 20px;
+  border-top: var(--edge);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+/* ----------------------------------------------------- cursor highlight */
+/*
+ * The p2output signature: glyphs light up as the pointer sweeps over them.
+ * JS sets --h (0..1) per character; everything visual happens here so the
+ * effect degrades to nothing when JS is off.
+ */
+.reactive .w {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.reactive .g {
+  display: inline-block;
+  color: color-mix(in srgb, var(--stamp) calc(var(--h, 0) * 100%), currentColor);
+  transform: translateY(calc(var(--h, 0) * -5px)) rotate(calc(var(--h, 0) * -3deg));
+  background: linear-gradient(
+    var(--marker),
+    var(--marker)
+  ) no-repeat;
+  background-size: 100% calc(var(--h, 0) * 100%);
+  background-position: 0 100%;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .ticker span {
+    animation: none;
+    padding-left: 0;
+  }
+
+  .reactive .g {
+    transform: none;
+  }
+
+  .smudge {
+    display: none;
+  }
+
+  .card {
+    transition: none;
+  }
+}
+
+@media print {
+  .grain,
+  .halftone,
+  .blotch,
+  .smudge,
+  .controls {
+    display: none;
+  }
+
+  body {
+    background: #fff;
+  }
+}
