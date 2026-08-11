@@ -1,3 +1,15 @@
+# [1.27.0](https://github.com/oleg-koval/agent-skills/compare/v1.26.0...v1.27.0) (2026-08-11)
+
+
+### ✨ Features
+
+* **site:** publish the catalog as a GitHub Pages site ([#52](https://github.com/oleg-koval/agent-skills/issues/52)) ([3d4aeae](https://github.com/oleg-koval/agent-skills/commit/3d4aeae8474ab2b57399b8c8311fa618f2772c20))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump js-yaml ([#51](https://github.com/oleg-koval/agent-skills/issues/51)) ([86c8831](https://github.com/oleg-koval/agent-skills/commit/86c8831a7bf0b7f6393f43f6abba47da71fa762c))
+
 # [1.26.0](https://github.com/oleg-koval/agent-skills/compare/v1.25.0...v1.26.0) (2026-08-10)
 
 
