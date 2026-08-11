@@ -190,14 +190,19 @@
   /* ------------------------------------------------------- copy buttons */
 
   document.querySelectorAll(".copy").forEach((button) => {
+    const idle = button.textContent;
+    let resetTimer = 0;
+
     button.addEventListener("click", async () => {
       const pre = button.closest(".slab").querySelector("pre");
       try {
         await navigator.clipboard.writeText(pre.textContent.trim());
-        const before = button.textContent;
         button.textContent = "copied";
-        setTimeout(() => {
-          button.textContent = before;
+        // A second click before the first timer fires would otherwise capture
+        // "copied" as the label to restore, wedging the button in that state.
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+          button.textContent = idle;
         }, 1400);
       } catch {
         // Clipboard blocked (insecure context, denied permission): select the
