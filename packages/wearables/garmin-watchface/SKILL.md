@@ -1,11 +1,6 @@
 ---
 name: garmin-watchface
 description: Build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C. Use when working on a Connect IQ watch face or app - creating one, fixing layout that clips or overlaps, capturing simulator screenshots, adding app settings, widening device support, or preparing a Connect IQ Store submission. Encodes the traps that silently produce a passing build and a broken face.
-license: MIT
-allowed-tools: Bash, Read, Write, Edit, Grep, Glob
-compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires macOS, the Connect IQ SDK, a JDK, and Python 3 (Pillow for screenshot cropping).
-metadata:
-  targets: [_source-only]
 ---
 
 # Garmin Connect IQ watch faces
@@ -15,43 +10,43 @@ that draws off the bottom of the screen, a test suite that contains no tests, an
 a colour that is not the colour you get. Everything below is a failure mode that
 looked like success first.
 
-**Read `references/` files as needed — do not read them all up front.**
+**Read `reference/` files as needed — do not read them all up front.**
 
 | File | When |
 | --- | --- |
-| `references/display.md` | Choosing colours, anything about brightness or legibility |
-| `references/layout.md` | Positioning anything; content clipped, overlapping, or off-screen |
-| `references/testing.md` | Writing tests; a suspiciously clean test run |
-| `references/simulator.md` | Screenshots, settings not applying, monkeydo hanging |
-| `references/devices.md` | Adding device support, launcher icons, API levels |
-| `references/store.md` | Publishing, listing copy, IP questions |
-| `references/publishing.md` | Driving the store portal in a browser; upload/update flow, validator rejections |
+| `reference/display.md` | Choosing colours, brightness, legibility; **AMOLED always-on and burn-in** |
+| `reference/layout.md` | Positioning anything; content clipped, overlapping, or off-screen |
+| `reference/testing.md` | Writing tests; a suspiciously clean test run |
+| `reference/simulator.md` | Screenshots, settings not applying, monkeydo hanging |
+| `reference/devices.md` | Adding device support, launcher icons, API levels |
+| `reference/store.md` | Publishing, listing copy, IP questions |
+| `reference/publishing.md` | Driving the store portal in a browser; upload/update flow, validator rejections |
 
 ## Tools
 
 Run these rather than reinventing them. All are standalone.
 
 ```bash
-<skill-dir>/scripts/ciq-doctor                    # toolchain check: SDK, JDK, key, devices
-<skill-dir>/scripts/ciq-devices                   # survey installed devices by resolution
-<skill-dir>/scripts/ciq-devices --same-as fenix6pro   # products you can add with no code change
-<skill-dir>/scripts/ciq-capture out.png           # calibrated simulator screenshot
-<skill-dir>/scripts/ciq-capture out.png --face --size 260   # cropped + masked to the round display
-<skill-dir>/scripts/ciq-calibrate                 # re-derive the display rect if capture looks wrong
-<skill-dir>/scripts/ciq-release       # pre-submission check: package, screenshots, icon, keys, copy
+bin/ciq-doctor                    # toolchain check: SDK, JDK, key, devices
+bin/ciq-devices                   # survey installed devices by resolution
+bin/ciq-devices --same-as fenix6pro   # products you can add with no code change
+bin/ciq-capture out.png           # calibrated simulator screenshot
+bin/ciq-capture out.png --face --size 260   # cropped + masked to the round display
+bin/ciq-calibrate                 # re-derive the display rect if capture looks wrong
+bin/ciq-release                   # pre-submission check: package, screenshots, icon, keys, copy
 ```
 
-`<skill-dir>/scripts/ciq-release` is what you run before opening the store
-portal. Every check in it is something otherwise discovered halfway through the
-submission form -- a stale screenshot set, an icon still copied from the last
-project, or copy containing a character the description validator rejects.
+`bin/ciq-release` is what you run before opening the store portal. Every check
+in it is something otherwise discovered halfway through the submission form --
+a stale screenshot set, an icon still copied from the last project, or copy
+containing a character the description validator rejects.
 
-`<skill-dir>/scripts/ciq-capture` exists because `screencapture -R` grabs a screen *region*, not
+`bin/ciq-capture` exists because `screencapture -R` grabs a screen *region*, not
 a window: without a frontmost check it silently photographs whatever is on top,
 and the window moves between simulator restarts. Both failure modes produce a
 plausible PNG of the wrong thing.
 
-## The five things that will bite you
+## The seven things that will bite you
 
 ### 1. `make test` can compile zero tests and report success
 
@@ -61,7 +56,7 @@ get `BUILD SUCCESSFUL` and a green run with nothing compiled — even when the t
 files reference symbols that no longer exist.
 
 Fix: a second jungle passed as an additional `-f`. See
-`<skill-dir>/templates/monkey.test.jungle` and the `test` target in `<skill-dir>/templates/Makefile`.
+`templates/monkey.test.jungle` and the `test` target in `templates/Makefile`.
 
 **Prove it before you trust it.** Put a deliberately unresolvable symbol in one
 test and confirm the build fails:
@@ -82,6 +77,13 @@ they look. Measured on fenix 6 Pro:
 | `FONT_SMALL` | 32 |
 | `FONT_NUMBER_MEDIUM` | 74 |
 
+**Font tiers already scale with the device.** `FONT_XTINY` is a tier, not a
+pixel height: a 454px watch supplies a proportionately taller glyph than a
+260px one, unasked. So when text looks wrong at a new resolution, the bug is a
+LENGTH that failed to scale, never the font. Do not add screen-size branching
+to pick a bigger tier -- doing so double-scales, and labels end up wider than
+the containers naming them.
+
 Content drawn past the screen height is simply invisible — no error, no warning,
 no clipping indicator. A two-line `FONT_NUMBER_MEDIUM` block is 148px of a 260px
 face.
@@ -96,7 +98,7 @@ function clampRuleY(derived as Number, footerH as Number) as Number {
 }
 ```
 
-See `references/layout.md`.
+See `reference/layout.md`.
 
 ### 3. The screen is round; your layout is not
 
@@ -125,7 +127,7 @@ simulator's backlit LCD.
 Corollary: a saturated colour on a glyph reflects only its own channel, making
 the thing you want to read the *dimmest* thing on screen.
 
-See `references/display.md`.
+See `reference/display.md`.
 
 ### 5. The simulator lies about settings
 
@@ -136,14 +138,59 @@ settings code.
 
 Reset also drops the loaded device, so relaunch and re-push afterwards.
 
-See `references/simulator.md`.
+See `reference/simulator.md`.
+
+### 6. On AMOLED, the face you designed is the one that fails review
+
+`requiresBurnInProtection` devices must show a restricted always-on frame
+between wrist raises. The trap is that the *stronger* your face's identity —
+a bright panel, a filled dial — the worse a dimmed version of it performs,
+because it still lights most of the screen. The always-on frame has to be a
+different drawing: outlines where there were fills, and shifted a few pixels on
+a cycle so no pixel is driven continuously.
+
+Also note the flag can be **null** on older products, and a null propagating
+into a `Boolean` field throws at the first wrist drop.
+
+See the AMOLED section of `reference/display.md`.
+
+### 7. A watch face CAN have settings on the watch
+
+`AppBase.getSettingsView()` has existed since **API 3.2.0** and the SDK
+documents it as "only applicable to watch faces and data fields". Plenty of
+store copy — including, at one point, this author's own — claims settings are
+reachable only from the phone. They are not.
+
+The override signature must include `or Null` or the compiler rejects it as
+narrowing:
+
+```monkeyc
+function getSettingsView() as
+    [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] or Null {
+    return [new SettingsMenu(), new SettingsMenuDelegate()];
+}
+```
+
+Two things to get right in the menu itself:
+
+- `ToggleMenuItem` has **already flipped its own state** by the time `onSelect`
+  runs. Read `isEnabled()`; negating the stored value inverts the setting.
+- A picker should `setFocus()` the current choice, not open at the top of a long
+  list. If the list filters out unavailable options, item position is *not* the
+  option id — count the focus row as you build the list.
+
+Keep one module that owns every property read, each wrapped with a default, and
+have both the phone path and the on-watch menu go through it. Two readers with
+two sets of defaults is exactly how the watch and the phone come to disagree
+about what "off" means — and check the fallbacks actually match
+`properties.xml`, because nothing enforces that.
 
 ## Workflow
 
 ### Starting a face
 
-1. `<skill-dir>/scripts/ciq-doctor` — confirm SDK, JDK, developer key, target device installed.
-2. Copy `<skill-dir>/templates/Makefile`, `<skill-dir>/templates/monkey.jungle`, `<skill-dir>/templates/monkey.test.jungle`.
+1. `bin/ciq-doctor` — confirm SDK, JDK, developer key, target device installed.
+2. Copy `templates/Makefile`, `templates/monkey.jungle`, `templates/monkey.test.jungle`.
 3. Generate a fresh app id: `python3 -c "import uuid;print(uuid.uuid4().hex)"`.
 4. Split source by responsibility. This structure has held up well:
 
@@ -172,7 +219,7 @@ Capture and *look at it*. Layout bugs are invisible in a passing test run:
 
 ```bash
 make build && make sim
-<skill-dir>/scripts/ciq-capture /tmp/face.png --face --size 260
+bin/ciq-capture /tmp/face.png --face --size 260
 ```
 
 Then Read the PNG. Every layout bug in this skill's history was found by looking,
@@ -205,7 +252,7 @@ are what makes it recognisable:
 - **Where the legends sit** — maker's name on the bezel, not the glass.
 
 No system font is a segment display. If you need one, draw it: see
-`references/layout.md` for a working seven-segment renderer, including the ghost
+`reference/layout.md` for a working seven-segment renderer, including the ghost
 (unlit) segments that are most of what sells the effect.
 
-**Do not print a real brand on the face.** See `references/store.md`.
+**Do not print a real brand on the face.** See `reference/store.md`.
