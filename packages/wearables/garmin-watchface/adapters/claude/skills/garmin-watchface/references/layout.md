@@ -222,3 +222,31 @@ digit nought" — they are different pictures.
   checked against a boundary: a stroke straddles its path, putting half its width
   outside what you verified.
 - Order matters when compositing. Pasting a square image over a ring erases it.
+
+## Fonts are tiers, not pixel heights
+
+`FONT_XTINY` is not a size — it is a request, and the device answers with a
+glyph proportionate to its own screen. A 454px watch supplies a materially
+taller `FONT_XTINY` than a 260px one, unasked.
+
+So when text looks wrong at a new resolution, **the bug is a length that failed
+to scale, never the font**. Do not branch on screen size to pick a bigger tier:
+that double-scales, and labels end up wider than the containers naming them.
+Tried on a real face, `FONT_SMALL` on a 1.75x screen made a four-character
+subdial label wider than the arc it sat inside; plain `FONT_XTINY` was correct
+on sight.
+
+The cheap check before theorising: does a sibling face that never touched its
+fonts render correctly at the new size? If yes, fonts are not your problem.
+
+**Where a font tier IS a real constraint, the limit is the container.** A label
+inside a 30-unit arc has to fit that arc at every resolution, which is a
+different question from how it scales. Derive placement from the MEASURED glyph:
+
+```monkeyc
+var h = dc.getFontHeight(Fonts.label());
+var y = cy + DIGIT_TOP_DY - Layout.grid(2) - h;   // seat it on its own height
+```
+
+A fixed offset scales with the screen while the glyph does not, which puts the
+label on top of its own digits at one size and adrift at another.

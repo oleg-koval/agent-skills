@@ -1,0 +1,502 @@
+#!/usr/bin/env python3
+"""Render SVG design proposals as a browsable HTML sheet, and audit them
+against what the watch can actually draw.
+
+    ciq-mock out.html a.svg b.svg c.svg
+    ciq-mock out.html *.svg --device fenix6pro
+    ciq-mock out.html a.svg --strict          # exit 1 on unsupported/bezel findings only
+
+Why this exists
+---------------
+
+Proposing a face in Monkey C costs a build, a simulator launch and a screenshot
+per iteration. Proposing it in SVG costs a file write. Three variants can be put
+in front of a human before any Monkey C exists.
+
+The trap is that SVG will happily render a face the watch cannot produce. Alpha,
+gradients, hairlines and 16-million colours all look fine in a browser and none
+of them survive contact with a 64-colour MIP panel with no alpha blending. A
+mock that promises them is worse than no mock: it gets approved, and then the
+implementation cannot hit it.
+
+So this tool does two things:
+
+  * renders each proposal at device size, inside the round bezel, with every
+    colour QUANTIZED TO THE 4x4x4 LATTICE -- you see what ships, not what you
+    drew;
+  * reports every construct that will not survive, per variant, next to the
+    picture.
+
+Audit limits, stated rather than hidden: `<path>` geometry is not bezel-checked
+(that needs a real path renderer), and text extents are not measured -- font
+metrics come from `dc.getFontHeight()` on device and no browser knows them.
+Both are called out in the report rather than silently passing.
+"""
+
+from __future__ import annotations
+
+import argparse
+import html
+import json
+import math
+import os
+import re
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+SVG_NS = "http://www.w3.org/2000/svg"
+ET.register_namespace("", SVG_NS)
+
+DEVICES = Path.home() / "Library/Application Support/Garmin/ConnectIQ/Devices"
+
+# The 4x4x4 lattice. A colour not already on it is not the colour that ships.
+LEVELS = (0x00, 0x55, 0xAA, 0xFF)
+
+# Only the handful of CSS names worth recognising. Anything else is reported as
+# unknown rather than guessed at -- a wrong guess here would quantize to a
+# colour the author never wrote.
+NAMED = {
+    "black": (0, 0, 0),
+    "white": (255, 255, 255),
+    "red": (255, 0, 0),
+    "lime": (0, 255, 0),
+    "blue": (0, 0, 255),
+    "yellow": (255, 255, 0),
+    "cyan": (0, 255, 255),
+    "aqua": (0, 255, 255),
+    "magenta": (255, 0, 255),
+    "fuchsia": (255, 0, 255),
+    "grey": (128, 128, 128),
+    "gray": (128, 128, 128),
+    "silver": (192, 192, 192),
+    "orange": (255, 165, 0),
+    "green": (0, 128, 0),
+    "navy": (0, 0, 128),
+    "maroon": (128, 0, 0),
+    "teal": (0, 128, 128),
+    "olive": (128, 128, 0),
+    "purple": (128, 0, 128),
+}
+
+COLOUR_ATTRS = ("fill", "stroke", "stop-color", "color", "flood-color")
+
+# Constructs with no equivalent on the panel.
+BANNED_TAGS = {
+    "linearGradient": "gradients do not exist -- 8bpp dithering shows as crosshatch",
+    "radialGradient": "gradients do not exist -- 8bpp dithering shows as crosshatch",
+    "filter": "no filter primitives; blur/shadow cannot be drawn",
+    "feGaussianBlur": "no blur on device",
+    "feDropShadow": "no shadow on device",
+    "mask": "no alpha mask; use setClip or draw the occluder",
+    "image": "raster costs memory against the watchface limit -- prefer vector",
+    "pattern": "no pattern fills",
+}
+
+BANNED_ATTRS = {
+    "opacity": "alphaBlendingSupport is false -- renders fully opaque",
+    "fill-opacity": "alphaBlendingSupport is false -- renders fully opaque",
+    "stroke-opacity": "alphaBlendingSupport is false -- renders fully opaque",
+    "stroke-dasharray": "no dash support; draw the segments",
+    "filter": "no filter primitives",
+}
+
+# Non-blocking attributes that need guidance but don't fail --strict.
+GUIDANCE_ATTRS = {
+    "transform": "fine in the mock, but every rotation must be precomputed in "
+                 "Monkey C -- one sin/cos pair per polygon, not per vertex",
+}
+
+# With no anti-aliasing a 1px diagonal stroke is a dotted line, not a line.
+MIN_STROKE = 2
+
+
+# ---------------------------------------------------------------- colour ----
+
+def parse_colour(text):
+    """-> (r, g, b) or None when unparseable/none, or "alpha" when alpha-bearing."""
+    if not text:
+        return None
+    t = text.strip().lower()
+    if t in ("none", "transparent", "currentcolor", "inherit"):
+        return None
+    if t in NAMED:
+        return NAMED[t]
+    # 4-digit or 8-digit hex with alpha
+    m = re.fullmatch(r"#([0-9a-f]{4})", t)
+    if m:
+        return "alpha"
+    m = re.fullmatch(r"#([0-9a-f]{8})", t)
+    if m:
+        return "alpha"
+    m = re.fullmatch(r"#([0-9a-f]{3})", t)
+    if m:
+        return tuple(int(c * 2, 16) for c in m.group(1))
+    m = re.fullmatch(r"#([0-9a-f]{6})", t)
+    if m:
+        h = m.group(1)
+        return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+    m = re.fullmatch(r"rgba?\(([^)]*)\)", t)
+    if m:
+        parts = [p.strip() for p in m.group(1).replace("/", ",").split(",")]
+        # If there's a 4th component (alpha), flag it
+        if len(parts) >= 4:
+            return "alpha"
+        try:
+            return tuple(int(round(float(p.rstrip("%")) * (2.55 if "%" in p else 1)))
+                         for p in parts[:3])
+        except ValueError:
+            return None
+    return None
+
+
+def quantize_channel(v):
+    return min(LEVELS, key=lambda level: abs(level - v))
+
+
+def quantize(rgb):
+    return tuple(quantize_channel(c) for c in rgb)
+
+
+def hexof(rgb):
+    return "#%02X%02X%02X" % rgb
+
+
+def luminance(rgb):
+    """Rec.601 weighting. On a transflective panel this IS reflectance: how much
+    ambient light the colour returns. Glance hierarchy is built from it."""
+    r, g, b = rgb
+    return (r * 299 + g * 587 + b * 114) // 1000
+
+
+# ------------------------------------------------------------------ load ----
+
+def strip_ns(tag):
+    return tag.split("}", 1)[-1] if "}" in tag else tag
+
+
+def load_fragment(path):
+    """Accept either a whole <svg> document or a bare fragment of shapes."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    text = re.sub(r"<\?xml[^>]*\?>", "", text)
+    text = re.sub(r"<!DOCTYPE[^>]*>", "", text)
+    stripped = text.lstrip()
+    if not stripped.startswith("<svg"):
+        text = f'<svg xmlns="{SVG_NS}">{text}</svg>'
+    try:
+        return ET.fromstring(text)
+    except ET.ParseError as exc:
+        sys.exit(f"{path}: not parseable as XML/SVG -- {exc}")
+
+
+def device_size(device):
+    path = DEVICES / device / "compiler.json"
+    if not path.is_file():
+        sys.exit(
+            f"Unknown device '{device}' (looked for {path}).\n"
+            "Run ciq-devices to list what the SDK Manager has installed, "
+            "or pass --size instead."
+        )
+    j = json.loads(path.read_text())
+    res = j.get("resolution") or j.get("display") or {}
+    w, h = res.get("width"), res.get("height")
+    if not w or not h:
+        sys.exit(f"{path} declares no resolution (width or height missing).")
+    return int(w), int(h)
+
+
+# ----------------------------------------------------------------- audit ----
+
+def numeric(el, name):
+    try:
+        return float(el.get(name))
+    except (TypeError, ValueError):
+        return None
+
+
+def bezel_findings(el, tag, size):
+    """Farthest-point checks for the shapes whose extent is readable from
+    attributes alone. A rectangle inscribed in a circle fails at its CORNERS
+    long before its sides, which is the single most common round-screen bug."""
+    c = size / 2.0
+    limit = c  # the glass edge; furniture should stop short of it
+
+    def reach(x, y):
+        return math.hypot(x - c, y - c)
+
+    if tag == "rect":
+        x, y = numeric(el, "x") or 0.0, numeric(el, "y") or 0.0
+        w, h = numeric(el, "width"), numeric(el, "height")
+        if w is None or h is None:
+            return []
+        # A rect covering the whole screen is the dial ground -- the Monkey C
+        # equivalent of dc.clear(). Its corners are off the glass by design, and
+        # flagging it every single time teaches you to ignore this check.
+        if x <= 0 and y <= 0 and x + w >= size and y + h >= size:
+            return []
+        worst = max(reach(px, py) for px in (x, x + w) for py in (y, y + h))
+        if worst > limit:
+            return [("bezel", f"rect corner reaches r={worst:.1f} > {limit:.0f} "
+                              f"-- clipped by the bezel (sides fit, corners do not)")]
+    elif tag in ("circle", "ellipse"):
+        cx, cy = numeric(el, "cx") or 0.0, numeric(el, "cy") or 0.0
+        rx = numeric(el, "r") or numeric(el, "rx") or 0.0
+        ry = numeric(el, "r") or numeric(el, "ry") or 0.0
+        worst = reach(cx, cy) + max(rx, ry)
+        if worst > limit:
+            return [("bezel", f"{tag} reaches r={worst:.1f} > {limit:.0f}")]
+    elif tag in ("polygon", "polyline"):
+        nums = [float(n) for n in re.findall(r"-?\d+\.?\d*", el.get("points", ""))]
+        pts = list(zip(nums[0::2], nums[1::2]))
+        if pts:
+            worst = max(reach(px, py) for px, py in pts)
+            if worst > limit:
+                return [("bezel", f"{tag} vertex reaches r={worst:.1f} > {limit:.0f}")]
+    elif tag == "line":
+        pts = [(numeric(el, "x1"), numeric(el, "y1")),
+               (numeric(el, "x2"), numeric(el, "y2"))]
+        if all(p is not None for pt in pts for p in pt):
+            worst = max(reach(px, py) for px, py in pts)
+            if worst > limit:
+                return [("bezel", f"line endpoint reaches r={worst:.1f} > {limit:.0f}")]
+    return []
+
+
+def audit(root, size, round_screen):
+    findings = []
+    colours = {}
+    has_path = False
+    has_text = False
+
+    for el in root.iter():
+        tag = strip_ns(el.tag)
+        if tag == "path":
+            has_path = True
+        if tag == "text":
+            has_text = True
+
+        if tag in BANNED_TAGS:
+            findings.append(("unsupported", f"<{tag}>: {BANNED_TAGS[tag]}"))
+
+        style = el.get("style", "")
+        declared = dict(el.attrib)
+        for decl in style.split(";"):
+            if ":" in decl:
+                k, v = decl.split(":", 1)
+                declared[k.strip()] = v.strip()
+
+        for attr, why in BANNED_ATTRS.items():
+            if attr in declared and declared[attr] not in ("1", "1.0", "none"):
+                findings.append(("unsupported", f"{tag} {attr}=\"{declared[attr]}\": {why}"))
+
+        for attr, why in GUIDANCE_ATTRS.items():
+            if attr in declared and declared[attr] not in ("1", "1.0", "none"):
+                findings.append(("limit", f"{tag} {attr}=\"{declared[attr]}\": {why}"))
+
+        for attr in COLOUR_ATTRS:
+            raw = declared.get(attr)
+            if raw is None:
+                continue
+            rgb = parse_colour(raw)
+            if rgb == "alpha":
+                findings.append(("unsupported", f"{tag} {attr}=\"{raw}\": alpha channel "
+                                               "not supported (alphaBlendingSupport is false)"))
+                continue
+            if rgb is None:
+                if raw.strip().lower() not in ("none", "transparent", "inherit",
+                                               "currentcolor"):
+                    findings.append(("colour", f"{tag} {attr}=\"{raw}\" not understood "
+                                               "-- write an explicit hex"))
+                continue
+            colours[rgb] = colours.get(rgb, 0) + 1
+
+        sw = declared.get("stroke-width")
+        if sw is not None and declared.get("stroke", "none") != "none":
+            try:
+                # Strip "px" suffix if present
+                sw_str = str(sw).strip()
+                if sw_str.endswith("px"):
+                    sw_str = sw_str[:-2].strip()
+                if float(sw_str) < MIN_STROKE:
+                    findings.append(("stroke", f"{tag} stroke-width={sw}: below {MIN_STROKE}px "
+                                               "breaks up with no anti-aliasing"))
+            except ValueError:
+                pass
+
+        if round_screen:
+            findings.extend(bezel_findings(el, tag, size))
+
+    off = [c for c in colours if quantize(c) != c]
+    for c in sorted(off, key=luminance):
+        findings.append(("colour", f"{hexof(c)} is off-lattice -- ships as "
+                                   f"{hexof(quantize(c))}"))
+
+    if has_path:
+        findings.append(("limit", "<path> present: not bezel-checked here, and "
+                                  "Monkey C has no path primitive -- it must become "
+                                  "fillPolygon/drawArc/drawLine"))
+    if has_text:
+        findings.append(("limit", "<text> present: browser metrics are not device "
+                                  "metrics. Derive every Y from dc.getFontHeight() "
+                                  "-- FONT_XTINY is 19px, FONT_NUMBER_MEDIUM is 74px"))
+    return findings, colours
+
+
+# --------------------------------------------------------------- render ----
+
+def apply_quantize(root):
+    for el in root.iter():
+        for attr in COLOUR_ATTRS:
+            rgb = parse_colour(el.get(attr))
+            if rgb is not None:
+                el.set(attr, hexof(quantize(rgb)))
+        style = el.get("style")
+        if style:
+            def repl(m):
+                rgb = parse_colour(m.group(2))
+                return f"{m.group(1)}:{hexof(quantize(rgb))}" if rgb else m.group(0)
+            el.set("style", re.sub(r"([a-z-]+)\s*:\s*([^;]+)", repl, style))
+    return root
+
+
+def inner_markup(root):
+    return "".join(ET.tostring(child, encoding="unicode") for child in root)
+
+
+CSS = """
+:root { color-scheme: dark; }
+body { margin:0; padding:28px; background:#141414; color:#ddd;
+       font:14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+h1 { font-size:15px; font-weight:600; letter-spacing:.08em;
+     text-transform:uppercase; color:#888; margin:0 0 4px; }
+.sub { color:#666; margin:0 0 26px; max-width:70ch; }
+.sheet { display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; }
+.card { background:#1d1d1d; border:1px solid #2c2c2c; border-radius:10px;
+        padding:18px; width:320px; }
+.card h2 { font-size:13px; margin:0 0 12px; color:#eee; font-weight:600; }
+.face { display:block; margin:0 auto 14px; border-radius:50%;
+        box-shadow:0 0 0 6px #2a2a2a, 0 0 0 7px #444; }
+.dim .face { filter:brightness(.42) saturate(.9); }
+.swatches { display:flex; flex-wrap:wrap; gap:5px; margin:12px 0; }
+.sw { width:26px; height:26px; border-radius:4px; border:1px solid #000; }
+.f { margin:3px 0; padding-left:1.1em; text-indent:-1.1em; font-size:12.5px; }
+.f.unsupported { color:#ff8f8f; }
+.f.colour      { color:#ffcf7a; }
+.f.bezel       { color:#ff8f8f; }
+.f.stroke      { color:#ffcf7a; }
+.f.limit       { color:#7fb6ff; }
+.clean { color:#7fd97f; font-size:12.5px; }
+button { background:#2c2c2c; color:#ddd; border:1px solid #3d3d3d;
+         border-radius:6px; padding:7px 13px; font:inherit; cursor:pointer;
+         margin-bottom:22px; }
+"""
+
+JS = """
+document.querySelector('#dim').addEventListener('click', function () {
+  document.body.classList.toggle('dim');
+  this.textContent = document.body.classList.contains('dim')
+    ? 'Ambient: dim (approximate)' : 'Ambient: bright';
+});
+"""
+
+
+def card(name, markup, w, h, findings, colours, round_screen, card_index):
+    clip = ""
+    if round_screen:
+        clip = (f'<defs><clipPath id="glass_{card_index}">'
+                f'<circle cx="{w/2}" cy="{h/2}" r="{min(w, h)/2}"/>'
+                f"</clipPath></defs>")
+        markup = f'<g clip-path="url(#glass_{card_index})">{markup}</g>'
+
+    swatches = "".join(
+        f'<div class="sw" style="background:{hexof(quantize(c))}" '
+        f'title="{hexof(quantize(c))} lum {luminance(quantize(c))}"></div>'
+        for c in sorted(colours, key=luminance, reverse=True)
+    )
+
+    if findings:
+        body = "".join(
+            f'<div class="f {kind}">- {html.escape(msg)}</div>' for kind, msg in findings
+        )
+    else:
+        body = '<div class="clean">nothing here fails to survive the panel.</div>'
+
+    return f"""
+    <div class="card">
+      <h2>{html.escape(name)}</h2>
+      <svg class="face" width="{w}" height="{h}" viewBox="0 0 {w} {h}"
+           xmlns="{SVG_NS}" shape-rendering="crispEdges">
+        {clip}{markup}
+      </svg>
+      <div class="swatches">{swatches}</div>
+      {body}
+    </div>"""
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("out", help="HTML file to write")
+    ap.add_argument("svg", nargs="+", help="SVG proposals (documents or fragments)")
+    ap.add_argument("--device", help="read the resolution from an installed device")
+    ap.add_argument("--size", type=int, default=260, help="square size (default 260)")
+    ap.add_argument("--rect", action="store_true",
+                    help="rectangular screen: skip the round bezel clip and checks")
+    ap.add_argument("--no-quantize", action="store_true",
+                    help="render the colours as written (dishonest; for comparison only)")
+    ap.add_argument("--strict", action="store_true",
+                    help="exit 1 if any variant has unsupported-feature or bezel findings "
+                         "(path/text limits are non-blocking)")
+    args = ap.parse_args()
+
+    if args.device:
+        w, h = device_size(args.device)
+    else:
+        w = h = args.size
+    round_screen = (not args.rect) and w == h
+
+    cards, blocking = [], 0
+    for idx, name in enumerate(args.svg):
+        path = Path(name)
+        if not path.is_file():
+            sys.exit(f"No such file: {path}")
+        root = load_fragment(path)
+        findings, colours = audit(root, min(w, h), round_screen)
+        if not args.no_quantize:
+            root = apply_quantize(root)
+        blocking += sum(1 for kind, _ in findings if kind in ("unsupported", "bezel"))
+        cards.append(card(path.stem, inner_markup(root), w, h,
+                          findings, colours, round_screen, idx))
+
+        print(f"{path.stem}: {len(findings)} finding(s)")
+        for kind, msg in findings:
+            print(f"  [{kind}] {msg}")
+
+    note = ("Colours are quantized to the 4x4x4 lattice, so these are the colours "
+            "that ship. The dim toggle is a rough stand-in for a transflective "
+            "panel in poor light -- it is not a measurement.")
+    if args.no_quantize:
+        note = ("--no-quantize: colours are shown AS WRITTEN, not as they will "
+                "ship. Do not approve a design from this view.")
+
+    doc = f"""<!doctype html>
+<meta charset="utf-8">
+<title>Connect IQ design proposals</title>
+<style>{CSS}</style>
+<h1>Design proposals &mdash; {w}&times;{h}{' round' if round_screen else ''}</h1>
+<p class="sub">{html.escape(note)}</p>
+<button id="dim">Ambient: bright</button>
+<div class="sheet">{''.join(cards)}</div>
+<script>{JS}</script>
+"""
+    Path(args.out).write_text(doc, encoding="utf-8")
+    print(f"\nWrote {args.out} -- open it and LOOK at it before writing Monkey C.")
+
+    if args.strict and blocking:
+        print(f"--strict: {blocking} finding(s) the panel cannot render.", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

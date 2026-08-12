@@ -9,4 +9,5 @@ Thumbs.db
 dist/
 node_modules/
 tmp/
+.gstack/
 _site/
