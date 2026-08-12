@@ -185,7 +185,7 @@ order problem.
 Grep the entire `source/` tree, not just `Layout.mc`:
 
 ```bash
-grep -rn "const [A-Z_0-9]* = -\?[0-9]" source/
+grep -rn "const [A-Z_][A-Z_0-9]* =" source/
 ```
 
 Then sort what you find into three buckets:

@@ -280,13 +280,19 @@ def check_listing(root: Path, r: Report) -> None:
         r.ok("no emoji in the copy")
 
     text = doc.lower()
-    # Watch face settings are unreachable from the watch. Omitting this reads as
-    # a missing feature to every reviewer and every user.
-    if "garmin connect" not in text:
+    # Settings ARE reachable from the watch: AppBase.getSettingsView() has
+    # existed since API 3.2.0 and the SDK documents it as "only applicable to
+    # watch faces and data fields". This check previously asserted the opposite
+    # and told people to write it into their store copy, which is how a false
+    # claim ended up published on two listings.
+    #
+    # What still matters is that the listing says WHERE settings live, by
+    # whichever route the face actually supports.
+    if "garmin connect" not in text and "menu button" not in text:
         r.warn(
-            "listing never mentions the Garmin Connect app",
-            "watch face settings are not reachable from the watch; say so or "
-            "it reads as a missing feature",
+            "listing never says where settings live",
+            "name the on-watch route (hold the menu button) or the phone route "
+            "(Garmin Connect app), or users report the settings as missing",
         )
     else:
         r.ok("listing explains where settings live")
