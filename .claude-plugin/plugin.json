@@ -1,7 +1,7 @@
 {
   "name": "olko-agent-skills",
   "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.",
-  "version": "1.25.0",
+  "version": "1.27.0",
   "author": {
     "name": "Oleg Koval"
   },
@@ -9,6 +9,7 @@
   "repository": "https://github.com/oleg-koval/agent-skills",
   "license": "MIT",
   "skills": [
+    "./packages/software-development/lekker-review",
     "./packages/software-development/self-critique",
     "./packages/software-development/docs-index-keeper",
     "./packages/software-development/semantic-release-beta",

@@ -2,6 +2,24 @@
   "name": "agent-skills",
   "packages": [
     {
+      "name": "lekker-review",
+      "lookupName": "olko:lekker-review",
+      "category": "software-development",
+      "path": "packages/software-development/lekker-review",
+      "description": "FAANG-quality PR code review: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, 5 parallel specialist review agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
+      "tags": [
+        "code-review",
+        "pull-request",
+        "github",
+        "multi-agent",
+        "workflow",
+        "quality"
+      ],
+      "adapters": [
+        "claude"
+      ]
+    },
+    {
       "name": "self-critique",
       "lookupName": "olko:self-critique",
       "category": "software-development",
