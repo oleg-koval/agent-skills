@@ -1,3 +1,11 @@
+# [1.29.0](https://github.com/oleg-koval/agent-skills/compare/v1.28.0...v1.29.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **garmin-watchface:** SVG design proposals, inspiration wizard, open-API sourcing ([#45](https://github.com/oleg-koval/agent-skills/issues/45)) ([f25dbfd](https://github.com/oleg-koval/agent-skills/commit/f25dbfdfb54bc5e4576351bfbbaa4747e2347327))
+* **skills:** auto-generate 2026-08-10 [weekly-pattern-learner] ([#49](https://github.com/oleg-koval/agent-skills/issues/49)) ([1312653](https://github.com/oleg-koval/agent-skills/commit/1312653191a25be9573b704ee46c77ca175852a3))
+
 # [1.28.0](https://github.com/oleg-koval/agent-skills/compare/v1.27.0...v1.28.0) (2026-08-12)
 
 
