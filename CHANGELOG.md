@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/oleg-koval/agent-skills/compare/v1.27.0...v1.28.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **lekker-review:** add PR review skill (Claude-only) ([4af2a06](https://github.com/oleg-koval/agent-skills/commit/4af2a065dc6490b70d3fa2d9a77185834be517c8))
+
 # [1.27.0](https://github.com/oleg-koval/agent-skills/compare/v1.26.0...v1.27.0) (2026-08-11)
 
 
