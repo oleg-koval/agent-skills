@@ -1,0 +1,6 @@
+{
+  "name": "olko:morning-routine",
+  "version": "0.1.0",
+  "description": "Run the complete start-of-day setup in one pass: roll over unfinished Obsidian tasks to today's daily note, sync open GitHub PRs that need your attention, and sweep Dependabot patch bumps. Chains obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage.",
+  "skills": "skills/"
+}
