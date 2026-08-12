@@ -2,6 +2,24 @@
   "name": "agent-skills",
   "packages": [
     {
+      "name": "lekker-review",
+      "lookupName": "olko:lekker-review",
+      "category": "software-development",
+      "path": "packages/software-development/lekker-review",
+      "description": "FAANG-quality PR code review: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, 5 parallel specialist review agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
+      "tags": [
+        "code-review",
+        "pull-request",
+        "github",
+        "multi-agent",
+        "workflow",
+        "quality"
+      ],
+      "adapters": [
+        "claude"
+      ]
+    },
+    {
       "name": "self-critique",
       "lookupName": "olko:self-critique",
       "category": "software-development",
@@ -399,7 +417,7 @@
       "lookupName": "olko:obsidian-pr-sync",
       "category": "software-development",
       "path": "packages/software-development/obsidian-pr-sync",
-      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent \u2014 re-running replaces the section.",
+      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
       "tags": [
         "github",
         "obsidian",
@@ -470,7 +488,7 @@
       "lookupName": "olko:macos-menubar-app",
       "category": "software-development",
       "path": "packages/software-development/macos-menubar-app",
-      "description": "Build a production-quality macOS menubar or notch app in SwiftUI \u2014 MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
+      "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
       "tags": [
         "macos",
         "swiftui",
@@ -495,7 +513,7 @@
       "lookupName": "olko:skill-budget-audit",
       "category": "software-development",
       "path": "packages/software-development/skill-budget-audit",
-      "description": "Diagnose and fix Claude Code skill context budget overflow \u2014 identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
+      "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
       "tags": [
         "claude-code",
         "skills",
@@ -534,11 +552,59 @@
       ]
     },
     {
+      "name": "pr-finalize",
+      "lookupName": "olko:pr-finalize",
+      "category": "software-development",
+      "path": "packages/software-development/pr-finalize",
+      "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human.",
+      "tags": [
+        "code-review",
+        "pull-requests",
+        "github",
+        "testing",
+        "automation",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "pr-finalize-complete",
+      "lookupName": "olko:pr-finalize-complete",
+      "category": "software-development",
+      "path": "packages/software-development/pr-finalize-complete",
+      "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption.",
+      "tags": [
+        "code-review",
+        "pull-requests",
+        "github",
+        "testing",
+        "verification",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
       "name": "qodoloop",
       "lookupName": "olko:qodoloop",
       "category": "software-development",
       "path": "packages/software-development/qodoloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings \u2014 reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
       "tags": [
         "code-review",
         "qodo",
@@ -586,10 +652,58 @@
       "lookupName": "olko:coderabbitloop",
       "category": "software-development",
       "path": "packages/software-development/coderabbitloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings \u2014 reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
+      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
       "tags": [
         "code-review",
         "coderabbit",
+        "github",
+        "pull-requests",
+        "automation",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "codexloop",
+      "lookupName": "olko:codexloop",
+      "category": "software-development",
+      "path": "packages/software-development/codexloop",
+      "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
+      "tags": [
+        "code-review",
+        "codex",
+        "github",
+        "pull-requests",
+        "automation",
+        "agents"
+      ],
+      "adapters": [
+        "claude",
+        "codex",
+        "cursor",
+        "copilot",
+        "grok",
+        "windsurf",
+        "kiro"
+      ]
+    },
+    {
+      "name": "geminiloop",
+      "lookupName": "olko:geminiloop",
+      "category": "software-development",
+      "path": "packages/software-development/geminiloop",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code.",
+      "tags": [
+        "code-review",
+        "gemini",
         "github",
         "pull-requests",
         "automation",
@@ -678,7 +792,7 @@
       "lookupName": "olko:wikipedia-uk-editor",
       "category": "software-development",
       "path": "packages/software-development/wikipedia-uk-editor",
-      "description": "Draft policy-compliant Ukrainian Wikipedia edits \u2014 translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item \u2014 and return ready-to-paste wikitext plus an edit summary.",
+      "description": "Draft policy-compliant Ukrainian Wikipedia edits — translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item — and return ready-to-paste wikitext plus an edit summary.",
       "tags": [
         "wikipedia",
         "ukrainian",
@@ -734,6 +848,80 @@
         "automation",
         "loop",
         "fix"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
+    },
+    {
+      "name": "pr-to-green",
+      "lookupName": "olko:pr-to-green",
+      "category": "software-development",
+      "path": "packages/software-development/pr-to-green",
+      "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads.",
+      "tags": [
+        "github",
+        "pr",
+        "ci",
+        "loop",
+        "qodoloop",
+        "coderabbitloop",
+        "ci-fix-loop",
+        "workflow",
+        "automation"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
+    },
+    {
+      "name": "dependabot-triage",
+      "lookupName": "olko:dependabot-triage",
+      "category": "software-development",
+      "path": "packages/software-development/dependabot-triage",
+      "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest.",
+      "tags": [
+        "dependabot",
+        "renovate",
+        "dependencies",
+        "security",
+        "automation",
+        "triage",
+        "github"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
+    },
+    {
+      "name": "store-listing-copy",
+      "lookupName": "olko:store-listing-copy",
+      "category": "software-development",
+      "path": "packages/software-development/store-listing-copy",
+      "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes.",
+      "tags": [
+        "app-store",
+        "google-play",
+        "connect-iq",
+        "garmin",
+        "store",
+        "listing",
+        "copy",
+        "release-notes",
+        "ios",
+        "android"
       ],
       "adapters": [
         "codex",

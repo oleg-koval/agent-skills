@@ -1,3 +1,43 @@
+# [1.28.0](https://github.com/oleg-koval/agent-skills/compare/v1.27.0...v1.28.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **lekker-review:** add PR review skill (Claude-only) ([4af2a06](https://github.com/oleg-koval/agent-skills/commit/4af2a065dc6490b70d3fa2d9a77185834be517c8))
+
+# [1.27.0](https://github.com/oleg-koval/agent-skills/compare/v1.26.0...v1.27.0) (2026-08-11)
+
+
+### ✨ Features
+
+* **site:** publish the catalog as a GitHub Pages site ([#52](https://github.com/oleg-koval/agent-skills/issues/52)) ([3d4aeae](https://github.com/oleg-koval/agent-skills/commit/3d4aeae8474ab2b57399b8c8311fa618f2772c20))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump js-yaml ([#51](https://github.com/oleg-koval/agent-skills/issues/51)) ([86c8831](https://github.com/oleg-koval/agent-skills/commit/86c8831a7bf0b7f6393f43f6abba47da71fa762c))
+
+# [1.26.0](https://github.com/oleg-koval/agent-skills/compare/v1.25.0...v1.26.0) (2026-08-10)
+
+
+### ✨ Features
+
+* add pr-finalize-complete skill ([8101ee6](https://github.com/oleg-koval/agent-skills/commit/8101ee6cf0cf69747ad91cfc9bd4e3eed18bffd3))
+* **skills:** add codexloop and geminiloop review-bot loops ([#50](https://github.com/oleg-koval/agent-skills/issues/50)) ([5179689](https://github.com/oleg-koval/agent-skills/commit/51796894b4af73321a857af7ff085440c505ec33))
+* **skills:** auto-generate 2026-07-31 [weekly-pattern-learner] ([#46](https://github.com/oleg-koval/agent-skills/issues/46)) ([0d86f68](https://github.com/oleg-koval/agent-skills/commit/0d86f6880f04c08d0fc6f507b850b70214b6c190))
+
+
+### 🛠 Builds
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 1 update ([#48](https://github.com/oleg-koval/agent-skills/issues/48)) ([24e0056](https://github.com/oleg-koval/agent-skills/commit/24e0056d1dfcb8f797de55aa28afaab9e9b90e85))
+
+# [1.25.0](https://github.com/oleg-koval/agent-skills/compare/v1.24.0...v1.25.0) (2026-07-31)
+
+
+### ✨ Features
+
+* **software-development:** add pr-finalize skill ([2c7b10c](https://github.com/oleg-koval/agent-skills/commit/2c7b10ce642192457cb45e24a91d2b1285ba0218))
+
 # [1.24.0](https://github.com/oleg-koval/agent-skills/compare/v1.23.0...v1.24.0) (2026-07-28)
 
 

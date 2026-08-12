@@ -1,7 +1,7 @@
 {
   "name": "olko-agent-skills",
   "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.",
-  "version": "1.24.0",
+  "version": "1.27.0",
   "author": {
     "name": "Oleg Koval"
   },
@@ -9,6 +9,7 @@
   "repository": "https://github.com/oleg-koval/agent-skills",
   "license": "MIT",
   "skills": [
+    "./packages/software-development/lekker-review",
     "./packages/software-development/self-critique",
     "./packages/software-development/docs-index-keeper",
     "./packages/software-development/semantic-release-beta",
@@ -32,14 +33,21 @@
     "./packages/software-development/macos-menubar-app",
     "./packages/software-development/skill-budget-audit",
     "./packages/software-development/crash-course",
+    "./packages/software-development/pr-finalize",
+    "./packages/software-development/pr-finalize-complete",
     "./packages/software-development/qodoloop",
     "./packages/wearables/garmin-watchface",
     "./packages/software-development/coderabbitloop",
+    "./packages/software-development/codexloop",
+    "./packages/software-development/geminiloop",
     "./packages/software-development/add-to-my-skills",
     "./packages/software-development/ai-tools-setup",
     "./packages/software-development/changelog-generator",
     "./packages/software-development/wikipedia-uk-editor",
     "./packages/software-development/pr-description-writer",
-    "./packages/software-development/ci-fix-loop"
+    "./packages/software-development/ci-fix-loop",
+    "./packages/software-development/pr-to-green",
+    "./packages/software-development/dependabot-triage",
+    "./packages/software-development/store-listing-copy"
   ]
 }

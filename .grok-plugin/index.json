@@ -117,6 +117,16 @@
       "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes."
     },
     {
+      "name": "olko:pr-finalize",
+      "source": "./packages/software-development/pr-finalize/adapters/grok",
+      "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human."
+    },
+    {
+      "name": "olko:pr-finalize-complete",
+      "source": "./packages/software-development/pr-finalize-complete/adapters/grok",
+      "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption."
+    },
+    {
       "name": "olko:qodoloop",
       "source": "./packages/software-development/qodoloop/adapters/grok",
       "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass."
@@ -130,6 +140,16 @@
       "name": "olko:coderabbitloop",
       "source": "./packages/software-development/coderabbitloop/adapters/grok",
       "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit."
+    },
+    {
+      "name": "olko:codexloop",
+      "source": "./packages/software-development/codexloop/adapters/grok",
+      "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code."
+    },
+    {
+      "name": "olko:geminiloop",
+      "source": "./packages/software-development/geminiloop/adapters/grok",
+      "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code."
     },
     {
       "name": "olko:add-to-my-skills",
@@ -160,6 +180,21 @@
       "name": "olko:ci-fix-loop",
       "source": "./packages/software-development/ci-fix-loop/adapters/grok",
       "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures."
+    },
+    {
+      "name": "olko:pr-to-green",
+      "source": "./packages/software-development/pr-to-green/adapters/grok",
+      "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads."
+    },
+    {
+      "name": "olko:dependabot-triage",
+      "source": "./packages/software-development/dependabot-triage/adapters/grok",
+      "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest."
+    },
+    {
+      "name": "olko:store-listing-copy",
+      "source": "./packages/software-development/store-listing-copy/adapters/grok",
+      "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes."
     }
   ]
 }

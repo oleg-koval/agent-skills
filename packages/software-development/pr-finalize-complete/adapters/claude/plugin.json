@@ -1,0 +1,5 @@
+{
+  "name": "olko-pr-finalize-complete",
+  "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption.",
+  "skills": "./skills"
+}
