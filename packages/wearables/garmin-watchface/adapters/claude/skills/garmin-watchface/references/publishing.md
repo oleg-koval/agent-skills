@@ -1,9 +1,9 @@
 # Publishing through the browser
 
-`references/store.md` covers *what* the listing needs. This covers *driving the
+`reference/store.md` covers *what* the listing needs. This covers *driving the
 portal*, which is the only way in — Garmin publishes no submission API.
 
-Run `scripts/ciq-release` before opening a browser. Everything it checks is
+Run `bin/ciq-release` before opening a browser. Everything it checks is
 something you would otherwise discover halfway through the form.
 
 ## The portal is automatable
@@ -44,6 +44,113 @@ Three separate traps in that block:
 Verify by checking the URL after `goto`: an unauthenticated session is bounced
 to `sso.garmin.com/portal/sso/...`, an authenticated one stays put.
 
+### When cookie import fails, `browse connect` is the answer
+
+Cookie import is the fast path and it fails in two common ways, both of which
+look identical from the outside (`Imported 0 cookies`):
+
+- **The browser encrypts its cookie store** and browse cannot decrypt it. Comet
+  is one. Reading the key out of the macOS keychain yourself is credential
+  extraction, an agent permission-classifier will block it, and it should.
+- **You are signed into a different browser than you think.** Check the cookie
+  DB's mtime rather than guessing — the store of the browser you just used is
+  written seconds ago:
+
+```bash
+for n in "Google/Chrome/Default" "Comet/Default" "BraveSoftware/Brave-Browser/Default"; do
+  f="$HOME/Library/Application Support/$n/Cookies"
+  [ -f "$f" ] && echo "$n $(stat -f '%Sm' -t '%H:%M:%S' "$f")"
+done
+```
+
+The path that works regardless is to put the login **inside the browser browse
+drives**:
+
+```bash
+$B connect                    # headed Chromium under browse's control
+$B goto https://apps.garmin.com/en-US/developer/dashboard
+$B focus                      # then the human signs in, in that window
+```
+
+No import, no keychain, no profile mismatch. `handoff` is NOT equivalent — it
+opens a *separate* browser whose session `resume` does not inherit.
+
+**Do not trust window counts from System Events.** `count of windows` returns 0
+for Chromium browsers without macOS automation permission, even while the window
+is plainly on screen — Finder returns a real number, so the API looks like it is
+working. Diagnosing "the browser never opened" from that reading sends you off
+fixing the wrong thing.
+
+### Protect the daemon session
+
+Every browse daemon restart destroys the authenticated context and you start
+over. Restarts are triggered by crashes and by some error paths, and the giveaway
+is `[browse] Starting server...` in otherwise-unrelated output. Check
+`$B url` after any surprise: `about:blank` means the context is gone.
+
+Practical consequence: between the human signing in and the work being finished,
+run as few commands as possible, and none that can throw.
+
+### Uploads are path-restricted
+
+`$B upload` refuses any file outside `/private/tmp` or the current repo:
+
+```
+Path must be within: /private/tmp, /Users/.../some-other-repo
+```
+
+Note it validates against the shell's *current* directory, which may be a
+different project than the one you are publishing. Copy the package first:
+
+```bash
+cp bin/<name>.iq /private/tmp/ && $B upload "input[type=file]" /private/tmp/<name>.iq
+```
+
+### Developer URLs, and the two forms
+
+The dashboard's app links go to the PUBLIC page (`/apps/<appId>`), not the
+editor. The developer routes are:
+
+```
+https://apps.garmin.com/developer/<devId>/apps/<appId>/update   # new version
+https://apps.garmin.com/developer/<devId>/apps/<appId>/edit     # listing text
+```
+
+`<devId>` is stable across your apps — read it off any editor URL once. Guessing
+`/developer/<appId>/edit` returns 404.
+
+Field handles, current as of mid-2026:
+
+| What | Selector |
+| --- | --- |
+| Package | `input[type=file]` |
+| Version string | third `input[type=text]` on `/update` |
+| Description | `textarea[name="app-desc-en"]` |
+| What's New | `textarea[name="app-whats-new-en"]` |
+
+React controls these, so assigning `.value` alone does not register. Use the
+native setter and dispatch both events:
+
+```js
+var set = Object.getOwnPropertyDescriptor(
+  window.HTMLTextAreaElement.prototype, 'value').set;
+set.call(el, text);
+el.dispatchEvent(new Event('input',  { bubbles: true }));
+el.dispatchEvent(new Event('change', { bubbles: true }));
+```
+
+Pass long copy through a staged `<script type="application/json">` node rather
+than interpolating it into a `js` one-liner — multi-line store copy will not
+survive shell and JS quoting intact.
+
+### The public page lags the portal
+
+After a successful publish the portal reports `Status: Verified, Signature:
+Verified` and expands the product list immediately. The **public** app page can
+still show the previous device list minutes later. The portal is authoritative;
+do not re-upload because the public page has not caught up, and do not report
+the new devices as live until it has.
+
 ## "The Connect IQ store is currently in maintenance mode"
 
 This string is in the DOM of the dashboard and of every app page, next to
@@ -68,8 +175,8 @@ the next one.
 
 ```bash
 $B upload "input[type=file]" "$(pwd)/bin/<name>.iq"
-$B fill "input[id*='version'],input[name*='version']" "2.0"
-$B click "button:has-text('Upload and publish')"
+$B fill @e43 "2.0"
+$B click @e46                      # "Upload and publish"
 ```
 
 On success the page reports **Status: Verified, Signature: Verified** and
@@ -83,6 +190,28 @@ email. Ends in *Submit*.
 The description arrives pre-filled with the copy from the PREVIOUS version.
 After a redesign it describes a face that no longer exists, and nothing prompts
 you about it. Re-paste from `docs/store/listing.md` every time.
+
+### Step 2 can fail silently — verify the live page
+
+Observed on a real submission: the package uploaded, the version went live, and
+*Submit* on step 2 **saved nothing**. No error, no validation message; the page
+simply stayed on `/update` instead of redirecting. The listing kept the previous
+description for as long as nobody looked.
+
+Treat uploading a version and updating its listing as two independent
+operations, whatever the form implies:
+
+1. After *Submit*, check that the URL actually changed to `/apps/<uuid>`.
+   Sitting on `/update` is the failure signature.
+2. Re-fetch the **public** page and string-match something distinctive from the
+   new copy. This is the only real confirmation.
+3. If it did not save, go back and use the separate **Edit Details** flow, which
+   does work.
+
+A long description may also be truncated behind a read-more on the public page,
+so a missing string near the *end* of the copy is not automatically a failed
+save — check a distinctive phrase from early in the text too before concluding
+either way.
 
 ## Image slots, in DOM order
 
@@ -115,7 +244,7 @@ Submit:
   same symbol space.
 
 Write settings paths in words: *"Garmin Connect app, then: your device, Connect
-IQ Apps, Watch Faces, the app name, settings"*. `scripts/ciq-release` checks the fenced
+IQ Apps, Watch Faces, <app>, settings"*. `bin/ciq-release` checks the fenced
 blocks of `listing.md` for both classes before you open a browser.
 
 The error text renders as a leaf node with no `aria-invalid` anywhere, so find
