@@ -1,5 +1,5 @@
 {
   "name": "olko-pr-finalize-complete",
-  "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption.",
+  "description": "Comprehensive PR finalization workflow for PRs that may already be partially addressed: checks each review comment's actual current status in code, distinguishes fixed vs. stale vs. still-present findings, verifies test coverage, runs real lint/test gates, and reports what still needs a human.",
   "skills": "./skills"
 }

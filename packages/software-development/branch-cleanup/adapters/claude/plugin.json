@@ -1,0 +1,5 @@
+{
+  "name": "olko-branch-cleanup",
+  "description": "Prune stale git branches after a merge wave: delete closed/merged remote branches, remove local tracking refs that no longer exist on the remote, and optionally clean up merged local branches. Natural follow-up to dependabot-triage.",
+  "skills": "./skills"
+}
