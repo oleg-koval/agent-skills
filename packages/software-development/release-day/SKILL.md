@@ -48,18 +48,32 @@ rather than pushing a broken release.
 ## Phase 1 — Verify the branch is ready
 
 ```bash
-# Check main is ahead of last release and CI is green
-git fetch origin main
+BRANCH="${Branch:-main}"
+git fetch origin "$BRANCH"
+BRANCH_SHA=$(git rev-parse "origin/$BRANCH")
+
+# Validate optional Version input
+if [ -n "$Version" ]; then
+  if ! echo "$Version" | grep -qE '^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+    echo "Error: Version '$Version' is not a valid SemVer (e.g. 1.2.3 or v1.2.3)" >&2
+    exit 1
+  fi
+fi
+
 git status --short
 
 # Last release tag
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
 
 # Commits since last release
-git log ${LAST_TAG}..origin/main --oneline --no-merges | head -20
+if [ "$LAST_TAG" = "none" ]; then
+  git log "origin/$BRANCH" --oneline --no-merges | head -20
+else
+  git log "${LAST_TAG}..origin/$BRANCH" --oneline --no-merges | head -20
+fi
 
-# CI state on main
-gh run list --branch main --limit 3 --json status,conclusion,workflowName \
+# CI state on branch
+gh run list --branch "$BRANCH" --limit 3 --json status,conclusion,workflowName \
   --jq '.[] | "\(.workflowName): \(.conclusion // .status)"'
 ```
 
@@ -75,7 +89,7 @@ is not clean and green.
 
 Run `olko:changelog-generator`.
 
-Use the range `${LAST_TAG}..HEAD` (or `HEAD` if no prior tag exists). Produce a
+Use the range `${LAST_TAG}..origin/${BRANCH}` (or `origin/${BRANCH}` if no prior tag exists). Produce a
 structured changelog with sections: New Features, Improvements, Bug Fixes, Breaking
 Changes. Strip internal commits (refactor, test, ci, chore without behavior impact).
 
@@ -83,8 +97,12 @@ Write the changelog to:
 ```bash
 RELEASE_DIR="$(mktemp -d)/release-$(date +%Y-%m-%d)"
 mkdir -p "$RELEASE_DIR"
-# changelog-generator writes to CHANGELOG.md — also save a release-scoped copy
-cp CHANGELOG.md "$RELEASE_DIR/changelog.md" 2>/dev/null || true
+# changelog-generator writes to CHANGELOG.md — validate before proceeding
+if [ ! -s CHANGELOG.md ]; then
+  echo "Error: CHANGELOG.md is missing or empty — cannot continue." >&2
+  exit 1
+fi
+cp CHANGELOG.md "$RELEASE_DIR/changelog.md"
 ```
 
 Review the generated changelog for accuracy before continuing. If commits are
@@ -115,23 +133,39 @@ character before tagging.
 
 ```bash
 # Dry-run first to confirm version and release notes
-npm run release:dry-run 2>&1 | tail -40
+set -o pipefail
+if ! npm run release:dry-run 2>&1 | tail -40; then
+  echo "Dry-run failed — aborting release." >&2
+  exit 1
+fi
 
 # On confirmation (or with --dry-run: stop here)
-git push origin main   # trigger CI which runs semantic-release
+git push origin "$BRANCH"   # trigger CI which runs semantic-release
 ```
 
 Wait for the GitHub Actions release workflow to complete:
 
 ```bash
-# Poll until the release workflow is done (timeout: 15 min)
+# Capture run ID for the push commit so we poll the right run
+sleep 10
+RUN_ID=$(gh run list --branch "$BRANCH" --workflow ci-release.yml --limit 1 \
+  --json databaseId,headSha \
+  --jq "[.[] | select(.headSha == \"$BRANCH_SHA\")] | .[0].databaseId")
+
+# Poll until the targeted run is done (timeout: 15 min)
+STATUS="pending"
 for i in $(seq 1 30); do
-  STATUS=$(gh run list --branch main --workflow release.yml --limit 1 \
-    --json conclusion --jq '.[0].conclusion // "pending"')
+  STATUS=$(gh run view "$RUN_ID" --json conclusion \
+    --jq '.conclusion // "pending"' 2>/dev/null || echo "pending")
   [ "$STATUS" = "success" ] && break
-  [ "$STATUS" = "failure" ] && echo "Release workflow failed" && exit 1
+  [ "$STATUS" = "failure" ] || [ "$STATUS" = "cancelled" ] || [ "$STATUS" = "timed_out" ] && \
+    echo "Release workflow ended with status: $STATUS" && exit 1
   sleep 30
 done
+if [ "$STATUS" != "success" ]; then
+  echo "Release workflow timed out after 15 minutes." >&2
+  exit 1
+fi
 ```
 
 ### If releasing manually (no semantic-release)
@@ -152,32 +186,70 @@ gh release create "$NEXT_VERSION" \
 
 ## Phase 5 — Confirm build artifact
 
-For mobile platforms, confirm the build was produced:
+Download and validate the platform-specific build artifact. Poll every 2 minutes
+(timeout: 20 min) — do not proceed to Phase 6 until the artifact is confirmed present.
 
 ```bash
-# iOS: look for .ipa in CI artifacts or local build
-gh run list --branch main --limit 1 --json databaseId --jq '.[0].databaseId' | \
-  xargs -I{} gh run download {} --dir "$RELEASE_DIR" 2>/dev/null
+ARTIFACT_FOUND=false
+for i in $(seq 1 10); do
+  gh run download "$RUN_ID" --dir "$RELEASE_DIR" 2>/dev/null || true
 
-# Garmin: look for .prg in dist/
-ls dist/*.prg 2>/dev/null || echo "Garmin build artifact not yet available"
+  case "$Platform" in
+    ios)
+      IPA=$(find "$RELEASE_DIR" -name "*.ipa" | head -1)
+      [ -n "$IPA" ] && ARTIFACT_FOUND=true && echo "iOS artifact: $IPA" && break
+      ;;
+    android)
+      APK=$(find "$RELEASE_DIR" \( -name "*.apk" -o -name "*.aab" \) | head -1)
+      [ -n "$APK" ] && ARTIFACT_FOUND=true && echo "Android artifact: $APK" && break
+      ;;
+    garmin)
+      PRG=$(find "$RELEASE_DIR" dist -name "*.prg" 2>/dev/null | head -1)
+      [ -n "$PRG" ] && ARTIFACT_FOUND=true && echo "Garmin artifact: $PRG" && break
+      ;;
+    all)
+      IPA=$(find "$RELEASE_DIR" -name "*.ipa" | head -1)
+      APK=$(find "$RELEASE_DIR" \( -name "*.apk" -o -name "*.aab" \) | head -1)
+      PRG=$(find "$RELEASE_DIR" dist -name "*.prg" 2>/dev/null | head -1)
+      [ -n "$IPA" ] && [ -n "$APK" ] && [ -n "$PRG" ] && ARTIFACT_FOUND=true && break
+      ;;
+  esac
+
+  echo "Attempt $i/10: artifact not yet available — waiting 2 minutes..."
+  sleep 120
+done
+
+if [ "$ARTIFACT_FOUND" != "true" ]; then
+  echo "Error: required build artifact not found after 20 minutes — aborting." >&2
+  exit 1
+fi
 ```
-
-If the build artifact is not yet available, poll every 2 minutes (timeout: 20 min).
 
 ## Phase 6 — Submit to the store
 
-Run `olko:apple-store-submit` (iOS) or the Garmin store upload workflow
-(`olko:garmin-watchface`) with the build artifact from Phase 5.
-
-For iOS: `apple-store-submit` handles the `altool` / `xcrun notarytool` submission,
-watches for Apple's processing email, and catches common rejection patterns.
-
-For Garmin: the `garmin-watchface` store publishing workflow uploads the `.prg`
-and the listing copy from Phase 3.
-
 **Skip this phase with `--dry-run`** — stop after Phase 3 and print the store copy
 for manual paste.
+
+Run the platform-specific submission workflow with the artifact from Phase 5:
+
+**iOS:** Run `olko:apple-store-submit` — handles `altool` / `xcrun notarytool`
+submission, watches for Apple's processing email, and catches common rejection patterns.
+
+**Android:** Upload the `.aab` (or `.apk`) to Google Play using `fastlane supply`:
+
+```bash
+fastlane supply \
+  --aab "$APK" \
+  --track internal \
+  --package_name "$(cat android/app/build.gradle | grep applicationId | awk '{print $2}' | tr -d '"')"
+```
+
+Promote from internal → production after QA sign-off.
+
+**Garmin:** Run `olko:garmin-watchface` store publishing workflow — uploads the `.prg`
+and the listing copy from Phase 3 via the Connect IQ developer portal.
+
+**all:** Run iOS → Android → Garmin in sequence; report each result independently.
 
 ## Final report
 

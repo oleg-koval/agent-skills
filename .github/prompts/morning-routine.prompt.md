@@ -26,18 +26,25 @@ If any required config is missing, ask once before starting — don't abort midw
 
 ## Phase 1 — Task rollover
 
-Run `olko:obsidian-task-rollover`.
+Initialize the daily note path once, before any optional phase:
 
-This moves unfinished tasks from yesterday's (or the last workday's) daily note to
-today's note with a `[>]` migration marker. If today's note doesn't exist, the skill
-creates it from the standard template.
+```bash
+NOTE="${VAULT_DAILY}/$(date +%Y-%m-%d).md"
+```
+
+Run `olko:obsidian-task-rollover` on the **previous workday's** note.
+
+`obsidian-task-rollover` is an end-of-day migration skill — it copies unchecked tasks
+from a given day's note into the next workday's note with a `[>]` marker. When invoked
+here in the morning, it should operate on **yesterday's** (or the last workday's) note
+so those unchecked tasks are pulled forward into today's note. If yesterday's note does
+not exist, skip this step and note it in the report.
 
 **Skip if** `--skip-rollover` is set, or if it's Monday and the user has explicitly
 said they clear the board on Fridays.
 
 After this phase, confirm:
 ```bash
-NOTE="${VAULT_DAILY}/$(date +%Y-%m-%d).md"
 grep -c "^\- \[ \]" "$NOTE" 2>/dev/null || echo "0"  # open tasks today
 grep -c "^\- \[>\]" "$NOTE" 2>/dev/null || echo "0"  # migrated tasks
 ```

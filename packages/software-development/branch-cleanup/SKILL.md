@@ -45,7 +45,8 @@ Always start here. This removes local tracking refs for remote branches that are
 already gone, without touching anything else:
 
 ```bash
-git fetch --prune origin
+REMOTE="${Remote:-origin}"
+git fetch --prune "$REMOTE"
 ```
 
 After pruning, print the count of removed tracking refs:
@@ -62,24 +63,34 @@ Find remote branches whose associated PR is merged or closed:
 # Get all non-default remote branches
 BASE=$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name' 2>/dev/null || echo "main")
 
-git branch -r --merged origin/"$BASE" \
+git branch -r --merged "$REMOTE/$BASE" \
   | grep -v "HEAD" \
-  | grep -v "origin/$BASE" \
-  | sed 's|origin/||' \
+  | grep -v "$REMOTE/$BASE" \
+  | sed "s|$REMOTE/||" \
   | sort
 ```
 
-Cross-reference with GitHub to confirm each branch's PR state:
+Cross-reference with GitHub to confirm each branch's PR state. Only include branches
+with a confirmed merged or closed PR — an empty result means the branch is not eligible:
 
 ```bash
-for branch in $(git branch -r --merged origin/"$BASE" \
-    | grep -v HEAD | grep -v "origin/$BASE" | sed 's|origin/||'); do
-  PR=$(gh pr list --head "$branch" --state merged --json number,title,mergedAt \
-    --jq '.[0] | "\(.number) merged \(.mergedAt | .[0:10])"' 2>/dev/null \
-    || gh pr list --head "$branch" --state closed --json number,title,closedAt \
-    --jq '.[0] | "\(.number) closed \(.closedAt | .[0:10])"' 2>/dev/null \
-    || echo "no PR found")
-  echo "$branch  ←  $PR"
+STALE_BRANCHES=()
+for branch in $(git branch -r --merged "$REMOTE/$BASE" \
+    | grep -v HEAD | grep -v "$REMOTE/$BASE" | sed "s|$REMOTE/||"); do
+  PR_DATA=$(gh pr list --head "$branch" --state merged \
+    --json number,title,mergedAt \
+    --jq '.[0] | "\(.number) merged \(.mergedAt | .[0:10])"' 2>/dev/null)
+  if [ -z "$PR_DATA" ]; then
+    PR_DATA=$(gh pr list --head "$branch" --state closed \
+      --json number,title,closedAt \
+      --jq '.[0] | "\(.number) closed \(.closedAt | .[0:10])"' 2>/dev/null)
+  fi
+  if [ -n "$PR_DATA" ]; then
+    echo "$branch  ←  $PR_DATA"
+    STALE_BRANCHES+=("$branch")
+  else
+    echo "$branch  ←  no confirmed PR (skipped)"
+  fi
 done
 ```
 
@@ -138,7 +149,7 @@ Branch cleanup preview — dry-run (pass --execute to apply)
 ```bash
 # Delete remote branches
 for branch in "${STALE_BRANCHES[@]}"; do
-  git push origin --delete "$branch" && echo "deleted: origin/$branch"
+  git push "$REMOTE" --delete "$branch" && echo "deleted: $REMOTE/$branch"
 done
 ```
 
