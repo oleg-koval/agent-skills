@@ -31,6 +31,15 @@ Rules for this phase: one change per edit, always an edit summary in Ukrainian, 
 
 Target: ~30–50 edits, **zero reverts**. A revert in this phase costs more than 50 edits gain.
 
+### Newcomer tasks as a ready-made Phase 1 queue
+
+Ukrainian Wikipedia's own GrowthExperiments "Suggested edits" (Пропоновані редагування) tiers a
+maintenance backlog into Легкі / Середні / Важкі — see `references/newcomer-tasks.md` for the
+full mapping and per-type scope contract. Легкі (`copyedit`) and Середні (`references`, `update`)
+are exactly the zero-revert-risk, community-endorsed work this phase calls for: pick candidates
+with `./scripts/wiki.sh tasks <type>` and stay strictly inside the assigned scope. Важкі
+(`expand`) is not Phase 1 work — it belongs in Phase 2 stream A/B, once autoconfirmed.
+
 ## Phase 2 — the volume engine (weeks 2–8)
 
 Four streams, run in parallel, roughly in this priority order. Value per unit of effort, highest first:
