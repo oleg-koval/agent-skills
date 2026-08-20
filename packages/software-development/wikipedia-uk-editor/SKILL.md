@@ -111,7 +111,7 @@ Write the draft to a scratch file: the raw `.wiki` file contains nothing but art
 - existing article → `https://uk.wikipedia.org/w/index.php?title=Тайтл&action=edit`, replace the whole edit box
 - test first → `Вікіпедія:Пісочниця` or the user's own `Користувач:Ім'я/Чернетка`
 
-End the delivery with a copy-to-clipboard command in its own fenced block, using a quoted absolute path — always the raw `.wiki` file, never the `.md`:
+End the delivery with a copy-to-clipboard command in its own fenced block, using a quoted absolute path — quoted because scratchpad paths contain characters the shell will otherwise mangle — always the raw `.wiki` file, never the `.md`:
 
 ```sh
 pbcopy < "/absolute/path/to/slug.wiki"
