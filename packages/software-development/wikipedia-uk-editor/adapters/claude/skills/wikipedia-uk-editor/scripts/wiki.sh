@@ -10,6 +10,7 @@
 #   wiki.sh search   <lang> <query> [n]      search article titles
 #   wiki.sh backlog  <category> [n]          list pages in a uk category (maintenance backlogs)
 #   wiki.sh info     <lang> <title>          length, last edit, categories, templates used
+#   wiki.sh tasks    <type> [n]              candidate articles for a newcomer task type
 set -eu
 
 UA="wikipedia-uk-editor-skill/1.0 (https://github.com/oleg-koval/agent-skills)"
@@ -24,7 +25,7 @@ api() {
 jqp() { python3 -c "$1"; }
 
 cmd=${1:-}
-[ -n "$cmd" ] || { sed -n '2,14p' "$0"; exit 1; }
+[ -n "$cmd" ] || { sed -n '2,13p' "$0"; exit 1; }
 shift
 
 case "$cmd" in
@@ -92,7 +93,62 @@ print('touched:',p.get('touched'))
 print('cats   :', ', '.join(c['title'] for c in p.get('categories',[])) or '(none)')
 print('tmpls  :', ', '.join(t['title'] for t in p.get('templates',[])) or '(none)')"
     ;;
+  tasks)
+    type=${1:-}
+    n=${2:-20}
+    case "$n" in
+      ''|*[!0-9]*) echo "Invalid task limit: '$n' (expected a non-negative integer)" >&2; exit 1 ;;
+    esac
+    case "$type" in
+      copyedit)   templates="Шаблон:Мовні помилки" ;;
+      links)      templates="Шаблон:Упорядкувати|Шаблон:Брак посилань" ;;
+      references) templates="Шаблон:Без джерел" ;;
+      update)     templates="Шаблон:Оновити" ;;
+      expand)     templates="Шаблон:Доробити" ;;
+      *)
+        echo "Unknown task type: '$type'. Valid types: copyedit, links, references, update, expand" >&2
+        exit 1
+        ;;
+    esac
+    [ "$n" -gt 0 ] || exit 0
+    results=$(mktemp)
+    trap 'rm -f "$results"' EXIT
+    oldifs=$IFS
+    IFS='|'
+    for tmpl in $templates; do
+      IFS=$oldifs
+      api uk --data-urlencode "action=query" --data-urlencode "list=embeddedin" \
+          --data-urlencode "eititle=$tmpl" --data-urlencode "einamespace=0" \
+          --data-urlencode "eilimit=$n" |
+        jqp "import json,sys
+d=json.load(sys.stdin)
+if 'error' in d: sys.exit('NOT FOUND: '+d['error'].get('info',''))
+for m in d['query']['embeddedin']: print(m['title'])" |
+        while IFS= read -r title; do printf '%s\t%s\n' "$tmpl" "$title"; done >> "$results"
+    done
+    python3 - "$results" "$n" <<'PY'
+import sys
+from collections import OrderedDict
+
+path, limit_text = sys.argv[1:]
+limit = int(limit_text)
+groups = OrderedDict()
+seen = set()
+with open(path, encoding="utf-8") as handle:
+    for line in handle:
+        template, title = line.rstrip("\n").split("\t", 1)
+        if title in seen:
+            continue
+        seen.add(title)
+        groups.setdefault(template, []).append(title)
+        if len(seen) == limit:
+            break
+for template, titles in groups.items():
+    print(f"== {template} ==")
+    print("\n".join(titles))
+PY
+    ;;
   *)
-    sed -n '2,14p' "$0"; exit 1
+    sed -n '2,13p' "$0"; exit 1
     ;;
 esac
