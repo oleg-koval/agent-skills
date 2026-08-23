@@ -36,7 +36,8 @@ Target: ~30–50 edits, **zero reverts**. A revert in this phase costs more than
 Ukrainian Wikipedia's own GrowthExperiments "Suggested edits" (Пропоновані редагування) tiers a
 maintenance backlog into Легкі / Середні / Важкі — see `references/newcomer-tasks.md` for the
 full mapping and per-type scope contract. Легкі (`copyedit`) and Середні (`references`, `update`)
-are exactly the zero-revert-risk, community-endorsed work this phase calls for: pick candidates
+are lower-risk, community-endorsed work for this phase, but they are not zero-revert-risk:
+sourcing and fabrication risks still require verification. Pick candidates
 with `./scripts/wiki.sh tasks <type>` and stay strictly inside the assigned scope. Важкі
 (`expand`) is not Phase 1 work — it belongs in Phase 2 stream A/B, once autoconfirmed.
 

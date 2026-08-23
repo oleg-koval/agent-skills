@@ -96,6 +96,9 @@ print('tmpls  :', ', '.join(t['title'] for t in p.get('templates',[])) or '(none
   tasks)
     type=${1:-}
     n=${2:-20}
+    case "$n" in
+      ''|*[!0-9]*) echo "Invalid task limit: '$n' (expected a non-negative integer)" >&2; exit 1 ;;
+    esac
     case "$type" in
       copyedit)   templates="Шаблон:Мовні помилки" ;;
       links)      templates="Шаблон:Упорядкувати|Шаблон:Брак посилань" ;;
@@ -107,19 +110,43 @@ print('tmpls  :', ', '.join(t['title'] for t in p.get('templates',[])) or '(none
         exit 1
         ;;
     esac
+    [ "$n" -gt 0 ] || exit 0
+    results=$(mktemp)
+    trap 'rm -f "$results"' EXIT
     oldifs=$IFS
     IFS='|'
     for tmpl in $templates; do
       IFS=$oldifs
-      echo "== $tmpl =="
       api uk --data-urlencode "action=query" --data-urlencode "list=embeddedin" \
           --data-urlencode "eititle=$tmpl" --data-urlencode "einamespace=0" \
           --data-urlencode "eilimit=$n" |
         jqp "import json,sys
 d=json.load(sys.stdin)
 if 'error' in d: sys.exit('NOT FOUND: '+d['error'].get('info',''))
-for m in d['query']['embeddedin']: print(m['title'])"
+for m in d['query']['embeddedin']: print(m['title'])" |
+        while IFS= read -r title; do printf '%s\t%s\n' "$tmpl" "$title"; done >> "$results"
     done
+    python3 - "$results" "$n" <<'PY'
+import sys
+from collections import OrderedDict
+
+path, limit_text = sys.argv[1:]
+limit = int(limit_text)
+groups = OrderedDict()
+seen = set()
+with open(path, encoding="utf-8") as handle:
+    for line in handle:
+        template, title = line.rstrip("\n").split("\t", 1)
+        if title in seen:
+            continue
+        seen.add(title)
+        groups.setdefault(template, []).append(title)
+        if len(seen) == limit:
+            break
+for template, titles in groups.items():
+    print(f"== {template} ==")
+    print("\n".join(titles))
+PY
     ;;
   *)
     sed -n '2,13p' "$0"; exit 1
