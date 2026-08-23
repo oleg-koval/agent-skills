@@ -2,7 +2,7 @@
 
 Codex resolves this skill today via a symlink:
 
-```
+```text
 ~/.codex/skills/olko:wikipedia-uk-editor -> .../agent-skills/packages/software-development/wikipedia-uk-editor
 ```
 
