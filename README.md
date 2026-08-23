@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-40-2563eb" alt="40 skills">
+    <img src="https://img.shields.io/badge/skills-45-2563eb" alt="45 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -139,11 +139,11 @@ packages/{category}/{skill}/SKILL.md
 
 </details>
 
-## All 40 Skills
+## All 45 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (35)
+### Software development (39)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
@@ -187,11 +187,12 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [release-day](packages/software-development/release-day/SKILL.md) | Orchestrates a full release-day workflow for iOS, Android, or Garmin apps: verifies CI is green, generates a changelog, drafts store listing copy, triggers semantic-release or tags manually, waits for the build, and queues the App Store submission | Cutting a release from "code is ready" to "build submitted" in one orchestrated pass |
 | [branch-cleanup](packages/software-development/branch-cleanup/SKILL.md) | Prunes stale git branches after a merge wave: deletes closed/merged remote branches, removes local tracking refs that no longer exist on the remote, and optionally cleans up merged local branches | Tidying up after a Dependabot triage batch merge or a sprint wind-down |
 
-### Marketing (2)
+### Marketing (3)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [search-console-indexing-audit](packages/marketing/search-console-indexing-audit/SKILL.md) | Audits Google Search Console Coverage exports against sitemap, robots, canonical, redirect, and noindex signals | Diagnosing GSC indexing issues such as redirects, canonical alternates, and discovered-but-not-indexed pages |
+| [website-analytics-bootstrap](packages/marketing/website-analytics-bootstrap/SKILL.md) | Sets up persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only SEO audits, and Telegram alerts on a local host or NAS | Bootstrapping SEO analytics and monitoring for a new website |
 | [viral-launch](packages/marketing/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, or creator tool for public launch |
 
 ### Music (1)
