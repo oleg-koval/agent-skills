@@ -139,11 +139,11 @@ packages/{category}/{skill}/SKILL.md
 
 </details>
 
-## All 40 Skills
+## All 41 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (35)
+### Software development (36)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
@@ -186,6 +186,7 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [morning-routine](packages/software-development/morning-routine/SKILL.md) | Runs the complete start-of-day setup in one pass: rolls over unfinished Obsidian tasks, syncs open GitHub PRs into today's daily note, and sweeps safe Dependabot patch bumps | Starting the workday by chaining obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage in sequence |
 | [release-day](packages/software-development/release-day/SKILL.md) | Orchestrates a full release-day workflow for iOS, Android, or Garmin apps: verifies CI is green, generates a changelog, drafts store listing copy, triggers semantic-release or tags manually, waits for the build, and queues the App Store submission | Cutting a release from "code is ready" to "build submitted" in one orchestrated pass |
 | [branch-cleanup](packages/software-development/branch-cleanup/SKILL.md) | Prunes stale git branches after a merge wave: deletes closed/merged remote branches, removes local tracking refs that no longer exist on the remote, and optionally cleans up merged local branches | Tidying up after a Dependabot triage batch merge or a sprint wind-down |
+| [vinted-listing](packages/software-development/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller’s original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Creating, editing, or publishing a Vinted listing |
 
 ### Marketing (2)
 
