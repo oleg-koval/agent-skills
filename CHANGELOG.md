@@ -1,3 +1,10 @@
+# [1.30.0](https://github.com/oleg-koval/agent-skills/compare/v1.29.0...v1.30.0) (2026-08-23)
+
+
+### ✨ Features
+
+* **skills:** add vinted listing workflow ([ab02273](https://github.com/oleg-koval/agent-skills/commit/ab0227317c7a1d0e565dec15f1e2eae19c6a5270))
+
 # [1.29.0](https://github.com/oleg-koval/agent-skills/compare/v1.28.0...v1.29.0) (2026-08-12)
 
 
