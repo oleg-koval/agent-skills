@@ -390,6 +390,30 @@
       ]
     },
     {
+      "name": "website-analytics-bootstrap",
+      "lookupName": "olko:website-analytics-bootstrap",
+      "category": "marketing",
+      "path": "packages/marketing/website-analytics-bootstrap",
+      "description": "Set up a website's first SEO analytics loop with persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS.",
+      "tags": [
+        "seo",
+        "analytics",
+        "google-search-console",
+        "serpbear",
+        "nas",
+        "telegram",
+        "monitoring"
+      ],
+      "adapters": [
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
+      ]
+    },
+    {
       "name": "cloudflare-block-countries",
       "lookupName": "olko:cloudflare-block-countries",
       "category": "software-development",
