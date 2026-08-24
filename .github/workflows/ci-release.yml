@@ -19,7 +19,13 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - name: ShellCheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck scripts/*.sh tests/*.sh
       - run: npm run build
+      - name: Generated tree is clean
+        run: git diff --exit-code
       - run: npm test
 
   release-readiness:

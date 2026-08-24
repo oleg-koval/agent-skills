@@ -3,6 +3,7 @@
 # disk, and a plugin with no skills.
 set -eu
 
+# shellcheck disable=SC1007 # CDPATH= intentionally clears CDPATH before cd, not an assignment typo
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$ROOT"
 

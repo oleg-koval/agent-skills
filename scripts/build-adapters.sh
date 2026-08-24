@@ -154,5 +154,5 @@ for (const plugin of catalog.plugins) {
   }
 }
 
-console.log(`generated ${catalog.plugins.length} plugin manifests and 7 adapter targets for ${catalog.skills.length} skills`)
+console.log(`generated ${catalog.plugins.length} plugin manifests and 9 adapter targets for ${catalog.skills.length} skills`)
 EOF
