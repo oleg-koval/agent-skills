@@ -2,234 +2,59 @@
   "name": "agent-skills",
   "plugins": [
     {
-      "name": "olko:self-critique",
-      "source": "./packages/software-development/self-critique/adapters/grok",
-      "description": "Adversarially critique your own last answer: spawn a critic agent that verifies claims against live sources, finds the related issue or pattern you missed, then loop until satisfied and report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score."
+      "name": "olko-github-pr",
+      "source": "./adapters/grok/olko-github-pr",
+      "description": "Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage."
     },
     {
-      "name": "olko:docs-index-keeper",
-      "source": "./packages/software-development/docs-index-keeper/adapters/grok",
-      "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows."
+      "name": "olko-git-tools",
+      "source": "./adapters/grok/olko-git-tools",
+      "description": "Everyday git and GitHub CLI operations: conventional commits, branch hygiene."
     },
     {
-      "name": "olko:semantic-release-beta",
-      "source": "./packages/software-development/semantic-release-beta/adapters/grok",
-      "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch."
+      "name": "olko-release",
+      "source": "./adapters/grok/olko-release",
+      "description": "Ship a release: semantic-release setup, changelogs, store listing copy, release-day routine."
     },
     {
-      "name": "olko:gh-cli",
-      "source": "./packages/software-development/gh-cli/adapters/grok",
-      "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more."
+      "name": "olko-product",
+      "source": "./adapters/grok/olko-product",
+      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans."
     },
     {
-      "name": "olko:git-commit",
-      "source": "./packages/software-development/git-commit/adapters/grok",
-      "description": "Create conventional commits with diff-aware staging and message generation."
+      "name": "olko-skill-meta",
+      "source": "./adapters/grok/olko-skill-meta",
+      "description": "Author and maintain agent skills and the AI toolchain itself."
     },
     {
-      "name": "olko:gallery",
-      "source": "./packages/photography/gallery/adapters/grok",
-      "description": "Create photo galleries with AI-assisted layout curation and sequencing."
+      "name": "olko-reflection",
+      "source": "./adapters/grok/olko-reflection",
+      "description": "Look back and improve: self-critique, retrospectives, performance review, rapid learning."
     },
     {
-      "name": "olko:promptctl",
-      "source": "./packages/software-development/promptctl/adapters/grok",
-      "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation."
+      "name": "olko-obsidian",
+      "source": "./adapters/grok/olko-obsidian",
+      "description": "Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine."
     },
     {
-      "name": "olko:fill-music-player",
-      "source": "./packages/music/fill-music-player/adapters/grok",
-      "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity."
+      "name": "olko-apple-kit",
+      "source": "./adapters/grok/olko-apple-kit",
+      "description": "Build and ship Apple platform apps: macOS menubar apps, App Store submissions."
     },
     {
-      "name": "olko:product-builder",
-      "source": "./packages/software-development/product-builder/adapters/grok",
-      "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults."
+      "name": "olko-garmin-kit",
+      "source": "./adapters/grok/olko-garmin-kit",
+      "description": "Build, test and publish Garmin Connect IQ watch faces."
     },
     {
-      "name": "olko:mvp-oneshot",
-      "source": "./packages/software-development/mvp-oneshot/adapters/grok",
-      "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice."
+      "name": "olko-creative",
+      "source": "./adapters/grok/olko-creative",
+      "description": "Creative and personal projects: photo galleries, music players, listings, wiki editing."
     },
     {
-      "name": "olko:starter-rules",
-      "source": "./packages/software-development/starter-rules/adapters/grok",
-      "description": "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID."
-    },
-    {
-      "name": "olko:review-past-performance",
-      "source": "./packages/software-development/review-past-performance/adapters/grok",
-      "description": "Self-improvement loop that pulls the last 24h of ICM memories, git history, and skill analytics to detect repeated mistakes, slow workflows, and missing coverage, then proposes 1-3 concrete improvements."
-    },
-    {
-      "name": "olko:relay",
-      "source": "./packages/software-development/relay/adapters/grok",
-      "description": "Use claude-relay to run long or rate-limit-prone tasks autonomously across subscription accounts."
-    },
-    {
-      "name": "olko:open-source-publisher",
-      "source": "./packages/software-development/open-source-publisher/adapters/grok",
-      "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, optional donation setup, and optional motion previews for generated static images."
-    },
-    {
-      "name": "olko:viral-launch",
-      "source": "./packages/marketing/viral-launch/adapters/grok",
-      "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops."
-    },
-    {
-      "name": "olko:search-console-indexing-audit",
-      "source": "./packages/marketing/search-console-indexing-audit/adapters/grok",
-      "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals."
-    },
-    {
-      "name": "olko:website-analytics-bootstrap",
-      "source": "./packages/marketing/website-analytics-bootstrap/adapters/grok",
-      "description": "Set up a website's first SEO analytics loop with persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS."
-    },
-    {
-      "name": "olko:cloudflare-block-countries",
-      "source": "./packages/software-development/cloudflare-block-countries/adapters/grok",
-      "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones."
-    },
-    {
-      "name": "olko:obsidian-pr-sync",
-      "source": "./packages/software-development/obsidian-pr-sync/adapters/grok",
-      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section."
-    },
-    {
-      "name": "olko:obsidian-task-rollover",
-      "source": "./packages/software-development/obsidian-task-rollover/adapters/grok",
-      "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent."
-    },
-    {
-      "name": "olko:apple-store-submit",
-      "source": "./packages/software-development/apple-store-submit/adapters/grok",
-      "description": "Handle Apple App Store rejection emails end-to-end: parse rejection reasons, plan fixes, implement code changes, navigate App Store Connect, and resubmit."
-    },
-    {
-      "name": "olko:macos-menubar-app",
-      "source": "./packages/software-development/macos-menubar-app/adapters/grok",
-      "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation."
-    },
-    {
-      "name": "olko:skill-budget-audit",
-      "source": "./packages/software-development/skill-budget-audit/adapters/grok",
-      "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability."
-    },
-    {
-      "name": "olko:crash-course",
-      "source": "./packages/software-development/crash-course/adapters/grok",
-      "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes."
-    },
-    {
-      "name": "olko:pr-finalize",
-      "source": "./packages/software-development/pr-finalize/adapters/grok",
-      "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human."
-    },
-    {
-      "name": "olko:pr-finalize-complete",
-      "source": "./packages/software-development/pr-finalize-complete/adapters/grok",
-      "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption."
-    },
-    {
-      "name": "olko:qodoloop",
-      "source": "./packages/software-development/qodoloop/adapters/grok",
-      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass."
-    },
-    {
-      "name": "olko:garmin-watchface",
-      "source": "./packages/wearables/garmin-watchface/adapters/grok",
-      "description": "Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C."
-    },
-    {
-      "name": "olko:coderabbitloop",
-      "source": "./packages/software-development/coderabbitloop/adapters/grok",
-      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit."
-    },
-    {
-      "name": "olko:codexloop",
-      "source": "./packages/software-development/codexloop/adapters/grok",
-      "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code."
-    },
-    {
-      "name": "olko:geminiloop",
-      "source": "./packages/software-development/geminiloop/adapters/grok",
-      "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code."
-    },
-    {
-      "name": "olko:add-to-my-skills",
-      "source": "./packages/software-development/add-to-my-skills/adapters/grok",
-      "description": "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push."
-    },
-    {
-      "name": "olko:wrap-up",
-      "source": "./packages/software-development/wrap-up/adapters/grok",
-      "description": "Verify a completed task against its original objective, confirm applicable checks, and safely tidy task-owned artifacts, worktrees, and local branches."
-    },
-    {
-      "name": "olko:retro-analysis",
-      "source": "./packages/software-development/retro-analysis/adapters/grok",
-      "description": "Produce repository, comparison, and cross-project engineering retrospectives from delivery, code-quality, work-pattern, and trend evidence."
-    },
-    {
-      "name": "olko:ai-tools-setup",
-      "source": "./packages/software-development/ai-tools-setup/adapters/grok",
-      "description": "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration."
-    },
-    {
-      "name": "olko:changelog-generator",
-      "source": "./packages/software-development/changelog-generator/adapters/grok",
-      "description": "Create user-facing changelogs from git history by categorising commits and rewriting them for readers rather than developers."
-    },
-    {
-      "name": "olko:wikipedia-uk-editor",
-      "source": "./packages/software-development/wikipedia-uk-editor/adapters/grok",
-      "description": "Draft policy-compliant Ukrainian Wikipedia edits — translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item — and return ready-to-paste wikitext plus an edit summary."
-    },
-    {
-      "name": "olko:pr-description-writer",
-      "source": "./packages/software-development/pr-description-writer/adapters/grok",
-      "description": "Draft and post a GitHub PR title and body from git diff and commit history. Chains after git-commit and before qodoloop / coderabbitloop."
-    },
-    {
-      "name": "olko:ci-fix-loop",
-      "source": "./packages/software-development/ci-fix-loop/adapters/grok",
-      "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures."
-    },
-    {
-      "name": "olko:pr-to-green",
-      "source": "./packages/software-development/pr-to-green/adapters/grok",
-      "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads."
-    },
-    {
-      "name": "olko:dependabot-triage",
-      "source": "./packages/software-development/dependabot-triage/adapters/grok",
-      "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest."
-    },
-    {
-      "name": "olko:store-listing-copy",
-      "source": "./packages/software-development/store-listing-copy/adapters/grok",
-      "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes."
-    },
-    {
-      "name": "olko:morning-routine",
-      "source": "./packages/software-development/morning-routine/adapters/grok",
-      "description": "Run the complete start-of-day setup in one pass: roll over unfinished Obsidian tasks to today's daily note, sync open GitHub PRs that need your attention, and sweep Dependabot patch bumps. Chains obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage."
-    },
-    {
-      "name": "olko:release-day",
-      "source": "./packages/software-development/release-day/adapters/grok",
-      "description": "Orchestrate a full release-day workflow for iOS, Android, or Garmin apps: verify main branch CI is green, generate changelog, draft platform-ready store listing copy, trigger semantic-release or tag manually, wait for the build, and queue the App Store submission."
-    },
-    {
-      "name": "olko:branch-cleanup",
-      "source": "./packages/software-development/branch-cleanup/adapters/grok",
-      "description": "Prune stale git branches after a merge wave: delete closed/merged remote branches, remove local tracking refs that no longer exist on the remote, and optionally clean up merged local branches. Natural follow-up to dependabot-triage."
-    },
-    {
-      "name": "olko:vinted-listing",
-      "source": "./packages/software-development/vinted-listing/adapters/grok",
-      "description": "Create, edit, and safely publish Vinted listings through the signed-in browser, using verified item details and the owner’s original photos."
+      "name": "olko-web-ops",
+      "source": "./adapters/grok/olko-web-ops",
+      "description": "Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes."
     }
   ]
 }

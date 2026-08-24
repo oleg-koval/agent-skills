@@ -1,0 +1,5 @@
+{
+  "name": "olko-release",
+  "description": "Ship a release: semantic-release setup, changelogs, store listing copy, release-day routine.",
+  "skills": "./skills"
+}

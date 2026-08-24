@@ -1,0 +1,7 @@
+# Loaded only by `make test`, as a second -f after monkey.jungle, so that
+# (:test) annotated code is actually compiled. base.excludeAnnotations strips it
+# from every other target on purpose -- test code must not ship.
+#
+# The grammar requires a value here; an empty assignment is a syntax error. So
+# this is a placeholder that matches no annotation.
+base.excludeAnnotations = none

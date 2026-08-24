@@ -4,54 +4,54 @@
 
 This repository is an opinionated agent skill catalog. Skills encode concrete defaults, preferred tools, and repeatable workflows.
 
-- Treat `catalog/skills.json` as the source of truth for package metadata.
-- Keep canonical skill instructions in `packages/{category}/{skill}/SKILL.md`.
-- Keep generated adapter files in sync by running `./scripts/build-adapters.sh` after catalog or skill metadata changes (includes Cursor `skills/*/SKILL.md` copies from each canonical `SKILL.md`).
+- Treat `catalog/skills.json` as the source of truth for plugin and skill metadata.
+- Keep canonical skill instructions in `plugins/{plugin}/skills/{skill}/SKILL.md`.
+- Regenerate every manifest and adapter with `./scripts/build-adapters.sh` after any catalog or skill metadata change.
 - Run `./scripts/validate-catalog.sh` before release.
-- Prefer small, scoped updates that preserve existing package structure.
+- Never edit a generated file directly.
 
 Available reusable prompt files:
-- self-critique: .github/prompts/self-critique.prompt.md
-- docs-index-keeper: .github/prompts/docs-index-keeper.prompt.md
-- semantic-release-beta: .github/prompts/semantic-release-beta.prompt.md
-- gh-cli: .github/prompts/gh-cli.prompt.md
-- git-commit: .github/prompts/git-commit.prompt.md
-- gallery: .github/prompts/gallery.prompt.md
-- promptctl: .github/prompts/promptctl.prompt.md
-- fill-music-player: .github/prompts/fill-music-player.prompt.md
-- product-builder: .github/prompts/product-builder.prompt.md
-- mvp-oneshot: .github/prompts/mvp-oneshot.prompt.md
-- starter-rules: .github/prompts/starter-rules.prompt.md
-- review-past-performance: .github/prompts/review-past-performance.prompt.md
-- open-source-publisher: .github/prompts/open-source-publisher.prompt.md
-- viral-launch: .github/prompts/viral-launch.prompt.md
-- search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
-- website-analytics-bootstrap: .github/prompts/website-analytics-bootstrap.prompt.md
-- cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
-- obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
-- obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
-- apple-store-submit: .github/prompts/apple-store-submit.prompt.md
-- macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
-- crash-course: .github/prompts/crash-course.prompt.md
 - pr-finalize: .github/prompts/pr-finalize.prompt.md
 - pr-finalize-complete: .github/prompts/pr-finalize-complete.prompt.md
+- pr-to-green: .github/prompts/pr-to-green.prompt.md
+- pr-description-writer: .github/prompts/pr-description-writer.prompt.md
 - qodoloop: .github/prompts/qodoloop.prompt.md
-- garmin-watchface: .github/prompts/garmin-watchface.prompt.md
 - coderabbitloop: .github/prompts/coderabbitloop.prompt.md
 - codexloop: .github/prompts/codexloop.prompt.md
 - geminiloop: .github/prompts/geminiloop.prompt.md
-- add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
-- wrap-up: .github/prompts/wrap-up.prompt.md
-- retro-analysis: .github/prompts/retro-analysis.prompt.md
-- ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
-- changelog-generator: .github/prompts/changelog-generator.prompt.md
-- wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md
-- pr-description-writer: .github/prompts/pr-description-writer.prompt.md
 - ci-fix-loop: .github/prompts/ci-fix-loop.prompt.md
-- pr-to-green: .github/prompts/pr-to-green.prompt.md
 - dependabot-triage: .github/prompts/dependabot-triage.prompt.md
-- store-listing-copy: .github/prompts/store-listing-copy.prompt.md
-- morning-routine: .github/prompts/morning-routine.prompt.md
-- release-day: .github/prompts/release-day.prompt.md
+- git-commit: .github/prompts/git-commit.prompt.md
+- gh-cli: .github/prompts/gh-cli.prompt.md
 - branch-cleanup: .github/prompts/branch-cleanup.prompt.md
+- semantic-release-beta: .github/prompts/semantic-release-beta.prompt.md
+- open-source-publisher: .github/prompts/open-source-publisher.prompt.md
+- release-day: .github/prompts/release-day.prompt.md
+- changelog-generator: .github/prompts/changelog-generator.prompt.md
+- store-listing-copy: .github/prompts/store-listing-copy.prompt.md
+- product-builder: .github/prompts/product-builder.prompt.md
+- mvp-oneshot: .github/prompts/mvp-oneshot.prompt.md
+- starter-rules: .github/prompts/starter-rules.prompt.md
+- viral-launch: .github/prompts/viral-launch.prompt.md
+- add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
+- promptctl: .github/prompts/promptctl.prompt.md
+- ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
+- self-critique: .github/prompts/self-critique.prompt.md
+- review-past-performance: .github/prompts/review-past-performance.prompt.md
+- retro-analysis: .github/prompts/retro-analysis.prompt.md
+- crash-course: .github/prompts/crash-course.prompt.md
+- wrap-up: .github/prompts/wrap-up.prompt.md
+- obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
+- obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
+- morning-routine: .github/prompts/morning-routine.prompt.md
+- apple-store-submit: .github/prompts/apple-store-submit.prompt.md
+- macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
+- garmin-watchface: .github/prompts/garmin-watchface.prompt.md
+- gallery: .github/prompts/gallery.prompt.md
+- fill-music-player: .github/prompts/fill-music-player.prompt.md
 - vinted-listing: .github/prompts/vinted-listing.prompt.md
+- wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md
+- cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
+- search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
+- docs-index-keeper: .github/prompts/docs-index-keeper.prompt.md
+- website-analytics-bootstrap: .github/prompts/website-analytics-bootstrap.prompt.md

@@ -8,9 +8,59 @@
   },
   "plugins": [
     {
-      "name": "olko-agent-skills",
-      "source": "./",
-      "description": "Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools."
+      "name": "olko-github-pr",
+      "source": "./plugins/olko-github-pr",
+      "description": "Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage."
+    },
+    {
+      "name": "olko-git-tools",
+      "source": "./plugins/olko-git-tools",
+      "description": "Everyday git and GitHub CLI operations: conventional commits, branch hygiene."
+    },
+    {
+      "name": "olko-release",
+      "source": "./plugins/olko-release",
+      "description": "Ship a release: semantic-release setup, changelogs, store listing copy, release-day routine."
+    },
+    {
+      "name": "olko-product",
+      "source": "./plugins/olko-product",
+      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans."
+    },
+    {
+      "name": "olko-skill-meta",
+      "source": "./plugins/olko-skill-meta",
+      "description": "Author and maintain agent skills and the AI toolchain itself."
+    },
+    {
+      "name": "olko-reflection",
+      "source": "./plugins/olko-reflection",
+      "description": "Look back and improve: self-critique, retrospectives, performance review, rapid learning."
+    },
+    {
+      "name": "olko-obsidian",
+      "source": "./plugins/olko-obsidian",
+      "description": "Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine."
+    },
+    {
+      "name": "olko-apple-kit",
+      "source": "./plugins/olko-apple-kit",
+      "description": "Build and ship Apple platform apps: macOS menubar apps, App Store submissions."
+    },
+    {
+      "name": "olko-garmin-kit",
+      "source": "./plugins/olko-garmin-kit",
+      "description": "Build, test and publish Garmin Connect IQ watch faces."
+    },
+    {
+      "name": "olko-creative",
+      "source": "./plugins/olko-creative",
+      "description": "Creative and personal projects: photo galleries, music players, listings, wiki editing."
+    },
+    {
+      "name": "olko-web-ops",
+      "source": "./plugins/olko-web-ops",
+      "description": "Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes."
     }
   ]
 }

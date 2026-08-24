@@ -1,0 +1,12 @@
+{
+  "name": "olko-skill-meta",
+  "description": "Author and maintain agent skills and the AI toolchain itself.",
+  "version": "1.34.0",
+  "author": {
+    "name": "Oleg Koval"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills",
+  "repository": "https://github.com/oleg-koval/agent-skills",
+  "license": "MIT",
+  "skills": "./skills"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "olko-obsidian",
+  "version": "0.1.0",
+  "description": "Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine.",
+  "skills": "skills/"
+}
