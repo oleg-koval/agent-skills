@@ -60,7 +60,11 @@ export function loadCatalog(catalogPath = 'catalog/skills.json') {
   const skills = []
   for (const plugin of plugins) {
     for (const skill of plugin.skills) {
-      skills.push({ ...skill, plugin })
+      const entry = { ...skill }
+      // Non-enumerable so spreads and JSON.stringify skip it: the plugin object
+      // holds every sibling skill, which would otherwise be copied per skill.
+      Object.defineProperty(entry, 'plugin', { value: plugin, enumerable: false })
+      skills.push(entry)
     }
   }
   return { name: raw.name, plugins, skills }
