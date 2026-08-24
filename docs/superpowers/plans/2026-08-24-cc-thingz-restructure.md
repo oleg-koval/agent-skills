@@ -40,7 +40,7 @@
 - `scripts/install-codex-symlinks.sh` - reads the nested catalog.
 - `scripts/sync-from-sources.sh` - writes to `plugins/<plugin>/skills/<skill>/`.
 - `package.json` - `validate`, `test` scripts.
-- `.github/workflows/ci.yml` - new file for the non-release gate.
+- `.github/workflows/ci-release.yml` - add shellcheck and the generation-clean gate to its existing `test` job. No second workflow.
 - `README.md` - project tree, install instructions, badge.
 
 **Deleted:** `collections/`, `.skillignore`, all `packages/*/*/adapters/` trees, `packages/` itself.
@@ -1049,8 +1049,7 @@ git commit -m "refactor(validate): retarget validator to plugin tree and drop co
 
 **Files:**
 - Create: `tests/test-generation-idempotent.sh`, `tests/test-codex-symlinks.sh`
-- Create: `.github/workflows/ci.yml`
-- Modify: `scripts/install-codex-symlinks.sh`, `scripts/sync-from-sources.sh`
+- Modify: `scripts/install-codex-symlinks.sh`, `scripts/sync-from-sources.sh`, `.github/workflows/ci-release.yml`
 
 **Interfaces:**
 - Consumes: everything from Tasks 1-6.
@@ -1181,11 +1180,64 @@ Expected: `PASS: test-codex-symlinks (48 links)`
 
 - [ ] **Step 5: Retarget sync-from-sources.sh**
 
-Read `scripts/sync-from-sources.sh` and change its destination from `pkg.path` under `packages/` to the catalog's `skill.path`, loading the catalog via `loadCatalog()` from `scripts/lib/catalog.mjs` exactly as the installer above does. Then confirm it still parses:
+The current script iterates `catalog.packages` and copies into `pkg.path`. Both
+change. Replace the whole file with:
+
+```sh
+#!/bin/sh
+set -eu
+
+node --input-type=module <<'EOF'
+import { existsSync, rmSync, cpSync, mkdirSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import { loadCatalog } from './scripts/lib/catalog.mjs'
+
+const root = process.cwd()
+let synced = 0
+
+const copyIfPresent = (source, target) => {
+  if (!existsSync(source)) return
+  rmSync(target, { force: true, recursive: true })
+  cpSync(source, target, { recursive: true })
+}
+
+for (const skill of loadCatalog().skills) {
+  if (!skill.sourcePath) continue
+
+  const sourcePath = resolve(root, skill.sourcePath)
+  const targetPath = resolve(root, skill.path)
+
+  if (!existsSync(sourcePath)) {
+    throw new Error(`sourcePath for ${skill.name} does not exist: ${skill.sourcePath}`)
+  }
+
+  mkdirSync(targetPath, { recursive: true })
+  copyIfPresent(join(sourcePath, 'SKILL.md'), join(targetPath, 'SKILL.md'))
+  copyIfPresent(join(sourcePath, 'references'), join(targetPath, 'references'))
+  copyIfPresent(join(sourcePath, 'LICENSE'), join(targetPath, 'LICENSE'))
+  synced += 1
+  console.log(`synced ${skill.name} into ${skill.path} from ${skill.sourcePath}`)
+}
+
+if (synced === 0) {
+  console.log('no skill sourcePath entries configured; nothing to sync')
+}
+EOF
+```
+
+Note the destination is now the plugin-nested `skill.path`, so a synced skill
+lands in the plugin its catalog entry names. No catalog entry currently sets
+`sourcePath`, so this script is a no-op today; the retarget keeps it correct for
+when one does.
+
+Verify it parses and no-ops cleanly:
 
 ```bash
 sh -n scripts/sync-from-sources.sh && echo "syntax OK"
+./scripts/sync-from-sources.sh
 ```
+
+Expected: `syntax OK` then `no skill sourcePath entries configured; nothing to sync`
 
 - [ ] **Step 6: Run shellcheck and fix what it reports**
 
@@ -1195,53 +1247,55 @@ shellcheck scripts/*.sh tests/*.sh
 
 Expected: no output. Fix every finding; do not add suppressions unless the finding is genuinely wrong, and if so add a `# shellcheck disable=SCxxxx` with a one-line reason.
 
-- [ ] **Step 7: Add the CI workflow**
+- [ ] **Step 7: Add the two missing checks to the existing release workflow**
 
-Create `.github/workflows/ci.yml`:
+Do NOT create a separate `ci.yml`. `.github/workflows/ci-release.yml` already
+runs `npm run build` then `npm test` in its `test` job, and `release-readiness`
+and `release` both chain off it via `needs:`. A second workflow triggering on
+`pull_request` would double-run every PR to main. Only two checks are missing
+there: shellcheck, and the generation-clean assertion.
+
+In `.github/workflows/ci-release.yml`, in the `test` job only, replace:
 
 ```yaml
-name: ci
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+```
 
-on:
-  push:
-    branches-ignore: [main, beta]
-  pull_request:
+with:
 
-jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Frontmatter validator self-tests
-        run: node .github/scripts/check-frontmatter.mjs --test
-
-      - name: Frontmatter across repo
-        run: node .github/scripts/check-frontmatter.mjs .
-
+```yaml
+      - run: npm ci
       - name: ShellCheck
         run: |
           sudo apt-get update && sudo apt-get install -y shellcheck
           shellcheck scripts/*.sh tests/*.sh
-
-      - name: Catalog validation
-        run: ./scripts/validate-catalog.sh
-
+      - run: npm run build
       - name: Generated tree is clean
-        run: |
-          ./scripts/build-adapters.sh
-          git diff --exit-code
-
-      - name: Bash tests
-        run: |
-          for t in tests/test-*.sh; do
-            echo "--- $t"
-            sh "$t" || exit 1
-          done
+        run: git diff --exit-code
+      - run: npm test
 ```
+
+Leave the `release-readiness` and `release` jobs unchanged: they already depend
+on `test`, so they inherit the gate. The generation-clean step goes immediately
+after `npm run build` so a stale committed adapter fails before anything else
+runs.
+
+Verify the file still parses and the job graph is intact:
+
+```bash
+node --input-type=module -e '
+import { readFileSync } from "node:fs"
+const t = readFileSync(".github/workflows/ci-release.yml", "utf8")
+for (const needed of ["ShellCheck", "Generated tree is clean", "needs: test", "needs: release-readiness"]) {
+  if (!t.includes(needed)) throw new Error(`missing: ${needed}`)
+}
+console.log("workflow ok")
+'
+```
+
+Expected: `workflow ok`
 
 - [ ] **Step 8: Run the whole suite locally**
 
@@ -1269,7 +1323,7 @@ git commit -m "test: add generation, integrity and symlink tests with CI gate"
 
 **Interfaces:**
 - Consumes: the finished tree from Tasks 1-7.
-- Produces: a repo whose rules are written down, whose known defects are tracked, and whose release workflow depends on `ci.yml`.
+- Produces: a repo whose rules are written down, whose known defects are tracked, and whose release gating is confirmed.
 
 - [ ] **Step 1: Write CLAUDE.md**
 
@@ -1378,22 +1432,28 @@ grep -q 'packages/' README.md && echo "STALE packages/ reference remains" || ech
 
 Expected: `no stale references`.
 
-- [ ] **Step 4: Gate the release workflow on ci**
+- [ ] **Step 4: Confirm release gating is in place**
 
-In `.github/workflows/ci-release.yml`, add the same verification steps that `ci.yml` runs before the release job, or add a `needs:` dependency if the workflows are merged. The requirement: a release must never publish a repo whose generated tree is stale or whose catalog fails validation.
-
-Verify the file parses:
+Task 7 Step 7 already added shellcheck and the generation-clean assertion to the
+`test` job that `release-readiness` and `release` depend on, so no further
+workflow change is needed. Confirm the chain rather than editing it:
 
 ```bash
 node --input-type=module -e '
-const fs = require("fs")
-for (const f of ["ci.yml", "ci-release.yml"]) {
-  const t = fs.readFileSync(`.github/workflows/${f}`, "utf8")
-  if (!/^name:/m.test(t)) throw new Error(`${f} has no name`)
-  console.log(f, "ok")
+import { readFileSync } from "node:fs"
+const t = readFileSync(".github/workflows/ci-release.yml", "utf8")
+const checks = {
+  "shellcheck in test job": t.includes("ShellCheck"),
+  "generation-clean gate": t.includes("Generated tree is clean"),
+  "release-readiness gated on test": t.includes("needs: test"),
+  "release gated on readiness": t.includes("needs: release-readiness"),
 }
+console.log(checks)
+if (Object.values(checks).some((v) => !v)) process.exit(1)
 '
 ```
+
+Expected: all four true.
 
 - [ ] **Step 5: Run the full suite**
 
@@ -1523,7 +1583,7 @@ State plainly: skill count from four sources, suite result, CI result, which ski
 | Section 3 duplicate-name detection | 1, 6 |
 | Section 3 shellcheck | 7 |
 | Section 3 tests/*.sh | 1, 6, 7 |
-| Section 3 CI split | 7, 8 |
+| Section 3 CI checks (single workflow) | 7 |
 | Section 3 npm scripts | 2 |
 | Section 4 delete collections | 6 |
 | Section 4 completed/PLAN.md relocation | 8 |
@@ -1541,5 +1601,11 @@ No spec element is unassigned.
 **Type consistency:** `loadCatalog()` returns `{name, plugins, skills}` with each skill carrying `plugin` back-reference; used identically in Tasks 3, 5, 6, 7, 9. `PLUGIN_ASSIGNMENT` is `{pluginName: {description, skills[]}}` in Tasks 3 and 6. `skill.path` is always `plugins/<plugin>/skills/<skill>`, asserted in Task 6.
 
 **Known gaps, deliberately left:**
-- Task 7 Step 5 asks the implementer to read `sync-from-sources.sh` before editing rather than supplying a patch, because its current contents were not read during planning. The requirement is stated precisely; the diff is not pre-written.
-- Task 8 Step 3 and Step 4 describe README and release-workflow edits in prose rather than a literal diff, because both depend on current file content that will have shifted by then.
+- Task 8 Step 3 describes the README project-tree and install-section rewrite in prose rather than a literal diff, because the surrounding content shifts across Tasks 4-7. Its verification is exact: no `packages/` references may remain and all 48 skill links must resolve.
+
+**Design change made during planning:** the spec's Section 3 proposed splitting CI
+into a new `ci.yml` plus the existing `ci-release.yml`. Reading `ci-release.yml`
+showed its `test` job already gates both release jobs via `needs:`, so a second
+workflow would only double-run PRs. The two genuinely missing checks (shellcheck,
+generation-clean) are added to that existing job instead. Section 3 of the spec
+should be read with this amendment.
