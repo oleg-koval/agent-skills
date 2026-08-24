@@ -2,200 +2,159 @@
 set -eu
 
 test -f catalog/skills.json
-test -f collections/software-development.json
-test -f collections/marketing.json
-test -f collections/music.json
-test -f collections/photography.json
-test -f collections/wearables.json
-test -f collections/docs-tools.json
-test -f collections/release-tools.json
 test -f .claude-plugin/marketplace.json
-test -f .claude-plugin/plugin.json
 test -f .cursor-plugin/index.json
 test -f .grok-plugin/index.json
 test -f .github/copilot-instructions.md
 test -d .windsurf/rules
 test -d .kiro/steering
+test -d adapters
 
-node <<'EOF'
-const fs = require('fs')
-const path = require('path')
+node --input-type=module <<'EOF'
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+import { loadCatalog, PLUGIN_ASSIGNMENT } from './scripts/lib/catalog.mjs'
 
-const categories = new Set(['software-development', 'marketing', 'music', 'photography', 'wearables'])
-const adapterFiles = {
-  claude: (pkg) => path.join(pkg.path, 'adapters', 'claude', 'plugin.json'),
-  codex: (pkg) => path.join(pkg.path, 'adapters', 'codex', 'README.md'),
-  cursor: (pkg) => path.join(pkg.path, 'adapters', 'cursor', 'plugin.json'),
-  grok: (pkg) => path.join(pkg.path, 'adapters', 'grok', 'plugin.json'),
-  pi: (pkg) => path.join(pkg.path, 'adapters', 'pi', 'README.md'),
-  hermes: (pkg) => path.join(pkg.path, 'adapters', 'hermes', 'README.md'),
-  copilot: (pkg) => path.join('.github', 'prompts', `${pkg.name}.prompt.md`),
-  windsurf: (pkg) => path.join(pkg.path, 'adapters', 'windsurf', 'rules', `${pkg.name}.md`),
-  kiro: (pkg) => path.join(pkg.path, 'adapters', 'kiro', 'steering', `${pkg.name}.md`),
+const kebab = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const KNOWN_ADAPTERS = new Set(['claude', 'codex', 'cursor', 'grok', 'pi', 'hermes', 'copilot', 'windsurf', 'kiro'])
+const adapterFile = {
+  claude: (s) => join('adapters', 'claude', s.plugin.name, 'skills', s.name, 'SKILL.md'),
+  cursor: (s) => join('adapters', 'cursor', s.plugin.name, 'skills', s.name, 'SKILL.md'),
+  grok: (s) => join('adapters', 'grok', s.plugin.name, 'skills', s.name, 'SKILL.md'),
+  codex: (s) => join('adapters', 'codex', s.plugin.name, 'README.md'),
+  copilot: (s) => join('.github', 'prompts', `${s.name}.prompt.md`),
+  windsurf: (s) => join('.windsurf', 'rules', `${s.name}.md`),
+  kiro: (s) => join('.kiro', 'steering', `${s.name}.md`),
+  pi: (s) => join('adapters', 'pi', s.plugin.name, 'README.md'),
+  hermes: (s) => join('adapters', 'hermes', s.plugin.name, 'README.md'),
 }
 
-const catalog = JSON.parse(fs.readFileSync('catalog/skills.json', 'utf8'))
-const packagesByName = new Map(catalog.packages.map((pkg) => [pkg.name, pkg]))
-if (packagesByName.size !== catalog.packages.length) {
-  const counts = new Map()
-  for (const pkg of catalog.packages) {
-    counts.set(pkg.name, (counts.get(pkg.name) || 0) + 1)
-  }
-  const dupes = [...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name)
-  throw new Error(
-    `catalog/skills.json has duplicate package names: ${dupes.join(', ')}\n` +
-    '  A duplicate inflates the public skill count and shadows the first entry.'
-  )
-}
-const claudeManifest = JSON.parse(fs.readFileSync('.claude-plugin/marketplace.json', 'utf8'))
-const claudePluginManifest = JSON.parse(fs.readFileSync('.claude-plugin/plugin.json', 'utf8'))
-const cursorManifest = JSON.parse(fs.readFileSync('.cursor-plugin/index.json', 'utf8'))
-const grokManifest = JSON.parse(fs.readFileSync('.grok-plugin/index.json', 'utf8'))
-const kebabCasePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const catalog = loadCatalog()
 
-if (!kebabCasePattern.test(claudeManifest.name)) {
-  throw new Error(`Claude marketplace name must be kebab-case: ${claudeManifest.name}`)
+// Plugin-level invariants.
+const pluginNames = new Set()
+for (const plugin of catalog.plugins) {
+  if (!kebab.test(plugin.name)) throw new Error(`plugin name must be kebab-case: ${plugin.name}`)
+  if (!plugin.name.startsWith('olko-')) throw new Error(`plugin name must carry the olko- prefix: ${plugin.name}`)
+  if (pluginNames.has(plugin.name)) throw new Error(`duplicate plugin name: ${plugin.name}`)
+  pluginNames.add(plugin.name)
+  if (!plugin.description) throw new Error(`plugin has no description: ${plugin.name}`)
+  if (!plugin.skills || plugin.skills.length === 0) {
+    throw new Error(`plugin has no skills: ${plugin.name}\n  An empty plugin generates an uninstallable manifest.`)
+  }
+  const manifest = join('plugins', plugin.name, '.claude-plugin', 'plugin.json')
+  if (!existsSync(manifest)) throw new Error(`missing generated plugin manifest: ${manifest}`)
 }
 
-if (!kebabCasePattern.test(claudePluginManifest.name)) {
-  throw new Error(`Claude plugin name must be kebab-case: ${claudePluginManifest.name}`)
-}
+// Skill-level invariants, including the duplicate-name check.
+const seen = new Map()
+for (const skill of catalog.skills) {
+  if (seen.has(skill.name)) {
+    throw new Error(
+      `duplicate skill name in catalog: ${skill.name} (in ${seen.get(skill.name)} and ${skill.plugin.name})\n` +
+      '  A duplicate inflates the public skill count and shadows the first entry.'
+    )
+  }
+  seen.set(skill.name, skill.plugin.name)
 
-for (const pkg of catalog.packages) {
-  if (!pkg.name || !pkg.lookupName || !pkg.path || !pkg.description) {
-    throw new Error(`package metadata is incomplete: ${JSON.stringify(pkg)}`)
+  if (!kebab.test(skill.name)) throw new Error(`skill name must be kebab-case: ${skill.name}`)
+  if (!skill.description) throw new Error(`skill has no description: ${skill.name}`)
+  if (!skill.lookupName) throw new Error(`skill has no lookupName: ${skill.name}`)
+
+  const expectedPath = join('plugins', skill.plugin.name, 'skills', skill.name)
+  if (skill.path !== expectedPath) {
+    throw new Error(`skill path must be ${expectedPath}, got ${skill.path}`)
+  }
+  const skillMd = join(skill.path, 'SKILL.md')
+  if (!existsSync(skillMd)) throw new Error(`missing SKILL.md for ${skill.name}: ${skillMd}`)
+
+  // Frontmatter name must match the directory name.
+  const content = readFileSync(skillMd, 'utf8')
+  const fmName = content.match(/^name:[ \t]*(.+)$/m)
+  if (!fmName) throw new Error(`SKILL.md has no name field: ${skillMd}`)
+  if (fmName[1].trim() !== skill.name) {
+    throw new Error(`SKILL.md name "${fmName[1].trim()}" does not match directory "${skill.name}": ${skillMd}`)
   }
 
-  if (!categories.has(pkg.category)) {
-    throw new Error(`unknown category for ${pkg.name}: ${pkg.category}`)
-  }
-
-  const skillPath = path.join(pkg.path, 'SKILL.md')
-  if (!fs.existsSync(skillPath)) {
-    throw new Error(`missing SKILL.md for ${pkg.name}: ${skillPath}`)
-  }
-
-  for (const adapter of pkg.adapters || []) {
-    const adapterFileFor = adapterFiles[adapter]
-    if (!adapterFileFor) {
-      throw new Error(`unknown adapter for ${pkg.name}: ${adapter}`)
-    }
-
-    const adapterFile = adapterFileFor(pkg)
-    if (!fs.existsSync(adapterFile)) {
-      throw new Error(`missing ${adapter} adapter for ${pkg.name}: ${adapterFile}`)
-    }
-
-    if (adapter === 'claude') {
-      const adapterManifest = JSON.parse(fs.readFileSync(adapterFile, 'utf8'))
-      if (!kebabCasePattern.test(adapterManifest.name)) {
-        throw new Error(`Claude adapter plugin name must be kebab-case for ${pkg.name}: ${adapterManifest.name}`)
-      }
-    }
+  for (const adapter of skill.adapters || []) {
+    if (!KNOWN_ADAPTERS.has(adapter)) throw new Error(`unknown adapter for ${skill.name}: ${adapter}`)
+    const file = adapterFile[adapter](skill)
+    if (!existsSync(file)) throw new Error(`missing ${adapter} adapter for ${skill.name}: ${file}`)
   }
 }
 
-// Reverse check: every skill on disk must be registered in the catalog.
-// Everything else in this file walks outward FROM the catalog, so a package the
-// catalog does not know about was invisible to validation -- which is how
-// add-to-my-skills, ai-tools-setup and changelog-generator sat unregistered
-// while still appearing in the README. Unregistered skills are absent from every
-// plugin manifest, so they cannot be installed from any marketplace.
-const registeredPaths = new Set(catalog.packages.map((pkg) => pkg.path))
-for (const category of fs.readdirSync('packages')) {
-  const categoryDir = path.join('packages', category)
-  if (!fs.statSync(categoryDir).isDirectory()) {
-    continue
-  }
-  for (const skill of fs.readdirSync(categoryDir)) {
-    const skillDir = path.join(categoryDir, skill)
-    if (!fs.statSync(skillDir).isDirectory()) {
-      continue
-    }
-    if (!fs.existsSync(path.join(skillDir, 'SKILL.md'))) {
-      continue
-    }
-    if (!registeredPaths.has(skillDir)) {
+if (catalog.skills.length !== seen.size) {
+  throw new Error(`skill count mismatch: ${catalog.skills.length} entries, ${seen.size} unique`)
+}
+
+// Reverse check: every skill on disk must be registered.
+const registered = new Set(catalog.skills.map((s) => s.path))
+for (const plugin of readdirSync('plugins')) {
+  const skillsDir = join('plugins', plugin, 'skills')
+  if (!existsSync(skillsDir) || !statSync(skillsDir).isDirectory()) continue
+  for (const skill of readdirSync(skillsDir)) {
+    const dir = join(skillsDir, skill)
+    if (!statSync(dir).isDirectory()) continue
+    if (!existsSync(join(dir, 'SKILL.md'))) continue
+    if (!registered.has(dir)) {
       throw new Error(
-        `skill on disk is not registered in catalog/skills.json: ${skillDir}\n` +
+        `skill on disk is not registered in catalog/skills.json: ${dir}\n` +
         '  Unregistered skills are missing from every plugin manifest and cannot be installed.'
       )
     }
   }
 }
 
-// Every catalog package must appear in the README table, so the two inventories
-// cannot drift apart in the other direction either.
-const readme = fs.readFileSync('README.md', 'utf8')
-for (const pkg of catalog.packages) {
-  if (!readme.includes(`${pkg.path}/SKILL.md`)) {
-    throw new Error(`catalog package is missing from the README table: ${pkg.name}`)
+// The assignment table and the catalog must not drift apart. A count-only check
+// would pass if two skills swapped plugins, so compare the groupings themselves.
+for (const [pluginName, def] of Object.entries(PLUGIN_ASSIGNMENT)) {
+  const plugin = catalog.plugins.find((p) => p.name === pluginName)
+  if (!plugin) {
+    throw new Error(`PLUGIN_ASSIGNMENT names a plugin absent from the catalog: ${pluginName}`)
+  }
+  const assigned = [...def.skills].sort()
+  const actual = plugin.skills.map((s) => s.name).sort()
+  if (assigned.join(',') !== actual.join(',')) {
+    const missing = assigned.filter((n) => !actual.includes(n))
+    const extra = actual.filter((n) => !assigned.includes(n))
+    throw new Error(
+      `PLUGIN_ASSIGNMENT and catalog disagree for ${pluginName}:\n` +
+      `  in the table but not the catalog: ${missing.join(', ') || 'none'}\n` +
+      `  in the catalog but not the table: ${extra.join(', ') || 'none'}`
+    )
+  }
+}
+for (const plugin of catalog.plugins) {
+  if (!PLUGIN_ASSIGNMENT[plugin.name]) {
+    throw new Error(`catalog has a plugin absent from PLUGIN_ASSIGNMENT: ${plugin.name}`)
   }
 }
 
-for (const collectionPath of fs.readdirSync('collections').map((name) => path.join('collections', name))) {
-  const collection = JSON.parse(fs.readFileSync(collectionPath, 'utf8'))
-  for (const packageName of collection.packages || []) {
-    if (!packagesByName.has(packageName)) {
-      throw new Error(`${collectionPath} references unknown package: ${packageName}`)
-    }
+// Every skill must appear in the README table.
+const readme = readFileSync('README.md', 'utf8')
+for (const skill of catalog.skills) {
+  if (!readme.includes(`${skill.path}/SKILL.md`)) {
+    throw new Error(`skill is missing from the README table: ${skill.name}`)
   }
 }
 
-for (const plugin of claudeManifest.plugins || []) {
-  if (!kebabCasePattern.test(plugin.name)) {
-    throw new Error(`Claude manifest plugin name must be kebab-case: ${plugin.name}`)
-  }
-
+// Manifest sources must exist.
+const marketplace = JSON.parse(readFileSync('.claude-plugin/marketplace.json', 'utf8'))
+for (const plugin of marketplace.plugins || []) {
+  if (!kebab.test(plugin.name)) throw new Error(`marketplace plugin name must be kebab-case: ${plugin.name}`)
   const source = plugin.source.replace(/^\.\//, '') || '.'
-  if (!fs.existsSync(source)) {
-    throw new Error(`Claude manifest source does not exist: ${plugin.source}`)
+  if (!existsSync(source)) throw new Error(`marketplace source does not exist: ${plugin.source}`)
+}
+for (const file of ['.cursor-plugin/index.json', '.grok-plugin/index.json']) {
+  for (const plugin of (JSON.parse(readFileSync(file, 'utf8')).plugins || [])) {
+    const source = plugin.source.replace(/^\.\//, '')
+    if (!existsSync(source)) throw new Error(`${file} source does not exist: ${plugin.source}`)
   }
 }
 
-for (const skillPath of claudePluginManifest.skills || []) {
-  const source = skillPath.replace(/^\.\//, '')
-  if (!fs.existsSync(path.join(source, 'SKILL.md'))) {
-    throw new Error(`Claude root plugin skill path is invalid: ${skillPath}`)
-  }
-}
+// No stale pre-restructure tree.
+if (existsSync('packages')) throw new Error('stale packages/ directory still exists')
+if (existsSync('collections')) throw new Error('stale collections/ directory still exists')
 
-for (const plugin of cursorManifest.plugins || []) {
-  const source = plugin.source.replace(/^\.\//, '')
-  if (!fs.existsSync(source)) {
-    throw new Error(`Cursor manifest source does not exist: ${plugin.source}`)
-  }
-}
-
-for (const plugin of grokManifest.plugins || []) {
-  const source = plugin.source.replace(/^\.\//, '')
-  if (!fs.existsSync(source)) {
-    throw new Error(`Grok manifest source does not exist: ${plugin.source}`)
-  }
-}
-
-for (const pkg of catalog.packages) {
-  const oldFlatPath = path.join('packages', pkg.name, 'SKILL.md')
-  if (fs.existsSync(oldFlatPath)) {
-    throw new Error(`stale flat package path exists: ${oldFlatPath}`)
-  }
-}
-
-// Assert every SKILL.md (canonical + adapter wrappers) has a valid closed frontmatter block
-// Codex adapter files use README.md and are validated separately above
-const walk = (dir) => {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) walk(full)
-    else if (entry.name === 'SKILL.md') {
-      const content = fs.readFileSync(full, 'utf8')
-      if (!content.match(/^---\n[\s\S]*?\n---\n?/)) {
-        throw new Error(`SKILL.md does not have valid closed frontmatter: ${full}`)
-      }
-    }
-  }
-}
-walk('packages')
+console.log(`catalog validation passed: ${catalog.plugins.length} plugins, ${catalog.skills.length} skills`)
 EOF
-
-echo "catalog validation passed"
