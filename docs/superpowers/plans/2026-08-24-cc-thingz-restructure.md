@@ -965,10 +965,29 @@ for (const plugin of readdirSync('plugins')) {
   }
 }
 
-// The assignment table and the catalog must not drift apart.
-const assigned = Object.values(PLUGIN_ASSIGNMENT).flatMap((p) => p.skills)
-if (assigned.length !== catalog.skills.length) {
-  throw new Error(`PLUGIN_ASSIGNMENT lists ${assigned.length} skills, catalog has ${catalog.skills.length}`)
+// The assignment table and the catalog must not drift apart. A count-only check
+// would pass if two skills swapped plugins, so compare the groupings themselves.
+for (const [pluginName, def] of Object.entries(PLUGIN_ASSIGNMENT)) {
+  const plugin = catalog.plugins.find((p) => p.name === pluginName)
+  if (!plugin) {
+    throw new Error(`PLUGIN_ASSIGNMENT names a plugin absent from the catalog: ${pluginName}`)
+  }
+  const assigned = [...def.skills].sort()
+  const actual = plugin.skills.map((s) => s.name).sort()
+  if (assigned.join(',') !== actual.join(',')) {
+    const missing = assigned.filter((n) => !actual.includes(n))
+    const extra = actual.filter((n) => !assigned.includes(n))
+    throw new Error(
+      `PLUGIN_ASSIGNMENT and catalog disagree for ${pluginName}:\n` +
+      `  in the table but not the catalog: ${missing.join(', ') || 'none'}\n` +
+      `  in the catalog but not the table: ${extra.join(', ') || 'none'}`
+    )
+  }
+}
+for (const plugin of catalog.plugins) {
+  if (!PLUGIN_ASSIGNMENT[plugin.name]) {
+    throw new Error(`catalog has a plugin absent from PLUGIN_ASSIGNMENT: ${plugin.name}`)
+  }
 }
 
 // Every skill must appear in the README table.
