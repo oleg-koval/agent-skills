@@ -4,7 +4,7 @@ against what the watch can actually draw.
 
     ciq-mock out.html a.svg b.svg c.svg
     ciq-mock out.html *.svg --device fenix6pro
-    ciq-mock out.html a.svg --strict          # exit 1 on unsupported/bezel findings only
+    ciq-mock out.html a.svg --strict          # exit 1 on any infidelity
 
 Why this exists
 ---------------
@@ -99,10 +99,6 @@ BANNED_ATTRS = {
     "stroke-opacity": "alphaBlendingSupport is false -- renders fully opaque",
     "stroke-dasharray": "no dash support; draw the segments",
     "filter": "no filter primitives",
-}
-
-# Non-blocking attributes that need guidance but don't fail --strict.
-GUIDANCE_ATTRS = {
     "transform": "fine in the mock, but every rotation must be precomputed in "
                  "Monkey C -- one sin/cos pair per polygon, not per vertex",
 }
@@ -114,7 +110,7 @@ MIN_STROKE = 2
 # ---------------------------------------------------------------- colour ----
 
 def parse_colour(text):
-    """-> (r, g, b) or None when unparseable/none, or "alpha" when alpha-bearing."""
+    """-> (r, g, b) or None when unparseable/none."""
     if not text:
         return None
     t = text.strip().lower()
@@ -122,13 +118,6 @@ def parse_colour(text):
         return None
     if t in NAMED:
         return NAMED[t]
-    # 4-digit or 8-digit hex with alpha
-    m = re.fullmatch(r"#([0-9a-f]{4})", t)
-    if m:
-        return "alpha"
-    m = re.fullmatch(r"#([0-9a-f]{8})", t)
-    if m:
-        return "alpha"
     m = re.fullmatch(r"#([0-9a-f]{3})", t)
     if m:
         return tuple(int(c * 2, 16) for c in m.group(1))
@@ -139,9 +128,6 @@ def parse_colour(text):
     m = re.fullmatch(r"rgba?\(([^)]*)\)", t)
     if m:
         parts = [p.strip() for p in m.group(1).replace("/", ",").split(",")]
-        # If there's a 4th component (alpha), flag it
-        if len(parts) >= 4:
-            return "alpha"
         try:
             return tuple(int(round(float(p.rstrip("%")) * (2.55 if "%" in p else 1)))
                          for p in parts[:3])
@@ -200,8 +186,8 @@ def device_size(device):
     j = json.loads(path.read_text())
     res = j.get("resolution") or j.get("display") or {}
     w, h = res.get("width"), res.get("height")
-    if not w or not h:
-        sys.exit(f"{path} declares no resolution (width or height missing).")
+    if not w:
+        sys.exit(f"{path} declares no resolution.")
     return int(w), int(h)
 
 
@@ -289,19 +275,11 @@ def audit(root, size, round_screen):
             if attr in declared and declared[attr] not in ("1", "1.0", "none"):
                 findings.append(("unsupported", f"{tag} {attr}=\"{declared[attr]}\": {why}"))
 
-        for attr, why in GUIDANCE_ATTRS.items():
-            if attr in declared and declared[attr] not in ("1", "1.0", "none"):
-                findings.append(("limit", f"{tag} {attr}=\"{declared[attr]}\": {why}"))
-
         for attr in COLOUR_ATTRS:
             raw = declared.get(attr)
             if raw is None:
                 continue
             rgb = parse_colour(raw)
-            if rgb == "alpha":
-                findings.append(("unsupported", f"{tag} {attr}=\"{raw}\": alpha channel "
-                                               "not supported (alphaBlendingSupport is false)"))
-                continue
             if rgb is None:
                 if raw.strip().lower() not in ("none", "transparent", "inherit",
                                                "currentcolor"):
@@ -313,11 +291,7 @@ def audit(root, size, round_screen):
         sw = declared.get("stroke-width")
         if sw is not None and declared.get("stroke", "none") != "none":
             try:
-                # Strip "px" suffix if present
-                sw_str = str(sw).strip()
-                if sw_str.endswith("px"):
-                    sw_str = sw_str[:-2].strip()
-                if float(sw_str) < MIN_STROKE:
+                if float(sw) < MIN_STROKE:
                     findings.append(("stroke", f"{tag} stroke-width={sw}: below {MIN_STROKE}px "
                                                "breaks up with no anti-aliasing"))
             except ValueError:
@@ -400,13 +374,13 @@ document.querySelector('#dim').addEventListener('click', function () {
 """
 
 
-def card(name, markup, w, h, findings, colours, round_screen, card_index):
+def card(name, markup, w, h, findings, colours, round_screen):
     clip = ""
     if round_screen:
-        clip = (f'<defs><clipPath id="glass_{card_index}">'
+        clip = (f'<defs><clipPath id="glass_{abs(hash(name))}">'
                 f'<circle cx="{w/2}" cy="{h/2}" r="{min(w, h)/2}"/>'
                 f"</clipPath></defs>")
-        markup = f'<g clip-path="url(#glass_{card_index})">{markup}</g>'
+        markup = f'<g clip-path="url(#glass_{abs(hash(name))})">{markup}</g>'
 
     swatches = "".join(
         f'<div class="sw" style="background:{hexof(quantize(c))}" '
@@ -445,8 +419,7 @@ def main():
     ap.add_argument("--no-quantize", action="store_true",
                     help="render the colours as written (dishonest; for comparison only)")
     ap.add_argument("--strict", action="store_true",
-                    help="exit 1 if any variant has unsupported-feature or bezel findings "
-                         "(path/text limits are non-blocking)")
+                    help="exit 1 if any variant has an unsupported/bezel finding")
     args = ap.parse_args()
 
     if args.device:
@@ -456,7 +429,7 @@ def main():
     round_screen = (not args.rect) and w == h
 
     cards, blocking = [], 0
-    for idx, name in enumerate(args.svg):
+    for name in args.svg:
         path = Path(name)
         if not path.is_file():
             sys.exit(f"No such file: {path}")
@@ -466,7 +439,7 @@ def main():
             root = apply_quantize(root)
         blocking += sum(1 for kind, _ in findings if kind in ("unsupported", "bezel"))
         cards.append(card(path.stem, inner_markup(root), w, h,
-                          findings, colours, round_screen, idx))
+                          findings, colours, round_screen))
 
         print(f"{path.stem}: {len(findings)} finding(s)")
         for kind, msg in findings:

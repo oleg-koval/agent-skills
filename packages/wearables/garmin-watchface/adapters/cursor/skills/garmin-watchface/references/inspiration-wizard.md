@@ -47,17 +47,16 @@ Three axes worth gathering along:
   proportions and polarity are what make it recognisable. Get those first; see
   the homage section in `SKILL.md`.
 - **Palette** -- from a brand domain, or from an image the user already owns.
-  Everything comes back quantised, so what you show is what ships.
+  Everything comes back quantized, so what you show is what ships.
 - **Prior art** -- read other people's Monkey C for *technique*, not for code.
   Most Connect IQ repositories carry no licence, which means all rights
   reserved.
 
-**IP boundary.** Use brand research and design references as inspiration only:
-implementation must be original, and distinctive creative elements or
-compositions must not be copied verbatim. Names, wordmarks and logos are not
-permissible -- not in the face, the launcher icon, the screenshots or the copy.
-`ciq-inspire --brand` will return another company's logo without complaint; that
-is a research artefact, not an asset. See `store.md`.
+**IP boundary.** Colours, proportions and layout ideas are fair to borrow. Names,
+wordmarks and logos are not -- not in the face, the launcher icon, the
+screenshots or the copy. `ciq-inspire --brand` will return another company's
+logo without complaint; that is a research artefact, not an asset. See
+`store.md`.
 
 ---
 
@@ -88,10 +87,10 @@ because each changes the code shape rather than the look:
 
 ---
 
-## Stage 3 -- Diverge: exactly three variants as SVG
+## Stage 3 -- Diverge: three variants as SVG
 
-Write exactly three SVG files that differ on **the one axis you asked about**,
-holding everything else constant. Then:
+Write three SVG files that differ on **the one axis you asked about**, holding
+everything else constant. Then:
 
 ```bash
 <skill-dir>/scripts/ciq-mock /tmp/proposals.html a.svg b.svg c.svg --device <target>
