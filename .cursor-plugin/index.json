@@ -157,6 +157,11 @@
       "description": "Verify a completed task against its original objective, confirm applicable checks, and safely tidy task-owned artifacts, worktrees, and local branches."
     },
     {
+      "name": "olko:retro-analysis",
+      "source": "./packages/software-development/retro-analysis/adapters/cursor",
+      "description": "Produce repository, comparison, and cross-project engineering retrospectives from delivery, code-quality, work-pattern, and trend evidence."
+    },
+    {
       "name": "olko:ai-tools-setup",
       "source": "./packages/software-development/ai-tools-setup/adapters/cursor",
       "description": "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration."
