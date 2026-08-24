@@ -1,5 +1,0 @@
-{
-  "name": "olko-coderabbitloop",
-  "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
-  "skills": "./skills"
-}

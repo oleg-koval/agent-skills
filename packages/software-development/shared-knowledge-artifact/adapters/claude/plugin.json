@@ -1,5 +1,0 @@
-{
-  "name": "olko-shared-knowledge-artifact",
-  "description": "Build a shared, self-persisting knowledge ledger as a Claude Artifact: a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons before working and append to them afterwards.",
-  "skills": "./skills"
-}

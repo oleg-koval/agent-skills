@@ -1,6 +1,0 @@
-{
-  "name": "olko:store-listing-copy",
-  "version": "0.1.0",
-  "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes.",
-  "skills": "skills/"
-}

@@ -1,5 +1,0 @@
-{
-  "name": "olko-changelog-generator",
-  "description": "Create user-facing changelogs from git history by categorising commits and rewriting them for readers rather than developers.",
-  "skills": "./skills"
-}

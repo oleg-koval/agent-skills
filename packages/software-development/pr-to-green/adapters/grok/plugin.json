@@ -1,6 +1,0 @@
-{
-  "name": "olko:pr-to-green",
-  "version": "0.1.0",
-  "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads.",
-  "skills": "skills/"
-}
