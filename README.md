@@ -314,20 +314,32 @@ When adding or changing a skill:
 4. Update `catalog/skills.json` if the skill name, category, description, path, tags, or adapters change.
 5. Run local validation before publishing changes.
 
-## Root manifests
+## Generated manifests
 
 | Harness | File | Format |
 |---------|------|--------|
-| Claude Code | `.claude-plugin/marketplace.json` | Marketplace plugin registry |
-| Claude Code | `.claude-plugin/plugin.json` | Plugin manifest |
+| Claude Code | `.claude-plugin/marketplace.json` | Marketplace registry listing all 11 plugins |
+| Claude Code | `plugins/<plugin>/.claude-plugin/plugin.json` | Per-plugin manifest, one per plugin |
+| Claude Code | `adapters/claude/<plugin>/` | Per-plugin skill copies |
 | Cursor | `.cursor-plugin/index.json` | Plugin index |
-| Grok | `.grok-plugin/index.json` | Plugin index (plus `.claude-plugin/` compatibility) |
+| Cursor | `adapters/cursor/<plugin>/` | Per-plugin skill copies |
+| Grok | `.grok-plugin/index.json` | Plugin index |
+| Grok | `adapters/grok/<plugin>/` | Per-plugin skill copies |
+| Codex | `adapters/codex/<plugin>/README.md` | Pointer to the canonical skills |
+| Pi | `adapters/pi/<plugin>/README.md` | Pointer to the canonical skills |
+| Hermes | `adapters/hermes/<plugin>/README.md` | Pointer to the canonical skills |
 | GitHub Copilot | `.github/copilot-instructions.md` | Repository instructions |
 | GitHub Copilot | `.github/prompts/*.prompt.md` | Per-skill prompt files |
 | Windsurf | `.windsurf/rules/*.md` | Cascade rules |
 | Kiro | `.kiro/steering/*.md` | Steering documents |
 
-All root manifests are generated from `catalog/skills.json` by `./scripts/build-adapters.sh`.
+Every file above is generated from `catalog/skills.json` by `./scripts/build-adapters.sh`.
+Never edit one by hand: CI regenerates and fails on any difference.
+
+Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
+decides which targets it ships to, so the file counts differ per target: Claude 48, Grok 46,
+Cursor 44, Copilot 44, Codex 41, Windsurf 34, Kiro 34, Pi 2, Hermes 2. A skill is absent from a
+target's tree when its catalog entry does not list that target.
 
 ## How Skills Work
 
