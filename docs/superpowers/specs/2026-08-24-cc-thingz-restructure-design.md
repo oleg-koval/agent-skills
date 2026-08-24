@@ -31,8 +31,16 @@ alongside a near-identical `plugin.json`. Several hundred generated files do the
 work of a few dozen.
 
 cc-thingz solves the grouping problem with several small, self-contained,
-independently installable plugins, and has validation tooling this repo lacks
-(frontmatter validator with embedded self-tests, shellcheck, bash test suite).
+independently installable plugins.
+
+This repo's `scripts/validate-catalog.sh` is already substantial: it enforces
+catalog-to-disk agreement in both directions, README table coverage, closed
+frontmatter on every `SKILL.md`, kebab-case manifest names, per-target adapter
+file existence, and collections referential integrity. What it lacks is narrow
+and specific: no duplicate-`name` detection (it builds a `Map` keyed by name,
+which silently collapses duplicates - exactly how the `pr-finalize-complete`
+double registration passed), no real YAML parsing (only a closed-block regex),
+no shellcheck, and no test suite. Those four gaps are what this design closes.
 
 ## Section 1 - Plugin decomposition
 
@@ -76,7 +84,7 @@ agent-skills/
   .claude-plugin/marketplace.json      GENERATED - 11 plugin entries
   .github/
     scripts/check-frontmatter.mjs      validator, supports --test
-    workflows/{ci.yml, ci-release.yml, automerge.yml, prevent-unknown-contributors.yml}
+    workflows/{ci-release.yml, automerge.yml, prevent-unknown-contributors.yml}
   .windsurf/rules/*.md                 GENERATED - tool-mandated root path
   .kiro/steering/*.md                  GENERATED - tool-mandated root path
   .github/prompts/*.prompt.md          GENERATED - Copilot, tool-mandated root path
@@ -151,15 +159,25 @@ unit-tests: `---` at EOF with no trailing newline, tab-indented YAML, and body
 text containing `---` that is not frontmatter. `--test` runs its own assertions
 inside the script, no test framework, following cc-thingz's pattern.
 
-**Schema validation beyond cc-thingz.** cc-thingz only checks that YAML parses.
-This repo also needs field-level checks because the fan-out depends on them:
+**Extend `validate-catalog.sh`, do not replace it.** Its existing checks are
+kept verbatim and retargeted to the new paths. The additions are:
 
-- `name` matches the containing directory name
+- duplicate `name` detection across catalog entries, failing the build
+- `name` in frontmatter matches the containing directory name
+- every skill belongs to exactly one plugin, and every plugin has >= 1 skill
+
+Its hard-coded `test -f collections/*.json` lines must be removed in the same
+change that deletes `collections/`, or CI breaks.
+
+The remaining field-level checks the fan-out depends on:
+
 - `description` present and non-empty
 - `allowed-tools` names only real tools
 - `metadata.targets` values are known adapter names
-- every skill on disk appears in the catalog, and every catalog entry exists on
-  disk
+
+The `adapterFiles` table in the validator already knows nine targets (`claude`,
+`codex`, `cursor`, `grok`, `pi`, `hermes`, `copilot`, `windsurf`, `kiro`), of
+which seven are in use. That table stays the authority on valid target names.
 
 A duplicate-`name` check belongs here too: it is what would have caught the
 double registration of `pr-finalize-complete`, which the README badge then
@@ -173,12 +191,12 @@ installer is safe to re-run, catalog and disk agree.
 
 **Generation gate** - `build-adapters` followed by `git diff --exit-code`.
 
-**CI split:**
-
-- `ci.yml` on all pushes and PRs: frontmatter, schema, shellcheck, bash tests,
-  generation-clean. Fast, needs no secrets.
-- `ci-release.yml` on main and beta only: the existing semantic-release pipeline,
-  unchanged, gated on `ci.yml`.
+**CI stays one workflow.** `ci-release.yml` already runs `npm run build` then
+`npm test` in a `test` job that both `release-readiness` and `release` depend on
+via `needs:`, so releases are already gated. A second workflow triggering on
+`pull_request` would double-run every PR to main. The two genuinely missing
+checks - shellcheck, and `git diff --exit-code` after the build - are added to
+that existing `test` job instead.
 
 `automerge.yml` and `prevent-unknown-contributors.yml` are unchanged.
 
