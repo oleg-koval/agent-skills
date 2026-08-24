@@ -1,3 +1,10 @@
+# [1.33.0](https://github.com/oleg-koval/agent-skills/compare/v1.32.0...v1.33.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **skills:** add cross-agent wrap-up skill ([#55](https://github.com/oleg-koval/agent-skills/issues/55)) ([b224216](https://github.com/oleg-koval/agent-skills/commit/b2242167abf5b8ff54c97a6fcb57b09243c5862e))
+
 # [1.32.0](https://github.com/oleg-koval/agent-skills/compare/v1.31.0...v1.32.0) (2026-08-24)
 
 
