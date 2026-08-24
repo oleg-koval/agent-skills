@@ -1,0 +1,5 @@
+{
+  "name": "olko-retro-analysis",
+  "description": "Produce repository, comparison, and cross-project engineering retrospectives from delivery, code-quality, work-pattern, and trend evidence.",
+  "skills": "./skills"
+}
