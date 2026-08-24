@@ -1,5 +1,0 @@
-{
-  "name": "olko-docs-index-keeper",
-  "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows.",
-  "skills": "./skills"
-}

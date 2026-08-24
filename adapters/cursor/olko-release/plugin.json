@@ -1,0 +1,6 @@
+{
+  "name": "olko-release",
+  "version": "0.1.0",
+  "description": "Ship a release: semantic-release setup, changelogs, store listing copy, release-day routine.",
+  "skills": "skills/"
+}

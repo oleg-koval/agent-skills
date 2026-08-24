@@ -1,0 +1,5 @@
+{
+  "name": "olko-web-ops",
+  "description": "Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.",
+  "skills": "./skills"
+}

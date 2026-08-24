@@ -1,5 +1,0 @@
-{
-  "name": "olko-release-day",
-  "description": "Orchestrate a full release-day workflow for iOS, Android, or Garmin apps: verify main branch CI is green, generate changelog, draft platform-ready store listing copy, trigger semantic-release or tag manually, wait for the build, and queue the App Store submission.",
-  "skills": "./skills"
-}

@@ -1,0 +1,12 @@
+{
+  "name": "olko-reflection",
+  "description": "Look back and improve: self-critique, retrospectives, performance review, rapid learning.",
+  "version": "1.34.0",
+  "author": {
+    "name": "Oleg Koval"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills",
+  "repository": "https://github.com/oleg-koval/agent-skills",
+  "license": "MIT",
+  "skills": "./skills"
+}

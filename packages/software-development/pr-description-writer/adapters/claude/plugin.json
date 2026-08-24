@@ -1,5 +1,0 @@
-{
-  "name": "olko-pr-description-writer",
-  "description": "Draft and post a GitHub PR title and body from git diff and commit history. Chains after git-commit and before qodoloop / coderabbitloop.",
-  "skills": "./skills"
-}

@@ -19,23 +19,27 @@
     "node": ">=22"
   },
   "files": [
+    "plugins",
+    "adapters",
     "catalog",
-    "collections",
     "docs",
-    "packages",
     ".claude-plugin",
     ".cursor-plugin",
     ".grok-plugin",
     ".windsurf",
     ".kiro",
+    ".github/prompts",
+    ".github/copilot-instructions.md",
     "scripts",
     "README.md",
+    "CLAUDE.md",
     "LICENSE",
     "site"
   ],
   "scripts": {
     "build": "sh ./scripts/build-adapters.sh",
-    "test": "sh ./scripts/validate-catalog.sh",
+    "validate": "node .github/scripts/check-frontmatter.mjs . && ./scripts/validate-catalog.sh",
+    "test": "node .github/scripts/check-frontmatter.mjs --test && npm run validate && for t in tests/test-*.sh; do sh \"$t\" || exit 1; done",
     "semantic-release": "semantic-release",
     "release:dry-run": "semantic-release --dry-run --no-ci --verify-conditions=@semantic-release/changelog --verify-conditions=@semantic-release/git --verify-conditions=@semantic-release/github",
     "build:site": "node site/build.mjs"

@@ -12,6 +12,7 @@ import { mkdir, readFile, readdir, copyFile, writeFile, rm } from "node:fs/promi
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadCatalog } from "../scripts/lib/catalog.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
@@ -137,18 +138,18 @@ const installSection = (sample) => `<section class="band" id="install">
       ${slab("any session", `Use the ${sample} skill.`)}
     </div>
   </div>
-  <p class="sub">Cursor, Copilot, Windsurf and Kiro consume the generated wrappers under each package's <code>adapters/</code> directory &mdash; see the <a href="${REPO}#quick-start">repository README</a>.</p>
+  <p class="sub">Cursor, Copilot, Windsurf and Kiro consume the generated wrappers under <code>adapters/&lt;tool&gt;/&lt;plugin&gt;/</code> &mdash; see the <a href="${REPO}#quick-start">repository README</a>.</p>
 </section>`;
 
 const card = (pkg) => {
-  const search = [pkg.name, pkg.description, pkg.category, ...(pkg.tags || [])]
+  const search = [pkg.name, pkg.description, pkg.plugin.name, ...(pkg.tags || [])]
     .join(" ")
     .toLowerCase();
   return `<li class="card"
-    data-category="${esc(pkg.category)}"
+    data-category="${esc(pkg.plugin.name)}"
     data-adapters="${esc((pkg.adapters || []).join(" "))}"
     data-search="${esc(search)}">
-    <span class="cat">${esc(pkg.category.replace(/-/g, " "))}</span>
+    <span class="cat">${esc(pkg.plugin.name.replace(/^olko-/, "").replace(/-/g, " "))}</span>
     <h2><a href="/skills/${esc(pkg.name)}/" data-reactive>${esc(titleCase(pkg.name))}</a></h2>
     <p>${esc(pkg.description)}</p>
     <span class="lookup">${esc(pkg.lookupName)}</span>
@@ -159,7 +160,7 @@ const card = (pkg) => {
   </li>`;
 };
 
-const indexPage = ({ packages, categories, adapters, collections }) => {
+const indexPage = ({ packages, categories, adapters }) => {
   const body = `<section class="hero">
   <p class="kicker">Agent-agnostic skill catalog</p>
   <h1 data-reactive>Skills in a paper bag</h1>
@@ -174,19 +175,18 @@ const indexPage = ({ packages, categories, adapters, collections }) => {
 <div class="statbar">
   <div><b>${packages.length}</b><small>Skills</small></div>
   <div><b>${adapters.length}</b><small>Agent adapters</small></div>
-  <div><b>${categories.length}</b><small>Categories</small></div>
-  <div><b>${collections.length}</b><small>Collections</small></div>
+  <div><b>${categories.length}</b><small>Plugins</small></div>
 </div>
 
 <section class="band" id="catalog">
   <div class="controls">
     <label for="q">Search the catalog</label>
     <input id="q" type="search" autocomplete="off" placeholder="release, pull requests, obsidian, watch face&hellip;">
-    <div class="chips" role="group" aria-label="Filter by category">
+    <div class="chips" role="group" aria-label="Filter by plugin">
       ${categories
         .map(
           (c) =>
-            `<button class="chip" type="button" aria-pressed="false" data-kind="category" data-value="${esc(c.name)}">${esc(c.name.replace(/-/g, " "))} <span aria-hidden="true">${c.count}</span></button>`,
+            `<button class="chip" type="button" aria-pressed="false" data-kind="category" data-value="${esc(c.name)}">${esc(c.name.replace(/^olko-/, "").replace(/-/g, " "))} <span aria-hidden="true">${c.count}</span></button>`,
         )
         .join("\n      ")}
     </div>
@@ -227,7 +227,7 @@ ${installSection(packages[0].lookupName)}
 
 const detailPage = (pkg, prev, next) => {
   const label = titleCase(pkg.name);
-  const body = `<p class="crumb"><a href="/">Catalog</a> / ${esc(pkg.category.replace(/-/g, " "))}</p>
+  const body = `<p class="crumb"><a href="/">Catalog</a> / ${esc(pkg.plugin.name.replace(/^olko-/, "").replace(/-/g, " "))}</p>
 <div class="detail-head">
   <span class="cat">${esc(pkg.lookupName)}</span>
   <h1 data-reactive>${esc(label)}</h1>
@@ -236,7 +236,7 @@ const detailPage = (pkg, prev, next) => {
 
 <dl class="meta">
   <div><dt>Lookup name</dt><dd>${esc(pkg.lookupName)}</dd></div>
-  <div><dt>Category</dt><dd>${esc(pkg.category.replace(/-/g, " "))}</dd></div>
+  <div><dt>Plugin</dt><dd>${esc(pkg.plugin.name.replace(/^olko-/, "").replace(/-/g, " "))}</dd></div>
   <div><dt>Agents</dt><dd>${esc((pkg.adapters || []).join(", "))}</dd></div>
   <div><dt>Bundled references</dt><dd>${pkg.supportFiles} file${pkg.supportFiles === 1 ? "" : "s"}</dd></div>
 </dl>
@@ -282,14 +282,9 @@ const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
 `;
 
 const main = async () => {
-  const catalog = JSON.parse(
-    await readFile(join(root, "catalog", "skills.json"), "utf8"),
-  );
+  const catalog = loadCatalog(join(root, "catalog", "skills.json"));
 
-  const collectionFiles = await readdir(join(root, "collections"));
-  const collections = collectionFiles.filter((f) => f.endsWith(".json"));
-
-  const packages = [...catalog.packages].sort((a, b) =>
+  const packages = [...catalog.skills].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
 
@@ -304,10 +299,10 @@ const main = async () => {
     pkg.supportFiles = await countSupportFiles(dir);
   }
 
-  const tally = (key) => {
+  const tally = (getValues) => {
     const counts = new Map();
     for (const pkg of packages) {
-      const values = Array.isArray(pkg[key]) ? pkg[key] : [pkg[key]];
+      const values = getValues(pkg);
       for (const value of values) counts.set(value, (counts.get(value) || 0) + 1);
     }
     return [...counts]
@@ -315,8 +310,8 @@ const main = async () => {
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   };
 
-  const categories = tally("category");
-  const adapters = tally("adapters");
+  const categories = tally((pkg) => [pkg.plugin.name]);
+  const adapters = tally((pkg) => pkg.adapters || []);
 
   await rm(out, { recursive: true, force: true });
   await mkdir(join(out, "assets"), { recursive: true });
@@ -333,7 +328,7 @@ const main = async () => {
 
   await writeFile(
     join(out, "index.html"),
-    indexPage({ packages, categories, adapters, collections }),
+    indexPage({ packages, categories, adapters }),
   );
 
   for (const [i, pkg] of packages.entries()) {

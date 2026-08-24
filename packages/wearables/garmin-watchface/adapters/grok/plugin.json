@@ -1,6 +1,0 @@
-{
-  "name": "olko:garmin-watchface",
-  "version": "0.1.0",
-  "description": "Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C.",
-  "skills": "skills/"
-}

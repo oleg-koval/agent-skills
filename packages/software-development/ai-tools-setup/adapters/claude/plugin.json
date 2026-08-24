@@ -1,5 +1,0 @@
-{
-  "name": "olko-ai-tools-setup",
-  "description": "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration.",
-  "skills": "./skills"
-}
