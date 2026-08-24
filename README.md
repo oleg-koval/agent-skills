@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-24-2563eb" alt="24 skills">
+    <img src="https://img.shields.io/badge/skills-33-2563eb" alt="33 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -136,15 +136,16 @@ packages/{category}/{skill}/SKILL.md
 
 </details>
 
-## All 29 Skills
+## All 33 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (27)
+### Software development (28)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [add-to-my-skills](packages/software-development/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
+| [wrap-up](packages/software-development/wrap-up/SKILL.md) | Verifies a completed task against its original objective, confirms applicable checks, and safely tidies task-owned artifacts, worktrees, and local branches | Periodic or end-of-task delivery and cleanup review |
 | [ai-tools-setup](packages/software-development/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit — installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine or diagnosing broken integrations |
 | [apple-store-submit](packages/software-development/apple-store-submit/SKILL.md) | Handles App Store rejection emails end-to-end — parses rejection reasons, creates a fix plan, implements code changes, and prepares resubmission | Responding to App Store rejections for privacy strings, entitlements, or guideline violations |
 | [changelog-generator](packages/software-development/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, app store update descriptions, or a public changelog |
@@ -276,7 +277,7 @@ See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
 ```text
 agent-skills/
 ├── packages/
-│   ├── software-development/   (19 skills)
+│   ├── software-development/   (28 skills)
 │   ├── marketing/              (2 skills)
 │   ├── music/                  (1 skill)
 │   └── photography/            (1 skill)

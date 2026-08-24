@@ -36,6 +36,7 @@ Available reusable prompt files:
 - garmin-watchface: .github/prompts/garmin-watchface.prompt.md
 - coderabbitloop: .github/prompts/coderabbitloop.prompt.md
 - add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
+- wrap-up: .github/prompts/wrap-up.prompt.md
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
 - changelog-generator: .github/prompts/changelog-generator.prompt.md
 - wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md

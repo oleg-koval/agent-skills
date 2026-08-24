@@ -36,6 +36,7 @@
     "./packages/wearables/garmin-watchface",
     "./packages/software-development/coderabbitloop",
     "./packages/software-development/add-to-my-skills",
+    "./packages/software-development/wrap-up",
     "./packages/software-development/ai-tools-setup",
     "./packages/software-development/changelog-generator",
     "./packages/software-development/wikipedia-uk-editor",
