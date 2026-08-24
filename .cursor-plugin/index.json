@@ -77,6 +77,11 @@
       "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals."
     },
     {
+      "name": "olko:website-analytics-bootstrap",
+      "source": "./packages/marketing/website-analytics-bootstrap/adapters/cursor",
+      "description": "Set up a website's first SEO analytics loop with persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS."
+    },
+    {
       "name": "olko:cloudflare-block-countries",
       "source": "./packages/software-development/cloudflare-block-countries/adapters/cursor",
       "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones."
@@ -210,6 +215,11 @@
       "name": "olko:branch-cleanup",
       "source": "./packages/software-development/branch-cleanup/adapters/cursor",
       "description": "Prune stale git branches after a merge wave: delete closed/merged remote branches, remove local tracking refs that no longer exist on the remote, and optionally clean up merged local branches. Natural follow-up to dependabot-triage."
+    },
+    {
+      "name": "olko:vinted-listing",
+      "source": "./packages/software-development/vinted-listing/adapters/cursor",
+      "description": "Create, edit, and safely publish Vinted listings through the signed-in browser, using verified item details and the owner’s original photos."
     }
   ]
 }

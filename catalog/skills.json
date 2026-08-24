@@ -390,6 +390,30 @@
       ]
     },
     {
+      "name": "website-analytics-bootstrap",
+      "lookupName": "olko:website-analytics-bootstrap",
+      "category": "marketing",
+      "path": "packages/marketing/website-analytics-bootstrap",
+      "description": "Set up a website's first SEO analytics loop with persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS.",
+      "tags": [
+        "seo",
+        "analytics",
+        "google-search-console",
+        "serpbear",
+        "nas",
+        "telegram",
+        "monitoring"
+      ],
+      "adapters": [
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
+      ]
+    },
+    {
       "name": "cloudflare-block-countries",
       "lookupName": "olko:cloudflare-block-countries",
       "category": "software-development",
@@ -1047,6 +1071,46 @@
         "cursor",
         "copilot",
         "grok"
+      ]
+    },
+    {
+      "name": "vinted-listing",
+      "lookupName": "olko:vinted-listing",
+      "category": "software-development",
+      "path": "packages/software-development/vinted-listing",
+      "description": "Create, edit, and safely publish Vinted listings through the signed-in browser, using verified item details and the owner’s original photos.",
+      "tags": [
+        "vinted",
+        "marketplace",
+        "selling",
+        "browser",
+        "photos",
+        "moderation"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
+    },
+    {
+      "name": "shared-knowledge-artifact",
+      "lookupName": "olko:shared-knowledge-artifact",
+      "category": "software-development",
+      "path": "packages/software-development/shared-knowledge-artifact",
+      "description": "Build a shared, self-persisting knowledge ledger as a Claude Artifact: a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons before working and append to them afterwards.",
+      "tags": [
+        "artifacts",
+        "knowledge-base",
+        "multi-agent",
+        "memory",
+        "lessons-learned",
+        "documentation"
+      ],
+      "adapters": [
+        "claude"
       ]
     }
   ]

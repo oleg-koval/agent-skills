@@ -1,0 +1,78 @@
+BUILD A SHARED AGENT-KNOWLEDGE ARTIFACT
+
+Goal
+Publish a single private Claude Artifact page that acts as an append-only, self-persisting
+knowledge ledger which multiple agents (and I) read before starting work and write to when
+reality corrects us. The page IS the record: it stores its own data and saves new versions of
+itself, so nothing depends on a server or on my local files.
+
+Before writing any code
+1. Load the artifact-capabilities skill (you must, before declaring capabilities or writing any
+   window.claude.* code) and the artifact-design skill (calibrates the design treatment).
+2. Read my global rules (CLAUDE.md / VERIFICATION.md / memory) and seed the ledger with 6-10
+   REAL lessons already recorded there. No lorem, no invented examples.
+
+Required behaviour
+- Declare capabilities: {artifact: {}} so the page can publish new versions of itself.
+- Store the data as a JSON object inside a <script type="application/json" id="ledger-state">
+  block. That block is the authoritative record; the visible page is RENDERED from it at load.
+  Never serialize the live DOM to save.
+- To persist: snapshot document.documentElement.outerHTML once at script start (pristine source,
+  before any rendering), then on save splice the new JSON into the #ledger-state block of that
+  snapshot, prepend <!doctype html>, and call artifact.publish(doc).
+- Get the namespace with: const artifact = await claude.use("artifact"); branch on null (view
+  cannot write) and render a read-only state instead of a broken control.
+- Handle publish errors by code: "conflict" means someone published first and every view reloads
+  to the winner (no retry - tell the person to re-add); "not_granted"/"not_writer" means
+  read-only. Publish only after an explicit user action, never on page load, and batch rapid
+  edits into one publish.
+
+Note schema (one fact per entry)
+  {"id":"...", "kind":"lesson|trap|pref", "scope":"shell|review|github|...",
+   "title":"the rule in one line", "body":"the concrete behaviour, specific enough to act on",
+   "why":"the failure that made this a rule", "author":"model or agent name",
+   "date":"YYYY-MM-DD"}
+Kinds: lesson = a habit that holds; trap = something that silently produces a WRONG answer;
+pref = how I want the work done.
+
+UI the page must have
+- Header: title, one-paragraph statement of what the ledger is for, and live counts
+  (total notes, traps, lessons, preferences) in tabular-nums.
+- Note list, newest first, each note showing kind tag, scope tag, author, date, title, body,
+  and a "Why:" line. Kind tags carry semantic colour (trap = critical, pref = warning,
+  lesson = accent) separate from the page accent.
+- Scope filter chips derived from the data, including an "all" chip, with aria-pressed state.
+- An "Add a note" form (kind select, scope, author, title, body, why) that appends to the JSON
+  and publishes, with an inline status line reporting published / conflict / read-only.
+- A "Protocol for agents" section, on the page itself, stating: read the page with the Artifact
+  tool action "read" before substantive work; parse the #ledger-state JSON, never scrape the DOM;
+  APPEND, don't rewrite; re-read before writing because another agent may have published since;
+  and one fact per note with the failure that caused it. Include a copyable JSON snippet of the
+  schema.
+- Gatekeeping copy: only non-obvious, durable, cross-cutting lessons. If a repo's CLAUDE.md
+  already says it or a review bot already catches it, leave it out. A littered ledger is worse
+  than a thin one.
+
+Design constraints
+- Utilitarian but genuinely polished; this is a reference document, not a landing page. No
+  oversized hero, no emoji section markers, no gradient hero, no everything-centered layout.
+- Avoid the AI-default looks: warm cream + serif + terracotta, near-black + acid green, Inter or
+  Space Grotesk as the safe face.
+- Pair a display face with a body face and a mono utility face from Google Fonts (the only
+  permitted external host), each with a real fallback stack.
+- Theme-aware in all three states: full light palette as tokens on bare :root, redefined under
+  @media (prefers-color-scheme: dark) guarded as :root:not([data-theme="light"]), and again under
+  :root[data-theme="dark"]. Style everything through tokens; body must set an explicit token
+  background. No colour whose only definition sits inside a media or [data-theme] block.
+- Layout with flex/grid + gap, not per-element margins. Wide content in its own overflow-x:auto
+  container. Visible focus states. Respect prefers-reduced-motion.
+- Escape all interpolated note text on render, and escape "</script" when writing the JSON back.
+- Title: a short, specific noun-phrase product name (2-4 words), no dash-explainer. Pass a
+  one-sentence description and an emoji favicon, and keep both stable across redeploys.
+
+Deliverable
+Write the HTML to a file, publish it with the Artifact tool, and report back: the URL, the fact
+that it is private until shared from the page's share menu, and the exact instructions another
+agent needs - read via Artifact action "read" with that URL, and write by appending to notes and
+republishing with `url` set to that URL (a publish WITHOUT url forks a separate artifact instead
+of updating this one).

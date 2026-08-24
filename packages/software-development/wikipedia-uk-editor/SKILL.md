@@ -34,7 +34,7 @@ Turn a URL or article title into a complete, policy-compliant Ukrainian Wikipedi
 A single deliverable written to a scratch file and echoed in chat:
 
 - the **target page** (exact ukwiki title, and whether it exists)
-- the **wikitext** — full article, or an exact-replacement section, or a precise before/after diff for small fixes
+- the **wikitext** — always the complete final article in one `.wiki` file, ready to paste over the whole edit box; never a diff, never a БУЛО/СТАЛО list of manual replacements
 - the **edit summary** in Ukrainian (≤ 200 chars)
 - the **source list** with the URL, publisher, and date actually fetched for each
 - **risk notes**: notability (ВП:ЗН) standing, anything a patroller will challenge, what still needs a human check
@@ -45,11 +45,14 @@ A single deliverable written to a scratch file and echoed in chat:
 
 | Input | Mode |
 |---|---|
+| explicit newcomer task (tier + type, e.g. "Середні → Оновлювати статті") | mode set by task type — see below |
 | en.wikipedia.org URL, no uk equivalent | **Translate** — new uk article |
 | uk.wikipedia.org URL, stub or thin | **Expand** |
 | uk.wikipedia.org URL with `{{Без джерел}}` / `{{Джерело}}` | **Source** |
 | uk.wikipedia.org URL, prose/format problems | **Cleanup** |
 | "what should I edit next" | **Plan** — read `references/strategy.md`, propose a ranked list |
+
+When a newcomer task type is given, it **overrides** the state-based guess above. The per-type scope contract in `references/newcomer-tasks.md` is binding — an assigned type is a ceiling on what the edit may touch, not a floor.
 
 Resolve the title first — `scripts/wiki.sh` handles redirects. Never draft against the wrong title.
 
@@ -60,6 +63,7 @@ Resolve the title first — `scripts/wiki.sh` handles redirects. Never draft aga
 ./scripts/wiki.sh get en "Title"          # source-language wikitext
 ./scripts/wiki.sh langlink en "Title" uk  # does a uk version already exist?
 ./scripts/wiki.sh check uk "Шаблон:Особа" # does this template/page exist?
+./scripts/wiki.sh tasks <type> [n]        # list candidates for a newcomer task type: copyedit|links|references|update|expand
 ```
 
 Stop and report if:
@@ -94,14 +98,30 @@ Run every item. Report failures rather than hiding them.
 - [ ] No original synthesis (ВП:ОД)
 - [ ] Dates, numbers, and name transliterations are Ukrainian-correct
 - [ ] Edit summary written in Ukrainian and states what changed and why
+- [ ] The edit stayed inside the assigned task type's allowed scope
+- [ ] Any maintenance template removed was actually earned — the underlying problem is genuinely fixed
 
 ### 6. Deliver
 
-Write the draft to a scratch file (`.md` alongside the raw `.wiki` text so paste is clean), print the edit summary, and tell the human exactly where to paste it:
+For Expand / Source / Cleanup: fetch the current wikitext, apply the changes programmatically (a small Python pass over the fetched file, asserting each anchor string matched exactly once), and write the whole resulting article out. Verify it before delivering — section list intact, every intended change landed, nothing else dropped.
+
+Write the draft to a scratch file: the raw `.wiki` file contains nothing but article wikitext (the full final article, ready to paste over the whole edit box); the human-readable explanation of what changed goes in a separate `.md`. Print the edit summary, and tell the human exactly where to paste it:
 
 - new article → `https://uk.wikipedia.org/wiki/Тайтл?action=edit`
-- section replace → name the section and its exact current heading
+- existing article → `https://uk.wikipedia.org/w/index.php?title=Тайтл&action=edit`, replace the whole edit box
 - test first → `Вікіпедія:Пісочниця` or the user's own `Користувач:Ім'я/Чернетка`
+
+End the delivery with a copy-to-clipboard command in its own fenced block, using a quoted absolute path — quoted because scratchpad paths contain characters the shell will otherwise mangle — always the raw `.wiki` file, never the `.md`:
+
+```sh
+pbcopy < "/absolute/path/to/slug.wiki"
+```
+
+Add an optional second line when the edit summary is long enough to be worth copying:
+
+```sh
+printf '%s' 'Опис редагування…' | pbcopy
+```
 
 Then stop. Do not offer to save it.
 
@@ -109,6 +129,7 @@ Then stop. Do not offer to save it.
 
 - `references/strategy.md` — the contribution strategy: what to farm, in what order, and how to build standing without getting flagged
 - `references/wikitext-uk.md` — verified uk templates, citation formats, article skeletons, policy shortcuts
+- `references/newcomer-tasks.md` — the newcomer task tiers (Легкі/Середні/Важкі) and the binding scope contract for each task type
 - `scripts/wiki.sh` — read-only MediaWiki API helper
 
 ## Verification

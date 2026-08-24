@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-45-2563eb" alt="45 skills">
+    <img src="https://img.shields.io/badge/skills-48-2563eb" alt="48 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -139,11 +139,11 @@ packages/{category}/{skill}/SKILL.md
 
 </details>
 
-## All 45 Skills
+## All 48 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
 
-### Software development (40)
+### Software development (42)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
@@ -175,6 +175,7 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [relay](packages/software-development/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
 | [review-past-performance](packages/software-development/review-past-performance/SKILL.md) | Pulls 24h of ICM memories, git history, and skill analytics; detects repeated mistakes and slow workflows; proposes 1-3 concrete fixes | Daily self-improvement loop or codifying a repeated workflow |
 | [self-critique](packages/software-development/self-critique/SKILL.md) | Adversarially critiques your own last answer: spawns a critic agent that verifies claims against live sources, then loops until satisfied and reports where you were wrong | Checking a substantial answer before the user has to |
+| [shared-knowledge-artifact](packages/software-development/shared-knowledge-artifact/SKILL.md) | Builds a shared, self-persisting knowledge ledger as a Claude Artifact — a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons and append to them | Giving multiple agents one place to learn from each other instead of repeating the same mistakes |
 | [semantic-release-beta](packages/software-development/semantic-release-beta/SKILL.md) | Sets up `semantic-release` with stable `main` releases and beta prereleases on a `beta` branch | A Node package needs stable npm publishing plus beta prereleases |
 | [skill-budget-audit](packages/software-development/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow — identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
 | [starter-rules](packages/software-development/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
@@ -187,12 +188,14 @@ Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup n
 | [morning-routine](packages/software-development/morning-routine/SKILL.md) | Runs the complete start-of-day setup in one pass: rolls over unfinished Obsidian tasks, syncs open GitHub PRs into today's daily note, and sweeps safe Dependabot patch bumps | Starting the workday by chaining obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage in sequence |
 | [release-day](packages/software-development/release-day/SKILL.md) | Orchestrates a full release-day workflow for iOS, Android, or Garmin apps: verifies CI is green, generates a changelog, drafts store listing copy, triggers semantic-release or tags manually, waits for the build, and queues the App Store submission | Cutting a release from "code is ready" to "build submitted" in one orchestrated pass |
 | [branch-cleanup](packages/software-development/branch-cleanup/SKILL.md) | Prunes stale git branches after a merge wave: deletes closed/merged remote branches, removes local tracking refs that no longer exist on the remote, and optionally cleans up merged local branches | Tidying up after a Dependabot triage batch merge or a sprint wind-down |
+| [vinted-listing](packages/software-development/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller’s original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Creating, editing, or publishing a Vinted listing |
 
-### Marketing (2)
+### Marketing (3)
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [search-console-indexing-audit](packages/marketing/search-console-indexing-audit/SKILL.md) | Audits Google Search Console Coverage exports against sitemap, robots, canonical, redirect, and noindex signals | Diagnosing GSC indexing issues such as redirects, canonical alternates, and discovered-but-not-indexed pages |
+| [website-analytics-bootstrap](packages/marketing/website-analytics-bootstrap/SKILL.md) | Sets up persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only SEO audits, and Telegram alerts on a local host or NAS | Bootstrapping SEO analytics and monitoring for a new website |
 | [viral-launch](packages/marketing/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, or creator tool for public launch |
 
 ### Music (1)
@@ -292,8 +295,8 @@ See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
 ```text
 agent-skills/
 ├── packages/
-│   ├── software-development/   (40 skills)
-│   ├── marketing/              (2 skills)
+│   ├── software-development/   (42 skills)
+│   ├── marketing/              (3 skills)
 │   ├── music/                  (1 skill)
 │   └── photography/            (1 skill)
 ├── catalog/

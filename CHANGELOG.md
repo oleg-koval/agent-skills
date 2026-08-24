@@ -1,3 +1,24 @@
+# [1.32.0](https://github.com/oleg-koval/agent-skills/compare/v1.31.0...v1.32.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **shared-knowledge-artifact:** add skill for building a self-persisting shared agent knowledge ledger ([7d981ce](https://github.com/oleg-koval/agent-skills/commit/7d981ced6fa108d6865b82f8e8862d9b70d598ad))
+
+# [1.31.0](https://github.com/oleg-koval/agent-skills/compare/v1.30.0...v1.31.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **marketing:** add one-shot website analytics bootstrap skill ([#54](https://github.com/oleg-koval/agent-skills/issues/54)) ([ec1b0ff](https://github.com/oleg-koval/agent-skills/commit/ec1b0ffa111f42c68ce10380ca590d23d39666a4))
+
+# [1.30.0](https://github.com/oleg-koval/agent-skills/compare/v1.29.0...v1.30.0) (2026-08-23)
+
+
+### ✨ Features
+
+* **skills:** add vinted listing workflow ([ab02273](https://github.com/oleg-koval/agent-skills/commit/ab0227317c7a1d0e565dec15f1e2eae19c6a5270))
+
 # [1.29.0](https://github.com/oleg-koval/agent-skills/compare/v1.28.0...v1.29.0) (2026-08-12)
 
 
