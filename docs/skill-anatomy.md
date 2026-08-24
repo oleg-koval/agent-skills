@@ -4,27 +4,27 @@ This document describes the structure and format of skill packages in this repos
 
 ## File Location
 
-Every skill lives in its own category directory under `packages/`:
+Every skill lives under its plugin directory in `plugins/`:
 
 ```text
-packages/
-  category-name/
-    skill-name/
-      SKILL.md            # Required canonical skill definition
-      references/         # Optional supporting material loaded on demand
-      adapters/           # Optional agent-specific wrappers
-        codex/
-        claude/
-        cursor/
+plugins/
+  olko-{plugin}/
+    .claude-plugin/plugin.json   # generated
+    skills/
+      skill-name/
+        SKILL.md                # Required canonical skill definition
+        references/             # Optional supporting material loaded on demand
 ```
 
 Examples:
 
 ```text
-packages/software-development/semantic-release-beta/SKILL.md
-packages/music/fill-music-player/SKILL.md
-packages/photography/gallery/SKILL.md
+plugins/olko-release/skills/semantic-release-beta/SKILL.md
+plugins/olko-creative/skills/fill-music-player/SKILL.md
+plugins/olko-creative/skills/gallery/SKILL.md
 ```
+
+Generated adapters live outside the plugin directory, one tree per tool, at `adapters/{tool}/olko-{plugin}/skills/{skill}/`. Three tools are mandated to read their wrappers straight from repo-root paths rather than `adapters/`: `.windsurf/rules/{skill}.md`, `.kiro/steering/{skill}.md`, and `.github/prompts/{skill}.prompt.md`.
 
 ## SKILL.md Format
 
@@ -47,7 +47,7 @@ metadata:
 
 Rules:
 
-- `name`: lowercase, hyphen-separated, and matching the package directory name.
+- `name`: lowercase, hyphen-separated, and matching the skill directory name.
 - `description`: concise activation guidance; include what the skill does and when to use it.
 - `license`: include when the source package carries an explicit license.
 - `compatibility`: state supported agent/tool assumptions and any required local tooling.
@@ -129,22 +129,27 @@ Keep short operational guidance in `SKILL.md` so the skill remains self-containe
 
 ## Adapters
 
-Adapters are wrappers for agent-specific packaging. They should point back to the canonical skill package and avoid duplicating business logic.
+Adapters are wrappers for agent-specific packaging. They should point back to the canonical skill under `plugins/` and avoid duplicating business logic.
 
 Current adapter targets:
 
 | Adapter | Generated files | Root output |
 |---------|----------------|-------------|
 | `codex` | `adapters/codex/README.md` (static stub) | — |
-| `claude` | `adapters/claude/plugin.json` + `adapters/claude/skills/{name}/SKILL.md` | `.claude-plugin/` |
-| `cursor` | `adapters/cursor/plugin.json` + `adapters/cursor/skills/{name}/SKILL.md` | `.cursor-plugin/index.json` |
+| `claude` | `adapters/claude/olko-{plugin}/plugin.json` + `adapters/claude/olko-{plugin}/skills/{name}/SKILL.md` | `.claude-plugin/` |
+| `cursor` | `adapters/cursor/olko-{plugin}/plugin.json` + `adapters/cursor/olko-{plugin}/skills/{name}/SKILL.md` | `.cursor-plugin/index.json` |
+| `grok` | `adapters/grok/olko-{plugin}/...` | `.grok-plugin/index.json` |
+| `pi` | `adapters/pi/olko-{plugin}/...` | — |
+| `hermes` | `adapters/hermes/olko-{plugin}/...` | — |
 | `copilot` | — | `.github/prompts/{name}.prompt.md` |
-| `windsurf` | `adapters/windsurf/rules/{name}.md` | `.windsurf/rules/{name}.md` |
-| `kiro` | `adapters/kiro/steering/{name}.md` | `.kiro/steering/{name}.md` |
+| `windsurf` | — | `.windsurf/rules/{name}.md` |
+| `kiro` | — | `.kiro/steering/{name}.md` |
+
+Adapter coverage is not uniform across the catalog; a skill only ships the adapters listed in its `adapters` array in `catalog/skills.json`. As of this writing: claude 48, grok 46, cursor 44, copilot 44, codex 41, windsurf 34, kiro 34, pi 2, hermes 2 (out of 48 canonical skills).
 
 Claude plugin and marketplace identifiers must be kebab-case. Keep `olko:*` names for Codex and Cursor lookup names, but do not use colons or spaces in Claude marketplace/plugin names.
 
-After changing a package name, description, category, path, tags, or adapter support, update `catalog/skills.json` and rebuild generated files:
+After changing a skill's name, description, plugin assignment, path, tags, or adapter support, update `catalog/skills.json` and rebuild generated files:
 
 ```bash
 ./scripts/build-adapters.sh
@@ -153,26 +158,37 @@ After changing a package name, description, category, path, tags, or adapter sup
 
 ## Catalog Requirements
 
-Each package must have a matching entry in `catalog/skills.json`:
+`catalog/skills.json` groups skills by plugin. Each skill must have a matching entry nested under its plugin's `skills` array:
 
 ```json
 {
-  "name": "skill-name",
-  "lookupName": "olko:skill-name",
-  "category": "software-development",
-  "path": "packages/software-development/skill-name",
-  "description": "Short catalog description.",
-  "tags": ["tag"],
-  "adapters": ["codex", "claude", "cursor", "copilot"]
+  "name": "olko-agent-skills",
+  "plugins": [
+    {
+      "name": "olko-release",
+      "description": "Ship a release: semantic-release setup, changelogs, store listing copy, release-day routine.",
+      "skills": [
+        {
+          "name": "skill-name",
+          "lookupName": "olko:skill-name",
+          "path": "plugins/olko-release/skills/skill-name",
+          "description": "Short catalog description.",
+          "tags": ["tag"],
+          "adapters": ["codex", "claude", "cursor", "copilot"]
+        }
+      ]
+    }
+  ]
 }
 ```
 
 Rules:
 
 - `lookupName` uses the `olko:` prefix.
-- `path` points at the canonical package directory, not an adapter.
+- `path` points at the canonical skill directory under `plugins/`, not an adapter.
 - `description` should be shorter than the full frontmatter description.
 - `adapters` must reflect generated or supported adapter targets.
+- A skill's plugin assignment (which plugin's `skills` array it lives in) comes from `PLUGIN_ASSIGNMENT` in `scripts/lib/catalog.mjs`.
 
 ## Writing Principles
 
@@ -189,7 +205,7 @@ Reference other skills by lookup name or package path instead of duplicating con
 
 ```markdown
 Use `olko:git-commit` when the user asks to commit the resulting changes.
-See `packages/software-development/semantic-release-beta/SKILL.md` for beta release setup.
+See `plugins/olko-release/skills/semantic-release-beta/SKILL.md` for beta release setup.
 ```
 
-Do not copy another skill's workflow into a new package unless the behavior intentionally diverges.
+Do not copy another skill's workflow into a new skill unless the behavior intentionally diverges.
