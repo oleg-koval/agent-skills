@@ -19,17 +19,20 @@
     "node": ">=22"
   },
   "files": [
+    "plugins",
+    "adapters",
     "catalog",
-    "collections",
     "docs",
-    "packages",
     ".claude-plugin",
     ".cursor-plugin",
     ".grok-plugin",
     ".windsurf",
     ".kiro",
+    ".github/prompts",
+    ".github/copilot-instructions.md",
     "scripts",
     "README.md",
+    "CLAUDE.md",
     "LICENSE",
     "site"
   ],
