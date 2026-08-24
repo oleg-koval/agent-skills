@@ -1,3 +1,10 @@
+# [1.31.0](https://github.com/oleg-koval/agent-skills/compare/v1.30.0...v1.31.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **marketing:** add one-shot website analytics bootstrap skill ([#54](https://github.com/oleg-koval/agent-skills/issues/54)) ([ec1b0ff](https://github.com/oleg-koval/agent-skills/commit/ec1b0ffa111f42c68ce10380ca590d23d39666a4))
+
 # [1.30.0](https://github.com/oleg-koval/agent-skills/compare/v1.29.0...v1.30.0) (2026-08-23)
 
 
