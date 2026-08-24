@@ -791,6 +791,31 @@
       ]
     },
     {
+      "name": "retro-analysis",
+      "lookupName": "olko:retro-analysis",
+      "category": "software-development",
+      "path": "packages/software-development/retro-analysis",
+      "description": "Produce repository, comparison, and cross-project engineering retrospectives from delivery, code-quality, work-pattern, and trend evidence.",
+      "tags": [
+        "retrospective",
+        "metrics",
+        "git",
+        "productivity",
+        "code-quality",
+        "trends",
+        "planning"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
+      ]
+    },
+    {
       "name": "ai-tools-setup",
       "lookupName": "olko:ai-tools-setup",
       "category": "software-development",
