@@ -1,3 +1,10 @@
+# [1.32.0](https://github.com/oleg-koval/agent-skills/compare/v1.31.0...v1.32.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **shared-knowledge-artifact:** add skill for building a self-persisting shared agent knowledge ledger ([7d981ce](https://github.com/oleg-koval/agent-skills/commit/7d981ced6fa108d6865b82f8e8862d9b70d598ad))
+
 # [1.31.0](https://github.com/oleg-koval/agent-skills/compare/v1.30.0...v1.31.0) (2026-08-24)
 
 
