@@ -83,7 +83,7 @@ cp catalog/skills.json "$BACKUP"
 restore() { cp "$BACKUP" catalog/skills.json; rm -f "$BACKUP"; }
 trap restore EXIT
 
-node --input-type=module -e '
+node -e '
 const fs = require("fs")
 const c = JSON.parse(fs.readFileSync("catalog/skills.json", "utf8"))
 c.packages.push(JSON.parse(JSON.stringify(c.packages[0])))
@@ -110,7 +110,7 @@ Expected: FAIL. Two reasons, and both must be observed. First `real catalog does
 - [ ] **Step 3: Remove the duplicate catalog entry**
 
 ```bash
-node --input-type=module -e '
+node -e '
 const fs = require("fs")
 const c = JSON.parse(fs.readFileSync("catalog/skills.json", "utf8"))
 const seen = new Set()
@@ -155,7 +155,7 @@ Expected: `PASS: test-catalog-integrity`
 - [ ] **Step 6: Confirm the count is now 48 everywhere**
 
 ```bash
-node --input-type=module -e '
+node -e '
 const c = require("./catalog/skills.json")
 const disk = require("child_process").execSync(
   "find packages -name SKILL.md -maxdepth 3 | wc -l", {encoding:"utf8"}).trim()
@@ -425,7 +425,7 @@ export function loadCatalog(catalogPath = 'catalog/skills.json') {
 ```bash
 node --input-type=module -e '
 const { PLUGIN_ASSIGNMENT } = await import("./scripts/lib/catalog.mjs")
-const c = JSON.parse(require("fs").readFileSync("catalog/skills.json", "utf8"))
+const c = JSON.parse((await import("node:fs")).default.readFileSync("catalog/skills.json", "utf8"))
 const assigned = Object.values(PLUGIN_ASSIGNMENT).flatMap((p) => p.skills)
 const catalogNames = c.packages.map((p) => p.name)
 const dupes = assigned.filter((n, i) => assigned.indexOf(n) !== i)
@@ -445,7 +445,7 @@ Expected: `assigned: 48 catalog: 48`, all three lists empty, exit 0.
 
 ```bash
 node --input-type=module -e '
-const fs = require("fs")
+const fs = (await import("node:fs")).default
 const { PLUGIN_ASSIGNMENT } = await import("./scripts/lib/catalog.mjs")
 const old = JSON.parse(fs.readFileSync("catalog/skills.json", "utf8"))
 const byName = new Map(old.packages.map((p) => [p.name, p]))
@@ -539,16 +539,16 @@ Expected: `48`. This file is the evidence that the move relocated content withou
 
 ```bash
 node --input-type=module -e '
-const { execSync } = require("child_process")
+const { execSync } = (await import("node:child_process")).default
 const { loadCatalog } = await import("./scripts/lib/catalog.mjs")
-const fs = require("fs")
+const fs = (await import("node:fs")).default
 for (const skill of loadCatalog().skills) {
   // Locate the current directory by skill name rather than assuming a category.
   const found = execSync(
     `find packages -maxdepth 2 -type d -name ${JSON.stringify(skill.name)}`,
     { encoding: "utf8" }).trim().split("\n").filter(Boolean)
   if (found.length !== 1) throw new Error(`expected 1 dir for ${skill.name}, got ${found.length}`)
-  fs.mkdirSync(require("path").dirname(skill.path), { recursive: true })
+  fs.mkdirSync((await import("node:path")).default.dirname(skill.path), { recursive: true })
   execSync(`git mv ${JSON.stringify(found[0])} ${JSON.stringify(skill.path)}`)
   console.log(`${found[0]} -> ${skill.path}`)
 }
@@ -780,12 +780,12 @@ Expected: `generated 11 plugin manifests and 7 adapter targets for 48 skills`
 
 ```bash
 echo "plugin manifests: $(ls plugins/*/.claude-plugin/plugin.json | wc -l)"
-echo "marketplace plugins: $(node --input-type=module -e 'console.log(require("./.claude-plugin/marketplace.json").plugins.length)')"
+echo "marketplace plugins: $(node -e 'console.log(require("./.claude-plugin/marketplace.json").plugins.length)')"
 echo "windsurf rules: $(ls .windsurf/rules/*.md | wc -l)"
 echo "kiro steering: $(ls .kiro/steering/*.md | wc -l)"
 echo "copilot prompts: $(ls .github/prompts/*.prompt.md | wc -l)"
 echo "adapter targets: $(ls adapters)"
-node --input-type=module -e 'const p=require("./plugins/olko-obsidian/.claude-plugin/plugin.json");console.log("obsidian userConfig:",JSON.stringify(p.userConfig))'
+node -e 'const p=require("./plugins/olko-obsidian/.claude-plugin/plugin.json");console.log("obsidian userConfig:",JSON.stringify(p.userConfig))'
 ```
 
 Expected: `plugin manifests: 11`, `marketplace plugins: 11`, 48 each for windsurf/kiro/copilot, adapter targets `claude codex cursor grok`, and the Obsidian `userConfig` present.
@@ -836,7 +836,7 @@ fi
 rm -rf plugins/olko-git-tools/skills/orphan-probe
 
 # A plugin with no skills must be rejected.
-node --input-type=module -e '
+node -e '
 const fs = require("fs")
 const c = JSON.parse(fs.readFileSync("catalog/skills.json", "utf8"))
 c.plugins.push({ name: "olko-empty-probe", description: "probe", skills: [] })
@@ -1011,7 +1011,7 @@ git rm -r -q collections .skillignore
 
 ```bash
 node --input-type=module -e '
-const fs = require("fs")
+const fs = (await import("node:fs")).default
 const { loadCatalog } = await import("./scripts/lib/catalog.mjs")
 let readme = fs.readFileSync("README.md", "utf8")
 for (const skill of loadCatalog().skills) {
@@ -1489,10 +1489,10 @@ echo "=== counts"
 node --input-type=module -e '
 const { loadCatalog } = await import("./scripts/lib/catalog.mjs")
 const c = loadCatalog()
-const fs = require("fs")
-const disk = require("child_process").execSync(
+const fs = (await import("node:fs")).default
+const disk = (await import("node:child_process")).default.execSync(
   "find plugins -name SKILL.md -not -path \"*/adapters/*\" | wc -l", {encoding:"utf8"}).trim()
-const manifests = require("child_process").execSync(
+const manifests = (await import("node:child_process")).default.execSync(
   "ls plugins/*/.claude-plugin/plugin.json | wc -l", {encoding:"utf8"}).trim()
 const market = JSON.parse(fs.readFileSync(".claude-plugin/marketplace.json","utf8")).plugins.length
 console.log({catalogSkills: c.skills.length, disk: Number(disk), plugins: c.plugins.length,
