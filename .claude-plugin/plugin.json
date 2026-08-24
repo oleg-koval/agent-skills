@@ -53,6 +53,7 @@
     "./packages/software-development/pr-finalize-complete",
     "./packages/software-development/morning-routine",
     "./packages/software-development/release-day",
-    "./packages/software-development/branch-cleanup"
+    "./packages/software-development/branch-cleanup",
+    "./packages/software-development/vinted-listing"
   ]
 }

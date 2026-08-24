@@ -53,3 +53,4 @@ Available reusable prompt files:
 - morning-routine: .github/prompts/morning-routine.prompt.md
 - release-day: .github/prompts/release-day.prompt.md
 - branch-cleanup: .github/prompts/branch-cleanup.prompt.md
+- vinted-listing: .github/prompts/vinted-listing.prompt.md

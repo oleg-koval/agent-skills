@@ -1048,6 +1048,28 @@
         "copilot",
         "grok"
       ]
+    },
+    {
+      "name": "vinted-listing",
+      "lookupName": "olko:vinted-listing",
+      "category": "software-development",
+      "path": "packages/software-development/vinted-listing",
+      "description": "Create, edit, and safely publish Vinted listings through the signed-in browser, using verified item details and the owner’s original photos.",
+      "tags": [
+        "vinted",
+        "marketplace",
+        "selling",
+        "browser",
+        "photos",
+        "moderation"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "grok"
+      ]
     }
   ]
 }
