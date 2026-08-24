@@ -1,0 +1,6 @@
+{
+  "name": "olko:website-analytics-bootstrap",
+  "version": "0.1.0",
+  "description": "Set up a website's first SEO analytics loop with persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS.",
+  "skills": "skills/"
+}
