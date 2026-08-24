@@ -1,0 +1,6 @@
+{
+  "name": "olko-github-pr",
+  "version": "0.1.0",
+  "description": "Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.",
+  "skills": "skills/"
+}

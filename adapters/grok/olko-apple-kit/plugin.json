@@ -1,0 +1,6 @@
+{
+  "name": "olko-apple-kit",
+  "version": "0.1.0",
+  "description": "Build and ship Apple platform apps: macOS menubar apps, App Store submissions.",
+  "skills": "skills/"
+}

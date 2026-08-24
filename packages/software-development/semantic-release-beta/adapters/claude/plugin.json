@@ -1,5 +1,0 @@
-{
-  "name": "olko-semantic-release-beta",
-  "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch.",
-  "skills": "./skills"
-}

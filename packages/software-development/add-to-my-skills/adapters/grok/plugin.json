@@ -1,6 +1,0 @@
-{
-  "name": "olko:add-to-my-skills",
-  "version": "0.1.0",
-  "description": "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push.",
-  "skills": "skills/"
-}

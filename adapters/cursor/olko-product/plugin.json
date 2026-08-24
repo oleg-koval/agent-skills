@@ -1,0 +1,6 @@
+{
+  "name": "olko-product",
+  "version": "0.1.0",
+  "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.",
+  "skills": "skills/"
+}

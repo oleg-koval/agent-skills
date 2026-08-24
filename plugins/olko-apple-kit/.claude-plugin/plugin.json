@@ -1,0 +1,12 @@
+{
+  "name": "olko-apple-kit",
+  "description": "Build and ship Apple platform apps: macOS menubar apps, App Store submissions.",
+  "version": "1.34.0",
+  "author": {
+    "name": "Oleg Koval"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills",
+  "repository": "https://github.com/oleg-koval/agent-skills",
+  "license": "MIT",
+  "skills": "./skills"
+}

@@ -1,5 +1,0 @@
-{
-  "name": "olko-codexloop",
-  "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
-  "skills": "./skills"
-}

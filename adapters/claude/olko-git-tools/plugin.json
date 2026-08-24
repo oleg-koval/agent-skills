@@ -1,0 +1,5 @@
+{
+  "name": "olko-git-tools",
+  "description": "Everyday git and GitHub CLI operations: conventional commits, branch hygiene.",
+  "skills": "./skills"
+}
