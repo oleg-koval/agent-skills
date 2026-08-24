@@ -1,1119 +1,1145 @@
 {
   "name": "agent-skills",
-  "packages": [
+  "plugins": [
     {
-      "name": "lekker-review",
-      "lookupName": "olko:lekker-review",
-      "category": "software-development",
-      "path": "packages/software-development/lekker-review",
-      "description": "FAANG-quality PR code review: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, 5 parallel specialist review agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
-      "tags": [
-        "code-review",
-        "pull-request",
-        "github",
-        "multi-agent",
-        "workflow",
-        "quality"
-      ],
-      "adapters": [
-        "claude"
+      "name": "olko-github-pr",
+      "description": "Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.",
+      "skills": [
+        {
+          "name": "pr-finalize",
+          "lookupName": "olko:pr-finalize",
+          "path": "plugins/olko-github-pr/skills/pr-finalize",
+          "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human.",
+          "tags": [
+            "code-review",
+            "pull-requests",
+            "github",
+            "testing",
+            "automation",
+            "agents"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro"
+          ]
+        },
+        {
+          "name": "pr-finalize-complete",
+          "lookupName": "olko:pr-finalize-complete",
+          "path": "plugins/olko-github-pr/skills/pr-finalize-complete",
+          "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption.",
+          "tags": [
+            "code-review",
+            "pull-requests",
+            "github",
+            "testing",
+            "verification",
+            "agents"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro"
+          ]
+        },
+        {
+          "name": "pr-to-green",
+          "lookupName": "olko:pr-to-green",
+          "path": "plugins/olko-github-pr/skills/pr-to-green",
+          "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads.",
+          "tags": [
+            "github",
+            "pr",
+            "ci",
+            "loop",
+            "qodoloop",
+            "coderabbitloop",
+            "ci-fix-loop",
+            "workflow",
+            "automation"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
+          "name": "pr-description-writer",
+          "lookupName": "olko:pr-description-writer",
+          "path": "plugins/olko-github-pr/skills/pr-description-writer",
+          "description": "Draft and post a GitHub PR title and body from git diff and commit history. Chains after git-commit and before qodoloop / coderabbitloop.",
+          "tags": [
+            "git",
+            "github",
+            "pull-request",
+            "description",
+            "pr",
+            "workflow"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
+          "name": "qodoloop",
+          "lookupName": "olko:qodoloop",
+          "path": "plugins/olko-github-pr/skills/qodoloop",
+          "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
+          "tags": [
+            "code-review",
+            "qodo",
+            "github",
+            "pull-requests",
+            "automation",
+            "agents"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro"
+          ]
+        },
+        {
+          "name": "coderabbitloop",
+          "lookupName": "olko:coderabbitloop",
+          "path": "plugins/olko-github-pr/skills/coderabbitloop",
+          "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
+          "tags": [
+            "code-review",
+            "coderabbit",
+            "github",
+            "pull-requests",
+            "automation",
+            "agents"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro"
+          ]
+        },
+        {
+          "name": "codexloop",
+          "lookupName": "olko:codexloop",
+          "path": "plugins/olko-github-pr/skills/codexloop",
+          "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
+          "tags": [
+            "code-review",
+            "codex",
+            "github",
+            "pull-requests",
+            "automation",
+            "agents"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro"
+          ]
+        },
+        {
+          "name": "geminiloop",
+          "lookupName": "olko:geminiloop",
+          "path": "plugins/olko-github-pr/skills/geminiloop",
+          "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code.",
+          "tags": [
+            "code-review",
+            "gemini",
+            "github",
+            "pull-requests",
+            "automation",
+            "agents"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro"
+          ]
+        },
+        {
+          "name": "ci-fix-loop",
+          "lookupName": "olko:ci-fix-loop",
+          "path": "plugins/olko-github-pr/skills/ci-fix-loop",
+          "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures.",
+          "tags": [
+            "github-actions",
+            "ci",
+            "testing",
+            "automation",
+            "loop",
+            "fix"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
+          "name": "dependabot-triage",
+          "lookupName": "olko:dependabot-triage",
+          "path": "plugins/olko-github-pr/skills/dependabot-triage",
+          "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest.",
+          "tags": [
+            "dependabot",
+            "renovate",
+            "dependencies",
+            "security",
+            "automation",
+            "triage",
+            "github"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
+          "name": "lekker-review",
+          "lookupName": "olko:lekker-review",
+          "path": "plugins/olko-github-pr/skills/lekker-review",
+          "description": "FAANG-quality PR code review: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, 5 parallel specialist review agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
+          "tags": [
+            "code-review",
+            "pull-request",
+            "github",
+            "multi-agent",
+            "workflow",
+            "quality"
+          ],
+          "adapters": [
+            "claude"
+          ]
+        }
       ]
     },
     {
-      "name": "self-critique",
-      "lookupName": "olko:self-critique",
-      "category": "software-development",
-      "path": "packages/software-development/self-critique",
-      "description": "Adversarially critique your own last answer: spawn a critic agent that verifies claims against live sources, finds the related issue or pattern you missed, then loop until satisfied and report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score.",
-      "tags": [
-        "critical-thinking",
-        "self-review",
-        "verification",
-        "adversarial",
-        "agents",
-        "quality"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
+      "name": "olko-git-tools",
+      "description": "Everyday git and GitHub CLI operations: conventional commits, branch hygiene.",
+      "skills": [
+        {
+          "name": "git-commit",
+          "lookupName": "olko:git-commit",
+          "path": "plugins/olko-git-tools/skills/git-commit",
+          "description": "Create conventional commits with diff-aware staging and message generation.",
+          "tags": [
+            "git",
+            "commit",
+            "conventional-commits"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "gh-cli",
+          "lookupName": "olko:gh-cli",
+          "path": "plugins/olko-git-tools/skills/gh-cli",
+          "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more.",
+          "tags": [
+            "github",
+            "gh",
+            "cli",
+            "pull-requests",
+            "actions"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "branch-cleanup",
+          "lookupName": "olko:branch-cleanup",
+          "path": "plugins/olko-git-tools/skills/branch-cleanup",
+          "description": "Prune stale git branches after a merge wave: delete closed/merged remote branches, remove local tracking refs that no longer exist on the remote, and optionally clean up merged local branches. Natural follow-up to dependabot-triage.",
+          "tags": [
+            "git",
+            "branches",
+            "cleanup",
+            "maintenance",
+            "dependabot",
+            "github"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        }
       ]
     },
     {
-      "name": "docs-index-keeper",
-      "lookupName": "olko:docs-index-keeper",
-      "category": "software-development",
-      "path": "packages/software-development/docs-index-keeper",
-      "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows.",
-      "tags": [
-        "docs",
-        "markdown",
-        "index",
-        "ci",
-        "pre-commit"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-release",
+      "description": "Ship a release: semantic-release setup, changelogs, store listing copy, release-day routine.",
+      "skills": [
+        {
+          "name": "semantic-release-beta",
+          "lookupName": "olko:semantic-release-beta",
+          "path": "plugins/olko-release/skills/semantic-release-beta",
+          "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch.",
+          "tags": [
+            "semantic-release",
+            "semantic-release-npm-github-publish",
+            "release",
+            "beta",
+            "github-actions",
+            "npm"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "open-source-publisher",
+          "lookupName": "olko:open-source-publisher",
+          "path": "plugins/olko-release/skills/open-source-publisher",
+          "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, optional donation setup, and optional motion previews for generated static images.",
+          "tags": [
+            "open-source",
+            "github",
+            "readme",
+            "branding",
+            "github-pages",
+            "ci",
+            "release",
+            "social-image"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "release-day",
+          "lookupName": "olko:release-day",
+          "path": "plugins/olko-release/skills/release-day",
+          "description": "Orchestrate a full release-day workflow for iOS, Android, or Garmin apps: verify main branch CI is green, generate changelog, draft platform-ready store listing copy, trigger semantic-release or tag manually, wait for the build, and queue the App Store submission.",
+          "tags": [
+            "release",
+            "ios",
+            "android",
+            "garmin",
+            "app-store",
+            "changelog",
+            "store-listing",
+            "semantic-release",
+            "deployment",
+            "automation"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
+          "name": "changelog-generator",
+          "lookupName": "olko:changelog-generator",
+          "path": "plugins/olko-release/skills/changelog-generator",
+          "description": "Create user-facing changelogs from git history by categorising commits and rewriting them for readers rather than developers.",
+          "tags": [
+            "changelog",
+            "git",
+            "release",
+            "documentation"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "store-listing-copy",
+          "lookupName": "olko:store-listing-copy",
+          "path": "plugins/olko-release/skills/store-listing-copy",
+          "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes.",
+          "tags": [
+            "app-store",
+            "google-play",
+            "connect-iq",
+            "garmin",
+            "store",
+            "listing",
+            "copy",
+            "release-notes",
+            "ios",
+            "android"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        }
       ]
     },
     {
-      "name": "semantic-release-beta",
-      "lookupName": "olko:semantic-release-beta",
-      "category": "software-development",
-      "path": "packages/software-development/semantic-release-beta",
-      "description": "Set up semantic-release-npm-github-publish with stable main releases and prerelease beta releases on a beta branch.",
-      "tags": [
-        "semantic-release",
-        "semantic-release-npm-github-publish",
-        "release",
-        "beta",
-        "github-actions",
-        "npm"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-product",
+      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.",
+      "skills": [
+        {
+          "name": "product-builder",
+          "lookupName": "olko:product-builder",
+          "path": "plugins/olko-product/skills/product-builder",
+          "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults.",
+          "tags": [
+            "product",
+            "full-stack",
+            "saas",
+            "web-app",
+            "builder"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "mvp-oneshot",
+          "lookupName": "olko:mvp-oneshot",
+          "path": "plugins/olko-product/skills/mvp-oneshot",
+          "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice.",
+          "tags": [
+            "mvp",
+            "product",
+            "scoping",
+            "prompt-chain",
+            "planning",
+            "startup",
+            "oneshot"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "starter-rules",
+          "lookupName": "olko:starter-rules",
+          "path": "plugins/olko-product/skills/starter-rules",
+          "description": "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID.",
+          "tags": [
+            "starters",
+            "rules",
+            "architecture",
+            "vertical-slice",
+            "linting",
+            "pre-commit",
+            "testing"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "viral-launch",
+          "lookupName": "olko:viral-launch",
+          "path": "plugins/olko-product/skills/viral-launch",
+          "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops.",
+          "tags": [
+            "marketing",
+            "launch",
+            "growth",
+            "virality",
+            "positioning",
+            "github"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        }
       ]
     },
     {
-      "name": "gh-cli",
-      "lookupName": "olko:gh-cli",
-      "category": "software-development",
-      "path": "packages/software-development/gh-cli",
-      "description": "Use the GitHub CLI effectively for repositories, PRs, Actions, releases, and more.",
-      "tags": [
-        "github",
-        "gh",
-        "cli",
-        "pull-requests",
-        "actions"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-skill-meta",
+      "description": "Author and maintain agent skills and the AI toolchain itself.",
+      "skills": [
+        {
+          "name": "add-to-my-skills",
+          "lookupName": "olko:add-to-my-skills",
+          "path": "plugins/olko-skill-meta/skills/add-to-my-skills",
+          "description": "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push.",
+          "tags": [
+            "skills",
+            "catalog",
+            "automation",
+            "git",
+            "maintenance"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "skill-budget-audit",
+          "lookupName": "olko:skill-budget-audit",
+          "path": "plugins/olko-skill-meta/skills/skill-budget-audit",
+          "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
+          "tags": [
+            "claude-code",
+            "skills",
+            "plugins",
+            "context-budget",
+            "token-economy",
+            "performance"
+          ],
+          "adapters": [
+            "claude",
+            "grok"
+          ]
+        },
+        {
+          "name": "promptctl",
+          "lookupName": "olko:promptctl",
+          "path": "plugins/olko-skill-meta/skills/promptctl",
+          "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation.",
+          "tags": [
+            "prompts",
+            "prompt-engineering",
+            "cli",
+            "templates"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "ai-tools-setup",
+          "lookupName": "olko:ai-tools-setup",
+          "path": "plugins/olko-skill-meta/skills/ai-tools-setup",
+          "description": "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration.",
+          "tags": [
+            "setup",
+            "tooling",
+            "mcp",
+            "hooks",
+            "developer-experience"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "relay",
+          "lookupName": "olko:relay",
+          "path": "plugins/olko-skill-meta/skills/relay",
+          "description": "Use claude-relay to run long or rate-limit-prone tasks autonomously across subscription accounts.",
+          "tags": [
+            "relay",
+            "autonomous",
+            "rate-limits",
+            "claude-relay"
+          ],
+          "adapters": [
+            "claude",
+            "grok"
+          ]
+        },
+        {
+          "name": "shared-knowledge-artifact",
+          "lookupName": "olko:shared-knowledge-artifact",
+          "path": "plugins/olko-skill-meta/skills/shared-knowledge-artifact",
+          "description": "Build a shared, self-persisting knowledge ledger as a Claude Artifact: a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons before working and append to them afterwards.",
+          "tags": [
+            "artifacts",
+            "knowledge-base",
+            "multi-agent",
+            "memory",
+            "lessons-learned",
+            "documentation"
+          ],
+          "adapters": [
+            "claude"
+          ]
+        }
       ]
     },
     {
-      "name": "git-commit",
-      "lookupName": "olko:git-commit",
-      "category": "software-development",
-      "path": "packages/software-development/git-commit",
-      "description": "Create conventional commits with diff-aware staging and message generation.",
-      "tags": [
-        "git",
-        "commit",
-        "conventional-commits"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-reflection",
+      "description": "Look back and improve: self-critique, retrospectives, performance review, rapid learning.",
+      "skills": [
+        {
+          "name": "self-critique",
+          "lookupName": "olko:self-critique",
+          "path": "plugins/olko-reflection/skills/self-critique",
+          "description": "Adversarially critique your own last answer: spawn a critic agent that verifies claims against live sources, finds the related issue or pattern you missed, then loop until satisfied and report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score.",
+          "tags": [
+            "critical-thinking",
+            "self-review",
+            "verification",
+            "adversarial",
+            "agents",
+            "quality"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
+          "name": "review-past-performance",
+          "lookupName": "olko:review-past-performance",
+          "path": "plugins/olko-reflection/skills/review-past-performance",
+          "description": "Self-improvement loop that pulls the last 24h of ICM memories, git history, and skill analytics to detect repeated mistakes, slow workflows, and missing coverage, then proposes 1-3 concrete improvements.",
+          "tags": [
+            "self-improvement",
+            "performance-review",
+            "icm",
+            "skills",
+            "workflow",
+            "ai-tools"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "retro-analysis",
+          "lookupName": "olko:retro-analysis",
+          "path": "plugins/olko-reflection/skills/retro-analysis",
+          "description": "Produce repository, comparison, and cross-project engineering retrospectives from delivery, code-quality, work-pattern, and trend evidence.",
+          "tags": [
+            "retrospective",
+            "metrics",
+            "git",
+            "productivity",
+            "code-quality",
+            "trends",
+            "planning"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "crash-course",
+          "lookupName": "olko:crash-course",
+          "path": "plugins/olko-reflection/skills/crash-course",
+          "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes.",
+          "tags": [
+            "learning",
+            "tutor",
+            "onboarding",
+            "study",
+            "feynman",
+            "active-recall"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "wrap-up",
+          "lookupName": "olko:wrap-up",
+          "path": "plugins/olko-reflection/skills/wrap-up",
+          "description": "Verify a completed task against its original objective, confirm applicable checks, and safely tidy task-owned artifacts, worktrees, and local branches.",
+          "tags": [
+            "delivery",
+            "verification",
+            "cleanup",
+            "git",
+            "worktrees",
+            "release-hygiene"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        }
       ]
     },
     {
-      "name": "gallery",
-      "lookupName": "olko:gallery",
-      "category": "photography",
-      "path": "packages/photography/gallery",
-      "description": "Create photo galleries with AI-assisted layout curation and sequencing.",
-      "tags": [
-        "photos",
-        "gallery",
-        "layout",
-        "curation"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-obsidian",
+      "description": "Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine.",
+      "userConfig": {
+        "vault_path": {
+          "title": "Obsidian vault path",
+          "type": "string",
+          "description": "Absolute path to the Obsidian vault these skills read and write.",
+          "default": ""
+        }
+      },
+      "skills": [
+        {
+          "name": "obsidian-pr-sync",
+          "lookupName": "olko:obsidian-pr-sync",
+          "path": "plugins/olko-obsidian/skills/obsidian-pr-sync",
+          "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
+          "tags": [
+            "github",
+            "obsidian",
+            "daily-note",
+            "pull-requests",
+            "productivity",
+            "morning-routine"
+          ],
+          "adapters": [
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "obsidian-task-rollover",
+          "lookupName": "olko:obsidian-task-rollover",
+          "path": "plugins/olko-obsidian/skills/obsidian-task-rollover",
+          "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent.",
+          "tags": [
+            "obsidian",
+            "daily-note",
+            "bullet-journal",
+            "productivity",
+            "task-rollover",
+            "end-of-day"
+          ],
+          "adapters": [
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "morning-routine",
+          "lookupName": "olko:morning-routine",
+          "path": "plugins/olko-obsidian/skills/morning-routine",
+          "description": "Run the complete start-of-day setup in one pass: roll over unfinished Obsidian tasks to today's daily note, sync open GitHub PRs that need your attention, and sweep Dependabot patch bumps. Chains obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage.",
+          "tags": [
+            "morning",
+            "obsidian",
+            "daily-note",
+            "github",
+            "dependabot",
+            "productivity",
+            "routine",
+            "automation"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        }
       ]
     },
     {
-      "name": "promptctl",
-      "lookupName": "olko:promptctl",
-      "category": "software-development",
-      "path": "packages/software-development/promptctl",
-      "description": "Use promptctl for template-based prompt engineering, scoring, and workflow automation.",
-      "tags": [
-        "prompts",
-        "prompt-engineering",
-        "cli",
-        "templates"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-apple-kit",
+      "description": "Build and ship Apple platform apps: macOS menubar apps, App Store submissions.",
+      "skills": [
+        {
+          "name": "apple-store-submit",
+          "lookupName": "olko:apple-store-submit",
+          "path": "plugins/olko-apple-kit/skills/apple-store-submit",
+          "description": "Handle Apple App Store rejection emails end-to-end: parse rejection reasons, plan fixes, implement code changes, navigate App Store Connect, and resubmit.",
+          "tags": [
+            "apple",
+            "app-store",
+            "ios",
+            "macos",
+            "xcode",
+            "submission",
+            "rejection"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "macos-menubar-app",
+          "lookupName": "olko:macos-menubar-app",
+          "path": "plugins/olko-apple-kit/skills/macos-menubar-app",
+          "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
+          "tags": [
+            "macos",
+            "swiftui",
+            "menubar",
+            "notch",
+            "xcode",
+            "apple",
+            "sandbox"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        }
       ]
     },
     {
-      "name": "fill-music-player",
-      "lookupName": "olko:fill-music-player",
-      "category": "music",
-      "path": "packages/music/fill-music-player",
-      "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity.",
-      "tags": [
-        "music",
-        "media",
-        "copy",
-        "curation",
-        "cli"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-garmin-kit",
+      "description": "Build, test and publish Garmin Connect IQ watch faces.",
+      "skills": [
+        {
+          "name": "garmin-watchface",
+          "lookupName": "olko:garmin-watchface",
+          "path": "plugins/olko-garmin-kit/skills/garmin-watchface",
+          "description": "Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C.",
+          "tags": [
+            "garmin",
+            "connect-iq",
+            "monkey-c",
+            "watch-face",
+            "wearables",
+            "embedded"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        }
       ]
     },
     {
-      "name": "product-builder",
-      "lookupName": "olko:product-builder",
-      "category": "software-development",
-      "path": "packages/software-development/product-builder",
-      "description": "Build a full-stack web application or SaaS product from a user description using production-oriented defaults.",
-      "tags": [
-        "product",
-        "full-stack",
-        "saas",
-        "web-app",
-        "builder"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
+      "name": "olko-creative",
+      "description": "Creative and personal projects: photo galleries, music players, listings, wiki editing.",
+      "skills": [
+        {
+          "name": "gallery",
+          "lookupName": "olko:gallery",
+          "path": "plugins/olko-creative/skills/gallery",
+          "description": "Create photo galleries with AI-assisted layout curation and sequencing.",
+          "tags": [
+            "photos",
+            "gallery",
+            "layout",
+            "curation"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "fill-music-player",
+          "lookupName": "olko:fill-music-player",
+          "path": "plugins/olko-creative/skills/fill-music-player",
+          "description": "Fill a portable music player with a curated random selection from a source music library while balancing formats, artists, albums, and capacity.",
+          "tags": [
+            "music",
+            "media",
+            "copy",
+            "curation",
+            "cli"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "vinted-listing",
+          "lookupName": "olko:vinted-listing",
+          "path": "plugins/olko-creative/skills/vinted-listing",
+          "description": "Create, edit, and safely publish Vinted listings through the signed-in browser, using verified item details and the owner’s original photos.",
+          "tags": [
+            "vinted",
+            "marketplace",
+            "selling",
+            "browser",
+            "photos",
+            "moderation"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
+          "name": "wikipedia-uk-editor",
+          "lookupName": "olko:wikipedia-uk-editor",
+          "path": "plugins/olko-creative/skills/wikipedia-uk-editor",
+          "description": "Draft policy-compliant Ukrainian Wikipedia edits — translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item — and return ready-to-paste wikitext plus an edit summary.",
+          "tags": [
+            "wikipedia",
+            "ukrainian",
+            "wikitext",
+            "translation",
+            "sourcing",
+            "editing"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro",
+            "hermes",
+            "pi"
+          ]
+        }
       ]
     },
     {
-      "name": "mvp-oneshot",
-      "lookupName": "olko:mvp-oneshot",
-      "category": "software-development",
-      "path": "packages/software-development/mvp-oneshot",
-      "description": "Turn a rough product idea into a shippable one-week MVP in one pass via a four-role prompt chain: scope a build prompt, ruthlessly trim it, plan the build, and self-review the vertical slice.",
-      "tags": [
-        "mvp",
-        "product",
-        "scoping",
-        "prompt-chain",
-        "planning",
-        "startup",
-        "oneshot"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "starter-rules",
-      "lookupName": "olko:starter-rules",
-      "category": "software-development",
-      "path": "packages/software-development/starter-rules",
-      "description": "Load and enforce hard rules for every oleg-koval/* starter: 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, no comments, KISS/DRY/SOLID.",
-      "tags": [
-        "starters",
-        "rules",
-        "architecture",
-        "vertical-slice",
-        "linting",
-        "pre-commit",
-        "testing"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "review-past-performance",
-      "lookupName": "olko:review-past-performance",
-      "category": "software-development",
-      "path": "packages/software-development/review-past-performance",
-      "description": "Self-improvement loop that pulls the last 24h of ICM memories, git history, and skill analytics to detect repeated mistakes, slow workflows, and missing coverage, then proposes 1-3 concrete improvements.",
-      "tags": [
-        "self-improvement",
-        "performance-review",
-        "icm",
-        "skills",
-        "workflow",
-        "ai-tools"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "relay",
-      "lookupName": "olko:relay",
-      "category": "software-development",
-      "path": "packages/software-development/relay",
-      "description": "Use claude-relay to run long or rate-limit-prone tasks autonomously across subscription accounts.",
-      "tags": [
-        "relay",
-        "autonomous",
-        "rate-limits",
-        "claude-relay"
-      ],
-      "adapters": [
-        "claude",
-        "grok"
-      ]
-    },
-    {
-      "name": "open-source-publisher",
-      "lookupName": "olko:open-source-publisher",
-      "category": "software-development",
-      "path": "packages/software-development/open-source-publisher",
-      "description": "Prepare an open-source repository for public publishing with a minimal icon, social preview image, GitHub Pages site, README standardization, CI/CD checks, release hygiene, optional donation setup, and optional motion previews for generated static images.",
-      "tags": [
-        "open-source",
-        "github",
-        "readme",
-        "branding",
-        "github-pages",
-        "ci",
-        "release",
-        "social-image"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "viral-launch",
-      "lookupName": "olko:viral-launch",
-      "category": "marketing",
-      "path": "packages/marketing/viral-launch",
-      "description": "Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops.",
-      "tags": [
-        "marketing",
-        "launch",
-        "growth",
-        "virality",
-        "positioning",
-        "github"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "search-console-indexing-audit",
-      "lookupName": "olko:search-console-indexing-audit",
-      "category": "marketing",
-      "path": "packages/marketing/search-console-indexing-audit",
-      "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals.",
-      "tags": [
-        "seo",
-        "google-search-console",
-        "indexing",
-        "sitemap",
-        "canonical",
-        "robots"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "pi",
-        "hermes",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "website-analytics-bootstrap",
-      "lookupName": "olko:website-analytics-bootstrap",
-      "category": "marketing",
-      "path": "packages/marketing/website-analytics-bootstrap",
-      "description": "Set up a website's first SEO analytics loop with persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS.",
-      "tags": [
-        "seo",
-        "analytics",
-        "google-search-console",
-        "serpbear",
-        "nas",
-        "telegram",
-        "monitoring"
-      ],
-      "adapters": [
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "cloudflare-block-countries",
-      "lookupName": "olko:cloudflare-block-countries",
-      "category": "software-development",
-      "path": "packages/software-development/cloudflare-block-countries",
-      "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones.",
-      "tags": [
-        "cloudflare",
-        "waf",
-        "security",
-        "geo-blocking",
-        "firewall"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "obsidian-pr-sync",
-      "lookupName": "olko:obsidian-pr-sync",
-      "category": "software-development",
-      "path": "packages/software-development/obsidian-pr-sync",
-      "description": "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section.",
-      "tags": [
-        "github",
-        "obsidian",
-        "daily-note",
-        "pull-requests",
-        "productivity",
-        "morning-routine"
-      ],
-      "adapters": [
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "obsidian-task-rollover",
-      "lookupName": "olko:obsidian-task-rollover",
-      "category": "software-development",
-      "path": "packages/software-development/obsidian-task-rollover",
-      "description": "Bullet-journal end-of-day task migration: copy unchecked tasks from today's Obsidian daily note to the next workday's note under '## Carried over', and mark them [>] in the source. Skips weekends, idempotent.",
-      "tags": [
-        "obsidian",
-        "daily-note",
-        "bullet-journal",
-        "productivity",
-        "task-rollover",
-        "end-of-day"
-      ],
-      "adapters": [
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "apple-store-submit",
-      "lookupName": "olko:apple-store-submit",
-      "category": "software-development",
-      "path": "packages/software-development/apple-store-submit",
-      "description": "Handle Apple App Store rejection emails end-to-end: parse rejection reasons, plan fixes, implement code changes, navigate App Store Connect, and resubmit.",
-      "tags": [
-        "apple",
-        "app-store",
-        "ios",
-        "macos",
-        "xcode",
-        "submission",
-        "rejection"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "macos-menubar-app",
-      "lookupName": "olko:macos-menubar-app",
-      "category": "software-development",
-      "path": "packages/software-development/macos-menubar-app",
-      "description": "Build a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and App Store preparation.",
-      "tags": [
-        "macos",
-        "swiftui",
-        "menubar",
-        "notch",
-        "xcode",
-        "apple",
-        "sandbox"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "skill-budget-audit",
-      "lookupName": "olko:skill-budget-audit",
-      "category": "software-development",
-      "path": "packages/software-development/skill-budget-audit",
-      "description": "Diagnose and fix Claude Code skill context budget overflow — identify heavy plugin bundles, remove domain-specific ones, and restore skill discoverability.",
-      "tags": [
-        "claude-code",
-        "skills",
-        "plugins",
-        "context-budget",
-        "token-economy",
-        "performance"
-      ],
-      "adapters": [
-        "claude",
-        "grok"
-      ]
-    },
-    {
-      "name": "crash-course",
-      "lookupName": "olko:crash-course",
-      "category": "software-development",
-      "path": "packages/software-development/crash-course",
-      "description": "Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes.",
-      "tags": [
-        "learning",
-        "tutor",
-        "onboarding",
-        "study",
-        "feynman",
-        "active-recall"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "pr-finalize",
-      "lookupName": "olko:pr-finalize",
-      "category": "software-development",
-      "path": "packages/software-development/pr-finalize",
-      "description": "Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment to zero unaddressed findings, verifies unit and E2E coverage actually exists, runs the repo's real lint/format/test gates before pushing, and reports what still needs a human.",
-      "tags": [
-        "code-review",
-        "pull-requests",
-        "github",
-        "testing",
-        "automation",
-        "agents"
-      ],
-      "adapters": [
-        "claude",
-        "codex",
-        "cursor",
-        "copilot",
-        "grok",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "pr-finalize-complete",
-      "lookupName": "olko:pr-finalize-complete",
-      "category": "software-development",
-      "path": "packages/software-development/pr-finalize-complete",
-      "description": "Confirms a PR is genuinely merge-ready when the work is already believed done: re-checks every review-bot and human finding against the current code, separates stale comments from fixed ones, runs the repo's real lint and test gates, and reports the evidence rather than the assumption.",
-      "tags": [
-        "code-review",
-        "pull-requests",
-        "github",
-        "testing",
-        "verification",
-        "agents"
-      ],
-      "adapters": [
-        "claude",
-        "codex",
-        "cursor",
-        "copilot",
-        "grok",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "qodoloop",
-      "lookupName": "olko:qodoloop",
-      "category": "software-development",
-      "path": "packages/software-development/qodoloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved Qodo findings — reads each finding's own Agent Prompt, applies the fix, replies to the thread, resolves it, pushes, and waits for Qodo's next pass.",
-      "tags": [
-        "code-review",
-        "qodo",
-        "github",
-        "pull-requests",
-        "automation",
-        "agents"
-      ],
-      "adapters": [
-        "claude",
-        "codex",
-        "cursor",
-        "copilot",
-        "grok",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "garmin-watchface",
-      "lookupName": "olko:garmin-watchface",
-      "category": "wearables",
-      "path": "packages/wearables/garmin-watchface",
-      "description": "Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C.",
-      "tags": [
-        "garmin",
-        "connect-iq",
-        "monkey-c",
-        "watch-face",
-        "wearables",
-        "embedded"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "coderabbitloop",
-      "lookupName": "olko:coderabbitloop",
-      "category": "software-development",
-      "path": "packages/software-development/coderabbitloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings — reads each inline comment's own Prompt for AI Agents block, applies the fix, replies to the thread, resolves it, pushes, and re-triggers CodeRabbit.",
-      "tags": [
-        "code-review",
-        "coderabbit",
-        "github",
-        "pull-requests",
-        "automation",
-        "agents"
-      ],
-      "adapters": [
-        "claude",
-        "codex",
-        "cursor",
-        "copilot",
-        "grok",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "codexloop",
-      "lookupName": "olko:codexloop",
-      "category": "software-development",
-      "path": "packages/software-development/codexloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments — but verifies every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
-      "tags": [
-        "code-review",
-        "codex",
-        "github",
-        "pull-requests",
-        "automation",
-        "agents"
-      ],
-      "adapters": [
-        "claude",
-        "codex",
-        "cursor",
-        "copilot",
-        "grok",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "geminiloop",
-      "lookupName": "olko:geminiloop",
-      "category": "software-development",
-      "path": "packages/software-development/geminiloop",
-      "description": "Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments — treats each one as a claim to verify, fixes only the genuinely-correct findings, and rebuts the rest with evidence instead of editing correct code.",
-      "tags": [
-        "code-review",
-        "gemini",
-        "github",
-        "pull-requests",
-        "automation",
-        "agents"
-      ],
-      "adapters": [
-        "claude",
-        "codex",
-        "cursor",
-        "copilot",
-        "grok",
-        "windsurf",
-        "kiro"
-      ]
-    },
-    {
-      "name": "add-to-my-skills",
-      "lookupName": "olko:add-to-my-skills",
-      "category": "software-development",
-      "path": "packages/software-development/add-to-my-skills",
-      "description": "Copy a newly created skill from another repo into this catalog, refresh the README and generated manifests, then commit and push.",
-      "tags": [
-        "skills",
-        "catalog",
-        "automation",
-        "git",
-        "maintenance"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "wrap-up",
-      "lookupName": "olko:wrap-up",
-      "category": "software-development",
-      "path": "packages/software-development/wrap-up",
-      "description": "Verify a completed task against its original objective, confirm applicable checks, and safely tidy task-owned artifacts, worktrees, and local branches.",
-      "tags": [
-        "delivery",
-        "verification",
-        "cleanup",
-        "git",
-        "worktrees",
-        "release-hygiene"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "retro-analysis",
-      "lookupName": "olko:retro-analysis",
-      "category": "software-development",
-      "path": "packages/software-development/retro-analysis",
-      "description": "Produce repository, comparison, and cross-project engineering retrospectives from delivery, code-quality, work-pattern, and trend evidence.",
-      "tags": [
-        "retrospective",
-        "metrics",
-        "git",
-        "productivity",
-        "code-quality",
-        "trends",
-        "planning"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "ai-tools-setup",
-      "lookupName": "olko:ai-tools-setup",
-      "category": "software-development",
-      "path": "packages/software-development/ai-tools-setup",
-      "description": "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration.",
-      "tags": [
-        "setup",
-        "tooling",
-        "mcp",
-        "hooks",
-        "developer-experience"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "changelog-generator",
-      "lookupName": "olko:changelog-generator",
-      "category": "software-development",
-      "path": "packages/software-development/changelog-generator",
-      "description": "Create user-facing changelogs from git history by categorising commits and rewriting them for readers rather than developers.",
-      "tags": [
-        "changelog",
-        "git",
-        "release",
-        "documentation"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "windsurf",
-        "kiro",
-        "grok"
-      ]
-    },
-    {
-      "name": "wikipedia-uk-editor",
-      "lookupName": "olko:wikipedia-uk-editor",
-      "category": "software-development",
-      "path": "packages/software-development/wikipedia-uk-editor",
-      "description": "Draft policy-compliant Ukrainian Wikipedia edits — translate an English article into uk, expand or source an existing uk article, or fix a maintenance backlog item — and return ready-to-paste wikitext plus an edit summary.",
-      "tags": [
-        "wikipedia",
-        "ukrainian",
-        "wikitext",
-        "translation",
-        "sourcing",
-        "editing"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok",
-        "windsurf",
-        "kiro",
-        "hermes",
-        "pi"
-      ]
-    },
-    {
-      "name": "pr-description-writer",
-      "lookupName": "olko:pr-description-writer",
-      "category": "software-development",
-      "path": "packages/software-development/pr-description-writer",
-      "description": "Draft and post a GitHub PR title and body from git diff and commit history. Chains after git-commit and before qodoloop / coderabbitloop.",
-      "tags": [
-        "git",
-        "github",
-        "pull-request",
-        "description",
-        "pr",
-        "workflow"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "ci-fix-loop",
-      "lookupName": "olko:ci-fix-loop",
-      "category": "software-development",
-      "path": "packages/software-development/ci-fix-loop",
-      "description": "Diagnose GitHub Actions CI failures in a loop: fetch failing check logs, fix, push, and repeat until green. Direct analog of qodoloop / coderabbitloop for test and lint failures.",
-      "tags": [
-        "github-actions",
-        "ci",
-        "testing",
-        "automation",
-        "loop",
-        "fix"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "pr-to-green",
-      "lookupName": "olko:pr-to-green",
-      "category": "software-development",
-      "path": "packages/software-development/pr-to-green",
-      "description": "Orchestrate a GitHub PR from first push to merge-ready: run ci-fix-loop until checks are green, detect active AI review bots, run qodoloop and coderabbitloop in sequence, and confirm zero unresolved threads.",
-      "tags": [
-        "github",
-        "pr",
-        "ci",
-        "loop",
-        "qodoloop",
-        "coderabbitloop",
-        "ci-fix-loop",
-        "workflow",
-        "automation"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "dependabot-triage",
-      "lookupName": "olko:dependabot-triage",
-      "category": "software-development",
-      "path": "packages/software-development/dependabot-triage",
-      "description": "Triage open Dependabot and Renovate PRs in bulk: classify by risk tier, auto-approve and merge safe patch bumps, flag breaking major upgrades for human review, and post a digest.",
-      "tags": [
-        "dependabot",
-        "renovate",
-        "dependencies",
-        "security",
-        "automation",
-        "triage",
-        "github"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "store-listing-copy",
-      "lookupName": "olko:store-listing-copy",
-      "category": "software-development",
-      "path": "packages/software-development/store-listing-copy",
-      "description": "Generate platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog or release notes.",
-      "tags": [
-        "app-store",
-        "google-play",
-        "connect-iq",
-        "garmin",
-        "store",
-        "listing",
-        "copy",
-        "release-notes",
-        "ios",
-        "android"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "morning-routine",
-      "lookupName": "olko:morning-routine",
-      "category": "software-development",
-      "path": "packages/software-development/morning-routine",
-      "description": "Run the complete start-of-day setup in one pass: roll over unfinished Obsidian tasks to today's daily note, sync open GitHub PRs that need your attention, and sweep Dependabot patch bumps. Chains obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage.",
-      "tags": [
-        "morning",
-        "obsidian",
-        "daily-note",
-        "github",
-        "dependabot",
-        "productivity",
-        "routine",
-        "automation"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "release-day",
-      "lookupName": "olko:release-day",
-      "category": "software-development",
-      "path": "packages/software-development/release-day",
-      "description": "Orchestrate a full release-day workflow for iOS, Android, or Garmin apps: verify main branch CI is green, generate changelog, draft platform-ready store listing copy, trigger semantic-release or tag manually, wait for the build, and queue the App Store submission.",
-      "tags": [
-        "release",
-        "ios",
-        "android",
-        "garmin",
-        "app-store",
-        "changelog",
-        "store-listing",
-        "semantic-release",
-        "deployment",
-        "automation"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "branch-cleanup",
-      "lookupName": "olko:branch-cleanup",
-      "category": "software-development",
-      "path": "packages/software-development/branch-cleanup",
-      "description": "Prune stale git branches after a merge wave: delete closed/merged remote branches, remove local tracking refs that no longer exist on the remote, and optionally clean up merged local branches. Natural follow-up to dependabot-triage.",
-      "tags": [
-        "git",
-        "branches",
-        "cleanup",
-        "maintenance",
-        "dependabot",
-        "github"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "vinted-listing",
-      "lookupName": "olko:vinted-listing",
-      "category": "software-development",
-      "path": "packages/software-development/vinted-listing",
-      "description": "Create, edit, and safely publish Vinted listings through the signed-in browser, using verified item details and the owner’s original photos.",
-      "tags": [
-        "vinted",
-        "marketplace",
-        "selling",
-        "browser",
-        "photos",
-        "moderation"
-      ],
-      "adapters": [
-        "codex",
-        "claude",
-        "cursor",
-        "copilot",
-        "grok"
-      ]
-    },
-    {
-      "name": "shared-knowledge-artifact",
-      "lookupName": "olko:shared-knowledge-artifact",
-      "category": "software-development",
-      "path": "packages/software-development/shared-knowledge-artifact",
-      "description": "Build a shared, self-persisting knowledge ledger as a Claude Artifact: a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons before working and append to them afterwards.",
-      "tags": [
-        "artifacts",
-        "knowledge-base",
-        "multi-agent",
-        "memory",
-        "lessons-learned",
-        "documentation"
-      ],
-      "adapters": [
-        "claude"
+      "name": "olko-web-ops",
+      "description": "Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.",
+      "skills": [
+        {
+          "name": "cloudflare-block-countries",
+          "lookupName": "olko:cloudflare-block-countries",
+          "path": "plugins/olko-web-ops/skills/cloudflare-block-countries",
+          "description": "Block specific countries via Cloudflare WAF Custom Rules using the Cloudflare API. Handles creating new rulesets and updating existing ones across single or multiple zones.",
+          "tags": [
+            "cloudflare",
+            "waf",
+            "security",
+            "geo-blocking",
+            "firewall"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "search-console-indexing-audit",
+          "lookupName": "olko:search-console-indexing-audit",
+          "path": "plugins/olko-web-ops/skills/search-console-indexing-audit",
+          "description": "Analyze Google Search Console Coverage CSV exports and correlate them with sitemap, robots, canonical, redirect, and noindex signals.",
+          "tags": [
+            "seo",
+            "google-search-console",
+            "indexing",
+            "sitemap",
+            "canonical",
+            "robots"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "pi",
+            "hermes",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "docs-index-keeper",
+          "lookupName": "olko:docs-index-keeper",
+          "path": "plugins/olko-web-ops/skills/docs-index-keeper",
+          "description": "Keep a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows.",
+          "tags": [
+            "docs",
+            "markdown",
+            "index",
+            "ci",
+            "pre-commit"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "website-analytics-bootstrap",
+          "lookupName": "olko:website-analytics-bootstrap",
+          "path": "plugins/olko-web-ops/skills/website-analytics-bootstrap",
+          "description": "Set up a website's first SEO analytics loop with persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS.",
+          "tags": [
+            "seo",
+            "analytics",
+            "google-search-console",
+            "serpbear",
+            "nas",
+            "telegram",
+            "monitoring"
+          ],
+          "adapters": [
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        }
       ]
     }
   ]
