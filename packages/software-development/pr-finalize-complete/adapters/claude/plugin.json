@@ -1,0 +1,5 @@
+{
+  "name": "olko-pr-finalize-complete",
+  "description": "Comprehensive PR finalization workflow for PRs that may already be partially addressed: checks each review comment's actual current status in code, distinguishes fixed vs. stale vs. still-present findings, verifies test coverage, runs real lint/test gates, and reports what still needs a human.",
+  "skills": "./skills"
+}

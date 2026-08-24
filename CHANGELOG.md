@@ -1,3 +1,79 @@
+# [1.33.0](https://github.com/oleg-koval/agent-skills/compare/v1.32.0...v1.33.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **skills:** add cross-agent wrap-up skill ([#55](https://github.com/oleg-koval/agent-skills/issues/55)) ([b224216](https://github.com/oleg-koval/agent-skills/commit/b2242167abf5b8ff54c97a6fcb57b09243c5862e))
+
+# [1.32.0](https://github.com/oleg-koval/agent-skills/compare/v1.31.0...v1.32.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **shared-knowledge-artifact:** add skill for building a self-persisting shared agent knowledge ledger ([7d981ce](https://github.com/oleg-koval/agent-skills/commit/7d981ced6fa108d6865b82f8e8862d9b70d598ad))
+
+# [1.31.0](https://github.com/oleg-koval/agent-skills/compare/v1.30.0...v1.31.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **marketing:** add one-shot website analytics bootstrap skill ([#54](https://github.com/oleg-koval/agent-skills/issues/54)) ([ec1b0ff](https://github.com/oleg-koval/agent-skills/commit/ec1b0ffa111f42c68ce10380ca590d23d39666a4))
+
+# [1.30.0](https://github.com/oleg-koval/agent-skills/compare/v1.29.0...v1.30.0) (2026-08-23)
+
+
+### ✨ Features
+
+* **skills:** add vinted listing workflow ([ab02273](https://github.com/oleg-koval/agent-skills/commit/ab0227317c7a1d0e565dec15f1e2eae19c6a5270))
+
+# [1.29.0](https://github.com/oleg-koval/agent-skills/compare/v1.28.0...v1.29.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **garmin-watchface:** SVG design proposals, inspiration wizard, open-API sourcing ([#45](https://github.com/oleg-koval/agent-skills/issues/45)) ([f25dbfd](https://github.com/oleg-koval/agent-skills/commit/f25dbfdfb54bc5e4576351bfbbaa4747e2347327))
+* **skills:** auto-generate 2026-08-10 [weekly-pattern-learner] ([#49](https://github.com/oleg-koval/agent-skills/issues/49)) ([1312653](https://github.com/oleg-koval/agent-skills/commit/1312653191a25be9573b704ee46c77ca175852a3))
+
+# [1.28.0](https://github.com/oleg-koval/agent-skills/compare/v1.27.0...v1.28.0) (2026-08-12)
+
+
+### ✨ Features
+
+* **lekker-review:** add PR review skill (Claude-only) ([4af2a06](https://github.com/oleg-koval/agent-skills/commit/4af2a065dc6490b70d3fa2d9a77185834be517c8))
+
+# [1.27.0](https://github.com/oleg-koval/agent-skills/compare/v1.26.0...v1.27.0) (2026-08-11)
+
+
+### ✨ Features
+
+* **site:** publish the catalog as a GitHub Pages site ([#52](https://github.com/oleg-koval/agent-skills/issues/52)) ([3d4aeae](https://github.com/oleg-koval/agent-skills/commit/3d4aeae8474ab2b57399b8c8311fa618f2772c20))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump js-yaml ([#51](https://github.com/oleg-koval/agent-skills/issues/51)) ([86c8831](https://github.com/oleg-koval/agent-skills/commit/86c8831a7bf0b7f6393f43f6abba47da71fa762c))
+
+# [1.26.0](https://github.com/oleg-koval/agent-skills/compare/v1.25.0...v1.26.0) (2026-08-10)
+
+
+### ✨ Features
+
+* add pr-finalize-complete skill ([8101ee6](https://github.com/oleg-koval/agent-skills/commit/8101ee6cf0cf69747ad91cfc9bd4e3eed18bffd3))
+* **skills:** add codexloop and geminiloop review-bot loops ([#50](https://github.com/oleg-koval/agent-skills/issues/50)) ([5179689](https://github.com/oleg-koval/agent-skills/commit/51796894b4af73321a857af7ff085440c505ec33))
+* **skills:** auto-generate 2026-07-31 [weekly-pattern-learner] ([#46](https://github.com/oleg-koval/agent-skills/issues/46)) ([0d86f68](https://github.com/oleg-koval/agent-skills/commit/0d86f6880f04c08d0fc6f507b850b70214b6c190))
+
+
+### 🛠 Builds
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 1 update ([#48](https://github.com/oleg-koval/agent-skills/issues/48)) ([24e0056](https://github.com/oleg-koval/agent-skills/commit/24e0056d1dfcb8f797de55aa28afaab9e9b90e85))
+
+# [1.25.0](https://github.com/oleg-koval/agent-skills/compare/v1.24.0...v1.25.0) (2026-07-31)
+
+
+### ✨ Features
+
+* **software-development:** add pr-finalize skill ([2c7b10c](https://github.com/oleg-koval/agent-skills/commit/2c7b10ce642192457cb45e24a91d2b1285ba0218))
+
 # [1.24.0](https://github.com/oleg-koval/agent-skills/compare/v1.23.0...v1.24.0) (2026-07-28)
 
 
