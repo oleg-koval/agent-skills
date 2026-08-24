@@ -767,6 +767,30 @@
       ]
     },
     {
+      "name": "wrap-up",
+      "lookupName": "olko:wrap-up",
+      "category": "software-development",
+      "path": "packages/software-development/wrap-up",
+      "description": "Verify a completed task against its original objective, confirm applicable checks, and safely tidy task-owned artifacts, worktrees, and local branches.",
+      "tags": [
+        "delivery",
+        "verification",
+        "cleanup",
+        "git",
+        "worktrees",
+        "release-hygiene"
+      ],
+      "adapters": [
+        "codex",
+        "claude",
+        "cursor",
+        "copilot",
+        "windsurf",
+        "kiro",
+        "grok"
+      ]
+    },
+    {
       "name": "ai-tools-setup",
       "lookupName": "olko:ai-tools-setup",
       "category": "software-development",

@@ -41,6 +41,7 @@ Available reusable prompt files:
 - codexloop: .github/prompts/codexloop.prompt.md
 - geminiloop: .github/prompts/geminiloop.prompt.md
 - add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
+- wrap-up: .github/prompts/wrap-up.prompt.md
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
 - changelog-generator: .github/prompts/changelog-generator.prompt.md
 - wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md
