@@ -293,8 +293,8 @@ See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
 ```text
 agent-skills/
 ├── packages/
-│   ├── software-development/   (22 skills)
-│   ├── marketing/              (2 skills)
+│   ├── software-development/   (39 skills)
+│   ├── marketing/              (3 skills)
 │   ├── music/                  (1 skill)
 │   └── photography/            (1 skill)
 ├── catalog/

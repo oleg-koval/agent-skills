@@ -56,7 +56,7 @@ Prefer a persistent container when Docker is healthy. If Docker is unavailable o
 - keep secrets in a protected environment file, never in source, shell history, logs, or reports;
 - build and run the production application before configuring automation.
 
-Record the actual path, runtime, port, service user, and rollback/restart command.
+Before applying any persistent setup, credential or permission changes, enabling the scheduler, or performing Telegram delivery or test actions, require explicit owner confirmation for that specific action. If confirmation is absent, default to a no-op and do not perform the action. Record the confirmation outcome alongside the actual path, runtime, port, service user, and rollback/restart command.
 
 ### 3. Configure SerpBear
 
@@ -73,9 +73,9 @@ Keyword seed examples should be generated from the target site's actual language
 
 Use a Google Cloud service account created for this integration:
 
-1. Create a JSON key in the service account's **Keys** tab.
+1. Create a JSON key in the service account's **Keys** tab. Keyless authentication is preferred when supported; otherwise document owner-approved rotation schedule, replacement procedure in SerpBear, and immediate disable/delete revocation steps for compromised or retired JSON keys.
 2. Enable the Google Search Console API in that same Cloud project.
-3. Add the service account's `client_email` as a **Full** user on the exact Search Console property.
+3. Add the service account's `client_email` as a **Restricted** user (with read-only access) on the exact Search Console property, retaining the existing `webmasters.readonly` scope and query-validation steps.
 4. Enter `client_email` and the JSON `private_key` into SerpBear through its protected settings UI.
 5. Match the property type precisely:
    - Domain property → `sc-domain:example.com`.
@@ -101,7 +101,7 @@ Use a reusable project-local script or the target runtime's equivalent for repea
 
 For HTML pages, inspect status, title, meta description, canonical, and accidental `noindex`. For robots and sitemap, inspect status, content type, parseability, and sitemap URL count. Do not infer indexation from a 200 response; use Search Console for index status.
 
-Write a JSON report with timestamp, checked URLs, status, latency, issue list, sitemap count, and artifact paths. Logs must be structured and must not contain credentials or full secret-bearing request data.
+Before saving artifacts, sanitize HTTP response headers and body fields by removing session-bearing Set-Cookie values and personal data. Restrict artifact file permissions to owner-read-write only and enforce bounded retention with automatic deletion of artifacts older than the documented retention period. Write a JSON report with timestamp, checked URLs, status, latency, issue list, sitemap count, and artifact paths using only sanitized data. Logs must be structured and must not contain credentials or full secret-bearing request data.
 
 ### 6. Schedule and alert
 
