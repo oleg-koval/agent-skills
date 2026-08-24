@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/oleg-koval/agent-skills/compare/v1.33.0...v1.34.0) (2026-08-24)
+
+
+### ✨ Features
+
+* **skills:** add cross-agent retro analysis skill ([#56](https://github.com/oleg-koval/agent-skills/issues/56)) ([be0cd25](https://github.com/oleg-koval/agent-skills/commit/be0cd25d3db403a33ae938660ca7a1a964cb9e86))
+
 # [1.33.0](https://github.com/oleg-koval/agent-skills/compare/v1.32.0...v1.33.0) (2026-08-24)
 
 
