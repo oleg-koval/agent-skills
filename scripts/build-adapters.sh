@@ -125,13 +125,17 @@ for (const skill of catalog.skills) {
     writeFileSync(join(destDir, 'SKILL.md'), wrap(fm, body))
     copyResources(skill, destDir)
   }
-  if (skill.adapters.includes('codex')) {
-    const dir = join(root, 'adapters', 'codex', skill.plugin.name)
+  // codex, pi and hermes are pointer adapters: one README per plugin listing the
+  // canonical skills, rather than a copy of each SKILL.md.
+  for (const target of ['codex', 'pi', 'hermes']) {
+    if (!skill.adapters.includes(target)) continue
+    const label = { codex: 'Codex', pi: 'Pi', hermes: 'Hermes' }[target]
+    const dir = join(root, 'adapters', target, skill.plugin.name)
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, 'README.md'), [
-      generatedHeader, '', `# Codex adapter: ${skill.plugin.name}`, '',
+      generatedHeader, '', `# ${label} adapter: ${skill.plugin.name}`, '',
       'Use the canonical skills directly:', '',
-      ...skill.plugin.skills.filter((s) => s.adapters.includes('codex'))
+      ...skill.plugin.skills.filter((s) => s.adapters.includes(target))
         .map((s) => `- \`${s.path}/SKILL.md\``),
       '',
     ].join('\n'))
