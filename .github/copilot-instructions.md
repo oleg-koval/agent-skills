@@ -51,7 +51,6 @@ Available reusable prompt files:
 - pr-to-green: .github/prompts/pr-to-green.prompt.md
 - dependabot-triage: .github/prompts/dependabot-triage.prompt.md
 - store-listing-copy: .github/prompts/store-listing-copy.prompt.md
-- pr-finalize-complete: .github/prompts/pr-finalize-complete.prompt.md
 - morning-routine: .github/prompts/morning-routine.prompt.md
 - release-day: .github/prompts/release-day.prompt.md
 - branch-cleanup: .github/prompts/branch-cleanup.prompt.md

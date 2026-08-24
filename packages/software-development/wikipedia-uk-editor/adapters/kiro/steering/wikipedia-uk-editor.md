@@ -42,7 +42,6 @@ A single deliverable written to a scratch file and echoed in chat:
 | "what should I edit next" | **Plan** — read `references/strategy.md`, propose a ranked list |
 
 When a newcomer task type is given, it **overrides** the state-based guess above. The per-type scope contract in `references/newcomer-tasks.md` is binding — an assigned type is a ceiling on what the edit may touch, not a floor.
-Structured newcomer tasks `link-recommendation`, `image-recommendation`, and `section-image-recommendation` are unsupported: decline them before mode selection and do not draft or propose an edit.
 
 Resolve the title first — `scripts/wiki.sh` handles redirects. Never draft against the wrong title.
 
@@ -93,7 +92,7 @@ Run every item. Report failures rather than hiding them.
 
 ### 6. Deliver
 
-For existing-article modes — Expand, Source, Cleanup, and newcomer tasks `copyedit`, `links`, `references`, and `update` — fetch the current wikitext, apply the changes programmatically (a small Python pass over the fetched file, asserting each anchor string matched exactly once), and write the whole resulting article out. Verify it before delivering — section list intact, every intended change landed, nothing else dropped.
+For Expand / Source / Cleanup: fetch the current wikitext, apply the changes programmatically (a small Python pass over the fetched file, asserting each anchor string matched exactly once), and write the whole resulting article out. Verify it before delivering — section list intact, every intended change landed, nothing else dropped.
 
 Write the draft to a scratch file: the raw `.wiki` file contains nothing but article wikitext (the full final article, ready to paste over the whole edit box); the human-readable explanation of what changed goes in a separate `.md`. Print the edit summary, and tell the human exactly where to paste it:
 

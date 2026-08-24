@@ -52,7 +52,6 @@
     "./packages/software-development/pr-to-green",
     "./packages/software-development/dependabot-triage",
     "./packages/software-development/store-listing-copy",
-    "./packages/software-development/pr-finalize-complete",
     "./packages/software-development/morning-routine",
     "./packages/software-development/release-day",
     "./packages/software-development/branch-cleanup",

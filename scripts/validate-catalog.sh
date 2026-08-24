@@ -36,6 +36,17 @@ const adapterFiles = {
 
 const catalog = JSON.parse(fs.readFileSync('catalog/skills.json', 'utf8'))
 const packagesByName = new Map(catalog.packages.map((pkg) => [pkg.name, pkg]))
+if (packagesByName.size !== catalog.packages.length) {
+  const counts = new Map()
+  for (const pkg of catalog.packages) {
+    counts.set(pkg.name, (counts.get(pkg.name) || 0) + 1)
+  }
+  const dupes = [...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name)
+  throw new Error(
+    `catalog/skills.json has duplicate package names: ${dupes.join(', ')}\n` +
+    '  A duplicate inflates the public skill count and shadows the first entry.'
+  )
+}
 const claudeManifest = JSON.parse(fs.readFileSync('.claude-plugin/marketplace.json', 'utf8'))
 const claudePluginManifest = JSON.parse(fs.readFileSync('.claude-plugin/plugin.json', 'utf8'))
 const cursorManifest = JSON.parse(fs.readFileSync('.cursor-plugin/index.json', 'utf8'))
