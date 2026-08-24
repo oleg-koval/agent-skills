@@ -1,0 +1,5 @@
+{
+  "name": "olko-wrap-up",
+  "description": "Verify a completed task against its original objective, confirm applicable checks, and safely tidy task-owned artifacts, worktrees, and local branches.",
+  "skills": "./skills"
+}
