@@ -155,6 +155,13 @@ for (const file of ['.cursor-plugin/index.json', '.grok-plugin/index.json']) {
 // No stale pre-restructure tree.
 if (existsSync('packages')) throw new Error('stale packages/ directory still exists')
 if (existsSync('collections')) throw new Error('stale collections/ directory still exists')
+if (existsSync('.claude-plugin/plugin.json')) {
+  throw new Error(
+    'stale root .claude-plugin/plugin.json exists\n' +
+    '  The repo root is no longer a single plugin. Each plugin has its own manifest at\n' +
+    '  plugins/<plugin>/.claude-plugin/plugin.json, and marketplace.json lists them.'
+  )
+}
 
 console.log(`catalog validation passed: ${catalog.plugins.length} plugins, ${catalog.skills.length} skills`)
 EOF
