@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-49-2563eb" alt="49 skills">
+    <img src="https://img.shields.io/badge/skills-48-2563eb" alt="48 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -17,11 +17,11 @@ These skills are opinionated by design. They encode working defaults, preferred 
 
 ## Structure
 
-- `packages/` — canonical skill packages organized by category
-- `catalog/` — machine-readable inventory
-- `collections/` — grouped package bundles
-- `scripts/` — sync and validation helpers
-- `site/` — generator for the browsable catalog at [skills.olegkoval.com](https://skills.olegkoval.com) (`npm run build:site`)
+- `plugins/olko-{plugin}/skills/{skill}/`: canonical skill packages, one per plugin
+- `catalog/skills.json`: machine-readable inventory, the source of truth
+- `adapters/`: generated per-tool wrappers (Claude, Codex, Cursor, Grok, Pi, Hermes)
+- `scripts/`: sync, build, and validation helpers
+- `site/`: generator for the browsable catalog at [skills.olegkoval.com](https://skills.olegkoval.com) (`npm run build:site`)
 
 ## Principles
 
@@ -62,11 +62,23 @@ The repository includes a generated Claude marketplace manifest at `.claude-plug
 /plugin marketplace add oleg-koval/agent-skills
 ```
 
-Then install the catalog plugin:
+Then install any of the eleven plugins by name:
 
 ```text
-/plugin install olko-agent-skills@olko-agent-skills
+/plugin install olko-github-pr@olko-agent-skills
+/plugin install olko-git-tools@olko-agent-skills
+/plugin install olko-release@olko-agent-skills
+/plugin install olko-product@olko-agent-skills
+/plugin install olko-skill-meta@olko-agent-skills
+/plugin install olko-reflection@olko-agent-skills
+/plugin install olko-obsidian@olko-agent-skills
+/plugin install olko-apple-kit@olko-agent-skills
+/plugin install olko-garmin-kit@olko-agent-skills
+/plugin install olko-creative@olko-agent-skills
+/plugin install olko-web-ops@olko-agent-skills
 ```
+
+Install only the plugins you need; each is independent.
 
 **For local development:**
 
@@ -134,88 +146,139 @@ Copy the relevant `.kiro/steering/{skill-name}.md` into your project's `.kiro/st
 Skills are plain Markdown. Use the canonical package file directly:
 
 ```text
-packages/{category}/{skill}/SKILL.md
+plugins/{plugin}/skills/{skill}/SKILL.md
 ```
 
 </details>
 
-## All 49 Skills
+## All 48 Skills
 
-Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session.
+Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
-### Software development (43)
+### olko-github-pr (11)
 
-| Skill | What it does | Use when |
-|-------|-------------|----------|
-| [add-to-my-skills](packages/software-development/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
-| [wrap-up](packages/software-development/wrap-up/SKILL.md) | Verifies a completed task against its original objective, confirms applicable checks, and safely tidies task-owned artifacts, worktrees, and local branches | Periodic or end-of-task delivery and cleanup review |
-| [retro-analysis](packages/software-development/retro-analysis/SKILL.md) | Produces repository, comparison, and cross-project retrospectives from delivery, code-quality, work-pattern, and trend evidence | Recurring engineering retrospective or “what did we ship?” analysis |
-| [ai-tools-setup](packages/software-development/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit — installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine or diagnosing broken integrations |
-| [apple-store-submit](packages/software-development/apple-store-submit/SKILL.md) | Handles App Store rejection emails end-to-end — parses rejection reasons, creates a fix plan, implements code changes, and prepares resubmission | Responding to App Store rejections for privacy strings, entitlements, or guideline violations |
-| [changelog-generator](packages/software-development/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, app store update descriptions, or a public changelog |
-| [ci-fix-loop](packages/software-development/ci-fix-loop/SKILL.md) | Diagnoses GitHub Actions CI failures in a loop: fetches failing check logs, applies a targeted fix, pushes, and waits for the next run — repeating until green or a blocker needs a human | CI is red after a push and you want it driven to green automatically |
-| [cloudflare-block-countries](packages/software-development/cloudflare-block-countries/SKILL.md) | Blocks specific countries via Cloudflare WAF Custom Rules using the API | Geo-blocking traffic or setting up WAF country rules across single or multiple zones |
-| [coderabbitloop](packages/software-development/coderabbitloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings, reading each inline comment's own Prompt for AI Agents block, replying to the thread, and resolving it | Fully addressing a PR against CodeRabbit's review before merging |
-| [codexloop](packages/software-development/codexloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved OpenAI Codex comments, but verifies each finding against the real code first and rebuts false positives instead of editing correct code | Clearing a Codex review without cargo-culting its suggestions |
-| [crash-course](packages/software-development/crash-course/SKILL.md) | Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes | Ramping up on an unfamiliar codebase, project, or concept under time pressure |
-| [docs-index-keeper](packages/software-development/docs-index-keeper/SKILL.md) | Keeps a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows | A repo has `docs/` and needs `docs/README.md` updated automatically |
-| [geminiloop](packages/software-development/geminiloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments, treating each as a claim to verify — fixing the correct ones and rebutting the rest with evidence | Clearing a Gemini Code Assist review whose findings need checking first |
-| [gh-cli](packages/software-development/gh-cli/SKILL.md) | Guides GitHub CLI usage for repos, PRs, Actions, releases, issues, and all related GitHub operations | Working with GitHub from the command line and needing reliable `gh` commands |
-| [git-commit](packages/software-development/git-commit/SKILL.md) | Creates conventional commits with diff-aware staging and message generation | Asking to commit changes or wanting a conventional commit message from the current diff |
-| [lekker-review](packages/software-development/lekker-review/SKILL.md) | Runs a FAANG-quality PR review in an isolated worktree: 5 parallel specialist agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings (Claude Code only — needs the Workflow tool) | Reviewing a GitHub PR beyond what a single-pass review or a bot reviewer catches |
-| [macos-menubar-app](packages/software-development/macos-menubar-app/SKILL.md) | Builds a production-quality macOS menubar or notch app in SwiftUI — MenuBarExtra setup, sandbox entitlements, keyboard shortcuts, sound effects | Building a native macOS utility that lives in the menu bar or Dynamic Island notch |
-| [mvp-oneshot](packages/software-development/mvp-oneshot/SKILL.md) | Takes a rough product idea and produces a scoped, testable MVP plan and initial implementation in a single pass | Going from idea to a shippable one-week MVP without losing scope |
-| [obsidian-pr-sync](packages/software-development/obsidian-pr-sync/SKILL.md) | Fetches open GitHub PRs assigned to you or requesting review and writes a grouped age-sorted section into today's Obsidian daily note | Syncing GitHub review queue to Obsidian at the start of the day or on demand |
-| [obsidian-task-rollover](packages/software-development/obsidian-task-rollover/SKILL.md) | Migrates unchecked tasks from today's Obsidian daily note to the next workday under `## Carried over` | End-of-day bullet-journal task migration |
-| [open-source-publisher](packages/software-development/open-source-publisher/SKILL.md) | Prepares an open-source repository for public publishing with branding, CI/CD, and release hygiene | Releasing a private project publicly with proper GitHub Pages, README, and social preview |
-| [product-builder](packages/software-development/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | Building a complete app, SaaS, dashboard, or product rather than a prototype |
-| [pr-description-writer](packages/software-development/pr-description-writer/SKILL.md) | Drafts and posts a GitHub PR title and body from git diff and commit history, respecting existing PR templates | Opening a PR after pushing a branch or wanting a structured PR description written automatically |
-| [pr-finalize](packages/software-development/pr-finalize/SKILL.md) | Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment, verifies unit and E2E coverage really exists, and runs the repo's own lint/format/test gates before pushing | Finalizing a PR, clearing all outstanding review comments, or getting a branch merge-ready in one pass |
-| [promptctl](packages/software-development/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, review, scoring, or reusable prompt workflows |
-| [qodoloop](packages/software-development/qodoloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved Qodo findings, reading each finding's own Agent Prompt, replying to the thread, and resolving it | Fully addressing a PR against Qodo's code review before merging |
-| [relay](packages/software-development/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
-| [review-past-performance](packages/software-development/review-past-performance/SKILL.md) | Pulls 24h of ICM memories, git history, and skill analytics; detects repeated mistakes and slow workflows; proposes 1-3 concrete fixes | Daily self-improvement loop or codifying a repeated workflow |
-| [self-critique](packages/software-development/self-critique/SKILL.md) | Adversarially critiques your own last answer: spawns a critic agent that verifies claims against live sources, then loops until satisfied and reports where you were wrong | Checking a substantial answer before the user has to |
-| [shared-knowledge-artifact](packages/software-development/shared-knowledge-artifact/SKILL.md) | Builds a shared, self-persisting knowledge ledger as a Claude Artifact — a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons and append to them | Giving multiple agents one place to learn from each other instead of repeating the same mistakes |
-| [semantic-release-beta](packages/software-development/semantic-release-beta/SKILL.md) | Sets up `semantic-release` with stable `main` releases and beta prereleases on a `beta` branch | A Node package needs stable npm publishing plus beta prereleases |
-| [skill-budget-audit](packages/software-development/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow — identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
-| [starter-rules](packages/software-development/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
-| [wikipedia-uk-editor](packages/software-development/wikipedia-uk-editor/SKILL.md) | Drafts policy-compliant Ukrainian Wikipedia edits — en→uk translation, stub expansion, sourcing, backlog cleanup — returning ready-to-paste wikitext, an edit summary, and a verified source list | Editing, translating, or sourcing a uk.wikipedia.org article, or planning what to contribute next |
-| [pr-finalize-complete](packages/software-development/pr-finalize-complete/SKILL.md) | Confirms a PR is genuinely merge-ready when the work is believed done: re-checks each finding against current code, separates stale comments from fixed ones, and runs the real lint/test gates before reporting | A branch owner says it's already fixed and you need that verified rather than assumed |
-| [pr-to-green](packages/software-development/pr-to-green/SKILL.md) | Orchestrates a GitHub PR from first push to merge-ready: runs ci-fix-loop until checks are green, detects active AI review bots, runs qodoloop and coderabbitloop in sequence, and confirms zero unresolved threads | Driving a PR to merge-ready in one pass without manually chaining the fix loops |
-| [dependabot-triage](packages/software-development/dependabot-triage/SKILL.md) | Triages open Dependabot and Renovate PRs in bulk: classifies by risk tier, auto-approves safe patch bumps, flags breaking major upgrades for human review, and posts a digest | Clearing a backlog of dependency update PRs during a maintenance window |
-| [store-listing-copy](packages/software-development/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
-| [pr-finalize-complete](packages/software-development/pr-finalize-complete/SKILL.md) | Comprehensive PR finalization for branches that may already be partially addressed: checks each review comment's actual current status in code, distinguishes fixed vs. stale vs. still-present findings, verifies test coverage, and runs real lint/test gates | Confirming a PR is genuinely merge-ready when review tools show findings that may already be fixed |
-| [morning-routine](packages/software-development/morning-routine/SKILL.md) | Runs the complete start-of-day setup in one pass: rolls over unfinished Obsidian tasks, syncs open GitHub PRs into today's daily note, and sweeps safe Dependabot patch bumps | Starting the workday by chaining obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage in sequence |
-| [release-day](packages/software-development/release-day/SKILL.md) | Orchestrates a full release-day workflow for iOS, Android, or Garmin apps: verifies CI is green, generates a changelog, drafts store listing copy, triggers semantic-release or tags manually, waits for the build, and queues the App Store submission | Cutting a release from "code is ready" to "build submitted" in one orchestrated pass |
-| [branch-cleanup](packages/software-development/branch-cleanup/SKILL.md) | Prunes stale git branches after a merge wave: deletes closed/merged remote branches, removes local tracking refs that no longer exist on the remote, and optionally cleans up merged local branches | Tidying up after a Dependabot triage batch merge or a sprint wind-down |
-| [vinted-listing](packages/software-development/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller’s original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Creating, editing, or publishing a Vinted listing |
-
-### Marketing (3)
+Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
-| [search-console-indexing-audit](packages/marketing/search-console-indexing-audit/SKILL.md) | Audits Google Search Console Coverage exports against sitemap, robots, canonical, redirect, and noindex signals | Diagnosing GSC indexing issues such as redirects, canonical alternates, and discovered-but-not-indexed pages |
-| [website-analytics-bootstrap](packages/marketing/website-analytics-bootstrap/SKILL.md) | Sets up persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only SEO audits, and Telegram alerts on a local host or NAS | Bootstrapping SEO analytics and monitoring for a new website |
-| [viral-launch](packages/marketing/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, or creator tool for public launch |
+| [pr-finalize](plugins/olko-github-pr/skills/pr-finalize/SKILL.md) | Drives one GitHub PR to genuinely merge-ready: rebases and resolves conflicts, sweeps every review bot and human comment, verifies unit and E2E coverage really exists, and runs the repo's own lint/format/test gates before pushing | Finalizing a PR, clearing all outstanding review comments, or getting a branch merge-ready in one pass |
+| [pr-finalize-complete](plugins/olko-github-pr/skills/pr-finalize-complete/SKILL.md) | Confirms a PR is genuinely merge-ready when the work is believed done: re-checks each finding against current code, separates stale comments from fixed ones, and runs the real lint/test gates before reporting | A branch owner says it's already fixed and you need that verified rather than assumed |
+| [pr-to-green](plugins/olko-github-pr/skills/pr-to-green/SKILL.md) | Orchestrates a GitHub PR from first push to merge-ready: runs ci-fix-loop until checks are green, detects active AI review bots, runs qodoloop and coderabbitloop in sequence, and confirms zero unresolved threads | Driving a PR to merge-ready in one pass without manually chaining the fix loops |
+| [pr-description-writer](plugins/olko-github-pr/skills/pr-description-writer/SKILL.md) | Drafts and posts a GitHub PR title and body from git diff and commit history, respecting existing PR templates | Opening a PR after pushing a branch or wanting a structured PR description written automatically |
+| [qodoloop](plugins/olko-github-pr/skills/qodoloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved Qodo findings, reading each finding's own Agent Prompt, replying to the thread, and resolving it | Fully addressing a PR against Qodo's code review before merging |
+| [coderabbitloop](plugins/olko-github-pr/skills/coderabbitloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved CodeRabbit findings, reading each inline comment's own Prompt for AI Agents block, replying to the thread, and resolving it | Fully addressing a PR against CodeRabbit's review before merging |
+| [codexloop](plugins/olko-github-pr/skills/codexloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved OpenAI Codex comments, but verifies each finding against the real code first and rebuts false positives instead of editing correct code | Clearing a Codex review without cargo-culting its suggestions |
+| [geminiloop](plugins/olko-github-pr/skills/geminiloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments, treating each as a claim to verify, fixing the correct ones and rebutting the rest with evidence | Clearing a Gemini Code Assist review whose findings need checking first |
+| [ci-fix-loop](plugins/olko-github-pr/skills/ci-fix-loop/SKILL.md) | Diagnoses GitHub Actions CI failures in a loop: fetches failing check logs, applies a targeted fix, pushes, and waits for the next run, repeating until green or a blocker needs a human | CI is red after a push and you want it driven to green automatically |
+| [dependabot-triage](plugins/olko-github-pr/skills/dependabot-triage/SKILL.md) | Triages open Dependabot and Renovate PRs in bulk: classifies by risk tier, auto-approves safe patch bumps, flags breaking major upgrades for human review, and posts a digest | Clearing a backlog of dependency update PRs during a maintenance window |
+| [lekker-review](plugins/olko-github-pr/skills/lekker-review/SKILL.md) | Runs a FAANG-quality PR review in an isolated worktree: 5 parallel specialist agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings (Claude Code only, needs the Workflow tool) | Reviewing a GitHub PR beyond what a single-pass review or a bot reviewer catches |
 
-### Music (1)
+### olko-git-tools (3)
 
-| Skill | What it does | Use when |
-|-------|-------------|----------|
-| [fill-music-player](packages/music/fill-music-player/SKILL.md) | Fills a portable music player with a curated random selection while balancing formats, artists, albums, and capacity | Copying music from a NAS or local library to a Walkman, iPod, USB drive, or similar device |
-
-### Photography (1)
-
-| Skill | What it does | Use when |
-|-------|-------------|----------|
-| [gallery](packages/photography/gallery/SKILL.md) | Creates photo galleries with AI-assisted layout curation and sequencing | Building a gallery from photos or planning photo layout, sequencing, and curation |
-
-### Wearables (1)
+Everyday git and GitHub CLI operations: conventional commits, branch hygiene.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
-| [garmin-watchface](packages/wearables/garmin-watchface/SKILL.md) | Designs, builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face — SVG design proposals, inspiration gathering, layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
+| [git-commit](plugins/olko-git-tools/skills/git-commit/SKILL.md) | Creates conventional commits with diff-aware staging and message generation | Asking to commit changes or wanting a conventional commit message from the current diff |
+| [gh-cli](plugins/olko-git-tools/skills/gh-cli/SKILL.md) | Guides GitHub CLI usage for repos, PRs, Actions, releases, issues, and all related GitHub operations | Working with GitHub from the command line and needing reliable `gh` commands |
+| [branch-cleanup](plugins/olko-git-tools/skills/branch-cleanup/SKILL.md) | Prunes stale git branches after a merge wave: deletes closed/merged remote branches, removes local tracking refs that no longer exist on the remote, and optionally cleans up merged local branches | Tidying up after a Dependabot triage batch merge or a sprint wind-down |
+
+### olko-release (5)
+
+Ship a release: semantic-release setup, changelogs, store listing copy, release-day routine.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [semantic-release-beta](plugins/olko-release/skills/semantic-release-beta/SKILL.md) | Sets up `semantic-release` with stable `main` releases and beta prereleases on a `beta` branch | A Node package needs stable npm publishing plus beta prereleases |
+| [open-source-publisher](plugins/olko-release/skills/open-source-publisher/SKILL.md) | Prepares an open-source repository for public publishing with branding, CI/CD, and release hygiene | Releasing a private project publicly with proper GitHub Pages, README, and social preview |
+| [release-day](plugins/olko-release/skills/release-day/SKILL.md) | Orchestrates a full release-day workflow for iOS, Android, or Garmin apps: verifies CI is green, generates a changelog, drafts store listing copy, triggers semantic-release or tags manually, waits for the build, and queues the App Store submission | Cutting a release from "code is ready" to "build submitted" in one orchestrated pass |
+| [changelog-generator](plugins/olko-release/skills/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, app store update descriptions, or a public changelog |
+| [store-listing-copy](plugins/olko-release/skills/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
+
+### olko-product (4)
+
+Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [product-builder](plugins/olko-product/skills/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | Building a complete app, SaaS, dashboard, or product rather than a prototype |
+| [mvp-oneshot](plugins/olko-product/skills/mvp-oneshot/SKILL.md) | Takes a rough product idea and produces a scoped, testable MVP plan and initial implementation in a single pass | Going from idea to a shippable one-week MVP without losing scope |
+| [starter-rules](plugins/olko-product/skills/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
+| [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, or creator tool for public launch |
+
+### olko-skill-meta (6)
+
+Author and maintain agent skills and the AI toolchain itself.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [add-to-my-skills](plugins/olko-skill-meta/skills/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
+| [skill-budget-audit](plugins/olko-skill-meta/skills/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow, identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
+| [promptctl](plugins/olko-skill-meta/skills/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, review, scoring, or reusable prompt workflows |
+| [ai-tools-setup](plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit, installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine or diagnosing broken integrations |
+| [relay](plugins/olko-skill-meta/skills/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
+| [shared-knowledge-artifact](plugins/olko-skill-meta/skills/shared-knowledge-artifact/SKILL.md) | Builds a shared, self-persisting knowledge ledger as a Claude Artifact, a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons and append to them | Giving multiple agents one place to learn from each other instead of repeating the same mistakes |
+
+### olko-reflection (5)
+
+Look back and improve: self-critique, retrospectives, performance review, rapid learning.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [self-critique](plugins/olko-reflection/skills/self-critique/SKILL.md) | Adversarially critiques your own last answer: spawns a critic agent that verifies claims against live sources, then loops until satisfied and reports where you were wrong | Checking a substantial answer before the user has to |
+| [review-past-performance](plugins/olko-reflection/skills/review-past-performance/SKILL.md) | Pulls 24h of ICM memories, git history, and skill analytics; detects repeated mistakes and slow workflows; proposes 1-3 concrete fixes | Daily self-improvement loop or codifying a repeated workflow |
+| [retro-analysis](plugins/olko-reflection/skills/retro-analysis/SKILL.md) | Produces repository, comparison, and cross-project retrospectives from delivery, code-quality, work-pattern, and trend evidence | Recurring engineering retrospective or “what did we ship?” analysis |
+| [crash-course](plugins/olko-reflection/skills/crash-course/SKILL.md) | Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes | Ramping up on an unfamiliar codebase, project, or concept under time pressure |
+| [wrap-up](plugins/olko-reflection/skills/wrap-up/SKILL.md) | Verifies a completed task against its original objective, confirms applicable checks, and safely tidies task-owned artifacts, worktrees, and local branches | Periodic or end-of-task delivery and cleanup review |
+
+### olko-obsidian (3)
+
+Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [obsidian-pr-sync](plugins/olko-obsidian/skills/obsidian-pr-sync/SKILL.md) | Fetches open GitHub PRs assigned to you or requesting review and writes a grouped age-sorted section into today's Obsidian daily note | Syncing GitHub review queue to Obsidian at the start of the day or on demand |
+| [obsidian-task-rollover](plugins/olko-obsidian/skills/obsidian-task-rollover/SKILL.md) | Migrates unchecked tasks from today's Obsidian daily note to the next workday under `## Carried over` | End-of-day bullet-journal task migration |
+| [morning-routine](plugins/olko-obsidian/skills/morning-routine/SKILL.md) | Runs the complete start-of-day setup in one pass: rolls over unfinished Obsidian tasks, syncs open GitHub PRs into today's daily note, and sweeps safe Dependabot patch bumps | Starting the workday by chaining obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage in sequence |
+
+### olko-apple-kit (2)
+
+Build and ship Apple platform apps: macOS menubar apps, App Store submissions.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [apple-store-submit](plugins/olko-apple-kit/skills/apple-store-submit/SKILL.md) | Handles App Store rejection emails end-to-end, parses rejection reasons, creates a fix plan, implements code changes, and prepares resubmission | Responding to App Store rejections for privacy strings, entitlements, or guideline violations |
+| [macos-menubar-app](plugins/olko-apple-kit/skills/macos-menubar-app/SKILL.md) | Builds a production-quality macOS menubar or notch app in SwiftUI, MenuBarExtra setup, sandbox entitlements, keyboard shortcuts, sound effects | Building a native macOS utility that lives in the menu bar or Dynamic Island notch |
+
+### olko-garmin-kit (1)
+
+Build, test and publish Garmin Connect IQ watch faces.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [garmin-watchface](plugins/olko-garmin-kit/skills/garmin-watchface/SKILL.md) | Designs, builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face, SVG design proposals, inspiration gathering, layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
+
+### olko-creative (4)
+
+Creative and personal projects: photo galleries, music players, listings, wiki editing.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [gallery](plugins/olko-creative/skills/gallery/SKILL.md) | Creates photo galleries with AI-assisted layout curation and sequencing | Building a gallery from photos or planning photo layout, sequencing, and curation |
+| [fill-music-player](plugins/olko-creative/skills/fill-music-player/SKILL.md) | Fills a portable music player with a curated random selection while balancing formats, artists, albums, and capacity | Copying music from a NAS or local library to a Walkman, iPod, USB drive, or similar device |
+| [vinted-listing](plugins/olko-creative/skills/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller’s original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Creating, editing, or publishing a Vinted listing |
+| [wikipedia-uk-editor](plugins/olko-creative/skills/wikipedia-uk-editor/SKILL.md) | Drafts policy-compliant Ukrainian Wikipedia edits, en→uk translation, stub expansion, sourcing, backlog cleanup, returning ready-to-paste wikitext, an edit summary, and a verified source list | Editing, translating, or sourcing a uk.wikipedia.org article, or planning what to contribute next |
+
+### olko-web-ops (4)
+
+Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.
+
+| Skill | What it does | Use when |
+|-------|-------------|----------|
+| [cloudflare-block-countries](plugins/olko-web-ops/skills/cloudflare-block-countries/SKILL.md) | Blocks specific countries via Cloudflare WAF Custom Rules using the API | Geo-blocking traffic or setting up WAF country rules across single or multiple zones |
+| [search-console-indexing-audit](plugins/olko-web-ops/skills/search-console-indexing-audit/SKILL.md) | Audits Google Search Console Coverage exports against sitemap, robots, canonical, redirect, and noindex signals | Diagnosing GSC indexing issues such as redirects, canonical alternates, and discovered-but-not-indexed pages |
+| [docs-index-keeper](plugins/olko-web-ops/skills/docs-index-keeper/SKILL.md) | Keeps a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows | A repo has `docs/` and needs `docs/README.md` updated automatically |
+| [website-analytics-bootstrap](plugins/olko-web-ops/skills/website-analytics-bootstrap/SKILL.md) | Sets up persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only SEO audits, and Telegram alerts on a local host or NAS | Bootstrapping SEO analytics and monitoring for a new website |
 
 ## How to use skills
 
@@ -241,7 +304,7 @@ Use the olko:add-to-my-skills skill to copy a skill from another repo into this 
 Use the olko:viral-launch skill to make this project launch-ready.
 ```
 
-Each package has a canonical `SKILL.md` under `packages/{category}/{skill}/`. Agent-specific wrappers live under that package's `adapters/` directory.
+Each skill has a canonical `SKILL.md` under `plugins/{plugin}/skills/{skill}/`. Agent-specific wrappers live under that plugin's `adapters/` directory.
 
 When adding or changing a skill:
 
@@ -251,37 +314,60 @@ When adding or changing a skill:
 4. Update `catalog/skills.json` if the skill name, category, description, path, tags, or adapters change.
 5. Run local validation before publishing changes.
 
-## Root manifests
+## Generated manifests
 
 | Harness | File | Format |
 |---------|------|--------|
-| Claude Code | `.claude-plugin/marketplace.json` | Marketplace plugin registry |
-| Claude Code | `.claude-plugin/plugin.json` | Plugin manifest |
+| Claude Code | `.claude-plugin/marketplace.json` | Marketplace registry listing all 11 plugins |
+| Claude Code | `plugins/<plugin>/.claude-plugin/plugin.json` | Per-plugin manifest, one per plugin |
+| Claude Code | `adapters/claude/<plugin>/` | Per-plugin skill copies |
 | Cursor | `.cursor-plugin/index.json` | Plugin index |
-| Grok | `.grok-plugin/index.json` | Plugin index (plus `.claude-plugin/` compatibility) |
+| Cursor | `adapters/cursor/<plugin>/` | Per-plugin skill copies |
+| Grok | `.grok-plugin/index.json` | Plugin index |
+| Grok | `adapters/grok/<plugin>/` | Per-plugin skill copies |
+| Codex | `adapters/codex/<plugin>/README.md` | Pointer to the canonical skills |
+| Pi | `adapters/pi/<plugin>/README.md` | Pointer to the canonical skills |
+| Hermes | `adapters/hermes/<plugin>/README.md` | Pointer to the canonical skills |
 | GitHub Copilot | `.github/copilot-instructions.md` | Repository instructions |
 | GitHub Copilot | `.github/prompts/*.prompt.md` | Per-skill prompt files |
 | Windsurf | `.windsurf/rules/*.md` | Cascade rules |
 | Kiro | `.kiro/steering/*.md` | Steering documents |
 
-All root manifests are generated from `catalog/skills.json` by `./scripts/build-adapters.sh`.
+Every file above is generated from `catalog/skills.json` by `./scripts/build-adapters.sh`.
+Never edit one by hand: CI regenerates and fails on any difference.
+
+Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
+decides which targets it ships to, so the file counts differ per target: Claude 48, Grok 46,
+Cursor 44, Copilot 44, Codex 41, Windsurf 34, Kiro 34, Pi 2, Hermes 2. A skill is absent from a
+target's tree when its catalog entry does not list that target.
 
 ## How Skills Work
 
 Every package follows a consistent anatomy:
 
 ```text
-packages/{category}/{skill}/
+plugins/{plugin}/skills/{skill}/
 ├── SKILL.md              # Required canonical skill definition
-├── references/           # Optional supporting material loaded only when needed
-└── adapters/             # Agent-specific wrappers (all generated by build-adapters.sh)
-    ├── codex/
-    ├── claude/
-    ├── cursor/
-    ├── grok/
-    ├── windsurf/
-    └── kiro/
+└── references/           # Optional supporting material loaded only when needed
 ```
+
+Agent-specific wrappers do not live inside the skill directory. They are
+generated at the top level, one tree per tool, mirroring the same
+plugin/skill path underneath:
+
+```text
+adapters/
+├── claude/{plugin}/skills/{skill}/
+├── codex/{plugin}/skills/{skill}/
+├── cursor/{plugin}/skills/{skill}/
+├── grok/{plugin}/skills/{skill}/
+├── pi/{plugin}/skills/{skill}/
+└── hermes/{plugin}/skills/{skill}/
+```
+
+Windsurf, Kiro, and Copilot do not use `adapters/`; they get their own
+top-level generated directories (`.windsurf/rules/`, `.kiro/steering/`,
+`.github/prompts/` and `.github/copilot-instructions.md`).
 
 Key design choices:
 
@@ -295,19 +381,34 @@ See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
 
 ```text
 agent-skills/
-├── packages/
-│   ├── software-development/   (43 skills)
-│   ├── marketing/              (3 skills)
-│   ├── music/                  (1 skill)
-│   └── photography/            (1 skill)
+├── plugins/
+│   └── olko-{plugin}/
+│       ├── .claude-plugin/plugin.json   # generated
+│       └── skills/{skill}/
+│           ├── SKILL.md
+│           └── references/
 ├── catalog/
-├── collections/
+│   └── skills.json                      # source of truth
+├── adapters/                            # generated, one tree per tool
+│   ├── claude/
+│   ├── codex/
+│   ├── cursor/
+│   ├── grok/
+│   ├── pi/
+│   └── hermes/
+├── .claude-plugin/marketplace.json      # generated
+├── .cursor-plugin/index.json            # generated
+├── .grok-plugin/index.json              # generated
+├── .windsurf/rules/                     # generated
+├── .kiro/steering/                      # generated
+├── .github/prompts/                     # generated
+├── .github/copilot-instructions.md      # generated
+├── docs/
+│   ├── backlog/
+│   └── plans/completed/
 ├── scripts/
-├── .claude-plugin/
-├── .cursor-plugin/
-├── .github/prompts/
-├── .windsurf/rules/
-└── .kiro/steering/
+├── site/
+└── tests/
 ```
 
 ## Local validation

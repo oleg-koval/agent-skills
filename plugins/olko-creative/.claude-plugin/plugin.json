@@ -1,0 +1,12 @@
+{
+  "name": "olko-creative",
+  "description": "Creative and personal projects: photo galleries, music players, listings, wiki editing.",
+  "version": "1.34.0",
+  "author": {
+    "name": "Oleg Koval"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills",
+  "repository": "https://github.com/oleg-koval/agent-skills",
+  "license": "MIT",
+  "skills": "./skills"
+}

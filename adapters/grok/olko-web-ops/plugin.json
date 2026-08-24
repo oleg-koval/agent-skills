@@ -1,0 +1,6 @@
+{
+  "name": "olko-web-ops",
+  "version": "0.1.0",
+  "description": "Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.",
+  "skills": "skills/"
+}

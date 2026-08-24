@@ -1,5 +1,0 @@
-{
-  "name": "olko-garmin-watchface",
-  "description": "Design, build, test, screenshot and publish Garmin Connect IQ watch faces in Monkey C.",
-  "skills": "./skills"
-}

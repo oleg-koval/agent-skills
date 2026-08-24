@@ -11,3 +11,6 @@ node_modules/
 tmp/
 .gstack/
 _site/
+
+# Subagent-driven-development scratch workspace (ledger, briefs, review packages)
+.superpowers/

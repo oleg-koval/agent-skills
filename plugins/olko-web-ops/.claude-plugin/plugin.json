@@ -1,0 +1,12 @@
+{
+  "name": "olko-web-ops",
+  "description": "Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.",
+  "version": "1.34.0",
+  "author": {
+    "name": "Oleg Koval"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills",
+  "repository": "https://github.com/oleg-koval/agent-skills",
+  "license": "MIT",
+  "skills": "./skills"
+}

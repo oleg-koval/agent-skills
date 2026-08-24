@@ -1,0 +1,5 @@
+{
+  "name": "olko-garmin-kit",
+  "description": "Build, test and publish Garmin Connect IQ watch faces.",
+  "skills": "./skills"
+}

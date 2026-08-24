@@ -1,0 +1,12 @@
+{
+  "name": "olko-git-tools",
+  "description": "Everyday git and GitHub CLI operations: conventional commits, branch hygiene.",
+  "version": "1.34.0",
+  "author": {
+    "name": "Oleg Koval"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills",
+  "repository": "https://github.com/oleg-koval/agent-skills",
+  "license": "MIT",
+  "skills": "./skills"
+}

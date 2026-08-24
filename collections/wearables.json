@@ -1,7 +1,0 @@
-{
-  "name": "wearables",
-  "description": "Skills for building software that runs on wearable devices.",
-  "packages": [
-    "garmin-watchface"
-  ]
-}

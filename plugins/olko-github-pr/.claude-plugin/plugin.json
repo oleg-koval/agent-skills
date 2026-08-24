@@ -1,0 +1,12 @@
+{
+  "name": "olko-github-pr",
+  "description": "Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.",
+  "version": "1.34.0",
+  "author": {
+    "name": "Oleg Koval"
+  },
+  "homepage": "https://github.com/oleg-koval/agent-skills",
+  "repository": "https://github.com/oleg-koval/agent-skills",
+  "license": "MIT",
+  "skills": "./skills"
+}

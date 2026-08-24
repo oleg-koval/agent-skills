@@ -1,5 +1,0 @@
-{
-  "name": "olko-git-commit",
-  "description": "Create conventional commits with diff-aware staging and message generation.",
-  "skills": "./skills"
-}
