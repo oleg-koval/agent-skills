@@ -31,7 +31,7 @@ Use a private Artifact page as an optional rendered and editing surface for an a
 
 1. Invoke the `artifact-capabilities` skill — mandatory before declaring `capabilities` or writing any `window.claude.*` code.
 2. Invoke the `artifact-design` skill — calibrates the design treatment.
-3. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory), and read the current repository ledger directly when one exists. **Seed the ledger with 6-10 real lessons already recorded there**. No lorem, no invented examples — a ledger that opens with fake entries never gets used.
+3. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory), and read the current repository ledger directly when one exists. **Seed the ledger with real lessons already recorded there — use 6-10 when that many exist, or all available real lessons if fewer than six are found**. No lorem, no invented examples — a ledger that opens with fake entries never gets used.
 
 ## Authority and reconciliation
 
