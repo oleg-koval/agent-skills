@@ -150,7 +150,25 @@ For `compare` or any window with a prior snapshot:
 
 Store a JSON snapshot with stable keys, UTC timestamps, resolved window, scope, repository identity, commit/PR identifiers, metric values, evidence limitations, and a short list of findings. Keep narrative prose out of fields intended for machine comparison. A snapshot is an aid to future analysis, not a source of truth that overrides current evidence.
 
-## 5. Produce the report
+## 5. Optionally promote durable lessons
+
+This phase is opt-in. A retrospective remains read-only unless the user or the surrounding workflow explicitly requests promotion to the shared ledger. Do not silently turn analysis into a write operation.
+
+Before adding any finding:
+
+1. Locate and read the current shared ledger. When a Git-backed repository ledger exists, read that repository file directly and treat it as authoritative. If it is absent or inaccessible, report `NOT_AVAILABLE` and do not claim that the ledger was checked.
+2. Classify the finding as one of:
+   - `local action` — a project- or task-specific follow-up that belongs in the report or backlog, not the shared ledger.
+   - `lesson` — a durable practice that generalizes across projects.
+   - `trap` — a non-obvious failure mode that can silently produce incorrect work.
+   - `preference` — a stable way the operator wants agents to work.
+3. Promote only non-obvious, durable, cross-project lessons, traps, or preferences. Keep local actions in the retrospective or project task system.
+4. Attach evidence to every promoted finding: a source path, commit, check, or other redacted reference, or the concrete failure that caused the rule. Do not promote an unsupported impression.
+5. Do not duplicate existing project instructions, shared-ledger notes, or behavior already enforced by an automated check. A thin ledger is more useful than a repetitive one.
+
+When promotion is authorized, append new notes using the current ledger schema; never rewrite, reorder, or overwrite existing entries. If no note is justified, append nothing. Report each added note ID, or `NOT_WRITTEN` when no note was added, promotion was not requested, or the ledger could not be safely updated.
+
+## 6. Produce the report
 
 Lead with a concise, shareable summary of the period. Then use this order:
 
@@ -169,7 +187,7 @@ Lead with a concise, shareable summary of the period. Then use this order:
 
 Use compact tables for exact metrics and prose for interpretation. Label inference as inference. Link or name evidence paths/commit IDs where useful, but never paste private content.
 
-## 6. End-of-task handoff
+## 7. End-of-task handoff
 
 If this run is explicitly closing a completed implementation, continue with `olko:wrap-up`:
 
