@@ -19,7 +19,7 @@ metadata:
 
 # shared-knowledge-artifact
 
-Publish one private Artifact page that acts as an append-only knowledge ledger which multiple agents (and the user) read before starting work and write to when reality corrects them. The page **is** the record: it stores its own data and publishes new versions of itself, so nothing depends on a server or on local files.
+Use a private Artifact page as an optional rendered and editing surface for an append-only knowledge ledger. Multiple agents (and the user) can read the lessons before starting work and append corrections afterwards. The Artifact is not universally authoritative: when a repository contains a Git-backed ledger, that repository ledger is the canonical record; the Artifact mirrors it and provides a convenient view or edit surface. Without a Git ledger, the published Artifact state is the durable record for that Artifact.
 
 ## Trigger phrases
 
@@ -32,12 +32,20 @@ Publish one private Artifact page that acts as an append-only knowledge ledger w
 
 1. Invoke the `artifact-capabilities` skill — mandatory before declaring `capabilities` or writing any `window.claude.*` code.
 2. Invoke the `artifact-design` skill — calibrates the design treatment.
-3. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory) and **seed the ledger with 6-10 real lessons already recorded there**. No lorem, no invented examples — a ledger that opens with fake entries never gets used.
+3. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory), and read the current repository ledger directly when one exists. **Seed the ledger with 6-10 real lessons already recorded there**. No lorem, no invented examples — a ledger that opens with fake entries never gets used.
+
+## Authority and reconciliation
+
+- If a Git-backed ledger exists, it is authoritative over the Artifact. Codex and other non-Claude agents must read and update that repository ledger directly; they must not require Artifact access.
+- Before writing either surface, read the current repository ledger and the current Artifact state when both exist. Do not write from a stale page or cached copy.
+- Notes added in the Artifact must be appended back to the Git ledger, using the repository's schema and append-only rules, before they are treated as shared guidance. Record the resulting note ID or the reason it was not written.
+- If the Artifact and Git ledger disagree, preserve both histories but resolve the usable guidance in favor of Git. Refresh or reconcile the Artifact from Git rather than overwriting the repository record.
+- If no Git ledger exists, the Artifact's published `#ledger-state` is authoritative for that Artifact. Do not imply that it is shared with non-Claude agents unless it has been exported to a repository ledger.
 
 ## Persistence mechanism
 
 - Declare `capabilities: {artifact: {}}` at publish time.
-- Store the data as a JSON object inside `<script type="application/json" id="ledger-state">`. That block is the authoritative record; the visible page is **rendered from it** at load. Never serialize the live DOM to save.
+- Store the Artifact surface's data as a JSON object inside `<script type="application/json" id="ledger-state">`. That block is authoritative for the published Artifact version; the visible page is **rendered from it** at load. When a Git ledger exists, this page state remains a mirror and Git remains authoritative overall. Never serialize the live DOM to save.
 - To persist: snapshot `document.documentElement.outerHTML` **once at script start** (pristine source, before any rendering), then on save splice the new JSON into that snapshot's `#ledger-state` block, prepend `<!doctype html>`, and call `artifact.publish(doc)`.
 - Get the namespace with `const artifact = await claude.use("artifact")`; branch on `null` (this view cannot write) and render a read-only state instead of a broken control.
 - Handle publish errors by code: `conflict` means someone published first and every view reloads to the winner — no retry, tell the person to re-add; `not_granted` / `not_writer` means read-only.
@@ -64,7 +72,7 @@ Kinds: **lesson** = a habit that holds; **trap** = something that silently produ
 - Note list, newest first: kind tag, scope tag, author, date, title, body, and a `Why:` line. Kind tags use semantic colour (trap = critical, pref = warning, lesson = accent), separate from the page accent.
 - Scope filter chips derived from the data, including an `all` chip, with `aria-pressed` state.
 - An "Add a note" form (kind, scope, author, title, body, why) that appends to the JSON and publishes, with an inline status line reporting published / conflict / read-only.
-- A "Protocol for agents" section **on the page itself**: read the page with the Artifact tool `action: "read"` before substantive work; parse the `#ledger-state` JSON, never scrape the DOM; **append, don't rewrite**; re-read before writing because another agent may have published since; one fact per note with the failure that caused it. Include the schema snippet.
+- A "Protocol for agents" section **on the page itself**: when a Git ledger exists, read that repository ledger directly before substantive work; Codex and other non-Claude agents must use it directly. Claude agents may read the Artifact with the Artifact tool `action: "read"` as a rendered surface, then parse the `#ledger-state` JSON rather than scraping the DOM. In either case, **append, don't rewrite**, re-read before writing because another agent may have updated the source, and include the failure that caused each note. Include the schema snippet and the Git reconciliation rule.
 - Gatekeeping copy: only non-obvious, durable, cross-cutting lessons. If a repo's `CLAUDE.md` already says it, or a review bot already catches it, leave it out — a littered ledger is worse than a thin one.
 
 ## Design constraints
@@ -78,11 +86,12 @@ Kinds: **lesson** = a habit that holds; **trap** = something that silently produ
 
 ## Deliverable
 
-Write the HTML to a file, publish it with the Artifact tool, then report:
+When an Artifact surface is requested, write the HTML to a file and publish it with the Artifact tool, then report:
 
 - the URL;
 - that it stays private until shared from the page's share menu;
-- the exact instructions another agent needs — read via Artifact `action: "read"` with that URL, and write by appending to `notes` and republishing **with `url` set to that URL** (a publish *without* `url` forks a separate artifact instead of updating this one).
+- the exact instructions another Claude agent needs — read via Artifact `action: "read"` with that URL, and write by appending to `notes` and republishing **with `url` set to that URL** (a publish *without* `url` forks a separate artifact instead of updating this one);
+- when a Git ledger exists, the repository path and the reconciliation result, making clear that other agents should read and write Git directly and that Git wins any disagreement.
 
 ## Notes
 
