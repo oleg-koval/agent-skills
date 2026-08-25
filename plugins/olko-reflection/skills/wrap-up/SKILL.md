@@ -66,20 +66,40 @@ Clean only paths created by this task or explicitly named for cleanup.
 
 ## 6. Report the result
 
-Lead with the outcome. Include concise evidence, cleanup performed, items intentionally preserved, and the smallest next action for any blocker. Always finish with this receipt, using `NOT_APPLICABLE` for out-of-scope gates and `NOT_RUN` for applicable checks that were not executed:
+Lead with the outcome. Use a short `DELIVERY RECEIPT` heading and a one- or
+two-sentence summary before the fields. Add `STATUS`, `NEXT_PHASE`, and
+`NEXT_STEP` near the top when follow-up work remains. Keep the required fields
+flush-left and grouped with one blank line between logical groups, not between
+every field. Keep each value concise and avoid repeating the same prose. Do
+not use Markdown tables, decorative separators, bullets, emojis, or indented
+continuation lines inside the canonical field block. Put `FINAL_STATUS` last.
+Add `LOCAL_COMMIT` when a local commit exists. Always finish with this receipt,
+using `NOT_APPLICABLE` for out-of-scope gates and `NOT_RUN` for applicable
+checks that were not executed:
 
 ```text
+DELIVERY RECEIPT
+
+<short outcome summary>
+STATUS: <DELIVERED | BLOCKED | INTENTIONALLY_UNCHANGED>
+NEXT_PHASE: <next phase or NOT_APPLICABLE>
+NEXT_STEP: <single smallest next action or NOT_APPLICABLE>
+
 OBJECTIVE:
 CHANGED:
 NOT_CHANGED:
+
 TESTS:
 BUILD:
+
 REMOTE:
 PR:
 CI:
 DEPLOYMENT:
 DEVICE_OR_HUMAN_QA:
+
 KNOWN_LIMITATIONS:
+LOCAL_COMMIT: <hash and subject, or NOT_APPLICABLE>
 FINAL_STATUS:
 ```
 
