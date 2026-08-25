@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/oleg-koval/agent-skills/compare/v1.34.0...v1.35.0) (2026-08-25)
+
+
+### ✨ Features
+
+* connect shared learning and readable delivery receipts ([#59](https://github.com/oleg-koval/agent-skills/issues/59)) ([024e561](https://github.com/oleg-koval/agent-skills/commit/024e561f97402899930581e25ff926b9c2a0910c))
+
 # [1.34.0](https://github.com/oleg-koval/agent-skills/compare/v1.33.0...v1.34.0) (2026-08-24)
 
 
