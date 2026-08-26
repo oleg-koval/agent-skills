@@ -1,3 +1,10 @@
+## [1.35.3](https://github.com/oleg-koval/agent-skills/compare/v1.35.2...v1.35.3) (2026-08-26)
+
+
+### 🐛 Bug Fixes
+
+* include generated manifests in releases ([9b4ed08](https://github.com/oleg-koval/agent-skills/commit/9b4ed08aa981504545be126e73547e86e3dd84c6))
+
 ## [1.35.2](https://github.com/oleg-koval/agent-skills/compare/v1.35.1...v1.35.2) (2026-08-26)
 
 
