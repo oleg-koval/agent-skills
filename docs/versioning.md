@@ -10,8 +10,10 @@ The version source is `package.json`. Conventional commits on `main` and
 changelog, Git tag, GitHub release, and npm publication. The generated Claude
 plugin manifests receive that same version during semantic-release's `prepare`
 phase from semantic-release's explicit `nextRelease.version`, before the
-release commit is created. This avoids depending on the order in which release
-plugins update `package.json`.
+release commit is created. The release commit explicitly includes the generated
+plugin manifests; otherwise semantic-release would generate the right files and
+then omit them from the commit. This avoids depending on the order in which
+release plugins update `package.json`.
 
 Do not add a version to an individual skill unless that skill becomes an
 independently distributed package with its own compatibility and release
