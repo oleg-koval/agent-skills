@@ -22,6 +22,7 @@ These skills are opinionated by design. They encode working defaults, preferred 
 - `adapters/`: generated per-tool wrappers (Claude, Codex, Cursor, Grok, Pi, Hermes)
 - `scripts/`: sync, build, and validation helpers
 - `site/`: generator for the browsable catalog at [skills.olegkoval.com](https://skills.olegkoval.com) (`npm run build:site`)
+- `docs/versioning.md`: catalog/plugin versioning and release automation contract
 
 ## Principles
 
