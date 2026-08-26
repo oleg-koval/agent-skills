@@ -30,6 +30,7 @@ const adapterFile = {
 }
 
 const catalog = loadCatalog()
+const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
 
 // Plugin-level invariants.
 const pluginNames = new Set()
@@ -44,6 +45,13 @@ for (const plugin of catalog.plugins) {
   }
   const manifest = join('plugins', plugin.name, '.claude-plugin', 'plugin.json')
   if (!existsSync(manifest)) throw new Error(`missing generated plugin manifest: ${manifest}`)
+  const manifestVersion = JSON.parse(readFileSync(manifest, 'utf8')).version
+  if (manifestVersion !== packageJson.version) {
+    throw new Error(
+      `plugin manifest version drift for ${plugin.name}: ` +
+      `expected ${packageJson.version}, got ${manifestVersion}`
+    )
+  }
 }
 
 // Skill-level invariants, including the duplicate-name check.
