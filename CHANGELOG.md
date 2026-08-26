@@ -1,3 +1,10 @@
+## [1.35.1](https://github.com/oleg-koval/agent-skills/compare/v1.35.0...v1.35.1) (2026-08-26)
+
+
+### 🐛 Bug Fixes
+
+* keep generated plugin versions in sync ([75c190b](https://github.com/oleg-koval/agent-skills/commit/75c190badff424808abbcd1f95a18cec806f1e9d))
+
 # [1.35.0](https://github.com/oleg-koval/agent-skills/compare/v1.34.0...v1.35.0) (2026-08-25)
 
 
