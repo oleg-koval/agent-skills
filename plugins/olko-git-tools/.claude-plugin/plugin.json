@@ -1,7 +1,7 @@
 {
   "name": "olko-git-tools",
   "description": "Everyday git and GitHub CLI operations: conventional commits, branch hygiene.",
-  "version": "1.36.0",
+  "version": "1.37.0",
   "author": {
     "name": "Oleg Koval"
   },
