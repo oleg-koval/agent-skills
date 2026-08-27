@@ -49,6 +49,7 @@ Available reusable prompt files:
 - garmin-watchface: .github/prompts/garmin-watchface.prompt.md
 - gallery: .github/prompts/gallery.prompt.md
 - fill-music-player: .github/prompts/fill-music-player.prompt.md
+- music-to-plex: .github/prompts/music-to-plex.prompt.md
 - vinted-listing: .github/prompts/vinted-listing.prompt.md
 - wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md
 - cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
