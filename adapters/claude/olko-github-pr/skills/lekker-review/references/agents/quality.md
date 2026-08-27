@@ -45,9 +45,11 @@ Axes to cover:
   (b) A bulk bump of several unrelated packages in one PR is `important`. When
       it breaks the build you have lost which package did it. The `fix` is to
       split it per package, or per genuinely related group.
-  (c) A `package.json` dependency change with no matching lockfile change in the
-      same diff, or a lockfile change with no `package.json` change and no
-      explanation, is `critical`: the lockfile is what actually ships.
+  (c) When the repository tracks a committed lockfile, a `package.json`
+      dependency change with no matching lockfile change in the same diff is
+      `critical`: the lockfile is what actually ships. A lockfile change with no
+      `package.json` change and no explanation is also `critical`. Do not require
+      a lockfile from a repository that intentionally does not commit one.
   (d) A new direct dependency that duplicates something already in the stack is
       `important`. Name the existing thing that already solves it.
   Raise NO naming, comment, complexity, or hard-rule finding inside a lockfile

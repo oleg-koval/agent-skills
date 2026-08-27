@@ -21,11 +21,13 @@ Look for:
 - Feature flags always on/off, fallback that can never trigger, dual
   implementations where old has no callers.
 - Relocated complexity: a refactor that moves code without reducing the number
-  of concepts a reader must hold to follow it. Count them before and after. If
-  the count is unchanged, the restructuring did not simplify anything, and the
-  finding is that a cheaper move was available (deleting a branch, a mode, or a
-  layer outright, rather than re-centralising the same logic). `important` when
-  the PR is sold as a cleanup or refactor, `observation` otherwise.
+  of concepts a reader must hold to follow it. Count them before and after, but
+  an unchanged count alone is not a finding. Flag only when the move leaves a
+  concrete residual coupling, duplication, branch, or bug-surface maintenance
+  risk, and name both that risk and the cheaper move available (deleting a
+  branch, a mode, or a layer outright, rather than re-centralising the same
+  logic). `important` when the PR is sold as a cleanup or refactor,
+  `observation` otherwise.
 - Feature logic in a shared module: feature-specific behaviour added to a
   general-purpose util, a shared client, or a base class. The branch belongs in
   the package that owns the concept. Name the owning layer in the `fix`.
@@ -35,7 +37,9 @@ Look for:
   false). Enumerate what is now unreachable. NEVER propose a silent deletion:
   the `fix` lists the orphans and asks the author to confirm removal.
   `observation`, or `important` when the dead path is still reachable from
-  production code.
+  production code. When WORKTREE_PATH is null in scan mode, do not infer absent
+  callers from the diff: mark orphan analysis unverified and request
+  worktree-backed verification instead.
 
 Only flag where duplication or complexity creates a real maintenance risk or
 bug surface — not aesthetic preference.
