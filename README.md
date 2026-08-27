@@ -174,6 +174,15 @@ Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descripti
 | [dependabot-triage](plugins/olko-github-pr/skills/dependabot-triage/SKILL.md) | Triages open Dependabot and Renovate PRs in bulk: classifies by risk tier, auto-approves safe patch bumps, flags breaking major upgrades for human review, and posts a digest | Clearing a backlog of dependency update PRs during a maintenance window |
 | [lekker-review](plugins/olko-github-pr/skills/lekker-review/SKILL.md) | Runs a FAANG-quality PR review in an isolated worktree: 5 parallel specialist agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings (Claude Code only, needs the Workflow tool) | Reviewing a GitHub PR beyond what a single-pass review or a bot reviewer catches |
 
+#### lekker-review at a glance
+
+Full write-up in the [skill README](plugins/olko-github-pr/skills/lekker-review/README.md).
+
+![The five specialist agents, the severity tiers, and the approval standard](plugins/olko-github-pr/skills/lekker-review/assets/poster-overview.png)
+
+![Adversarial refutation, the hard-rule exemption, proof of bug, and the fix-mode proof flip](plugins/olko-github-pr/skills/lekker-review/assets/poster-proof.png)
+
+
 ### olko-git-tools (3)
 
 Everyday git and GitHub CLI operations: conventional commits, branch hygiene.

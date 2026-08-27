@@ -330,6 +330,50 @@ anchors. Apply your own judgment to every finding.
 - Pre-existing code not touched by this diff
 - Anything you are not confident about - omit rather than hedge
 
+**Approval standard.** The verdict answers "does this definitely improve the
+codebase's health", not "is this how I would have written it". Perfect code does
+not exist. `✅ LGTM - ship it` is the right call for a change that improves
+health and violates no hard rule, even with open Observations or Idiomatic
+findings. Reserve `🚫 Needs work` for an unfixed Critical, a hard-rule
+violation, or an Important finding that changes external behaviour or data
+shape. Never manufacture a Critical to justify a verdict, and never block on
+taste.
+
+**PR sizing.** Judge how much a reviewer must hold at once, not the raw diff
+count:
+- Under ~300 changed lines, or larger but one logical change: no finding.
+- Over ~800 changed lines spanning more than one logical change: `important`,
+  and name the split. Pick the strategy that fits - stack (sequential
+  dependencies), by file group (different reviewers), horizontal (shared code
+  and stubs first, then consumers), vertical (smaller full-stack slices).
+- A diff that both refactors existing code and adds new behaviour: `important`
+  at any size. Those are two PRs, and bundling them hides the real change.
+- A change that pushes a single file past ~1000 total lines with no
+  decomposition: `observation`. Ask for the extraction first, then the feature.
+Exempt: whole-file deletions and mechanical or automated refactors, where the
+reviewer verifies intent rather than every line.
+
+**Verify the verification.** Read the PR body for the author's verification
+story: which tests were run, whether the build passed, whether it was exercised
+manually, screenshots for a UI change, a before/after for a behaviour or
+performance change. A non-trivial PR whose body claims nothing about
+verification is an `observation` naming the evidence that is missing. `CI: ✅
+All passing` is not a verification story - it only says the suite that already
+existed still runs.
+
+**Rationalizations to reject.** If one of these is the reason a finding is about
+to be dropped or softened, keep the finding:
+
+| Rationalization | Reality |
+|---|---|
+| "The tests pass, so it's fine" | Tests do not catch architecture, security, or data-shape problems. |
+| "It works, that's good enough" | Working code that is unreadable or insecure is debt that compounds. |
+| "The refactor makes it cleaner" | Relocating complexity is not reducing it. Count the concepts a reader holds. |
+| "It's only a small addition to this file" | Judge the resulting structure, not the diff size. |
+| "It's just a version bump" | A bump is a behaviour change nobody in the PR wrote. |
+| "They'll clean it up later" | Later does not come. Require it now, or require a ticket. |
+| "An agent wrote it, so it's probably fine" | Generated code needs more scrutiny, not less: it is confident and plausible when wrong. |
+
 **Idiomatic & Consistency exception:** the conventions agent raises non-blocking
 suggestions ONLY when a concrete better pattern provably already exists in the
 codebase. Never on taste alone. These land in their own section, not in
