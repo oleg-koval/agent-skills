@@ -207,17 +207,15 @@ function shouldVerify(finding, depth) {
   return finding.severity === 'critical' || finding.severity === 'important'
 }
 
-// Run thunks in sequential batches instead of one wide fan-out.
+// Run thunks in sequential batches, giving the per-finding stages a ceiling.
 //
-// Every reviewer holds the diff, the context file and its slice of the
-// worktree in memory at once, so launching all of them together multiplies
-// peak footprint by the agent count. Five concurrent sonnet reviewers over a
-// large diff was enough to push a session into a teardown that destroyed the
-// worktree mid-run, taking the whole review with it. Staggering trades a
-// little wall-clock for a peak that stays flat.
+// The review stage is bounded by its dimension count, but verify, critic and
+// prove spawn one agent per finding: a PR with thirty findings would otherwise
+// launch thirty concurrent agents in a single call. This caps them without
+// changing results.
 //
 // `plan` gives the size of each successive batch and its final entry repeats
-// to cover any remainder, so a plan of [2] means "two at a time, forever".
+// to cover any remainder, so a plan of [5] means "five at a time, forever".
 // Return value matches parallel(): input order preserved, a failed thunk
 // resolves to null rather than rejecting the batch.
 async function batched(thunks, plan) {
@@ -274,13 +272,15 @@ if (!repoSlug || !prNumber || !depth || !diffFile || !contextFile || !promptDir)
   )
 }
 
-// Concurrency. The five specialists run 2 then 2 then 1 rather than all at
-// once; every other fan-out (verify, critic, prove) goes two at a time. Both
-// are overridable per run for a machine with more headroom.
+// Concurrency. The review stage is self-limiting: five dimensions means five
+// agents, so it runs them all at once. The other stages are not. Verify,
+// critic and prove spawn one agent PER FINDING, so a finding-heavy PR would
+// fan out far wider than the review that produced it, with no ceiling. Those
+// are capped at the review stage's own width.
 const REVIEW_PLAN = (Array.isArray(reviewBatchPlan) && reviewBatchPlan.length > 0)
   ? reviewBatchPlan
-  : [2, 2, 1]
-const FANOUT_PLAN = [Math.max(1, maxConcurrent || 2)]
+  : [5]
+const FANOUT_PLAN = [Math.max(1, maxConcurrent || 5)]
 
 log(`args ok: PR #${prNumber} in ${repoSlug}, depth=${depth}, reviewPlan=[${REVIEW_PLAN}], fanout=${FANOUT_PLAN[0]}`)
 
