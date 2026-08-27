@@ -104,7 +104,7 @@ they want a break, a re-explain, or to continue.
 Keep the learner active the whole way. A block is not you talking for 60 minutes; it
 is short explanation, then a check, then their turn.
 
-### Block 1 (0:00 to 1:00) — The map and the vocabulary
+### Block 1 (0:00 to 1:00): The map and the vocabulary
 
 Goal: the learner can say what the topic *is*, why it exists, and name its main parts.
 
@@ -116,7 +116,7 @@ Goal: the learner can say what the topic *is*, why it exists, and name its main 
   exists, and the single most important distinction in the topic. Grade briefly,
   fill gaps.
 
-### Block 2 (1:00 to 2:00) — How the pieces fit together
+### Block 2 (1:00 to 2:00): How the pieces fit together
 
 Goal: the learner understands the flow, the interactions, and the "why it is built
 this way" tradeoffs.
@@ -131,7 +131,7 @@ this way" tradeoffs.
   not vocabulary. Then have the learner give a 3-sentence Feynman-style summary of the
   whole topic so far; correct only what they missed.
 
-### Block 3 (2:00 to 3:00) — Build something (30-minute mini-project)
+### Block 3 (2:00 to 3:00): Build something (30-minute mini-project)
 
 Goal: touch the real thing. Understanding without contact is fragile.
 
@@ -144,7 +144,7 @@ Goal: touch the real thing. Understanding without contact is fragile.
 - Let them drive. When they hit an error, coach toward the fix; do not just hand it
   over. Use the remaining time in the block to debug together.
 
-### Block 4 (3:00 to 4:00) — Prove it and lock it in
+### Block 4 (3:00 to 4:00): Prove it and lock it in
 
 Goal: confirm retention and produce the take-home artifacts.
 
@@ -183,16 +183,16 @@ topic. It is a study map, not an explanation. Keep it dense, visual, and scannab
 
 Produce exactly these sections:
 
-1. **What it is** — one or two sentences, plain language.
-2. **Core concepts / rules / steps** — the load-bearing ideas as tight bullets, not
+1. **What it is**: one or two sentences, plain language.
+2. **Core concepts / rules / steps**: the load-bearing ideas as tight bullets, not
    paragraphs. Include formulas or exact command/endpoint names where they apply.
-3. **Mental model** — one simple text diagram, flowchart, table, or analogy that makes
+3. **Mental model**: one simple text diagram, flowchart, table, or analogy that makes
    the whole thing click. Only include it if it genuinely helps.
-4. **3 to 5 real examples** — concrete, from the actual sources, showing the topic in
+4. **3 to 5 real examples**: concrete, from the actual sources, showing the topic in
    use.
-5. **Common mistakes / confusing parts** — the traps, with the correction.
-6. **Before you use this checklist** — 3 to 6 quick pre-flight checks.
-7. **5 rapid-fire questions** — memory checks. Put answers below a divider so they can
+5. **Common mistakes / confusing parts**: the traps, with the correction.
+6. **Before you use this checklist**: 3 to 6 quick pre-flight checks.
+7. **5 rapid-fire questions**: memory checks. Put answers below a divider so they can
    self-test first.
 
 Then offer to save it. Avoid theory padding; if a line is not useful under time

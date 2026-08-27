@@ -1,6 +1,6 @@
 ---
 name: apple-store-submit
-description: Handle Apple App Store rejection emails end-to-end — parse rejection reasons, create a fix plan, implement code changes (privacy strings, entitlements, sandbox), navigate App Store Connect to update metadata, and resubmit. Use when an app receives a rejection or when preparing a first-time submission.
+description: Handle Apple App Store rejection emails end-to-end: parse rejection reasons, create a fix plan, implement code changes (privacy strings, entitlements, sandbox), navigate App Store Connect to update metadata, and resubmit. Use when an app receives a rejection or when preparing a first-time submission.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires Xcode, an Apple Developer account, and App Store Connect access.
@@ -23,7 +23,7 @@ metadata:
 
 ## Overview
 
-Parse Apple rejection feedback, implement targeted fixes, update App Store Connect metadata, and resubmit — covering the complete cycle from rejection email to approved build.
+Parse Apple rejection feedback, implement targeted fixes, update App Store Connect metadata, and resubmit, covering the complete cycle from rejection email to approved build.
 
 ## When to Use
 
@@ -39,9 +39,9 @@ Parse Apple rejection feedback, implement targeted fixes, update App Store Conne
 Read the full rejection email. Extract and list:
 
 - **Guideline numbers** violated (e.g., 2.1, 4.2.0, 5.1.1)
-- **Code-level issues** — missing entitlements, incorrect privacy strings, sandbox violations
-- **Metadata issues** — wrong screenshot sizes, subtitle policy, keyword stuffing
-- **UX issues** — crashes described by reviewer, broken flows, missing functionality
+- **Code-level issues**: missing entitlements, incorrect privacy strings, sandbox violations
+- **Metadata issues**: wrong screenshot sizes, subtitle policy, keyword stuffing
+- **UX issues**: crashes described by reviewer, broken flows, missing functionality
 
 Create a numbered fix plan: one item per rejection point, with the type of fix needed.
 
@@ -79,7 +79,7 @@ Create a numbered fix plan: one item per rejection point, with the type of fix n
 <true/>
 ```
 
-**Sandbox violations** — remove `NoEscapeBlock` patterns, replace deprecated APIs, use only sandboxed file access via Security-Scoped Bookmarks when needed.
+**Sandbox violations**: remove `NoEscapeBlock` patterns, replace deprecated APIs, use only sandboxed file access via Security-Scoped Bookmarks when needed.
 
 ### 4. Build and Archive
 
@@ -127,7 +127,7 @@ Common metadata fixes:
 In the submission form, fill **Notes for Reviewer**:
 
 - Explain each rejection point and what was changed
-- Reference specific guideline numbers: "Addressing 2.1 — added NSMicrophoneUsageDescription to Info.plist"
+- Reference specific guideline numbers: "Addressing 2.1: added NSMicrophoneUsageDescription to Info.plist"
 - If a feature requires special credentials to test, provide test account details
 
 ### 7. Submit and Track
@@ -136,7 +136,7 @@ In the submission form, fill **Notes for Reviewer**:
 2. In App Store Connect: select the new build, fill notes, **Submit for Review**
 3. Typical re-review: 24–48h
 4. If rejected again: respond in the **Resolution Center** thread (same case number)
-5. Escalate via Resolution Center for policy disagreements — do not open a new submission
+5. Escalate via Resolution Center for policy disagreements: do not open a new submission
 
 ## Build Number Protocol
 

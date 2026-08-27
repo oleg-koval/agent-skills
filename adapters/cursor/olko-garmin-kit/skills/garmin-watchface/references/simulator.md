@@ -10,7 +10,7 @@ settings code and will send you debugging the wrong thing.
 Clear it: **File → Reset All App Data**. That also drops the loaded device, so
 relaunch the simulator and re-push afterwards.
 
-Diagnose before assuming a bug — print what the app actually sees:
+Diagnose before assuming a bug: print what the app actually sees:
 
 ```monkeyc
 System.println("SETTINGS pro=" + _proMode + " ghost=" + _ghost);
@@ -60,7 +60,7 @@ The simulator needs about 10-12 seconds before it will accept a push, and a
 further beat before its window is scriptable. Pushing too early gives a window
 titled "CIQ Simulator" with no device name and no display.
 
-For a watch face `monkeydo` does not exit on its own — it stays attached. That is
+For a watch face `monkeydo` does not exit on its own: it stays attached. That is
 normal; Ctrl-C once the face renders.
 
 ## Screenshots
@@ -84,7 +84,7 @@ osascript -e 'tell application "System Events" to tell process "simulator" to ge
 ```
 
 **3. The display is a sub-rectangle of the window.** Do not guess it. Render a
-full-screen marker colour, capture, and take its bounding box — that is the
+full-screen marker colour, capture, and take its bounding box: that is the
 display rect exactly. `bin/ciq-calibrate` automates this. On a 2x Retina Mac with
 the fenix 6 Pro skin the answer is 518x518 at (155,345), a clean 2:1 for the
 260x260 display.
@@ -120,12 +120,12 @@ osascript -e 'tell application "System Events" to tell process "simulator" to ge
 | Simulation | Time Simulation | check other times of day |
 
 The simulator reports zero steps and calories by default, because it has no
-activity data — not because your render path is broken. Use Simulation →
+activity data, not because your render path is broken. Use Simulation →
 Activity Data before concluding anything.
 
 **Settings → Display Mode → Always-Active is how you see the always-on frame**,
 and it is a submenu, not a checkbox. The two items are *High Power* and
-*Always-Active* — NOT "Normal" and "Always-On", which is what the naming
+*Always-Active*: NOT "Normal" and "Always-On", which is what the naming
 everywhere else in the SDK leads you to type. Enumerate rather than guess:
 
 ```bash
@@ -135,7 +135,7 @@ osascript -e 'tell application "System Events" to tell process "simulator" \
 ```
 
 Settings → *Sleep Mode* is a different thing
-entirely — the user's sleep window, not the watch-face power state — and
+entirely (the user's sleep window, not the watch-face power state), and
 clicking it leaves the face fully lit, which looks like `onEnterSleep` never
 firing:
 
@@ -149,7 +149,7 @@ Check both directions. Switching an AMOLED product to Always-On should give the
 restricted frame; switching a MIP product to Always-On should change **nothing**,
 because it carries no `requiresBurnInProtection` and has no reason to dim.
 
-Measure rather than eyeball the result — the budget is a number:
+Measure rather than eyeball the result: the budget is a number:
 
 ```python
 # lit fraction and centroid inside the round glass, from a raw capture
@@ -158,14 +158,14 @@ print(100 * lit / len(glass_pixels))     # keep well under 10%
 ```
 
 The centroid is the more useful of the two. It caught a blanked leading digit
-cell leaving the time 106px right of centre — invisible in a passing test suite,
+cell leaving the time 106px right of centre: invisible in a passing test suite,
 and easy to look straight past in a screenshot.
 
 ### Stale monkeydo processes wedge the next run
 
 `make test` hanging forever, or `Unable to connect to simulator`, is usually an
 earlier `monkeydo` still holding the port rather than anything wrong with the
-build. They accumulate silently across a session — several were found alive
+build. They accumulate silently across a session: several were found alive
 here from runs an hour old.
 
 ```bash
@@ -181,7 +181,7 @@ Kill the simulator too if it will not come forward, then relaunch with
 `screencapture` on a locked machine photographs the login screen, and the
 AppleScript menu clicks report success while going nowhere. The result is a
 plausible PNG containing a desktop wallpaper, and analysis of it produces
-confident nonsense — a lit-pixel fraction of 0.0005 rather than an error.
+confident nonsense: a lit-pixel fraction of 0.0005 rather than an error.
 
 Assert the capture contains a display before measuring it: the round glass is
 a large dark disc, so a near-zero dark fraction over any 454-square window
@@ -214,7 +214,7 @@ function bodyBattery() as Number? {
 }
 ```
 
-Always guard with `Toybox has :SensorHistory` — not every device has it, and the
+Always guard with `Toybox has :SensorHistory`: not every device has it, and the
 face must degrade to `--` rather than crash.
 
 ## Verifying on real hardware

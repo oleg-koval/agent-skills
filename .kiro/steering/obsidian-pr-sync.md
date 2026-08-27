@@ -2,7 +2,7 @@
 
 ---
 inclusion: manual
-description: "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent — re-running replaces the section."
+description: "Fetch open GitHub PRs assigned to you or requesting your review, and write a grouped, age-sorted '## PRs to review' section into today's Obsidian daily note. Idempotent: re-running replaces the section."
 ---
 
 # Obsidian PR Sync
@@ -14,13 +14,13 @@ daily note.
 ## Configuration
 
 Before running, confirm:
-- `VAULT_DAILY` — absolute path to the daily notes folder (e.g. `/Users/you/obsidian/vault/Lead/Daily`)
-- `GH_USERNAME` — GitHub login to exclude self-authored PRs (e.g. `oleg-koval`)
-- `ORG_PREFIX` — org name to group as "Work" (e.g. `Teifi-Digital`); everything else goes to "Personal"
+- `VAULT_DAILY`: absolute path to the daily notes folder (e.g. `/Users/you/obsidian/vault/Lead/Daily`)
+- `GH_USERNAME`: GitHub login to exclude self-authored PRs (e.g. `oleg-koval`)
+- `ORG_PREFIX`: org name to group as "Work" (e.g. `Teifi-Digital`); everything else goes to "Personal"
 
 If not specified by the user, infer from context (git config, existing vault files).
 
-## Step 1 — Fetch PRs
+## Step 1: Fetch PRs
 
 Run two `gh` queries and merge results, deduplicating by URL:
 
@@ -36,14 +36,14 @@ gh search prs --assignee=@me --state=open \
 
 Merge both lists, deduplicate by `url`. The union is what needs attention.
 
-## Step 2 — Filter
+## Step 2: Filter
 
 Discard entries where:
 - `isDraft` is `true`
 - `author.login` matches any bot pattern: `dependabot`, `copilot`, `renovate`, `github-actions`, or `author.is_bot` is `true`
-- `author.login` equals `GH_USERNAME` — self-authored PRs are not reviews; they're your own work
+- `author.login` equals `GH_USERNAME`: self-authored PRs are not reviews; they're your own work
 
-## Step 3 — Enrich authors
+## Step 3: Enrich authors
 
 For each unique author login, resolve a display name for the Obsidian wiki-link:
 
@@ -55,13 +55,13 @@ If the API returns a name, use it (e.g. `Rutger Klaassen`). If it returns null, 
 back to the login with first letter uppercased. This gives `[[Rutger Klaassen]]` or
 `[[Merlijnmacgillavry]]`.
 
-Batch these lookups — run them in parallel if possible to keep the sync fast.
+Batch these lookups: run them in parallel if possible to keep the sync fast.
 
-## Step 4 — Calculate age
+## Step 4: Calculate age
 
 For each PR: `days_old = (today - createdAt).days`. Use today's date in local time.
 
-## Step 5 — Build the section
+## Step 5: Build the section
 
 Format the section exactly as:
 
@@ -78,9 +78,9 @@ Format the section exactly as:
 Rules:
 - **Work**: `repository.nameWithOwner` starts with `<ORG_PREFIX>/`
 - **Personal**: everything else
-- Within each group, sort by `createdAt` ascending (oldest first — most overdue at top)
+- Within each group, sort by `createdAt` ascending (oldest first: most overdue at top)
 - If a group has no PRs, omit that subsection entirely (don't render an empty `### Work` header)
-- If there are zero PRs total, write: `## PRs to review\n\n_No open PRs — clear queue! 🎉_`
+- If there are zero PRs total, write: `## PRs to review\n\n_No open PRs, clear queue! 🎉_`
 - Add `⚠️` after the age if `days_old >= 7`
 
 **Example line:**
@@ -88,7 +88,7 @@ Rules:
 - [ ] [RSL-108] Image sync from InRiver by [[Merlijn Mac Gillavry]] (12 days old ⚠️)
 ```
 
-## Step 6 — Write to today's daily note
+## Step 6: Write to today's daily note
 
 **Find today's note:**
 ```bash
@@ -114,7 +114,7 @@ The user says something like "sync my PRs to today's note" or "update obsidian w
 Run the full flow and confirm how many PRs were written.
 
 **Scheduled morning routine:**
-Same flow. No user prompt needed — just run, update the note, and report a one-line
+Same flow. No user prompt needed: just run, update the note, and report a one-line
 summary: `"PR sync: 3 work PRs, 2 personal PRs written to 2026-05-11.md"`.
 
 **In a remote CCR agent:**

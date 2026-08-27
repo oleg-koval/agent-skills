@@ -1,5 +1,5 @@
 /*
- * paperbag.js — progressive enhancement only. With JS off the page is a
+ * paperbag.js: progressive enhancement only. With JS off the page is a
  * complete, readable, fully linked catalog; everything below just adds the
  * p2output-era cursor theatrics and client-side filtering.
  */
