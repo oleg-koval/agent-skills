@@ -259,14 +259,15 @@ Build, test and publish Garmin Connect IQ watch faces.
 |-------|-------------|----------|
 | [garmin-watchface](plugins/olko-garmin-kit/skills/garmin-watchface/SKILL.md) | Designs, builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face, SVG design proposals, inspiration gathering, layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
 
-### olko-creative (4)
+### olko-creative (5)
 
-Creative and personal projects: photo galleries, music players, listings, wiki editing.
+Creative and personal projects: photo galleries, music players, Plex ingest, listings, wiki editing.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [gallery](plugins/olko-creative/skills/gallery/SKILL.md) | Creates photo galleries with AI-assisted layout curation and sequencing | Building a gallery from photos or planning photo layout, sequencing, and curation |
 | [fill-music-player](plugins/olko-creative/skills/fill-music-player/SKILL.md) | Fills a portable music player with a curated random selection while balancing formats, artists, albums, and capacity | Copying music from a NAS or local library to a Walkman, iPod, USB drive, or similar device |
+| [music-to-plex](plugins/olko-creative/skills/music-to-plex/SKILL.md) | Acquires albums, DJ crates, and YouTube playlists for Plex/Plexamp with verified NAS delivery, Plex visibility, and source-backed Obsidian radio notes | Adding or downloading music to Plex/Plexamp, including an album request, DJ crate, or YouTube playlist |
 | [vinted-listing](plugins/olko-creative/skills/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller’s original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Creating, editing, or publishing a Vinted listing |
 | [wikipedia-uk-editor](plugins/olko-creative/skills/wikipedia-uk-editor/SKILL.md) | Drafts policy-compliant Ukrainian Wikipedia edits, en→uk translation, stub expansion, sourcing, backlog cleanup, returning ready-to-paste wikitext, an edit summary, and a verified source list | Editing, translating, or sourcing a uk.wikipedia.org article, or planning what to contribute next |
 
