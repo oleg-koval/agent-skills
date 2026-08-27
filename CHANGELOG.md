@@ -1,3 +1,10 @@
+# [1.36.0](https://github.com/oleg-koval/agent-skills/compare/v1.35.3...v1.36.0) (2026-08-27)
+
+
+### ✨ Features
+
+* add music-to-plex skill ([#65](https://github.com/oleg-koval/agent-skills/issues/65)) ([c5a5c30](https://github.com/oleg-koval/agent-skills/commit/c5a5c302d3b2ad26db89eae61568e3fa03ddaf27))
+
 ## [1.35.3](https://github.com/oleg-koval/agent-skills/compare/v1.35.2...v1.35.3) (2026-08-26)
 
 
