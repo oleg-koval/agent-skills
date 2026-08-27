@@ -1,0 +1,254 @@
+---
+name: music-to-plex
+description: "Acquire music and make it playable in Plex/Plexamp — single albums (via mtp-bot), DJ tracklists/crates, and YouTube playlists. Use ONLY when the user explicitly wants to ADD or DOWNLOAD music to Plex (e.g. 'add to Plex', 'get me this album', 'download this playlist', a timestamped DJ tracklist, or a plain 'Artist - Title' list). NOT for podcasts or non-music; for albums already on disk that won't show up, bulk library repair, or Plex scanner/DB problems, hand off to plex-music-ingest."
+version: 3.0.0
+platforms: [macos, linux]
+metadata:
+  hermes:
+    tags: [music, plex, flac, nas, synology, album, playlist, plexamp]
+    related_skills: [plex-music-ingest, music-library-publishing, music-note-curation, podcast-monitoring]
+---
+
+# Music to Plex
+
+Acquire music and surface it in Plex/Plexamp. Three flows: **album** (one-shot
+via `mtp-bot`), **DJ tracklist/crate**, and **YouTube playlist**. Pick the flow,
+run it, verify, post notes.
+
+## Operating rules (non-negotiable)
+
+- **One command per album.** For a single album/release, call `mtp-bot handle`
+  once and post its output. Do **not** run `mtp search`/`add`/`status` yourself,
+  do **not** pick a version (auto-pick is automatic), do **not** poll for
+  download status (the notifier streams it).
+- **Serialize multi-album imports.** `mtp-bot` keeps a state machine per chat;
+  never dispatch album handler calls in parallel. Send one request, inspect its
+  reply, and proceed only after it has accepted the release or returned to idle.
+  If it opens a numbered picker, stop the batch and preserve that picker until
+  its owner chooses or explicitly authorizes cancellation. Do not send a bare
+  number, `cancel`, or a new request into an existing picker on behalf of a
+  different request. **Exception:** when the user explicitly says to ignore or
+  override an active download and names the replacement, treat that as direct
+  cancellation authority: dispatch the resolved replacement once, without a
+  redundant confirmation loop, and state that the earlier job may be abandoned.
+- **Route by shape.** Album → `mtp-bot handle`. DJ tracklist/crate → the crate
+  ingest reference. YouTube playlist or plain track list → the YouTube flow.
+  Never pass a crate or multi-track prose to `mtp-bot handle` (album-shaped
+  parser; it will reply `⏭️ Not a music album request — skipped.`).
+- **Cover-art requests need resolution before dispatch.** A bare `mtp` with an
+  album image is an explicit album request, but `mtp` alone is not handler-ready.
+  Transcribe/identify the cover, verify the canonical release and track count,
+  then proceed through the resolved-image continuation. Never expect the album
+  parser to infer a title from an image caption. When invoking `mtp-bot`, use the
+  **originating Telegram chat ID** from the inbound route; a group ID, user ID,
+  and configured home-chat ID are different things.
+- **Never claim done without verification.** A "Downloading…" or a successful Plex refresh is a *start* signal, not proof. The album is done only when the files exist under the configured Plex library path **and** are visible in Plexamp. Read back playlist items before saying a playlist is updated.
+- **Show the user the checklist.** For every album ingest, post/update this exact evidence-led checklist in order. Mark `✅` only after tool evidence; use `⏳` while active, `⚠️` for a verified blocker, and never silently omit a step:
+  ```text
+  ⏳ Canonical release metadata / tracklist verified
+  ⏳ Audio acquired and locally staged
+  ⏳ Track count, tags, embedded art, and file integrity verified
+  ⏳ NAS artist-path and write-permission preflight verified
+  ⏳ Files copied to the final Plex-scanned NAS folder
+  ⏳ NAS count/art/folder traversal verified; transfer sidecars cleaned
+  ⏳ Plex refresh triggered and album + full track count read back from Plex
+  ⏳ Obsidian note written: Artist note → Album note → DJ summary
+  ```
+  The final response must retain this checklist with concrete proof values (final path, counts, Plex result, and note path). If a fallback bypasses the normal handler, say so explicitly and still keep the checklist.
+- **Never fabricate facts.** In DJ notes, if unsure of a musician/label/year, say less. Do not invent files, APIs, env vars, or NAS paths.
+- **Obsidian note voice and substance.** Notes must use the full enrichment standard in `references/music-note-blurb-order.md`: original WFMU / LDBK / Radio Brussels / classic-underground-radio energy, vivid sensory language, and juicy source-backed facts that make listeners curious and emotionally engaged. Include verified recording/release context, label/year, collaborators/producers, samples or scene links, unusual backstory, cultural impact, and concrete listening cues when available. Never imitate a named presenter, write generic promo copy, or pad the note with unsourced trivia. Run the replaceability test before saving: if the note would mostly work after swapping the album name, rewrite it.
+- **Obsidian vault path.** Write music notes to `/Users/olegkoval/Documents/opus/Music/`, the visible Music folder used by the existing notes (not `Documents/opus/Obsidian/Hermes/Music/`). Verify the exact note path by reading it back after writing.
+- **Secrets live in `~/.config/music-to-plex/.env`** (loaded automatically by
+  `Config.load`), never in `config.toml`. If a check says "PLEX_TOKEN not set",
+  fix the `.env`. See `references/plex-token-source.md`.
+- **Hand off repair.** Album on disk but not visible, wrong folder/tags after
+  the fact, bulk library cleanup, permission problems, or Plex scanner/DB
+  crashes → this is **plex-music-ingest**'s job, not this skill's.
+
+## One-shot album flow
+
+The user posts once ("add <album>") and gets a status stream back. The mechanics
+(auto-pick best version, download, organize, Plex refresh, staged status
+messages) are handled by the tool chain. **Your only creative job is the DJ
+blurb.**
+
+### Step 1 — Run the handler once
+
+```bash
+mtp-bot handle "<exact user message>" --chat <chat_id>
+```
+
+`<exact user message>` = what the user said; `<chat_id>` = the Telegram chat ID.
+This auto-picks the highest-seed release, starts the download, and spawns a
+background notifier. It returns:
+
+```
+✅ Accepted: <Artist> — <Album>
+⏳ Downloading [FORMAT] SIZE, N seeds — status updates to follow.
+```
+
+Post that result as-is.
+
+### Step 2 — Write the notes in strict order
+
+Immediately after posting "Accepted", while the download runs in the background,
+write one enrichment package, in this order:
+
+1. **Artist note** — a specific, substantial paragraph in the original WFMU / LDBK / Radio Brussels / classic-underground-radio lane: the artist's broader sound, history, scene, collaborators, and lane. Include at least one verified fact that gives the listener a reason to care.
+2. **Album note** — a separate, juicy paragraph: year, label, recording/release context, key players, unusual backstory, samples or scene connections, cultural impact, and two or three concrete things to listen for. Use only facts verified from authoritative sources; turn them into a human invitation rather than a database dump.
+3. Optional one-line DJ summary or recommendation — tactile, specific, curious, and emotionally inviting.
+
+Keep artist note first and album note second — never merge them into one generic promo paragraph. Sound like a great late-night radio host with a crate-digger’s memory, not a press release or a Wikipedia entry. See
+`references/music-note-blurb-order.md`. Optional extras: 🎵 YouTube link,
+`🎶 You might also like:` + 2 short recommendations.
+
+### Step 3 — Let the notifier stream the rest
+
+The background notifier posts these on its own — **do not poll or re-run**:
+
+```
+📥 Downloaded → 📂 Moving to library folder → 🔄 Rescanning Plex → ✅ Ready in Plexamp
+```
+
+After "Ready", mirror the notes into the canonical visible Music vault at
+`/Users/olegkoval/Documents/opus/Music/` as a music note for that release
+(append if it exists), artist note above album note, followed by DJ summary and
+source links. Read the exact file back before reporting the note complete. If
+the user asked for album art, save the release image as `cover.jpg` in the
+artist/release folder and verify it exists. See
+`references/cover-art-sourcing-session.md`.
+
+### Step 4 — Follow-up replies (stuck downloads)
+
+If a download stalls, the notifier posts a "stuck" message with 4 numbered
+options (wait 1h / wait N hours / next release / YouTube). When the user replies
+— a bare number `1`–`4`, a count of hours, or "next" / "youtube" — **pass the
+reply verbatim to `mtp-bot handle`**, exactly like an add request. Post whatever
+it returns.
+
+**YouTube handoff:** if `mtp-bot handle` returns a line starting with
+`__YOUTUBE_FALLBACK__`, strip it and run the YouTube flow yourself (download
+highest-quality audio with `yt-dlp`, fix tags, move into the library, refresh
+Plex), then post the blurb. If `rsync` or `scp` is unsuitable for a release transfer, use the verified tar-over-SSH fallback, remove any macOS AppleDouble sidecars, and compare NAS/Plex track counts with canonical metadata. See `references/manual-fallback-transfer-and-plex-verification.md`, `references/youtube-403-fallbacks.md`, and `references/youtube-full-album-fallback.md`.
+
+**No-result continuation:** if the bot returns an actual no-results outcome and
+the user asks to continue, do not stop at a blocker report. Resolve canonical
+MusicBrainz metadata, then run the fail-closed track-by-track YouTube fallback:
+match each track by normalized title and duration, reject videos/remixes/live
+versions unless canonical, tag and cover-embed every file, stage it, transfer,
+and verify in Plex. A file's existence is not evidence it completed: fully decode
+all staged files and compare each actual duration to canonical metadata before
+NAS transfer; re-tag the full set after any interrupted run. Prefer separately
+sourced tracks over slicing a continuous full-album upload; only split a full
+upload using validated cues and boundary checks. Clearly distinguish local
+staging, NAS transfer, and Plex visibility. See
+`references/no-result-album-fallback.md` and
+`references/fallback-audio-validation-and-nas-preflight.md`.
+
+### Manual-fallback NAS preflight
+
+Resolve the canonical release first, then preflight the exact NAS destination
+**in parallel with source selection and before substantial fallback downloading**.
+Inspect the NAS layout and an existing album by the same artist. `nas_music` is a
+storage root, not proof that a new artist directory is inside the Plex-scanned
+library. Confirm the originating transfer account can write and traverse the
+exact final parent; if a new artist directory is required, confirm it can create
+that directory too. If the parent is root-owned or read-only, do not spend the
+whole fallback download hoping the copy will work and do not invent an alternate
+writable folder. Keep any already-staged release local and request an
+album-scoped permission repair from the NAS owner.
+
+**Durable access repair:** when the user explicitly wants future managed imports
+to work, repair the *Plex library root* (for this setup,
+`/volume1/music/library`) rather than recursively changing ownership of the
+whole `/volume1/music` share. A safe target is managed-account ownership and
+library-root group write (for example `beheerder:users`, `775`), then verify by
+creating and removing a uniquely named probe directory over SSH. New artist and
+album parents must still be Plex-traversable (`755`); an artist directory left
+at `770` can block scanner traversal even when the release directory and FLACs
+are readable. Never widen ownership/permissions above the Plex library root
+without explicit user approval. See
+`references/nas-library-layout-and-write-preflight.md`,
+`references/fallback-audio-validation-and-nas-preflight.md`, and
+`references/nas-permissions-and-plex-traversal.md`.
+
+## DJ tracklist / crate flow
+
+A timestamped DJ set or a themed crate brief is **not** an album request. Parse
+the list, find lawful sources, acquire audio when allowed, fix metadata/artwork,
+store a separate DJ-friendly folder on NAS, and create/refresh a Plex playlist.
+Creation is incomplete until Plex shows a visible playlist **and** the crate has
+proper cover art. If the user says the set is for DJ practice, treat it as a
+**practice crate**: rebuild/trim for mixability, don't just append tracks. Full
+procedure: `references/dj-tracklist-crate-ingest.md`.
+
+## YouTube playlist flow
+
+Use when the user wants a YouTube playlist (not a timestamped DJ set, not a
+single album) turned into a normal Plex listening playlist. Two inputs: a
+ready-made playlist URL, or a plain list of `Artist - Title` lines. Do not route
+through `mtp-bot handle` or the crate flow. Full download/tagging/placement/
+verification steps: `references/youtube-playlist-import.md`.
+
+## Verification pitfalls (hard-won)
+
+- **File exists ≠ visible.** After refresh, if Plexamp shows nothing, re-verify
+  the album landed under the configured Plex-rooted library path (not a staging/
+  download dir or a bucket Plex doesn't scan). See `references/plex-visibility-check.md`.
+- **Permissions.** Root-owned `700` directories are invisible to Plex traversal
+  even if the audio is readable. Verify the final folder is traversable and fix
+  to `755` before every refresh.
+- **Refresh verb.** On this Plex install, `/library/sections/{id}/refresh` must
+  be **GET**; PUT returns 404, and a targeted `path=` refresh may also 404 - fall
+  back to a plain section refresh. Refresh only after files are in their final
+  NAS path; refresh again after any later tag/rename change.
+- **Targeted refresh exists in the CLI.** `mtp refresh --path <final NAS path>`
+  is the preferred completion check when the release lands cleanly. Treat
+  `{"refreshed": true, "section_id": ...}` as a real success signal.
+
+- **Target layout beats generic configuration.** Before creating a genre bucket, inspect where Plex stores an existing album from the same artist and confirm the transfer account can write that parent. Do not redirect a release to an unrelated writable folder or `unsorted` solely to make the copy succeed; repair access to the canonical target instead. See `references/nas-library-layout-and-write-preflight.md`.
+- **Corrupt source ≠ Plex problem.** If a chapter-based rip yields a zero-byte or
+  corrupt final track, switch source first, then tag and move — don't just
+  re-refresh. See `references/malformed-flac-fallbacks.md`.
+- **NAS codec tools may be unavailable.** Some NAS images ship neither `ffprobe`
+  nor an AAC decoder in `ffmpeg`. In that case, fully decode each staged source
+  locally before transfer, then use NAS file count/art/sidecar/traversal checks
+  plus Plex’s album-and-track read-back as the remote verification receipt. Do
+  not describe a remote decode as passed when the NAS tool cannot decode it.
+- **Duplicate torrent.** On Synology `Duplicate torrent file`, do not retry
+  blindly — `list_tasks` first; repeated attempts stack failed tasks. Clean stale
+  tasks, then re-search with plain artist/album text (no magnet URLs in replies).
+  See `references/duplicate-torrent-handling.md`.
+- **Image/typo identification.** If the user sends cover art or a misspelled/clip
+  title (`Single`, `Official clip`, `teaser`), use it as a *clue* — confirm the
+  real release name and track count on the store/release page before importing.
+  See `references/image-driven-identification-and-verification.md` and
+  `references/bandcamp-album-identification.md`.
+- **Lesson (scanner health):** when an album repeatedly "won't ingest" after the
+  files are correctly placed, stop re-moving files. The cause is usually scanner/
+  DB state, not placement — a direct scanner probe can crash with `DB::Exception`
+  while a plain refresh succeeds. At that point the album is a **plex-music-ingest**
+  case: check scanner health, DB state, and crash cause before touching tags again.
+  (Real example: an album sat correctly at `/volume1/music/Various Artists/…`
+  yet stayed invisible; extra nested `library/pop` layers never helped.)
+
+## References
+
+- Notes & enrichment: `music-note-blurb-order.md`, `cover-art-sourcing-session.md`
+- Album ID & verification: `image-driven-identification-and-verification.md`,
+  `gear-change-image-identification.md`, `bandcamp-album-identification.md`,
+  `plex-visibility-check.md`, `verification-and-pitfalls.md`
+- DJ crates: `dj-tracklist-crate-ingest.md`, `cover-art-repair-session.md`,
+  `per-track-album-art-split.md`, `youtube-lineage-playlist-fallback.md`
+- YouTube: `youtube-playlist-import.md`, `youtube-403-fallbacks.md`,
+  `youtube-full-album-fallback.md`, `fallback-audio-validation-and-nas-preflight.md`
+- Playlists: `plex-playlist-creation.md`, `plex-playlist-append-and-verify.md`,
+  `zero-track-playlist-recovery.md`
+- Plex/NAS plumbing: `plex-token-source.md`, `nas-routing-and-refresh.md`,
+  `batch-import-staging.md`, `mtp-subprocess-wrapper.md`,
+  `mtp-bot-bulk-state-safety.md`, `session-2026-06-17-synology-probe.md`
+- Repair/forensics (mostly owned by **plex-music-ingest**):
+  `library-repair-folders.md`, `canonical-artist-normalization.md`,
+  `cover-art-and-plexamp.md`
+
+That is the skill. Pick the flow, run it, verify, post notes. Silence if no output.

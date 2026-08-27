@@ -45,7 +45,7 @@ export const PLUGIN_ASSIGNMENT = {
   },
   'olko-creative': {
     description: 'Creative and personal projects: photo galleries, music players, listings, wiki editing.',
-    skills: ['gallery', 'fill-music-player', 'vinted-listing', 'wikipedia-uk-editor'],
+    skills: ['gallery', 'fill-music-player', 'music-to-plex', 'vinted-listing', 'wikipedia-uk-editor'],
   },
   'olko-web-ops': {
     description: 'Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.',
