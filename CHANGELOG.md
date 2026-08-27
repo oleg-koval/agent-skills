@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/oleg-koval/agent-skills/compare/v1.36.0...v1.37.0) (2026-08-27)
+
+
+### ✨ Features
+
+* **lekker-review:** approval standard, sizing and dependency axes, plus a skill README ([#66](https://github.com/oleg-koval/agent-skills/issues/66)) ([11ec271](https://github.com/oleg-koval/agent-skills/commit/11ec271179ef203be5f76c659d7c8210aa1fa01a))
+
 # [1.36.0](https://github.com/oleg-koval/agent-skills/compare/v1.35.3...v1.36.0) (2026-08-27)
 
 
