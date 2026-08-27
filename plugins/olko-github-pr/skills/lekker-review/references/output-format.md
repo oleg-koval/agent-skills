@@ -144,6 +144,14 @@ proof inline.>
 
 - <note — tradeoff, risk to watch, or design question worth raising>
 
+PR-level notes belong here, since they have no single file:line. Two are
+produced by Step 3 rather than by an agent:
+- **Sizing:** when the PR exceeds the sizing thresholds, or mixes a refactor
+  with new behaviour, state the recommended split and the strategy.
+- **Verification story:** when the PR body says nothing about how the change was
+  verified, name the evidence that is missing (tests run, manual exercise,
+  screenshots for UI, before/after for behaviour or performance).
+
 *(Omit section entirely if empty.)*
 
 ## 🧪 Test Quality
