@@ -36,6 +36,24 @@ Axes to cover:
 - No JavaScript files (TS-2): if the diff adds any `.js` file to a non-Liquid
   theme repo, flag as Critical — must be `.ts`. Set `rule: "TS-2"` on the
   finding.
+- Dependency changes. Skip this axis entirely unless the diff touches
+  `package.json`, a lockfile, or a vendored dependency. Where it applies:
+  (a) A version bump is a behaviour change nobody in this PR wrote. If neither
+      the PR body nor a commit message cites the changelog or migration notes,
+      that is `important`: semver is a promise the maintainer may not have kept,
+      and a "patch" can carry a behavioural change.
+  (b) A bulk bump of several unrelated packages in one PR is `important`. When
+      it breaks the build you have lost which package did it. The `fix` is to
+      split it per package, or per genuinely related group.
+  (c) When the repository tracks a committed lockfile, a `package.json`
+      dependency change with no matching lockfile change in the same diff is
+      `critical`: the lockfile is what actually ships. A lockfile change with no
+      `package.json` change and no explanation is also `critical`. Do not require
+      a lockfile from a repository that intentionally does not commit one.
+  (d) A new direct dependency that duplicates something already in the stack is
+      `important`. Name the existing thing that already solves it.
+  Raise NO naming, comment, complexity, or hard-rule finding inside a lockfile
+  or a `node_modules` path.
 
 Setting rule tags the finding as a house hard rule: it keeps its Critical
 severity and skips adversarial verification. Only set it for a genuine
