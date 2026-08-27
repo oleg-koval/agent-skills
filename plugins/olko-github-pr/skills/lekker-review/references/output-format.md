@@ -140,6 +140,36 @@ proof inline.>
 
 ---
 
+## 📋 PR-level findings
+
+PR-level findings have no single file:line. Render them with this dedicated
+contract instead of demoting them to Observations because a location is absent:
+
+For an `important` sizing finding:
+
+### #N — Sizing
+
+**Scope:** PR-level · **Severity:** Important
+
+**Risk:** <why the PR cannot be reviewed safely as presented>
+
+**Action:** <the recommended split and strategy>
+
+For a missing verification story:
+
+### Verification story — action required
+
+**Missing evidence:** <tests run, manual exercise, screenshots for UI, or
+before/after for behaviour or performance>
+
+**Action:** <exactly what the author must add to the PR description>
+
+An `important` sizing finding counts toward the Important total and continues
+the finding-number sequence. Missing verification evidence is an explicit
+action, not a no-action Observation.
+
+*(Omit section entirely if empty.)*
+
 ## 📝 Observations
 
 - <note — tradeoff, risk to watch, or design question worth raising>

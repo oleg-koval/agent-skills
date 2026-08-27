@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280, initial-scale=1">
+  <title>Lekker Review Overview</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 1280px; height: 720px; margin: 0; overflow: hidden; }
+    body {
+      color: #e8e8e8;
+      background: radial-gradient(circle at 0 0, rgba(255, 200, 60, 0.05), transparent 38%), #0d0d0d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .poster {
+      width: 1280px;
+      height: 720px;
+      padding: 40px;
+      display: grid;
+      grid-template-rows: 62px 38px 220px 128px 60px 22px;
+      gap: 16px;
+      align-content: space-between;
+      overflow: hidden;
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: #f5c542;
+      font: 700 30px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.06em;
+    }
+    .subtitle { margin: 0; color: #9a9a9a; font-size: 15px; line-height: 1.35; white-space: nowrap; }
+    .pipeline { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .step {
+      height: 38px;
+      padding: 0 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9a9a9a;
+      background: #161616;
+      border: 1px solid #2c2c2c;
+      border-radius: 8px;
+      font: 13px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      white-space: nowrap;
+    }
+    .step.hot { color: #f5c542; border-color: #f5c542; }
+    .arrow { flex: 0 0 auto; color: #555; font: 15px/1 ui-monospace, "SFMono-Regular", Menlo, monospace; }
+    .cards { display: flex; gap: 16px; min-width: 0; }
+    .card {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 220px;
+      padding: 16px;
+      background: #161616;
+      border: 1px solid #262626;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .kicker {
+      margin: 0 0 8px;
+      color: #f5c542;
+      font: 700 11px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+    h2 { margin: 0 0 14px; font-size: 19px; line-height: 1.1; font-weight: 600; }
+    .claims { display: grid; gap: 9px; }
+    .claim { margin: 0; color: #9a9a9a; font-size: 12.5px; line-height: 1.38; }
+    .panel {
+      padding: 14px 16px;
+      background: #161616;
+      border: 1px solid #262626;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .panel-title {
+      margin: 0 0 10px;
+      color: #f5c542;
+      font: 700 11px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.11em;
+    }
+    .severity-row { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; margin-bottom: 10px; }
+    .chip {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 7px 10px;
+      color: #8a8a8a;
+      background: #1e1e1e;
+      border: 1px solid #2c2c2c;
+      border-radius: 6px;
+      font: 11.5px/1.15 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      white-space: normal;
+    }
+    .chip strong { color: #e8e8e8; font-weight: 700; }
+    .chip.critical { color: #f0dcdc; background: #a35c60; border-color: #a35c60; }
+    .chip.critical strong { color: #f0dcdc; }
+    .rule { margin: 0; color: #e8e8e8; font-size: 12.5px; line-height: 1.25; font-weight: 600; }
+    .statement {
+      display: flex;
+      align-items: center;
+      color: #e8e8e8;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+    footer {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      color: #6a6a6a;
+      font: 11.5px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="poster">
+    <header>
+      <h1>LEKKER REVIEW</h1>
+      <p class="subtitle">Depth selects two triage agents or five specialists; verification follows depth. Nothing is pushed without confirmation.</p>
+    </header>
+
+    <section class="pipeline" aria-label="Review pipeline">
+      <div class="step">parse input</div><span class="arrow">→</span>
+      <div class="step">context + worktree</div><span class="arrow">→</span>
+      <div class="step">review agents</div><span class="arrow">→</span>
+      <div class="step hot">verify + prove</div><span class="arrow">→</span>
+      <div class="step">synthesize</div><span class="arrow">→</span>
+      <div class="step">fix / post</div>
+    </section>
+
+    <section class="cards" aria-label="Review agents">
+      <article class="card">
+        <p class="kicker">AGENT 01</p>
+        <h2>Quality</h2>
+        <div class="claims">
+          <p class="claim">Business logic</p>
+          <p class="claim">Data integrity and security</p>
+          <p class="claim">Error handling and scalability</p>
+          <p class="claim">Pre-existing code stays out of scope</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">AGENT 02</p>
+        <h2>Implementation</h2>
+        <div class="claims">
+          <p class="claim">Integration contracts</p>
+          <p class="claim">Migration safety</p>
+          <p class="claim">CI failures feed Critical findings</p>
+          <p class="claim">External behavior and data shape</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">AGENT 03</p>
+        <h2>Simplification</h2>
+        <div class="claims">
+          <p class="claim">Count reader-held concepts</p>
+          <p class="claim">Relocating is not reducing</p>
+          <p class="claim">Split refactor from behavior</p>
+          <p class="claim">Ignore 2-3 duplicated lines</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">AGENT 04</p>
+        <h2>Conventions</h2>
+        <div class="claims">
+          <p class="claim">Existing precedent required</p>
+          <p class="claim">Cite the precedent</p>
+          <p class="claim">Taste alone is dropped</p>
+          <p class="claim">Idiomatic findings never block</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">AGENT 05</p>
+        <h2>Test Quality</h2>
+        <div class="claims">
+          <p class="claim">Coverage verdict</p>
+          <p class="claim">Mutation-slip risk</p>
+          <p class="claim">Mock smells and gaps</p>
+          <p class="claim">Would tests catch a regression?</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="Severity tiers">
+      <p class="panel-title">SEVERITY</p>
+      <div class="severity-row">
+        <div class="chip critical"><strong>Critical</strong> / blocks the merge</div>
+        <div class="chip"><strong>Important</strong> / should fix</div>
+        <div class="chip"><strong>Observation</strong> / worth raising</div>
+        <div class="chip"><strong>Idiomatic</strong> / cited precedent</div>
+      </div>
+      <p class="rule">Critical and Important cover real failure risk; adopter-defined hard-rule violations also remain Critical. No nitpicking.</p>
+    </section>
+
+    <div class="statement">Approve when the change definitely improves codebase health, violates no hard rule, and leaves only non-blocking findings.</div>
+
+    <footer>
+      <span>AUTO: SCAN additions+deletions &lt;150 AND ≤5 files · DEEP &gt;800 OR &gt;25 files OR migrations/ OR *.sql · MEDIUM otherwise</span>
+      <span>lekker-review</span>
+    </footer>
+  </main>
+</body>
+</html>

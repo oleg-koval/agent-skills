@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280, initial-scale=1">
+  <title>Lekker Review Proof</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 1280px; height: 720px; margin: 0; overflow: hidden; }
+    body {
+      color: #e8e8e8;
+      background: radial-gradient(circle at 0 0, rgba(255, 200, 60, 0.05), transparent 38%), #0d0d0d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .poster {
+      width: 1280px;
+      height: 720px;
+      padding: 40px;
+      display: grid;
+      grid-template-rows: 62px 38px 286px 86px 66px 22px;
+      gap: 16px;
+      overflow: hidden;
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: #f5c542;
+      font: 700 30px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.06em;
+    }
+    .subtitle { margin: 0; color: #9a9a9a; font-size: 15px; line-height: 1.35; white-space: nowrap; }
+    .pipeline { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .step {
+      height: 38px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9a9a9a;
+      background: #161616;
+      border: 1px solid #2c2c2c;
+      border-radius: 8px;
+      font: 13px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      white-space: nowrap;
+    }
+    .step.hot { color: #f5c542; border-color: #f5c542; }
+    .arrow { flex: 0 0 auto; color: #555; font: 15px/1 ui-monospace, "SFMono-Regular", Menlo, monospace; }
+    .cards { display: flex; gap: 16px; min-width: 0; }
+    .card {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 286px;
+      padding: 16px;
+      background: #161616;
+      border: 1px solid #262626;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .kicker {
+      margin: 0 0 8px;
+      color: #f5c542;
+      font: 700 11px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.11em;
+    }
+    h2 { margin: 0 0 14px; font-size: 19px; line-height: 1.1; font-weight: 600; }
+    .claims { display: grid; gap: 9px; }
+    .claim { margin: 0; color: #9a9a9a; font-size: 12.5px; line-height: 1.38; }
+    .claim strong { color: #e8e8e8; font-weight: 600; }
+    .panel {
+      padding: 13px 16px;
+      background: #161616;
+      border: 1px solid #262626;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      overflow: hidden;
+    }
+    .panel-title {
+      flex: 0 0 auto;
+      margin: 0;
+      color: #f5c542;
+      font: 700 11px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.11em;
+    }
+    .chip {
+      flex: 0 0 auto;
+      padding: 8px 11px;
+      color: #8a8a8a;
+      background: #1e1e1e;
+      border: 1px solid #2c2c2c;
+      border-radius: 6px;
+      font: 11.5px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      white-space: nowrap;
+    }
+    .chip.red { color: #f0dcdc; background: #a35c60; border-color: #a35c60; }
+    .panel-rule { margin: 0; color: #e8e8e8; font-size: 12.5px; line-height: 1.28; font-weight: 600; }
+    .statement {
+      display: flex;
+      align-items: center;
+      color: #e8e8e8;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+    footer {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      color: #6a6a6a;
+      font: 11.5px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="poster">
+    <header>
+      <h1>LEKKER PROOF</h1>
+      <p class="subtitle">Depth gates verification and proof attempts; a proven Critical must flip green after a fix.</p>
+    </header>
+
+    <section class="pipeline" aria-label="Evidence pipeline">
+      <div class="step">finding</div><span class="arrow">→</span>
+      <div class="step">five challenges</div><span class="arrow">→</span>
+      <div class="step hot">proof attempt</div><span class="arrow">→</span>
+      <div class="step">real git diff</div><span class="arrow">→</span>
+      <div class="step">green proof</div><span class="arrow">→</span>
+      <div class="step">confirmed push</div>
+    </section>
+
+    <section class="cards" aria-label="Proof mechanisms">
+      <article class="card">
+        <p class="kicker">PROOF 01</p>
+        <h2>Refute It</h2>
+        <div class="claims">
+          <p class="claim">One verifier applies five adversarial challenges to one finding.</p>
+          <p class="claim"><strong>Scan:</strong> no findings verified.</p>
+          <p class="claim"><strong>Medium:</strong> Criticals verified.</p>
+          <p class="claim"><strong>Deep:</strong> Criticals and Importants verified.</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">PROOF 02</p>
+        <h2>Keep the Rule</h2>
+        <div class="claims">
+          <p class="claim">Teams define hard rules in <strong>references/house-rules.md</strong>.</p>
+          <p class="claim">Reviewers tag violations with <strong>rule</strong>; they stay Critical.</p>
+          <p class="claim">Runtime questions cannot prove standards and would drop non-negotiable findings.</p>
+          <p class="claim">Rule-tagged findings skip provers; policy has no failing test.</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">PROOF 03</p>
+        <h2>Prove the Bug</h2>
+        <div class="claims">
+          <p class="claim">At medium and deep depth, up to five non-rule Criticals get a prover.</p>
+          <p class="claim">It runs in the isolated worktree.</p>
+          <p class="claim">Captured red demonstrates the Critical bug.</p>
+          <p class="claim">Green is counter-evidence: downgrade or justify.</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">PROOF 04</p>
+        <h2>Fix, Then Verify</h2>
+        <div class="claims">
+          <p class="claim">One fix agent edits each file.</p>
+          <p class="claim">A read-only verifier reads the real git diff.</p>
+          <p class="claim">A red proof after the fix reverts the group.</p>
+          <p class="claim">Nothing is pushed without explicit confirmation.</p>
+        </div>
+      </article>
+      <article class="card">
+        <p class="kicker">PROOF 05</p>
+        <h2>Keep It Living</h2>
+        <div class="claims">
+          <p class="claim">Reviews publish a private artifact page by default.</p>
+          <p class="claim">Re-reviews update the same URL.</p>
+          <p class="claim">A timeline shows what changed since the last review.</p>
+          <p class="claim">Findings close commit by commit.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="Counter-evidence rule">
+      <p class="panel-title">COUNTER-EVIDENCE</p>
+      <span class="chip red">RED = bug demonstrated</span>
+      <span class="chip">GREEN = code behaved correctly</span>
+      <p class="panel-rule">A green proof cannot silently remain Critical. It must be downgraded or explicitly justified.</p>
+    </section>
+
+    <div class="statement">An executed test outranks an agent's opinion. If the proof stays red after a fix, the group is reverted.</div>
+
+    <footer>
+      <span>VERIFY: scan none · medium Critical · deep Critical + Important · rule-tagged findings exempt and never proved</span>
+      <span>lekker-review</span>
+    </footer>
+  </main>
+</body>
+</html>
