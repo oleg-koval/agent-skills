@@ -235,7 +235,7 @@
           "name": "lekker-review",
           "lookupName": "olko:lekker-review",
           "path": "plugins/olko-github-pr/skills/lekker-review",
-          "description": "FAANG-quality PR code review: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, 5 parallel specialist review agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
+          "description": "FAANG-quality PR code review: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, 5 specialist review agents run in staggered batches, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
           "tags": [
             "code-review",
             "pull-request",

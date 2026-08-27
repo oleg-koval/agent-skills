@@ -3,8 +3,9 @@ name: lekker-review
 description: >
   FAANG-quality PR code review, adaptable to any team. Checks out the branch in an
   isolated worktree, gathers context from your issue tracker, chat, docs, CI
-  checks, and (optionally) production monitoring, runs 5 parallel specialized
-  review agents (quality/implementation/simplification/conventions/test-quality),
+  checks, and (optionally) production monitoring, runs 5 specialized review
+  agents (quality/implementation/simplification/conventions/test-quality) in
+  staggered batches of 2, 2 then 1 to keep peak memory flat,
   verifies every finding against the diff, then outputs a single unified markdown
   review — file + risk + bad code + why it's wrong + fix — ready to paste directly
   into GitHub. Saves every review to ~/code-reviews/*.md. Covers business logic,
@@ -44,8 +45,8 @@ argument-hint: "<github-pr-url | repo pr-number | repo pr-title> [scan|medium|de
 
 FAANG-grade code review. Isolated worktree checkout, full context gathering
 (issue tracker + chat + docs + framework docs + monitoring + CI, whichever
-you have MCP tools configured for), then 5 parallel specialized review
-agents, a finding-verification pass, and one unified markdown output.
+you have MCP tools configured for), then 5 specialized review agents run in
+staggered batches, a finding-verification pass, and one unified markdown output.
 
 Each finding contains: **file + risk** · **bad code verbatim** · **why it's
 wrong** · **fix with code example** - ready to paste directly into GitHub.
@@ -147,7 +148,7 @@ treat as a full review and leave PREV_SHA unset. Also grep the same file for
 | Context: issue-tracker/CI/diff/existing-reviews | always | always | always |
 | Context: chat/docs/framework-docs/monitoring/prior-review-memory (optional, MCP-dependent) | skip | included | included + broader recall |
 | Worktree + static checks    | skip (WORKTREE_PATH=null) unless `--fix` | included | included          |
-| Review agents               | 2 triage (haiku)      | 5 specialists (sonnet) | 5 specialists (sonnet)  |
+| Review agents               | 2 triage (haiku)      | 5 specialists (sonnet), batched 2/2/1 | 5 specialists (sonnet), batched 2/2/1 |
 | Per-finding verification    | none                  | Criticals only (hard rules exempt) | Criticals + Importants (hard rules exempt) |
 | Completeness critic         | skip                  | skip                | included                   |
 | Proof-of-bug (failing test per Critical) | skip     | included (max 5)    | included (max 5)           |
@@ -270,12 +271,29 @@ args: {
 }
 ```
 
+Two optional args tune concurrency; omit both unless a run needs it:
+
+- `reviewBatchPlan` - batch sizes for the review dimensions, default `[2, 2, 1]`.
+  The last entry repeats to cover any remainder, so `[2]` means two at a time.
+- `maxConcurrent` - cap for every other fan-out (verify, critic, prove),
+  default `2`.
+
+Raise them only on a machine with headroom to spare. Lowering them is always
+safe: it costs wall-clock, never findings.
+
 The workflow runs three phases:
 
 - **Review:** scan uses `[triage-quality, triage-logic]` on `haiku`; medium/deep
   use 5 specialists (quality, implementation, simplification, conventions,
   test-quality) on `sonnet`. Agents receive DIFF_FILE + CONTEXT_FILE by path.
-  All reviewers run to completion before verification starts.
+  They run in **staggered batches of 2, then 2, then 1** rather than one wide
+  fan-out: every reviewer holds the diff, the context file and its slice of the
+  worktree at once, so launching five together multiplies peak memory by five
+  and has been enough to trigger a session teardown that destroys the worktree
+  mid-run. Batching trades a little wall-clock for a flat peak. All reviewers
+  still run to completion before verification starts.
+  Override per run with the `reviewBatchPlan` arg (e.g. `[5]` restores the old
+  single fan-out, `[1]` runs them strictly one at a time).
 - **Dedup:** findings are merged across dimensions on `file:line` + title
   token-similarity, so one issue found by three agents is verified once, not
   three times. A merge keeps the highest severity and the longest
@@ -286,13 +304,15 @@ The workflow runs three phases:
   Criticals + Importants. Hard-rule findings (`rule` set) are always exempt.
   Each verifier runs the five-challenge adversarial refutation from
   `references/agents/verifier.md` against one finding, returns
-  `{verdict, newSeverity?, reasoning}`.
+  `{verdict, newSeverity?, reasoning}`. Verifiers run `maxConcurrent` at a time
+  (default 2) - a finding-heavy PR would otherwise fan out wider than the
+  review stage it came from.
 - **Critic (deep only):** completeness critic gets the full deduped finding
   list + DIFF_FILE; its findings go through verifier agents before promotion.
 - **Prove (medium/deep, worktree required):** each non-hard-rule Critical gets
-  one prover agent (`references/agents/prover.md`, sonnet, max 5) that writes a
-  test asserting the CORRECT behavior, runs it in the worktree, and captures it
-  failing because of the bug. The proof rides on the finding as
+  one prover agent (`references/agents/prover.md`, sonnet, max 5, run
+  `maxConcurrent` at a time) that writes a test asserting the CORRECT behavior,
+  runs it in the worktree, and captures it failing because of the bug. The proof rides on the finding as
   `proof: {attempted, proven, reason, testCode?, testCommand?, redOutput?}`.
   A proof that comes back GREEN (code behaved correctly) is counter-evidence -
   Step 3 must downgrade or explicitly justify the finding, never ignore it.
@@ -505,11 +525,18 @@ Remove the delta file if `deltaFile` was set in worktree.json. Verify with
 
 Two identical failures = stop and diagnose, don't loop blindly.
 
-If the Workflow tool is unavailable or the run dies: fall back to launching the
-5 agents via the Agent tool with the same prompt files, do verification inline
-per `references/agents/verifier.md`, and state this fallback in the review
-output under a `**Note:** Workflow tool unavailable - ran agents directly`
-line in the header.
+If the Workflow tool is unavailable or the run dies: first re-check that
+DIFF_FILE, CONTEXT_FILE and WORKTREE_PATH still exist. A killed run often means
+the session was torn down, and a teardown takes the worktree and scratchpad with
+it - agents launched against vanished inputs return nothing and the tokens are
+wasted. Re-run Step 1 before Step 2 if any input is missing.
+
+Once the inputs are confirmed present, fall back to launching the 5 agents via
+the Agent tool with the same prompt files, **in the same 2/2/1 batches** (a
+direct fan-out reintroduces exactly the pressure the batching exists to avoid),
+do verification inline per `references/agents/verifier.md`, and state this
+fallback in the review output under a
+`**Note:** Workflow tool unavailable - ran agents directly` line in the header.
 
 Fix-mode specific:
 - Never claim a fix landed without a `git log` / `git status` receipt from the
