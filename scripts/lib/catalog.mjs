@@ -24,7 +24,7 @@ export const PLUGIN_ASSIGNMENT = {
   },
   'olko-skill-meta': {
     description: 'Author and maintain agent skills and the AI toolchain itself.',
-    skills: ['add-to-my-skills', 'skill-budget-audit', 'promptctl', 'ai-tools-setup',
+    skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'ai-tools-setup',
              'relay', 'shared-knowledge-artifact'],
   },
   'olko-reflection': {

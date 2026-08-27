@@ -2,7 +2,7 @@
 name: ci-fix-loop
 description: >
   Diagnose GitHub Actions CI failures in a loop: fetch the failing check logs, identify
-  the root cause, apply a targeted fix, push, and wait for the next run — repeating until
+  the root cause, apply a targeted fix, push, and wait for the next run: repeating until
   all checks are green or a real blocker needs a human. Use when CI is red after a push,
   when the user says "fix CI", "make tests pass", "diagnose CI failures", or "drive this
   to green". Direct analog of qodoloop / coderabbitloop for automated test and lint failures.
@@ -53,7 +53,7 @@ gh pr checks --json name,state,conclusion 2>/dev/null \
 
 Classify each check as: `pass`, `fail`, `pending`, or `skipped`.
 
-**Exit immediately if all required checks already pass** — nothing to do.
+**Exit immediately if all required checks already pass**: nothing to do.
 
 ### 2. Loop (max 5 iterations)
 
@@ -66,7 +66,7 @@ gh pr checks --json name,state,conclusion \
 
 For each failing check, record: check name, workflow file, job name.
 
-Stop if the working set is empty — all required checks are green.
+Stop if the working set is empty: all required checks are green.
 
 #### B. Check for base-branch regression first
 
@@ -77,7 +77,7 @@ gh run list --branch <base-branch> --workflow <workflow-name> --limit 3 \
   --json conclusion --jq '.[].conclusion'
 ```
 
-If the same check is failing on the base branch, **stop and report** —
+If the same check is failing on the base branch, **stop and report**:
 this is not your PR's fault. Do not attempt a fix that masks a base-branch problem.
 Wait for a `Base branch recovered` notice before re-trying.
 
@@ -94,7 +94,7 @@ gh run list --branch <branch> --workflow <workflow-name> --limit 1 \
 gh run view <run-id> --log-failed
 ```
 
-Cap log reading at ~200 lines per job — the error is almost always in the last
+Cap log reading at ~200 lines per job: the error is almost always in the last
 50 lines of a failed step.
 
 #### D. Diagnose
@@ -146,12 +146,12 @@ go mod tidy          # Go
 ```
 
 For test failures: read the failing test and the code it exercises. Fix the code
-or the assertion — but not both in one commit unless the test was clearly wrong
+or the assertion, but not both in one commit unless the test was clearly wrong
 and the fix is trivial.
 
 #### F. Commit and push
 
-Stage **only the files touched in step E** — never `git add -A`, which can sweep
+Stage **only the files touched in step E**: never `git add -A`, which can sweep
 in unrelated local changes:
 
 ```bash
@@ -189,7 +189,7 @@ Go back to step A.
 ```
 CI fix loop complete.
   Iterations:  2
-  Fixed:       lint (gofmt: 3 files), test (TestUserCreate — nil pointer in fixture)
+  Fixed:       lint (gofmt: 3 files), test (TestUserCreate: nil pointer in fixture)
   Blocked:     none
   Status:      all required checks green
 ```

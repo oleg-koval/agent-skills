@@ -11,7 +11,7 @@ Use the olko:release-day skill.
 # Release Day
 
 Drive a release from "code is ready" to "build submitted" in one orchestrated pass.
-Each phase validates its output before proceeding — the skill stops and reports
+Each phase validates its output before proceeding: the skill stops and reports
 rather than pushing a broken release.
 
 ## Inputs
@@ -23,7 +23,7 @@ rather than pushing a broken release.
 - **--dry-run** (optional): run all checks and generate all copy without pushing
   the tag or submitting to the store
 
-## Phase 1 — Verify the branch is ready
+## Phase 1: Verify the branch is ready
 
 ```bash
 BRANCH="${Branch:-main}"
@@ -56,14 +56,14 @@ gh run list --branch "$BRANCH" --limit 3 --json status,conclusion,workflowName \
 ```
 
 **Stop if:**
-- `git status --short` is non-empty — there are uncommitted changes
+- `git status --short` is non-empty: there are uncommitted changes
 - The latest CI run on main is failing or still in progress
 - There are zero commits since the last tag (nothing to release)
 
-Report the problem clearly and stop — do not proceed to a release if the branch
+Report the problem clearly and stop. Do not proceed to a release if the branch
 is not clean and green.
 
-## Phase 2 — Generate changelog
+## Phase 2: Generate changelog
 
 Run `olko:changelog-generator`.
 
@@ -75,9 +75,9 @@ Write the changelog to:
 ```bash
 RELEASE_DIR="$(mktemp -d)/release-$(date +%Y-%m-%d)"
 mkdir -p "$RELEASE_DIR"
-# changelog-generator writes to CHANGELOG.md — validate before proceeding
+# changelog-generator writes to CHANGELOG.md: validate before proceeding
 if [ ! -s CHANGELOG.md ]; then
-  echo "Error: CHANGELOG.md is missing or empty — cannot continue." >&2
+  echo "Error: CHANGELOG.md is missing or empty, cannot continue." >&2
   exit 1
 fi
 cp CHANGELOG.md "$RELEASE_DIR/changelog.md"
@@ -87,7 +87,7 @@ Review the generated changelog for accuracy before continuing. If commits are
 ambiguous (e.g. `fix: thing`), use `git show <sha>` to read the diff and
 re-classify the entry.
 
-## Phase 3 — Draft store listing copy
+## Phase 3: Draft store listing copy
 
 Run `olko:store-listing-copy` with `--platform <platform>`.
 
@@ -105,7 +105,7 @@ store-copy-v<version>-<YYYY-MM-DD>.md
 **Do not proceed until store copy passes validation.** Fix any overflow or forbidden
 character before tagging.
 
-## Phase 4 — Trigger the release
+## Phase 4: Trigger the release
 
 ### If semantic-release is configured
 
@@ -113,7 +113,7 @@ character before tagging.
 # Dry-run first to confirm version and release notes
 set -o pipefail
 if ! npm run release:dry-run 2>&1 | tail -40; then
-  echo "Dry-run failed — aborting release." >&2
+  echo "Dry-run failed, aborting release." >&2
   exit 1
 fi
 
@@ -162,10 +162,10 @@ gh release create "$NEXT_VERSION" \
   --notes-file "$RELEASE_DIR/changelog.md"
 ```
 
-## Phase 5 — Confirm build artifact
+## Phase 5: Confirm build artifact
 
 Download and validate the platform-specific build artifact. Poll every 2 minutes
-(timeout: 20 min) — do not proceed to Phase 6 until the artifact is confirmed present.
+(timeout: 20 min). Do not proceed to Phase 6 until the artifact is confirmed present.
 
 ```bash
 ARTIFACT_FOUND=false
@@ -193,24 +193,24 @@ for i in $(seq 1 10); do
       ;;
   esac
 
-  echo "Attempt $i/10: artifact not yet available — waiting 2 minutes..."
+  echo "Attempt $i/10: artifact not yet available, waiting 2 minutes..."
   sleep 120
 done
 
 if [ "$ARTIFACT_FOUND" != "true" ]; then
-  echo "Error: required build artifact not found after 20 minutes — aborting." >&2
+  echo "Error: required build artifact not found after 20 minutes, aborting." >&2
   exit 1
 fi
 ```
 
-## Phase 6 — Submit to the store
+## Phase 6: Submit to the store
 
-**Skip this phase with `--dry-run`** — stop after Phase 3 and print the store copy
+**Skip this phase with `--dry-run`**: stop after Phase 3 and print the store copy
 for manual paste.
 
 Run the platform-specific submission workflow with the artifact from Phase 5:
 
-**iOS:** Run `olko:apple-store-submit` — handles `altool` / `xcrun notarytool`
+**iOS:** Run `olko:apple-store-submit`: handles `altool` / `xcrun notarytool`
 submission, watches for Apple's processing email, and catches common rejection patterns.
 
 **Android:** Upload the `.aab` (or `.apk`) to Google Play using `fastlane supply`:
@@ -224,7 +224,7 @@ fastlane supply \
 
 Promote from internal → production after QA sign-off.
 
-**Garmin:** Run `olko:garmin-watchface` store publishing workflow — uploads the `.prg`
+**Garmin:** Run `olko:garmin-watchface` store publishing workflow: uploads the `.prg`
 and the listing copy from Phase 3 via the Connect IQ developer portal.
 
 **all:** Run iOS → Android → Garmin in sequence; report each result independently.
@@ -232,7 +232,7 @@ and the listing copy from Phase 3 via the Connect IQ developer portal.
 ## Final report
 
 ```
-Release day complete — YYYY-MM-DD
+Release day complete: YYYY-MM-DD
 
   Version:      vX.Y.Z (was vA.B.C)
   Platform:     ios / android / garmin / all
@@ -259,6 +259,6 @@ Release day complete — YYYY-MM-DD
 
 | Before this skill | After this skill |
 |---|---|
-| `olko:pr-to-green` — merge the release PR | Monitor store review status |
-| `olko:semantic-release-beta` — promote beta to stable | `olko:changelog-generator` for next iteration |
+| `olko:pr-to-green`: merge the release PR | Monitor store review status |
+| `olko:semantic-release-beta`: promote beta to stable | `olko:changelog-generator` for next iteration |
 | Manual: "all features are in, ship it" | Post-release monitoring |

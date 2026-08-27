@@ -4,7 +4,7 @@
 **Guidelines:** <https://developer.garmin.com/connect-iq/app-review-guidelines/>
 
 Upload is a single file: the `.iq` from `make package`. It is a multi-device
-bundle — every declared product is inside it. Nothing else to attach.
+bundle: every declared product is inside it. Nothing else to attach.
 
 ## App settings live on the phone, not the watch
 
@@ -77,7 +77,7 @@ And Garmin will not adjudicate:
 > infringing, properly used under a license, or fair use.
 
 So there is no approval to win. They accept it, and §5(b) lets them suspend with
-**no notice** if a rights holder complains — against the account, which carries
+**no notice** if a rights holder complains: against the account, which carries
 your other apps too.
 
 Practical tiers for an homage:
@@ -90,7 +90,7 @@ Practical tiers for an homage:
 
 "The brand is dead so I can use it" does not hold. Abandonment is a legal finding
 requiring genuine non-use with no intent to resume, and it is moot if anyone holds
-a live registration — renewal is cheap and dormant heritage marks are routinely
+a live registration: renewal is cheap and dormant heritage marks are routinely
 warehoused and revived. Check the registers before relying on it: USPTO Trademark
 Search, EUIPO eSearch, WIPO Global Brand Database, and the national register of
 the owner's country. A lapsed mark you do not own is still not a mark you *own*,
@@ -128,7 +128,7 @@ Two things that bite when reusing face-drawing code for artwork:
 
 ## Checklist
 
-- [ ] `make test` passes — and the tests actually compile (`reference/testing.md`)
+- [ ] `make test` passes, and the tests actually compile (`reference/testing.md`)
 - [ ] `make lint` clean at level 3
 - [ ] `make package` builds every declared device
 - [ ] Developer key not committed

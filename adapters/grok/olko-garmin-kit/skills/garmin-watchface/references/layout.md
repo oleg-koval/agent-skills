@@ -16,7 +16,7 @@ Real heights on fenix 6 Pro. They are larger than they look:
 | `FONT_NUMBER_MEDIUM` | 74 |
 
 `FONT_NUMBER_MEDIUM` at 74px means a two-line time block is **148px of a 260px
-face** — 57% of the screen for four digits.
+face**: 57% of the screen for four digits.
 
 These differ per device, so treat the table as an order-of-magnitude guide and
 call `dc.getFontHeight()` at draw time.
@@ -106,7 +106,7 @@ function rowXBounds(topY as Number, height as Number) as Array<Number> {
 ```
 
 **A row is cut at its lowest edge if below centre, its highest if above.** Using
-the row's top for a bottom row is the classic error — it reports space that is
+the row's top for a bottom row is the classic error: it reports space that is
 not there.
 
 **Rectangles fail at their corners, not their edges.** Checking the sides of a
@@ -208,11 +208,11 @@ Two things this costs you:
 - Ghosts destroy legibility below about 60px. At icon size, the faint `8` behind
   a `1` wins and every digit reads as `8`. Omit them there.
 - Ghost colour must sit between panel and segment. Against a white panel,
-  `0x555555` ghosts compete with lit digits — use `0xAAAAAA`.
+  `0x555555` ghosts compete with lit digits: use `0xAAAAAA`.
 
 Blank a leading zero by drawing only the ghost, not by drawing `0`. Return
 `null` from the digit provider so the drawing code can tell "blank" from "the
-digit nought" — they are different pictures.
+digit nought": they are different pictures.
 
 ## Miscellaneous
 
@@ -225,7 +225,7 @@ digit nought" — they are different pictures.
 
 ## Fonts are tiers, not pixel heights
 
-`FONT_XTINY` is not a size — it is a request, and the device answers with a
+`FONT_XTINY` is not a size: it is a request, and the device answers with a
 glyph proportionate to its own screen. A 454px watch supplies a materially
 taller `FONT_XTINY` than a 260px one, unasked.
 

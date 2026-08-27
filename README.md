@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-48-2563eb" alt="48 skills">
+    <img src="https://img.shields.io/badge/skills-49-2563eb" alt="49 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -151,7 +151,7 @@ plugins/{plugin}/skills/{skill}/SKILL.md
 
 </details>
 
-## All 48 Skills
+## All 49 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
@@ -206,12 +206,13 @@ Take a product idea to a shippable build: MVP passes, full-stack scaffolds, laun
 | [starter-rules](plugins/olko-product/skills/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
 | [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, or creator tool for public launch |
 
-### olko-skill-meta (6)
+### olko-skill-meta (7)
 
 Author and maintain agent skills and the AI toolchain itself.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
+| [context-repo](plugins/olko-skill-meta/skills/context-repo/SKILL.md) | Resolves a single durable, private GitHub repository other skills use to persist context they produce, retro snapshots and shared-knowledge-artifact mirrors among them, asking once for consent before creating anything and remembering the answer afterward | A skill needs a durable, cross-machine store for content it generates, rather than a local scratch directory that does not survive across machines or repos |
 | [add-to-my-skills](plugins/olko-skill-meta/skills/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
 | [skill-budget-audit](plugins/olko-skill-meta/skills/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow, identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
 | [promptctl](plugins/olko-skill-meta/skills/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, review, scoring, or reusable prompt workflows |
@@ -314,6 +315,20 @@ When adding or changing a skill:
 4. Update `catalog/skills.json` if the skill name, category, description, path, tags, or adapters change.
 5. Run local validation before publishing changes.
 
+### Shared context store
+
+`retro-analysis` and `shared-knowledge-artifact` bootstrap one shared, private GitHub
+repository the first time either one runs, resolved through the `context-repo` skill.
+It asks once, before creating anything, stating the owner, name, and every path it
+will write. The repository stays private; `n` keeps that run local-only and asks
+again next time, `never` stops the prompt for good, and a missing or unauthenticated
+`gh` falls back to local-only automatically.
+
+The pointer lives at `${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json`;
+the clone lives at `${XDG_DATA_HOME:-$HOME/.local/share}/agent-context/repo`.
+See [docs/agent-context-store.md](docs/agent-context-store.md) for the repository
+layout, the first-run walkthrough, and the contract callers follow when writing to it.
+
 ## Generated manifests
 
 | Harness | File | Format |
@@ -337,8 +352,8 @@ Every file above is generated from `catalog/skills.json` by `./scripts/build-ada
 Never edit one by hand: CI regenerates and fails on any difference.
 
 Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
-decides which targets it ships to, so the file counts differ per target: Claude 48, Grok 46,
-Cursor 44, Copilot 44, Codex 41, Windsurf 34, Kiro 34, Pi 2, Hermes 2. A skill is absent from a
+decides which targets it ships to, so the file counts differ per target: Claude 49, Grok 47,
+Cursor 45, Copilot 45, Codex 42, Windsurf 35, Kiro 35, Pi 2, Hermes 2. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
 ## How Skills Work

@@ -41,14 +41,14 @@ Rules:
   the author takes ("Return early here", "Extract one shared winner-picker",
   "Raise to 250", "Add a double with `session`"). Evidence comes after, and only
   the evidence that makes the ask credible. Never open with a bolded severity
-  label, a restated finding title, or a preamble — the author already knows they
+  label, a restated finding title, or a preamble: the author already knows they
   are reading a review comment.
 
   ```
-  ✗ **Important — two implementations of "largest fulfillment order" with
+  ✗ **Important: two implementations of "largest fulfillment order" with
     different tie-break keys.** This ranks by value → units → id; `x.ts:104`
     ranks by shipped qty → id. Diverging input: one shared line referenced by
-    FO-A (qty 1, one $100 item) and FO-B (qty 3, three $10 items) — fallback
+    FO-A (qty 1, one $100 item) and FO-B (qty 3, three $10 items). Fallback
     picks FO-A, exact picks FO-B. Because `existingCreatedLines` idempotency is
     keyed per `fulfillmentOrderGid` with no cross-FO check, a transient
     exact-API failure on FO-A (fallback wins, line written) followed by a
@@ -70,32 +70,32 @@ Rules:
   second worked example once the first lands, and no sentence whose content is
   already visible on the commented line.
 - **Use a GitHub suggestion block for the fix whenever it's a direct code change**
-  anchored to the commented line(s) — a reviewer can apply it with one click:
+  anchored to the commented line(s), a reviewer can apply it with one click:
   ```suggestion
   <replacement line(s), exact drop-in for the line(s) the comment is anchored to>
   ```
-  Only use a suggestion block when it exactly replaces the commented line(s) —
+  Only use a suggestion block when it exactly replaces the commented line(s):
   never for fixes spanning multiple files or requiring a new function/extraction
   elsewhere. For those, describe the fix in one sentence instead and point to
   the saved review for detail; do not paste a plain fenced code block as a
   substitute for a real suggestion.
-- **Every inline comment must be ACTIONABLE** — it must ask for a concrete change
+- **Every inline comment must be ACTIONABLE**: it must ask for a concrete change
   (fix X, add a test for Y, regenerate Z). Do NOT post informational-only or
   FYI comments ("behaviour change, intentional", "note that…", "just flagging").
-  If there's nothing to do, there's no comment — put context like that in the
+  If there's nothing to do, there's no comment: put context like that in the
   review body or the saved review file, never as an inline PR comment.
 - The review-level `body` field must contain, in this order: the finding counts
   ("0 Critical / 5 Important / 6 Observations / 1 Idiomatic"), one or two
-  sentences of risk framing, then **a numbered list of the asks — one line each,
+  sentences of risk framing, then **a numbered list of the asks: one line each,
   imperative, matching the inline comments in order**. That list is what the
   author reads first and works from; it must be scannable in ten seconds. Then
   any Production Signals, then a short flat list of Observations marked "no
   action required", then the saved review file path.
 
   Keep the body itself under ~2,500 characters. If it is longer, the asks are
-  buried — cut prose, never cut the numbered asks.
+  buried: cut prose, never cut the numbered asks.
 - Do NOT prefix the body with a banner like "## Lekker review". Do NOT praise the
-  PR or describe what it does well — no "solid", "handled well", "clean", "nice".
+  PR or describe what it does well: no "solid", "handled well", "clean", "nice".
   State the risk and the asks only.
 - We use **Linear**, not Jira. Never write "Jira" in any comment or body; refer
   to Linear ticket IDs (e.g. DUBO-201) directly.

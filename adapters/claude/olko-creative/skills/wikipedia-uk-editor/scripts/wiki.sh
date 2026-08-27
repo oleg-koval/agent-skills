@@ -63,7 +63,7 @@ print(p['title'], r['revid'], r['timestamp'])"
 p=json.load(sys.stdin)['query']['pages'][0]
 if p.get('missing'): sys.exit('MISSING: '+p['title'])
 ll=p.get('langlinks')
-print(ll[0]['title'] if ll else 'NO EQUIVALENT — safe to create')"
+print(ll[0]['title'] if ll else 'NO EQUIVALENT: safe to create')"
     ;;
   search)
     api "$1" --data-urlencode "action=query" --data-urlencode "list=search" \

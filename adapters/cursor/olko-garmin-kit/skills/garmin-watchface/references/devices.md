@@ -3,13 +3,13 @@
 ## Products, devices, and what "5 out of 5 built" means
 
 A `<iq:product>` in the manifest often covers several marketing variants that
-share hardware. Declaring `fenix6pro` alone produces `5 OUT OF 5 DEVICES BUILT`
-— fenix 6 Pro, 6 Sapphire, 6 Pro Solar, 6 Pro Dual Power, quatix 6. That is one
+share hardware. Declaring `fenix6pro` alone produces `5 OUT OF 5 DEVICES BUILT`:
+fenix 6 Pro, 6 Sapphire, 6 Pro Solar, 6 Pro Dual Power, quatix 6. That is one
 layout, not five. Do not read the count as breadth.
 
 ## Widening cheaply
 
-A face written against one resolution ports for free to every device sharing it —
+A face written against one resolution ports for free to every device sharing it:
 a manifest edit, no code change.
 
 ```bash
@@ -105,7 +105,7 @@ fr970.resourcePath = $(base.resourcePath);resources-65
 ```
 
 **Do not upsample.** A 40×40 icon scaled to 65×65 turns 2px segment bars into
-grey smears. Draw it at size — render at 8× and downsample once with a good
+grey smears. Draw it at size: render at 8× and downsample once with a good
 filter, which is what gives rounded corners and stroke ends clean edges at these
 sizes. Keep the generator in `tools/` so the next size is one command.
 
@@ -133,7 +133,7 @@ function init(width as Number) as Void {
 }
 ```
 
-Call it from `onLayout(dc)` with `dc.getWidth()` — never from a device name, so
+Call it from `onLayout(dc)` with `dc.getWidth()`: never from a device name, so
 a new product needs no code at all.
 
 **Constants outside `Layout.mc` are the trap.** Widget modules accumulate their
@@ -202,9 +202,9 @@ produces garbage. Both compile.
 ## Recommended order
 
 1. Ship one resolution, verified on your own wrist.
-2. Add the same-resolution family — biggest reach per unit of risk.
+2. Add the same-resolution family: biggest reach per unit of risk.
 3. Make `Layout` resolution-aware only if it gets traction. It is real work and
    it risks the pixel-exact look you tuned.
 4. Crossing to AMOLED is a *separate* step from crossing resolution, even though
    the 454×454 group makes them arrive together. See the always-on section in
-   `reference/display.md` — that is the part that fails review, not the layout.
+   `reference/display.md`: that is the part that fails review, not the layout.

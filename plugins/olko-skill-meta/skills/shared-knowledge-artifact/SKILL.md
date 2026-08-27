@@ -1,9 +1,9 @@
 ---
 name: shared-knowledge-artifact
-description: Build a shared, self-persisting knowledge ledger as a Claude Artifact — a private page that stores its own data, renders itself from that data, and saves new versions of itself, so several agents can read the same lessons before starting work and append to them afterwards. Use when the user wants agents to learn from each other, asks for a shared knowledge base, lessons-learned log, gotcha ledger, or cross-agent memory page they can hand to other sessions.
+description: Build a shared, self-persisting knowledge ledger as a Claude Artifact, a private page that stores its own data, renders itself from that data, and saves new versions of itself, so several agents can read the same lessons before starting work and append to them afterwards. Use when the user wants agents to learn from each other, asks for a shared knowledge base, lessons-learned log, gotcha ledger, or cross-agent memory page they can hand to other sessions.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob, Skill, Artifact
-compatibility: Claude Code only — requires the Artifact tool and the artifact runtime capabilities (`capabilities: {artifact: {}}`).
+compatibility: Claude Code only, requires the Artifact tool and the artifact runtime capabilities (`capabilities: {artifact: {}}`).
 metadata:
   author: Oleg Koval
   package: shared-knowledge-artifact
@@ -29,9 +29,10 @@ Publish one private Artifact page that acts as an append-only knowledge ledger w
 
 ## Before writing any code
 
-1. Invoke the `artifact-capabilities` skill — mandatory before declaring `capabilities` or writing any `window.claude.*` code.
-2. Invoke the `artifact-design` skill — calibrates the design treatment.
-3. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory) and **seed the ledger with 6-10 real lessons already recorded there**. No lorem, no invented examples — a ledger that opens with fake entries never gets used.
+1. Invoke the `artifact-capabilities` skill, mandatory before declaring `capabilities` or writing any `window.claude.*` code.
+2. Invoke the `artifact-design` skill, which calibrates the design treatment.
+3. Resolve the durable store by invoking the `context-repo` skill. If it comes back BLOCKED, or the user declines when that skill asks, publish the artifact anyway and skip mirroring, labelled `NOT_MIRRORED: <reason>` in the deliverable. Mirroring must never block publishing.
+4. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory) and, when the store resolved, `knowledge/*/ledger.json` from it, then **seed the ledger with 6-10 real lessons already recorded there**. Skip any lesson already present in a resolved store's ledger.json so a new ledger doesn't reseed what is already recorded elsewhere. No lorem, no invented examples: a ledger that opens with fake entries never gets used.
 
 ## Persistence mechanism
 
@@ -39,9 +40,17 @@ Publish one private Artifact page that acts as an append-only knowledge ledger w
 - Store the data as a JSON object inside `<script type="application/json" id="ledger-state">`. That block is the authoritative record; the visible page is **rendered from it** at load. Never serialize the live DOM to save.
 - To persist: snapshot `document.documentElement.outerHTML` **once at script start** (pristine source, before any rendering), then on save splice the new JSON into that snapshot's `#ledger-state` block, prepend `<!doctype html>`, and call `artifact.publish(doc)`.
 - Get the namespace with `const artifact = await claude.use("artifact")`; branch on `null` (this view cannot write) and render a read-only state instead of a broken control.
-- Handle publish errors by code: `conflict` means someone published first and every view reloads to the winner — no retry, tell the person to re-add; `not_granted` / `not_writer` means read-only.
+- Handle publish errors by code: `conflict` means someone published first and every view reloads to the winner: no retry, tell the person to re-add; `not_granted` / `not_writer` means read-only.
 - Publish only after an explicit user action, never on load; batch rapid edits into one publish.
 - Escape `</script` when writing the JSON back, and escape every interpolated note field on render.
+
+## Mirror to the context store
+
+The Artifact page stays the authoritative record; this section only mirrors it, it never replaces it. After a successful publish performed by this skill (not a viewer's later edit on the page), extract the `#ledger-state` JSON from the published document and commit `knowledge/<slug>/ledger.json` plus `page.html` to the resolved store, message `chore(knowledge): mirror <slug>, <n> notes` where `<n>` is the current note count. Follow the `context-repo` caller contract: one commit per run, `git pull --rebase` before push, never force, never delete an existing file.
+
+If the store did not resolve (BLOCKED or declined in the "Before writing any code" step), skip this section entirely and report `NOT_MIRRORED` with the reason; do not retry the resolution mid-run.
+
+Limitation, stated plainly: notes added on the page by a viewer are not mirrored, because no agent is present when that happens. The mirror only catches up on the next agent-driven publish. Treat the repo as a recovery copy and a diffable history, never as the complete log; anyone relying on it as the full record will be wrong.
 
 ## Note schema
 
@@ -64,7 +73,7 @@ Kinds: **lesson** = a habit that holds; **trap** = something that silently produ
 - Scope filter chips derived from the data, including an `all` chip, with `aria-pressed` state.
 - An "Add a note" form (kind, scope, author, title, body, why) that appends to the JSON and publishes, with an inline status line reporting published / conflict / read-only.
 - A "Protocol for agents" section **on the page itself**: read the page with the Artifact tool `action: "read"` before substantive work; parse the `#ledger-state` JSON, never scrape the DOM; **append, don't rewrite**; re-read before writing because another agent may have published since; one fact per note with the failure that caused it. Include the schema snippet.
-- Gatekeeping copy: only non-obvious, durable, cross-cutting lessons. If a repo's `CLAUDE.md` already says it, or a review bot already catches it, leave it out — a littered ledger is worse than a thin one.
+- Gatekeeping copy: only non-obvious, durable, cross-cutting lessons. If a repo's `CLAUDE.md` already says it, or a review bot already catches it, leave it out: a littered ledger is worse than a thin one.
 
 ## Design constraints
 
@@ -81,9 +90,10 @@ Write the HTML to a file, publish it with the Artifact tool, then report:
 
 - the URL;
 - that it stays private until shared from the page's share menu;
-- the exact instructions another agent needs — read via Artifact `action: "read"` with that URL, and write by appending to `notes` and republishing **with `url` set to that URL** (a publish *without* `url` forks a separate artifact instead of updating this one).
+- the exact instructions another agent needs: read via Artifact `action: "read"` with that URL, and write by appending to `notes` and republishing **with `url` set to that URL** (a publish *without* `url` forks a separate artifact instead of updating this one);
+- the mirror path and commit SHA in the context store (`knowledge/<slug>/ledger.json` at `<sha>`), or `NOT_MIRRORED: <reason>` if the store did not resolve.
 
 ## Notes
 
-- The full copy-paste prompt version of this workflow lives in `references/prompt.txt` — hand it to another agent or session verbatim.
+- The full copy-paste prompt version of this workflow lives in `references/prompt.txt`: hand it to another agent or session verbatim.
 - Redeploy by republishing the same file path in the same conversation, or by passing `url` from any other conversation.
