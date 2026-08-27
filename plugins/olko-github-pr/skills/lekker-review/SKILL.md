@@ -6,7 +6,7 @@ description: >
   checks, and (optionally) production monitoring, runs 5 parallel specialized
   review agents (quality/implementation/simplification/conventions/test-quality),
   verifies every finding against the diff, then outputs a single unified markdown
-  review — file + risk + bad code + why it's wrong + fix — ready to paste directly
+  review: file + risk + bad code + why it's wrong + fix, ready to paste directly
   into GitHub. Saves every review to ~/code-reviews/*.md. Covers business logic,
   scalability, complexity, data integrity, security, integration contracts, error
   handling, and migration safety. Critical findings come with PROOF: a prover
@@ -24,7 +24,7 @@ description: >
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact
 compatibility: Claude Code only. Requires the Workflow tool (multi-agent orchestration)
-  and the Artifact tool (living review page) — other Agent Skills-compatible tools
+  and the Artifact tool (living review page): other Agent Skills-compatible tools
   without an equivalent to Workflow cannot run the review/verify/critic pipeline this
   skill depends on. Requires git and gh (GitHub CLI) authenticated.
 metadata:
@@ -69,11 +69,11 @@ are about to present the review without it, stop and compute it first.
 
 ## Set up before first use
 
-This skill ships with **no** hard rules of its own — `references/house-rules.md`
+This skill ships with **no** hard rules of its own: `references/house-rules.md`
 is a template. Fill it in with your team's own non-negotiable conventions
 (type safety, pagination, PR-title format, repo-placement taxonomy, stack
 context) before relying on the Critical-severity hard-rule gate. Until then,
-the 5 specialist agents still run and still find real bugs — they just don't
+the 5 specialist agents still run and still find real bugs. They just don't
 have a codified "always Critical" rule list to check against.
 
 If any hard rule you define carries a `rule` tag (e.g. `"TS-1"`), reviewer
@@ -86,8 +86,8 @@ your policy declares non-negotiable. A tagged finding keeps its Critical
 severity; the workflow returns how many were exempted as `hardRuleCount`, and
 each carries a `verifierReasoning` saying so.
 
-`${CLAUDE_PLUGIN_ROOT}` below refers to this skill's own installed directory
-— resolve every `references/...` and script path relative to it.
+`${CLAUDE_PLUGIN_ROOT}` below refers to this skill's own installed directory:
+resolve every `references/...` and script path relative to it.
 
 ---
 
@@ -539,7 +539,7 @@ repo-short-name + PR author login, instructed to follow
 `references/post-review.md` if you've written one for your own setup:
 - Log durable patterns (recurring findings, confirmed false positives) scoped
   to the repo, never to the author.
-- Skip entirely if you have no such system — nothing else in this skill
+- Skip entirely if you have no such system: nothing else in this skill
   depends on it.
 
 ### Cleanup (when a worktree was created)

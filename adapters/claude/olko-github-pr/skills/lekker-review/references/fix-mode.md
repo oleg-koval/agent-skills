@@ -304,7 +304,7 @@ Re-read the file after writing and emit `✓ Fixes recorded -> <REVIEW_FILE>`.
 Add one line to the `## 💰 Review Cost` block for fix-mode spend:
 
 ```
-Fix agents:       <N> (sonnet) — <outputTokens> output tokens, ~$<X.XX>
+Fix agents:       <N> (sonnet): <outputTokens> output tokens, ~$<X.XX>
 ```
 
 ---

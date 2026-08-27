@@ -1,4 +1,4 @@
-# quality — lekker-review agent prompt
+# quality: lekker-review agent prompt
 You will receive in your task message: REPO_SLUG, PR_NUMBER, PR_URL, DIFF_FILE, CONTEXT_FILE (JSON), WORKTREE_PATH (may be null).
 Your findings are returned via the StructuredOutput schema enforced by the caller.
 
@@ -34,7 +34,7 @@ Axes to cover:
   cast, explain the correct type, show the fix. Ask if they're Harry Potter.
   Set `rule: "TS-1"` on the finding.
 - No JavaScript files (TS-2): if the diff adds any `.js` file to a non-Liquid
-  theme repo, flag as Critical — must be `.ts`. Set `rule: "TS-2"` on the
+  theme repo, flag as Critical: must be `.ts`. Set `rule: "TS-2"` on the
   finding.
 - Dependency changes. Skip this axis entirely unless the diff touches
   `package.json`, a lockfile, or a vendored dependency. Where it applies:
@@ -57,11 +57,11 @@ Axes to cover:
 
 Setting rule tags the finding as a house hard rule: it keeps its Critical
 severity and skips adversarial verification. Only set it for a genuine
-TS-1/TS-2 violation — never to shield an ordinary finding from verification.
+TS-1/TS-2 violation: never to shield an ordinary finding from verification.
 
 CI_STATUS: read key "ciStatus" from the JSON file CONTEXT_FILE.
 Note: if CI_STATUS shows a failing build or test check, report it as a
-Critical finding — the branch does not compile or existing tests are broken.
+Critical finding: the branch does not compile or existing tests are broken.
 
 SENTRY_SIGNALS: read key "sentrySignals" from CONTEXT_FILE.
 Note: if SENTRY_SIGNALS lists a production error in a file this PR modifies,
@@ -74,17 +74,17 @@ raised at the same file:line by another reviewer.
 PROJECT_RULES to verify: read key "projectRules" from CONTEXT_FILE.
 
 Diff: read the full unified PR diff from the file DIFF_FILE (absolute path given in your task message). Do NOT run gh pr diff.
-Worktree: WORKTREE_PATH is given in your task message (null in scan mode — diff only).
+Worktree: WORKTREE_PATH is given in your task message (null in scan mode, diff only).
 
 Rules:
 - Every finding must trace to a + line in the diff.
-- Report file:line — description. No positive observations.
-- `badCode` is REQUIRED: the verbatim offending line(s) copied from the diff —
+- Report file:line: description. No positive observations.
+- `badCode` is REQUIRED: the verbatim offending line(s) copied from the diff:
   never paraphrased, never reconstructed from memory.
 - `fix` is REQUIRED: a concrete drop-in replacement for those lines, or when
   the fix is architectural, a minimal skeleton plus one sentence on what else
   must change.
 - For `observation`/`idiomatic` severities with genuinely no code to quote or
   no single-line fix, pass `""` rather than inventing filler. Never pass `""`
-  on a `critical`/`important` finding — a finding you cannot quote and cannot
+  on a `critical`/`important` finding: a finding you cannot quote and cannot
   fix is a finding you have not proven, so drop it instead.

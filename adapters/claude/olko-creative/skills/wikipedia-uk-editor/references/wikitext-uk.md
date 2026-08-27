@@ -10,7 +10,7 @@ All template and policy names below were verified against the live `uk.wikipedia
 | ВП:АД | Вікіпедія:Авторитетні джерела | Is this source usable |
 | ВП:НТЗ | Вікіпедія:Нейтральна точка зору | Tone and framing |
 | ВП:ОД | Вікіпедія:Жодних оригінальних досліджень | No synthesis or personal analysis |
-| ВП:КОПІВІО | Вікіпедія:Авторські права | Copyright — never paste source prose |
+| ВП:КОПІВІО | Вікіпедія:Авторські права | Copyright: never paste source prose |
 
 Note the spelling: **значущості**, not «значимості» (that title is a redirect).
 
@@ -43,9 +43,9 @@ The reference list goes under a `== Примітки ==` heading as `{{Reflist}}
 | `{{Перекладена стаття}}` | **Required attribution when translating** |
 | `{{Особа}}` | Person infobox (there is no `Шаблон:Картка особи`) |
 
-`{{Не перекладено|Український підпис|Український підпис|en|English Title}}` — use instead of a bare red link when the topic exists in another wiki.
+`{{Не перекладено|Український підпис|Український підпис|en|English Title}}`: use instead of a bare red link when the topic exists in another wiki.
 
-## Translation attribution — mandatory
+## Translation attribution: mandatory
 
 Wikipedia's licence requires attributing the source article. Place at the very end of the article, and also state it in the edit summary:
 
@@ -93,7 +93,7 @@ Edit summary for a translation:
 
 The bolded subject name must appear in the first sentence. Lead paragraph = definition + why notable, both sourced.
 
-`{{Особа}}` auto-fills from Wikidata: if the subject has a Wikidata item, a bare `{{Особа}}` is often enough, and you only pass parameters that should differ from Wikidata. Dates in this infobox are plain `дд.мм.рррр` — **do not** wrap them in `{{Дата народження}}`. The template auto-adds `Категорія:Персоналії за алфавітом`, so do not add it manually.
+`{{Особа}}` auto-fills from Wikidata: if the subject has a Wikidata item, a bare `{{Особа}}` is often enough, and you only pass parameters that should differ from Wikidata. Dates in this infobox are plain `дд.мм.рррр`: **do not** wrap them in `{{Дата народження}}`. The template auto-adds `Категорія:Персоналії за алфавітом`, so do not add it manually.
 
 ## Common section headings (Ukrainian, sentence case)
 
@@ -107,7 +107,7 @@ Order at the end is fixed: `Див. також` → `Примітки` → `Дж
 - Decimal separator is a comma: `3,14`. Thousands separated by a non-breaking space.
 - Transliterate names into Ukrainian and give the original in brackets on first mention: `Джон Сміт (англ. John Smith)`.
 - Ukrainian apostrophe is `'` in `ім'я`, `кар'єра`, `п'ять`.
-- Use `и`/`і` correctly in loanwords — «дизайн», «інтерфейс», «Гуглу» declines.
+- Use `и`/`і` correctly in loanwords: «дизайн», «інтерфейс», «Гуглу» declines.
 - Interwiki links are managed in Wikidata, not in the article. Do not add `[[en:...]]`.
 
 ## Categories

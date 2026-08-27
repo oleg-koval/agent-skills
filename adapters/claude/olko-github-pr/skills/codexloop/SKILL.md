@@ -15,7 +15,7 @@ allowed-tools: Bash(gh:*) Bash(git:*)
 
 # Codexloop
 
-Drive a GitHub PR until Codex has no unresolved review comments — **but do not cargo-cult its
+Drive a GitHub PR until Codex has no unresolved review comments, **but do not cargo-cult its
 suggestions.** Every comment is a *claim to verify*, not an instruction to obey. A wrong
 suggestion applied is worse than the comment itself.
 
@@ -54,10 +54,10 @@ Pick the login matching `*codex*` (commonly `chatgpt-codex-connector[bot]`, some
 `codex[bot]`) and export it as `BOT`.
 
 **Finding nothing here is NOT a stop condition.** On a PR Codex has never reviewed there is no bot
-login to find yet — that is the normal starting state, not a missing app. When the probe comes back
+login to find yet: that is the normal starting state, not a missing app. When the probe comes back
 empty, fall through to step 2A, post `@codex review`, and re-run this probe once a review lands;
 until then match any login containing `codex` when polling. Only conclude the app is absent after
-step 2A's bounded wait has expired with no review and no codex-like login anywhere on the PR — and
+step 2A's bounded wait has expired with no review and no codex-like login anywhere on the PR, and
 then say so and stop, rather than looping against nothing.
 
 ## 1. Identify the PR
@@ -70,7 +70,7 @@ Switch to the PR branch if not already on it. Capture `OWNER`/`REPO` (`gh repo v
 
 ## 2. The loop (max 5 iterations)
 
-Keep an explicit iteration counter and stop at 5 — the cap is a real bound to enforce, not a
+Keep an explicit iteration counter and stop at 5: the cap is a real bound to enforce, not a
 figure of speech. Each pass through A–G is one iteration; on hitting the cap, go straight to the
 report and list what is still unresolved rather than starting a sixth.
 
@@ -84,13 +84,13 @@ HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
 if [ "$HAVE" = "0" ]; then gh pr comment <PR> --body "@codex review"; fi
 ```
 
-Poll for the review of THIS head to land. No check-run exists, so poll the reviews endpoint — and
+Poll for the review of THIS head to land. No check-run exists, so poll the reviews endpoint, and
 poll it on a **deadline**, never `while true`: a review that never arrives must end the skill with
 an honest timeout, not hang it.
 
 ```bash
 # 10-minute deadline, one retry, then give up. DEADLINE/RETRIES are the
-# enforcement of the bounds this skill claims — do not drop them.
+# enforcement of the bounds this skill claims: do not drop them.
 wait_for_review() {                       # $1 = attempt label
   local deadline=$(( SECONDS + 600 ))
   while [ "$SECONDS" -lt "$deadline" ]; do
@@ -103,7 +103,7 @@ wait_for_review() {                       # $1 = attempt label
 }
 
 if ! wait_for_review "first wait"; then
-  echo "no Codex review after 10m — retrying once"     # say the retry out loud
+  echo "no Codex review after 10m, retrying once"     # say the retry out loud
   gh pr comment <PR> --body "@codex review"
   if ! wait_for_review "after retry"; then
     echo "Codex did not review $HEAD_SHA after a retry; stopping and reporting."
@@ -117,7 +117,7 @@ retry in the final summary; two silent timeouts are the failure mode this guard 
 
 ### B. Fetch the findings
 
-- **Summary**: the review `.body` from the object above — read the overall take and the priority
+- **Summary**: the review `.body` from the object above: read the overall take and the priority
   spread.
 - **Unresolved inline comments** on the current head:
 
@@ -132,11 +132,11 @@ unresolved ones.
 ### C. Critically evaluate EACH comment (the core of this skill)
 
 For every comment, **verify the claim against the actual code and repo conventions before touching
-anything.** Read the whole file — not just the diff hunk Codex saw — plus the types and the call
+anything.** Read the whole file, not just the diff hunk Codex saw, plus the types and the call
 sites. Then classify:
 
-1. **CORRECT + actionable** — the finding is real and the fix improves the code. → fix it (step D).
-2. **FALSE POSITIVE / technically wrong** — the claim doesn't hold. → do **NOT** change code; write a
+1. **CORRECT + actionable**: the finding is real and the fix improves the code. → fix it (step D).
+2. **FALSE POSITIVE / technically wrong**: the claim doesn't hold. → do **NOT** change code; write a
    specific, evidence-based reply (cite the exact code/line/behavior that disproves it), then resolve.
 3. **Valid but out-of-scope / stylistic nit** that conflicts with repo convention or the PR's intent
    → briefly decline with a reason, then resolve. Do not expand the PR's scope to satisfy a nit.
@@ -159,7 +159,7 @@ sites. Then classify:
 - Restating library/framework semantics incorrectly.
 - Style demands that contradict the repo's existing, consistent pattern.
 
-### D. Apply fixes — category 1 only
+### D. Apply fixes: category 1 only
 
 Make the minimal correct change. Re-run the local gate if the repo has one (typecheck/tests) before
 moving on.
@@ -167,13 +167,13 @@ moving on.
 ### E. Commit and push FIRST, before resolving anything
 
 Order matters. A resolved thread is a claim that the fix is on the branch, so the push has to
-succeed before the claim is made — otherwise a failed commit or push leaves the PR unfixed with the
+succeed before the claim is made: otherwise a failed commit or push leaves the PR unfixed with the
 finding marked resolved, and nobody looks at it again.
 
 If step D changed code:
 
 ```bash
-# Stage ONLY the files your fixes touched — never `git add -A`, which sweeps up
+# Stage ONLY the files your fixes touched: never `git add -A`, which sweeps up
 # unrelated work and untracked secrets sitting in the worktree.
 git status --short                     # look before you stage
 git add <path> [<path>...]             # the files named in the findings you fixed
@@ -194,7 +194,7 @@ If they differ, stop: the fix is not on the PR, so nothing may be resolved yet.
 ### F. Reply to and resolve every addressed thread
 
 Only now, with the fixes pushed, reply and resolve. Fetch unresolved threads, **following
-pagination** — a PR with more than 100 threads will otherwise look clean while unresolved findings
+pagination**: a PR with more than 100 threads will otherwise look clean while unresolved findings
 sit on page two:
 
 ```bash
@@ -226,7 +226,7 @@ then resolve:
 gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "THREAD_ID"}) { thread { isResolved } } }'
 ```
 
-Resolve a thread only for comments authored by `$BOT` that you have fixed or rebutted — never
+Resolve a thread only for comments authored by `$BOT` that you have fixed or rebutted: never
 blanket-resolve, and never resolve a human reviewer's thread.
 
 Threads you are **rebutting** need no push, so they may be replied to and resolved regardless of
@@ -242,9 +242,9 @@ ensure all threads are resolved, and exit.
 
 Stop when **any** is true:
 - Zero unresolved `$BOT` comments remain, and every comment this round was fixed or
-  rebutted+resolved. (There is no score to hit — this is "done".)
-- Max iterations (5) reached — report what remains.
-- Codex never responded after one retry — report the timeout honestly; do not claim success.
+  rebutted+resolved. (There is no score to hit: this is "done".)
+- Max iterations (5) reached: report what remains.
+- Codex never responded after one retry: report the timeout honestly; do not claim success.
 
 ## 4. Report
 
