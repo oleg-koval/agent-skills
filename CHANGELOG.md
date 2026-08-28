@@ -1,3 +1,15 @@
+## [1.38.1](https://github.com/oleg-koval/agent-skills/compare/v1.38.0...v1.38.1) (2026-08-28)
+
+
+### 🐛 Bug Fixes
+
+* **context-repo:** resolve the store that already exists instead of creating a rival ([#68](https://github.com/oleg-koval/agent-skills/issues/68)) ([d9b446c](https://github.com/oleg-koval/agent-skills/commit/d9b446c20f568a8b79807809dc9090106f28a65e))
+
+
+### 📚 Documentation
+
+* **readme:** document the upgrade path off the removed olko-agent-skills plugin ([#69](https://github.com/oleg-koval/agent-skills/issues/69)) ([399738c](https://github.com/oleg-koval/agent-skills/commit/399738c84b97b4c6cae2e4ba0590e915f2077f6b))
+
 # [1.38.0](https://github.com/oleg-koval/agent-skills/compare/v1.37.0...v1.38.0) (2026-08-28)
 
 
