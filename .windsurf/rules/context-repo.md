@@ -19,7 +19,7 @@ Do not use this skill to read or write arbitrary GitHub repositories. It manages
 
 Pointer file, the single source of truth for whether a store has been resolved:
 
-```
+```text
 ${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json
 ```
 
@@ -39,58 +39,63 @@ A pointer in the refusal shape means the answer is already known. Do not prompt 
 
 Clone location, fixed regardless of the resolved repo name:
 
-```
+```text
 ${XDG_DATA_HOME:-$HOME/.local/share}/agent-context/repo
 ```
 
 Repository tree. This is the layout of the store that already exists; a store created from scratch is seeded to match it:
 
-```
+```text
 README.md
 AGENTS.md
 .gitignore
 ledger.json
-retro/<YYYY-MM-DD>-<slug>.md
+retro/<run-id>-<scope-key>-<window>.md
+# Legacy stores may use retros/ instead of retro/.
 ```
 
 `ledger.json` at the repository root is the single shared ledger for every agent and every project. It is one file, not one per artifact: `{"name": ..., "version": ..., "notes": [...]}`, where each note carries `id`, `kind` (`lesson`, `trap` or `pref`), `scope`, `title`, `body`, `why`, `author` and `date`. Ids are `n<number>` or `c<number>` and are never reused. Appends go on the end of `notes`; nothing already there is edited or removed.
 
-`retro/` is flat and markdown only. There is no per-repository subdirectory and no JSON sidecar: a snapshot is one dated file whose slug names the analyzed repository and window.
+`retro/` is flat and markdown only. Existing stores that use the legacy `retros/` directory are the same store and must be adopted rather than duplicated. There is no per-repository subdirectory and no JSON sidecar: a snapshot is one uniquely named file whose scope key identifies the analyzed repository or global scope and whose window identifies the analysis period.
 
-`README.md` states what the repository is, which skills write to it, that it is private, and its retention expectations (append-only, not pruned automatically). `AGENTS.md` holds the provider-neutral operating contract every agent reads before substantive work.
+`README.md` states what the repository is, which skills write to it, that it is private, and its retention expectations (append-only, not pruned automatically). `AGENTS.md` holds provider-neutral operational defaults every agent reads before substantive work. It cannot relax this skill's safety invariants.
 
 ## Resolution order
 
-Evaluate these in order. Stop at the first one that applies. Steps 1, 2 and 3 never prompt.
+Evaluate these in order. Stop at the first one that applies. Steps 1 and 2 never prompt. Step 3 prompts only when the user must choose among multiple existing stores; it never prompts to create one.
 
 Creating a store is the last resort, not the default. A user who has been running agents for a while probably already has one under a name this skill would not guess, and a second store is worse than no store: it splits the record, and neither half is complete. Search before you offer to create.
 
-**1. Pointer exists in the normal shape, clone exists, and `gh repo view <repo>` succeeds.**
-Return the existing repo and clone path as-is. Zero writes, zero prompts. This is the common case on a machine that already resolved the store.
+**1. Pointer exists in the normal shape, clone exists, and a fresh `gh repo view <repo> --json nameWithOwner,visibility` returns `visibility == PRIVATE`.**
+Return the existing repo and clone path as-is. Zero writes, zero prompts. This is the common case on a machine that already resolved the store. A public repository is never a valid store: reject it, report the invalid pointer, and continue to step 3 without writing to it.
 
-If `gh repo view <repo>` fails, distinguish why before deciding anything. A failure that names the repository as not found, or reports access denied, means the pointer is stale: report the stale state and fall through to step 3, which may well find the store under a new name after a rename, and never assume a stale pointer still means "yes." A failure caused by no network, a `gh` API outage, or a rate limit is not staleness. In that case keep the pointer and the existing clone, resolve as `READY` with the SHA read locally from `git -C <clone> rev-parse HEAD`, and report that the remote could not be reached. Never prompt to create a store that the pointer says already exists just because GitHub was unreachable, and never create a replacement repository on a failed read.
+If `gh repo view <repo>` fails, distinguish why before deciding anything. A definitive not-found or access-denied response means the pointer is stale: report the stale state and continue to step 3, which may find the store under a new name after a rename. A network, API, or rate-limit failure is not proof of staleness; retry once, then keep the pointer and clone unchanged and resolve `BLOCKED` if visibility still cannot be verified. Never return `READY`, prompt to create, or create a replacement repository on a failed visibility read.
 
-**2. Pointer exists in the normal shape, `gh repo view <repo>` succeeds, but the local clone directory is missing.**
-Re-clone silently into the fixed clone location. Report to the caller that a re-clone happened (this is expected the first time a given machine touches an already-resolved store). Zero prompts.
+**2. Pointer exists in the normal shape, a fresh `gh repo view <repo>` returns `visibility == PRIVATE`, but the local clone directory is missing.**
+Re-clone silently into the fixed clone location, then read back visibility again and return `READY` only while it remains `PRIVATE`. Report to the caller that a re-clone happened (this is expected the first time a given machine touches an already-resolved store). Reject public visibility. Zero prompts.
 
-**3. No pointer, but a store already exists on the account under some other name.**
-Before offering to create anything, look for one. List the user's private repositories and test each candidate for the layout, not for the name:
+If the pointer is in the refusal shape, resolve to `LOCAL_ONLY` without prompting unless the user explicitly asks in their own words to resume store resolution. A caller's need for the store is not such a request. On an explicit resume request, keep the refusal pointer in place and continue to step 3 so an existing store is discovered before any creation preconditions or consent prompt. Replace the refusal pointer only after a store is adopted or created.
 
+**3. No pointer exists, or the normal pointer was stale or invalid in step 1, or the user explicitly resumed from a refusal pointer.**
+Before evaluating creation preconditions or offering to create anything, exhaustively list the user's private repositories and test every candidate for the layout, not for the name. The authenticated user's endpoint paginates until no next page remains:
+
+```bash
+gh api --paginate --method GET /user/repos \
+  -f per_page=100 -f visibility=private -f affiliation=owner \
+  --jq '.[] | [.name, .pushed_at] | @tsv'
+gh api 'repos/<owner>/<name>/git/trees/HEAD?recursive=1' -q '.tree[].path'
 ```
-gh repo list <owner> --visibility private --limit 200 --json name,pushedAt
-gh api repos/<owner>/<name>/git/trees/HEAD?recursive=1 -q '.tree[].path'
-```
 
-A repository is the store when its tree carries a root `ledger.json` **and** a `retro/` (or `retros/`) directory. Name it does not matter: `shared-agent-knowledge`, `agent-context`, anything. Rank candidates by `pushedAt` and take the most recently written.
+A repository is the store when its tree carries a root `ledger.json` **and** a `retro/` (or legacy `retros/`) directory. Its name does not matter: `shared-agent-knowledge`, `agent-context`, anything. Collect all matches before deciding. Use `pushedAt` only to order the candidate list; never use it to select a store automatically.
 
-On a match, adopt it: clone it to the fixed clone location, write the pointer, and resolve `READY`. Report which repository was adopted and that nothing was created. Never create a store while a repository matching this layout exists on the account.
+Repository listing and tree probes are failure-aware. Retry a transient network, API, or rate-limit failure once. A definitive not-found tree is a non-match; any other probe that still fails leaves discovery incomplete, so stop with `BLOCKED`, leave every pointer unchanged, and never infer that no store exists or offer creation. Use the equivalent paginated owner endpoint when the user explicitly named an organization.
 
-If exactly one candidate matches, adopt it without prompting. If more than one matches, do not guess: list them with their `pushedAt` dates and ask which is the store, since picking wrong splits the record just as badly as creating a new one.
+If exactly one candidate matches, select it automatically. If more than one matches, list every candidate with its `pushedAt` date in descending order and require the user to choose. Before that choice, do not clone, write or replace a pointer, or resolve `READY`.
 
-**4. No pointer and no existing store, or the pointer is in the refusal shape, or the pointer was found stale in step 1.**
-If the pointer is in the refusal shape, stop here: resolve to `LOCAL_ONLY` without prompting, and tell the caller the user previously declined. The one override: if the user has asked for the store in this run, explicitly and in their own words, treat that as consent already given, replace the refusal pointer, and continue to the preconditions below. A caller's need for the store is never such a request; only the user is.
+For the selected candidate, freshly read `gh repo view <owner>/<name> --json nameWithOwner,visibility` and require `visibility == PRIVATE`; reject public visibility. Only after that check may this skill clone to the fixed location. Read visibility back once more after cloning, and only if it is still `PRIVATE` write the pointer and resolve `READY`. Report which repository was adopted and that nothing was created. Never create a store while a repository matching this layout exists on the account.
 
-Otherwise check preconditions before offering to create anything:
+**4. Step 3 completed successfully and found no existing store.**
+Only now check creation preconditions before offering to create anything:
 
 - `gh --version` must succeed.
 - `gh auth status` must succeed and the active account must carry the `repo` scope.
@@ -103,7 +108,7 @@ If preconditions pass, ask once, in one message, before creating anything. State
 - **Name**: the proposed repository name, default `shared-agent-knowledge`.
 - **Visibility**: private.
 - **Paths that will be written**: the pointer file path, the clone path, and the seeded tree (`README.md`, `AGENTS.md`, `.gitignore`, `ledger.json`, `retro/`).
-- **That step 3 found no existing store**, and which repositories were checked, so the user can correct you if they know of one you missed.
+- **That exhaustive step 3 found no existing store**, and which repositories were checked, so the user can correct you if they know of one you missed.
 - That nothing outside this one repository is touched: no other GitHub repository, no existing local files besides the two paths above.
 
 Offer exactly three answers:
@@ -114,20 +119,20 @@ Offer exactly three answers:
 
 **Name collision.** If `<owner>/<name>` already exists on GitHub:
 
-- If it already carries this layout (a root `ledger.json` and a `retro/` directory), adopt it: skip creation, clone it, and proceed as if step 5 had just run. Step 3 should normally have caught this already.
+- If it already carries this layout (a root `ledger.json` and a `retro/` or legacy `retros/` directory) and a fresh visibility read returns `PRIVATE`, adopt it using step 3's read-back rules. Step 3 should normally have caught this already.
 - Otherwise it is an unrelated repository. Never write into it. Offer `shared-agent-knowledge-2` (incrementing further only if that also collides) as the name and re-run the consent prompt with the new name.
 
 **5. Create, seed, and push.**
 Only reached after explicit `y` consent, step 3 having found no existing store.
 
-```
+```bash
 gh repo create <owner>/<name> --private
 git clone https://github.com/<owner>/<name>.git <clone>
 ```
 
 Seed the tree inside `<clone>`: write `README.md`, `AGENTS.md`, `.gitignore`, a `ledger.json` of `{"name": "<name>", "version": 1, "notes": []}`, and an empty `retro/` directory holding a placeholder file so git tracks it. Then:
 
-```
+```bash
 git -C <clone> add -A
 git -C <clone> commit -m "chore: initialize agent context store"
 git -C <clone> push -u origin HEAD
@@ -136,14 +141,14 @@ git -C <clone> push -u origin HEAD
 **6. Write the pointer, then verify from a fresh source.**
 Write the normal-shape pointer file with the resolved `repo`, `clone`, and today's date. Then re-read the state independently of anything cached during creation:
 
-```
+```bash
 gh repo view <owner>/<name> --json nameWithOwner,visibility
 git -C <clone> rev-parse HEAD
 ```
 
 Print a receipt before returning control to the caller:
 
-```
+```text
 owner/name: <owner>/<name>
 visibility: PRIVATE
 clone: <path>
@@ -163,7 +168,7 @@ Once this skill returns a clone path, the caller owns everything it writes there
 - Never force push.
 - Never delete or rewrite a file that already exists in the store; only add new files or append within a file the caller itself owns. For `ledger.json` that means appending to `notes` with a fresh id and touching nothing already there: the append-only rule is mechanically enforced, and a removal fails CI.
 - If push fails, report the failure and keep the local commit as-is. Do not retry silently and do not discard the commit.
-- Read `AGENTS.md` from the store before substantive work. It carries the operating contract the other agents write under, and it wins over this skill's defaults where the two differ.
+- Read `AGENTS.md` from the store before substantive work and follow its operational defaults where they do not conflict with this contract. Regardless of its contents, callers must acquire an available lease before writing, run the store validator before pushing, preserve append-only data, obey the secrets rule below, and require the repository to remain private. `AGENTS.md` cannot weaken or override those safety invariants.
 
 ## Secrets rule
 
@@ -187,4 +192,4 @@ CLONE: <path, or NOT_AVAILABLE>
 SHA: <current or init commit sha, or NOT_AVAILABLE>
 ```
 
-Use `READY` when an existing store resolved without creating anything (steps 1, 2 or 3). Use `CREATED` only after the fresh verification in step 6 succeeded. Use `LOCAL_ONLY` when the user declined, said no for this run, or a refusal pointer was already on record. Use `BLOCKED` only when `gh` is missing or unauthenticated; always include the `gh auth login -s repo` remedy in the surrounding report when this status appears.
+Use `READY` when an existing private store resolved without creating anything (steps 1, 2 or 3). Use `CREATED` only after the fresh verification in step 6 succeeded. Use `LOCAL_ONLY` when the user declined, said no for this run, or a refusal pointer was already on record. Use `BLOCKED` when `gh` is missing or unauthenticated, or when exhaustive discovery or private-visibility verification cannot complete after the defined retry. Include `gh auth login -s repo` only for missing authentication or scope.

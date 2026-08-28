@@ -16,16 +16,18 @@ Before writing any code
    searches the account for an existing store by layout before it ever offers to create one.
    Otherwise skip mirroring entirely for this run. A missing store must never block publishing
    the artifact.
-3. Read my global rules (CLAUDE.md / VERIFICATION.md / memory) and seed the ledger with 6-10
-   REAL lessons already recorded there. If a store resolved in step 2, also read ledger.json from
-   its ROOT and skip any lesson already present there, so the new page doesn't reseed what's
-   already recorded elsewhere. No lorem, no invented examples.
+3. Read my global rules (CLAUDE.md / VERIFICATION.md / memory). With no store, seed the ledger
+   with 6-10 REAL lessons already recorded there. If a store resolved in step 2, read ledger.json
+   directly from its Git root and use all of its notes as the Artifact's initial mirrored state;
+   add a lesson from the global rules only through the append flow below and only when it is not
+   already present. No lorem, no invented examples.
 
 Required behaviour
 - Declare capabilities: {artifact: {}} so the page can publish new versions of itself.
 - Store the data as a JSON object inside a <script type="application/json" id="ledger-state">
-  block. That block is the authoritative record; the visible page is RENDERED from it at load.
-  Never serialize the live DOM to save.
+  block. With no context store, that block is the authoritative record. When a store exists, it
+  is only a mirror of the store's root ledger.json. The visible page is RENDERED from the block at
+  load. Never serialize the live DOM to save.
 - To persist: snapshot document.documentElement.outerHTML once at script start (pristine source,
   before any rendering), then on save splice the new JSON into the #ledger-state block of that
   snapshot, prepend <!doctype html>, and call artifact.publish(doc).
@@ -37,14 +39,15 @@ Required behaviour
   edits into one publish.
 
 Write through to the context store
-The store holds the canonical ledger; the page is the view onto it. After
-a successful publish you perform (not a later edit a viewer makes on the page), extract the
-#ledger-state JSON from the published document and append any note it holds that the store does
-not to the notes array of the store's ROOT ledger.json, with a fresh id in the store's own
-sequence. One shared ledger, not one per artifact. Message "chore(knowledge): append <n> notes
-from <slug>" where <n> is the number actually appended. Take the store's lease first if it ships
-one, git pull --rebase before push, run the store's validator if it has one, one commit per run,
-never force push, never edit or remove an existing note. Never commit raw session content,
+Whenever a store exists, read its Git-root ledger.json directly before building or synchronizing;
+that file remains authoritative and the published Artifact is only a mirror. After a successful
+publish you perform (not a later edit a viewer makes on the page), take the store's lease if it
+ships one, git pull --rebase, and re-read the root ledger.json. Extract #ledger-state from the
+published document and append only notes absent from the freshly read ledger, assigning each a
+fresh id in the store's own sequence. Never replace store data with Artifact data. One shared
+ledger, not one per artifact. Message "chore(knowledge): append <n> notes from <slug>" where <n>
+is the number actually appended. Run the store's validator if it has one, make one commit per run,
+never force push, and never edit or remove an existing note. Never commit raw session content,
 tokens, private prompts, or customer data.
 
 If no store resolved in step 2 of "Before writing any code", skip this section entirely and

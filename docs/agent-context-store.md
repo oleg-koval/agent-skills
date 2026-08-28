@@ -32,7 +32,8 @@ README.md
 AGENTS.md
 .gitignore
 ledger.json
-retro/<YYYY-MM-DD>-<repo-slug>-<window>.md
+retro/<run-id>-<scope-key>-<window>.md       # preferred
+retros/<run-id>-<scope-key>-<window>.md      # legacy stores
 ```
 
 `ledger.json` at the repository root is the single shared ledger, one file for every
@@ -49,30 +50,33 @@ Ids are `n<number>` or `c<number>` and are never reused. The ledger is append-on
 that rule is mechanical, not advisory: a store with CI runs a validator that fails the
 build when a note disappears.
 
-`retro/` is flat and markdown only, one dated file per retrospective whose slug names
-the analyzed repository and window. `README.md` states what the repository is, which
-skills write to it, that it is private, and that it is append-only and not pruned
-automatically. `AGENTS.md` holds the provider-neutral operating contract every agent
-reads before substantive work; where it differs from a skill's defaults, it wins.
+`retro/` is flat and markdown only, one uniquely named file per retrospective whose
+scope key identifies the analyzed repository or global scope and whose name includes a
+per-run id and window. `retros/` is the legacy spelling; a repository containing either
+directory is the same store and must be reused rather than duplicated. `README.md`
+states what the repository is, which skills write to it, that it is private, and that
+it is append-only and not pruned automatically. `AGENTS.md` provides operational
+defaults every agent reads before substantive work, but it cannot weaken the mandatory
+lease, validation, append-only, secret-handling, or private-repository requirements.
 
-These are the two probe paths. A private repository with a root `ledger.json` and a
-`retro/` directory is the store, whatever it is called.
+The probe requires a root `ledger.json` plus either `retro/` or legacy `retros/`. A
+private repository with that layout is the same store, whatever it is called.
 
 ## First-run walkthrough
 
 1. A caller (`retro-analysis` or `shared-knowledge-artifact`) needs the store and
    invokes `context-repo`.
-2. `context-repo` finds no pointer at
-   `${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json` and checks
-   preconditions: `gh --version` and `gh auth status` with the `repo` scope. If
-   either fails, it stops at `BLOCKED` with the remedy `gh auth login -s repo` and
-   the caller falls back to local-only; nothing is created.
-3. It searches the account for a store that already exists, listing private
-   repositories and probing each tree for a root `ledger.json` and a `retro/`
-   directory. One match is adopted silently and resolves `READY`; several matches are
-   listed with their `pushedAt` dates for the user to pick, because guessing wrong
-   splits the record as badly as creating a new store. Only when nothing matches does
-   it go on to offer creation.
+2. `context-repo` finds no normal pointer at
+   `${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json` and exhaustively
+   paginates the account's private repositories. It probes every tree for a root
+   `ledger.json` and either `retro/` or legacy `retros/`. Transient listing or probe
+   failures are retried once; if discovery remains incomplete, it stops at `BLOCKED`
+   without offering creation.
+3. One private match is adopted silently after a fresh visibility read. Several matches
+   are listed with their `pushedAt` dates, ordered only for display, and the user must
+   choose before any clone, pointer write, or `READY` result. Only when exhaustive
+   discovery finds nothing does the skill check creation preconditions (`gh --version`
+   and `gh auth status` with the `repo` scope) and go on to offer creation.
 4. It asks once, in one message, before creating anything. The prompt states:
    - **Owner**: the account from `gh api user -q .login`.
    - **Name**: the proposed repository name, default `shared-agent-knowledge`.
@@ -98,13 +102,14 @@ These are the two probe paths. A private repository with a root `ledger.json` an
 
 | State | What the user sees |
 |-------|---------------------|
-| Pointer, clone, and repo all present | Silent reuse. Zero writes, zero prompts; the existing repo and clone are returned as-is. |
-| Clone deleted, pointer and repo still valid | Silent re-clone into the fixed clone path; `context-repo` reports that a re-clone happened. |
+| Pointer, clone, and private repo all present | Silent reuse after a fresh `visibility == PRIVATE` read. Zero writes and zero prompts. |
+| Clone deleted, pointer and private repo still valid | Silent re-clone into the fixed clone path, followed by another private-visibility read; `context-repo` reports that a re-clone happened. |
+| Pointer targets a public repo | The pointer is rejected. A public repository is never returned as `READY` or used for context writes. |
 | Repo renamed on GitHub | The pointer is treated as stale, not as a live answer, and the layout search finds the store under its new name and re-points to it. No prompt, nothing created. |
 | Repo deleted or access revoked on GitHub | The pointer is stale and the search finds no replacement, so `context-repo` re-prompts as if resolving for the first time. |
 | User picks `n` | Local-only for that run. No pointer is written, so the next caller that needs the store asks again. |
 | User picks `never` | A refusal-shape pointer (`{"status": "declined", ...}`) is written. Local-only forever; no future prompts. |
-| `gh` gets logged out after the store was already resolved | The next run's `gh repo view` fails, the pointer is treated as stale, and the fallback precondition check finds `gh auth status` failing too, so resolution stops at `BLOCKED`. Repo, clone, and SHA report as `NOT_AVAILABLE`; the caller falls back to local-only and still completes its own run. |
+| Provider visibility cannot be verified | The read is retried once, then resolution stops at `BLOCKED` without changing the pointer or creating a replacement. The caller falls back to local-only and still completes its own run. |
 
 ## Caller contract
 
@@ -128,6 +133,9 @@ into it:
   appending to `notes` with a fresh id and touching nothing already there.
 - If push fails, report the failure and keep the local commit. Do not retry
   silently and do not discard the commit.
+- Read `AGENTS.md` before substantive work and apply its operational defaults only
+  where they do not conflict with this contract. It cannot override lease acquisition,
+  validation, append-only writes, secret handling, or the private-repository requirement.
 
 ## What is never committed
 
