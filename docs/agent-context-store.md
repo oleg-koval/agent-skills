@@ -20,6 +20,134 @@ time an agent has no access to the Artifact page that came before it. A durable,
 cross-machine store is what makes "compare this retro to the last one" or "what have
 other agents already learned" answerable at all.
 
+## How it works
+
+The resolver follows the stored pointer before considering creation. The labels show
+which branches are silent, which ask for consent, and every status it can return.
+
+```mermaid
+flowchart TD
+    start["Caller asks for the store"] --> step1["Step 1: check pointer, clone, and remote"]
+    step1 --> normal{"Normal pointer exists?"}
+    normal -->|Yes| clone{"Local clone exists?"}
+    clone -->|Yes| remote1{"gh repo view succeeds?"}
+    remote1 -->|Yes| ready1["READY: reuse, no prompt"]
+    remote1 -->|No| remote_failure{"Failure kind?"}
+    remote_failure -->|"Offline, outage, or rate limit"| ready2["READY: keep pointer and clone, report unreachable, no prompt"]
+    remote_failure -->|"Not found or access denied"| stale["Pointer is stale"]
+    clone -->|No| step2["Step 2: resolve missing clone"]
+    step2 --> remote2{"gh repo view succeeds?"}
+    remote2 -->|Yes| reclone["Silent re-clone to fixed path"]
+    reclone --> ready3["READY: report re-clone, no prompt"]
+    remote2 -->|"No, network reason"| local_unreachable["LOCAL_ONLY: known but unreachable and not cloned here, no prompt"]
+
+    normal -->|No| refusal{"Refusal pointer exists?"}
+    stale --> step3["Step 3: preconditions and consent"]
+    refusal -->|No| step3
+    refusal -->|Yes| explicit{"User explicitly asked for the store this run?"}
+    explicit -->|No| local_recorded["LOCAL_ONLY: prior refusal, no prompt"]
+    explicit -->|Yes| consented["Consent already given: replace refusal pointer"]
+    consented --> preconditions2["Check gh and repo-scoped authentication"]
+    step3 --> preconditions["Check gh and repo-scoped authentication"]
+
+    preconditions -->|Missing or unauthenticated| blocked["BLOCKED: run gh auth login -s repo"]
+    preconditions2 -->|Missing or unauthenticated| blocked
+    preconditions -->|Pass| prompt["Prompt with owner, name, private visibility, and exact paths"]
+    preconditions2 -->|Pass| collision{"Repository name exists?"}
+    prompt -->|n| local_run["LOCAL_ONLY: this run, no pointer"]
+    prompt -->|never| local_forever["Write refusal pointer: LOCAL_ONLY forever"]
+    prompt -->|y| collision
+
+    collision -->|No| create["Step 4: create private repository, clone, seed, commit, and push"]
+    collision -->|Yes| layout{"Store layout matches?"}
+    layout -->|Yes| adopt["Adopt and clone existing store"]
+    layout -->|No| alternate["Offer agent-context-2 or next free name"]
+    alternate --> prompt
+    create --> verify{"Step 5: fresh read-back agrees?"}
+    adopt --> verify
+    verify -->|Yes| pointer["Write the normal pointer"]
+    pointer --> created["CREATED: verified receipt"]
+    verify -->|No| blocked_verify["BLOCKED: no pointer written, report the disagreeing read"]
+```
+
+On a normal first run, the calling skill waits while `context-repo` checks the
+prerequisites, asks once, creates the private store, and proves the result from fresh reads.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Caller as Calling skill
+    participant Context as context-repo
+    participant CLI as gh
+    participant Remote as GitHub
+
+    Caller->>Context: Ask for the store
+    Context->>CLI: gh --version
+    CLI-->>Context: Available
+    Context->>CLI: gh auth status
+    CLI->>Remote: Check account and repo scope
+    Remote-->>CLI: Authenticated
+    CLI-->>Context: Preconditions pass
+    Context->>CLI: gh api user -q .login
+    CLI->>Remote: Read authenticated owner
+    Remote-->>CLI: Owner
+    CLI-->>Context: Owner
+    Context->>User: Ask once before anything exists
+    Note over Context,User: Shows owner, name, private visibility<br/>${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json<br/>${XDG_DATA_HOME:-$HOME/.local/share}/agent-context/repo<br/>README.md, .gitignore, retros/, and knowledge/
+    User-->>Context: y
+    Context->>CLI: gh repo create owner/name --private
+    CLI->>Remote: Create private repository
+    Remote-->>CLI: Repository created
+    CLI-->>Context: Creation returned
+    Context->>Remote: git clone into the resolved clone path
+    Remote-->>Context: Empty private repository cloned
+    Note over Context: Seed README.md, .gitignore,<br/>retros/, and knowledge/
+    Context->>Context: git add and commit the seeded tree
+    Context->>Remote: git push -u origin HEAD
+    Remote-->>Context: Push returned
+    Note over Context,Remote: A successful-looking push is not proof
+    Context->>CLI: gh repo view owner/name --json nameWithOwner,visibility
+    CLI->>Remote: Fresh repository read
+    Remote-->>CLI: Name and PRIVATE visibility
+    CLI-->>Context: Fresh remote read-back
+    Context->>Context: git -C clone rev-parse HEAD
+    Note over Context: Fresh local SHA read-back
+    Context->>Context: Both reads agree, write the normal pointer
+    Context-->>Caller: CREATED with verified repo, clone, and init SHA
+    Caller-->>User: Continue with the resolved store
+```
+
+The two callers own separate paths in the resolved clone. Retro snapshots can fall
+back locally, while the Artifact page remains authoritative over its repository mirror.
+
+```mermaid
+flowchart LR
+    retro["retro-analysis"]
+    prior["retros/&lt;repo-slug&gt;/&lt;YYYY-MM-DD&gt;-&lt;window&gt;.json<br/>retros/&lt;repo-slug&gt;/&lt;YYYY-MM-DD&gt;-&lt;window&gt;.md"]
+    local[".context/retros/"]
+    shared["shared-knowledge-artifact"]
+    artifact["Artifact page: AUTHORITATIVE"]
+    mirror["knowledge/&lt;artifact-slug&gt;/ledger.json and page.html: mirror"]
+    skipped["NOT_MIRRORED: store did not resolve"]
+    viewer["Viewer adds a note on the Artifact page"]
+    gap["No agent is present: mirror does not update"]
+    next["Next agent-driven publish"]
+
+    prior -->|"Read first for cross-machine compare and global"| retro
+    retro -->|"Write JSON and Markdown snapshots"| prior
+    retro -.->|"Store does not resolve: local fallback"| local
+
+    shared -->|"Publish"| artifact
+    artifact -->|"After a successful publish by the skill"| shared
+    shared -->|"Extract state and mirror"| mirror
+    shared -.->|"Store does not resolve"| skipped
+
+    viewer --> artifact
+    viewer -.-> gap
+    gap -.-> next
+    next --> shared
+```
+
 ## Repository layout
 
 ```text
