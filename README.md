@@ -222,7 +222,7 @@ Author and maintain agent skills and the AI toolchain itself.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
-| [context-repo](plugins/olko-skill-meta/skills/context-repo/SKILL.md) | Resolves a single durable, private GitHub repository other skills use to persist context they produce, retro snapshots and shared-knowledge-artifact mirrors among them, asking once for consent before creating anything and remembering the answer afterward | A skill needs a durable, cross-machine store for content it generates, rather than a local scratch directory that does not survive across machines or repos |
+| [context-repo](plugins/olko-skill-meta/skills/context-repo/SKILL.md) | Resolves a single durable, private GitHub repository other skills use to persist context they produce, retro snapshots and shared-knowledge notes among them, searching the account for a store that already exists before ever asking to create one | A skill needs a durable, cross-machine store for content it generates, rather than a local scratch directory that does not survive across machines or repos |
 | [add-to-my-skills](plugins/olko-skill-meta/skills/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
 | [skill-budget-audit](plugins/olko-skill-meta/skills/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow, identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
 | [promptctl](plugins/olko-skill-meta/skills/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, review, scoring, or reusable prompt workflows |
@@ -328,12 +328,14 @@ When adding or changing a skill:
 
 ### Shared context store
 
-`retro-analysis` and `shared-knowledge-artifact` bootstrap one shared, private GitHub
-repository the first time either one runs, resolved through the `context-repo` skill.
-It asks once, before creating anything, stating the owner, name, and every path it
-will write. The repository stays private; `n` keeps that run local-only and asks
-again next time, `never` stops the prompt for good, and a missing or unauthenticated
-`gh` falls back to local-only automatically.
+`retro-analysis` and `shared-knowledge-artifact` share one private GitHub repository,
+resolved through the `context-repo` skill the first time either one runs. It finds a
+store before it creates one: private repositories are probed for a root `ledger.json`
+and a `retro/` directory, and a match is adopted whatever it is called, so an existing
+store is never duplicated. Only when nothing matches does it ask, stating the owner,
+name, and every path it will write. The repository stays private; `n` keeps that run
+local-only and asks again next time, `never` stops the prompt for good, and a missing
+or unauthenticated `gh` falls back to local-only automatically.
 
 The pointer lives at `${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json`;
 the clone lives at `${XDG_DATA_HOME:-$HOME/.local/share}/agent-context/repo`.
