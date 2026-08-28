@@ -1,0 +1,377 @@
+<title>Agent Context Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page-ground: #0A0A0A;
+    --surface: #141414;
+    --border: #262626;
+    --accent: #FFC53D;
+    --heading: #F5F5F5;
+    --body: #A3A3A3;
+    --metadata: #6B6B6B;
+    --rose: #B56576;
+    --green: #5C8A63;
+    --ink-dark: #141414;
+    --transparent: transparent;
+    --warm-glow: rgb(255 197 61 / 5%);
+    --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --sans: "Figtree", "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 28px;
+    overflow-x: hidden;
+    background: radial-gradient(circle at 4% 4%, var(--warm-glow), var(--transparent) 34%), var(--page-ground);
+    color: var(--body);
+    font-family: var(--sans);
+  }
+
+  .frame {
+    width: min(1500px, calc(100vw - 56px));
+    max-width: 1500px;
+    /* A 16:9 floor, not a clamp. A hard aspect-ratio plus overflow:hidden made the
+       cards paint over the state strip whenever the copy needed one more line. */
+    min-height: calc(min(1500px, 100vw - 56px) * 9 / 16);
+    display: grid;
+    grid-template-rows: auto auto auto auto auto;
+    gap: 13px;
+    padding: 24px 30px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .title-band,
+  .skill-card,
+  .state-strip,
+  .closing-band,
+  .state-copy,
+  .state-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title-band {
+    gap: 5px;
+  }
+
+  h1 {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 1.95rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    line-height: 1.08;
+  }
+
+  .subtitle {
+    color: var(--body);
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr) 28px) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pipeline-step {
+    display: grid;
+    place-items: center;
+    min-height: 38px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--body);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .pipeline-step.highlight {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .arrow {
+    color: var(--metadata);
+    font-family: var(--mono);
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .cards {
+    display: grid;
+    align-content: start;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .skill-card {
+    gap: 9px;
+    min-width: 0;
+    padding: 16px 17px 15px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+  }
+
+  .eyebrow,
+  .strip-label {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .skill-card h2 {
+    color: var(--heading);
+    font-size: 1.16rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+  }
+
+  .card-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: var(--body);
+    font-size: 0.87rem;
+    line-height: 1.32;
+  }
+
+  .state-strip {
+    gap: 9px;
+    padding: 13px 17px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+  }
+
+  .state-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(128px, 1fr)) minmax(250px, 1.45fr);
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .state-item {
+    justify-content: center;
+    gap: 4px;
+    min-height: 54px;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+  }
+
+  .state-name {
+    color: var(--heading);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  .state-detail {
+    color: var(--body);
+    font-size: 0.72rem;
+    line-height: 1.24;
+  }
+
+  .state-ready {
+    border-color: var(--green);
+  }
+
+  .state-ready .state-name {
+    color: var(--green);
+  }
+
+  .state-created {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .state-created .state-name,
+  .state-created .state-detail {
+    color: var(--ink-dark);
+  }
+
+  .state-blocked {
+    border-color: var(--rose);
+  }
+
+  .state-blocked .state-name {
+    color: var(--rose);
+  }
+
+  .state-copy {
+    justify-content: center;
+    color: var(--body);
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  .proof-line {
+    color: var(--heading);
+    font-size: 0.96rem;
+    line-height: 1.35;
+  }
+
+  .closing-band {
+    gap: 7px;
+  }
+
+  .closing-line {
+    color: var(--heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .metadata-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    color: var(--metadata);
+    font-family: var(--mono);
+    font-size: 0.63rem;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1100px) {
+    .frame {
+      gap: 12px;
+      padding: 22px;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+    }
+
+    .skill-card {
+      gap: 8px;
+      padding: 14px;
+    }
+
+    .card-copy,
+    .state-copy {
+      font-size: 0.76rem;
+    }
+
+    .metadata-line {
+      font-size: 0.51rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<main class="frame" aria-labelledby="card-title">
+  <header class="title-band">
+    <h1 id="card-title">AGENT CONTEXT STORE</h1>
+    <p class="subtitle">One private repository holds shared context: discover first, ask once, then verify before claiming success.</p>
+  </header>
+
+  <section class="pipeline" aria-label="Context repository resolution order">
+    <div class="pipeline-step">check pointer</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="pipeline-step">discover stores</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="pipeline-step highlight">ask if needed</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="pipeline-step">create + seed</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="pipeline-step">verify + record</div>
+  </section>
+
+  <section class="cards" aria-label="Three skills that use the context store">
+    <article class="skill-card">
+      <p class="eyebrow">SKILL 01</p>
+      <h2><code>context-repo</code></h2>
+      <div class="divider" aria-hidden="true"></div>
+      <div class="card-copy">
+        <p>Discovers or resolves one private GitHub repository and its fixed local clone.</p>
+        <p>Never claims ready or created until fresh remote and local reads agree.</p>
+      </div>
+    </article>
+
+    <article class="skill-card">
+      <p class="eyebrow">SKILL 02</p>
+      <h2><code>retro-analysis</code></h2>
+      <div class="divider" aria-hidden="true"></div>
+      <div class="card-copy">
+        <p>Writes one uniquely named snapshot under <code>retro/</code>, after reading the store.</p>
+        <p>Shared history powers <code>compare</code> and <code>global</code> across machines.</p>
+      </div>
+    </article>
+
+    <article class="skill-card">
+      <p class="eyebrow">SKILL 03</p>
+      <h2><code>shared-knowledge-artifact</code></h2>
+      <div class="divider" aria-hidden="true"></div>
+      <div class="card-copy">
+        <p>Appends notes to the root <code>ledger.json</code>; the Artifact page is the user-facing view.</p>
+        <p>Git is canonical; viewer-only notes reach it on the next agent publish.</p>
+      </div>
+    </article>
+  </section>
+
+  <section class="state-strip" aria-labelledby="state-title">
+    <p class="strip-label" id="state-title">EVERY RUN ENDS IN ONE STATE</p>
+    <div class="state-row">
+      <div class="state-item state-ready">
+        <p class="state-name">READY</p>
+        <p class="state-detail">existing or adopted, nothing created</p>
+      </div>
+      <div class="state-item state-created">
+        <p class="state-name">CREATED</p>
+        <p class="state-detail">new store, read back and verified</p>
+      </div>
+      <div class="state-item">
+        <p class="state-name">LOCAL_ONLY</p>
+        <p class="state-detail">declined, or store not resolved</p>
+      </div>
+      <div class="state-item state-blocked">
+        <p class="state-name">BLOCKED</p>
+        <p class="state-detail"><code>gh</code>, discovery, or verification failed</p>
+      </div>
+      <p class="state-copy">The caller always gets a definite answer, never a silent partial success.</p>
+    </div>
+    <p class="proof-line">A push that appears to succeed is <strong>not proof</strong>. <strong>CREATED</strong> is claimed only after a <strong>fresh read-back agrees</strong>.</p>
+  </section>
+
+  <footer class="closing-band">
+    <p class="closing-line">One consented store gives every skill durable context with explicit verification.</p>
+    <div class="metadata-line">
+      <span>${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json · ${XDG_DATA_HOME:-$HOME/.local/share}/agent-context/repo</span>
+      <span>oleg-koval/agent-skills</span>
+    </div>
+  </footer>
+</main>
