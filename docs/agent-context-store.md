@@ -25,6 +25,98 @@ time an agent has no access to the Artifact page that came before it. A durable,
 cross-machine store is what makes "compare this retro to the last one" or "what have
 other agents already learned" answerable at all.
 
+## How it works
+
+The resolver searches for an existing private store before offering creation. The
+diagram includes the silent reuse paths, the explicit consent boundary, and every
+terminal status the caller can receive.
+
+```mermaid
+flowchart TD
+    start["Caller asks for the store"] --> pointer{"Normal pointer?"}
+    pointer -->|"Yes"| clone{"Local clone exists?"}
+    clone -->|"Yes"| visibility{"Fresh remote read is private?"}
+    visibility -->|"Yes"| ready1["READY: reuse, no prompt"]
+    visibility -->|"Public"| discover["Exhaustive private-store discovery"]
+    visibility -->|"Not found or access denied"| discover
+    visibility -->|"Network, API, or rate limit after retry"| blocked1["BLOCKED: visibility unknown"]
+    clone -->|"No"| remote2{"Remote read succeeds?"}
+    remote2 -->|"Private"| reclone["Clone to the fixed path"]
+    reclone --> verifyclone{"Fresh visibility read is private?"}
+    verifyclone -->|"Yes"| ready2["READY: adopted and re-cloned"]
+    verifyclone -->|"No"| blocked2["BLOCKED: verification failed"]
+    remote2 -->|"Network or API failure"| blocked3["BLOCKED: cannot verify or clone"]
+    remote2 -->|"Not found, access denied, or public"| discover
+
+    pointer -->|"No, or stale"| refusal{"Refusal pointer?"}
+    refusal -->|"Yes, no explicit resume"| local1["LOCAL_ONLY: prior refusal"]
+    refusal -->|"No, or explicit resume"| discover
+    discover --> probe{"All private repositories probed?"}
+    probe -->|"No: retry still failed"| blocked4["BLOCKED: discovery incomplete"]
+    probe -->|"Exactly one private match"| adopt["Adopt matching store"]
+    probe -->|"Several matches"| choose["User chooses; no clone or pointer write yet"]
+    choose --> adopt
+    probe -->|"No matches"| preconditions["Check gh and repo authentication"]
+    adopt --> adoptread["Fresh private read, then clone and read again"]
+    adoptread --> ready3["READY: existing store adopted"]
+    preconditions -->|"Missing or unauthenticated"| blocked5["BLOCKED: gh auth login -s repo"]
+    preconditions -->|"Pass"| prompt["Ask once: owner, name, private, exact paths"]
+    prompt -->|"n"| local2["LOCAL_ONLY: this run only"]
+    prompt -->|"never"| local3["LOCAL_ONLY: refusal pointer recorded"]
+    prompt -->|"y"| create["Create private repo, clone, seed, commit, push"]
+    create --> verify{"Fresh remote and local reads agree?"}
+    verify -->|"Yes"| writepointer["Write normal pointer"]
+    writepointer --> created["CREATED: verified receipt"]
+    verify -->|"No"| blocked6["BLOCKED: no pointer written"]
+```
+
+On a normal first run, the caller waits while `context-repo` completes discovery,
+checks prerequisites, asks once, creates the private store, and verifies it from
+fresh reads before returning a receipt.
+
+```mermaid
+sequenceDiagram
+    participant Caller as Calling skill
+    participant Context as context-repo
+    participant User as User
+    participant CLI as gh and git
+    participant Remote as GitHub
+
+    Caller->>Context: Resolve durable store
+    Context->>CLI: List private owner repositories
+    CLI->>Remote: Probe each repository tree
+    Remote-->>CLI: No matching ledger + retro layout
+    CLI-->>Context: Exhaustive discovery complete
+    Context->>CLI: gh --version and gh auth status
+    CLI-->>Context: Preconditions pass
+    Context->>CLI: gh api user -q .login
+    CLI-->>Context: Authenticated owner
+    Context->>User: Ask once before creation
+    Note over Context,User: Private store, exact pointer and clone paths,<br/>README.md, AGENTS.md, .gitignore, ledger.json, retro/
+    User-->>Context: y
+    Context->>CLI: gh repo create owner/name --private
+    CLI->>Remote: Create repository
+    Remote-->>CLI: Created
+    Context->>CLI: git clone and seed the store
+    CLI-->>Context: Local initialized tree
+    Context->>CLI: git add, commit, and push
+    CLI->>Remote: Push initialization commit
+    Note over Context,Remote: A successful-looking push is not proof
+    Context->>CLI: gh repo view owner/name --json nameWithOwner,visibility
+    CLI->>Remote: Fresh visibility read
+    Remote-->>CLI: PRIVATE
+    Context->>CLI: git -C clone rev-parse HEAD
+    CLI-->>Context: Fresh local SHA
+    Context->>Context: Confirm both reads and write the pointer
+    Context-->>Caller: CREATED with repo, clone, and init SHA
+```
+
+The callers then own distinct content in the same clone: `retro-analysis` writes
+one uniquely named Markdown snapshot under `retro/`, while
+`shared-knowledge-artifact` appends notes to the root `ledger.json` and treats its
+Artifact page as the user-facing view. Both follow the store's lease, pull-before-
+push, validation, append-only, and no-force-push rules.
+
 ## Repository layout
 
 ```text
