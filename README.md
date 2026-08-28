@@ -81,6 +81,19 @@ Then install any of the eleven plugins by name:
 
 Install only the plugins you need; each is independent.
 
+**Upgrading from the single `olko-agent-skills` plugin:**
+
+Releases up to `v1.34.0` shipped one plugin also named `olko-agent-skills`.
+`v1.35.0` split it into the eleven above and dropped that name from
+`marketplace.json`, so an install of it can no longer be resolved: `/plugin
+update` reports `Plugin "olko-agent-skills" not found` and the install stays
+pinned at `1.34.0` forever. Remove the stale entry once, then install the
+plugins you want from the list above.
+
+```text
+/plugin uninstall olko-agent-skills@olko-agent-skills
+```
+
 **For local development:**
 
 Clone the repo and point Claude Code at the plugin directory:
