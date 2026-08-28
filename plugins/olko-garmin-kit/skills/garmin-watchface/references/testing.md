@@ -8,7 +8,7 @@
 base.excludeAnnotations = test
 ```
 
-That is correct — test code must not ship in the store build. But it strips
+That is correct: test code must not ship in the store build. But it strips
 `(:test)` from **every** target, including `--unit-test`. The result:
 
 ```
@@ -19,7 +19,7 @@ Ran 0 tests
 or, worse, a green run reported against stale test files that reference deleted
 symbols. Tests written months ago may never have executed once.
 
-**Fix** — a second jungle, passed as an additional `-f`:
+**Fix**: a second jungle, passed as an additional `-f`:
 
 ```
 # monkey.test.jungle
@@ -55,7 +55,7 @@ you inherit a project or change the jungle.
 ## What is worth testing
 
 Monkey C unit tests run on-device or in the simulator and can only assert on pure
-logic — you cannot inspect rendered pixels. So test the two things that are pure:
+logic: you cannot inspect rendered pixels. So test the two things that are pure:
 **geometry** and **formatting**. Keep `Dc` out of `Layout` and `Fields` and they
 stay testable.
 
@@ -91,7 +91,7 @@ function footerStaysOnScreenForAnyPlausibleFont(logger as Logger) as Boolean {
 
 ### Lookup tables where a typo is plausible
 
-A mistyped segment mask produces a *plausible* wrong digit — a `6` missing its
+A mistyped segment mask produces a *plausible* wrong digit: a `6` missing its
 top bar still reads as a `6` to a careless eye. Pin by count plus the specific
 features that distinguish neighbours:
 
@@ -134,7 +134,7 @@ exist. Grep for call sites of anything you have just written a test for.
 ## What tests cannot catch
 
 Everything visual. Overlapping rows, a bar through a label, a face that is too
-dim, content drawn off-screen — all of it passes a green suite. **Capture a
+dim, content drawn off-screen: all of it passes a green suite. **Capture a
 screenshot and look at it before committing.** Every visual bug in this skill's
 history was found by looking.
 

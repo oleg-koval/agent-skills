@@ -4,6 +4,7 @@
 
 Use the canonical skills directly:
 
+- `plugins/olko-skill-meta/skills/context-repo/SKILL.md`
 - `plugins/olko-skill-meta/skills/add-to-my-skills/SKILL.md`
 - `plugins/olko-skill-meta/skills/promptctl/SKILL.md`
 - `plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md`

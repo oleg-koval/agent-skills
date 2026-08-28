@@ -23,11 +23,11 @@ Composed skill that creates photo galleries by orchestrating atomic scripts and 
 
 This skill applies principles from masters of photo sequencing and curation:
 
-- **Keith Smith** — Group/Series/Sequence taxonomy; the gallery as a unified experience
-- **Jörg Colberg** — Ruthless editing; visual rhythm; pacing
-- **John Szarkowski** — The Five Characteristics for image assessment
+- **Keith Smith**: Group/Series/Sequence taxonomy; the gallery as a unified experience
+- **Jörg Colberg**: Ruthless editing; visual rhythm; pacing
+- **John Szarkowski**: The Five Characteristics for image assessment
 
-> "The individual pages have to give up their independence in order to form a union." — Keith Smith
+> "The individual pages have to give up their independence in order to form a union." (Keith Smith)
 
 For detailed principles, see `docs/photo-layout-principles.md`.
 
@@ -37,7 +37,7 @@ For detailed principles, see `docs/photo-layout-principles.md`.
 
 Example: `/gallery cabo-2025 "CABO 2025" cabo`
 
-**Important:** All paths are relative to the current project directory. The `{folder}` argument is a path within the project (e.g., `./photos/cabo-2025` or just `cabo-2025`). Do NOT search the filesystem for folders — assume the user's folder exists in the current working directory.
+**Important:** All paths are relative to the current project directory. The `{folder}` argument is a path within the project (e.g., `./photos/cabo-2025` or just `cabo-2025`). Do NOT search the filesystem for folders: assume the user's folder exists in the current working directory.
 
 ## Gallery Modes
 
@@ -154,11 +154,11 @@ This combines all batch files and validates the result.
 
 Before generating, review the merged manifest for overall coherence:
 
-1. **Count hero moments** — If >4 FullBleeds, demote some to WideImage
-2. **Check multi-image limits** — Max 2-3 TwoUp, 1-2 ThreeUp across entire gallery
-3. **Verify rhythm** — No consecutive high-weight blocks
-4. **Identify the climax** — One clear emotional peak, not many
-5. **Working backwards** — Does the final image provide satisfying closure?
+1. **Count hero moments**: If >4 FullBleeds, demote some to WideImage
+2. **Check multi-image limits**: Max 2-3 TwoUp, 1-2 ThreeUp across entire gallery
+3. **Verify rhythm**: No consecutive high-weight blocks
+4. **Identify the climax**: One clear emotional peak, not many
+5. **Working backwards**: Does the final image provide satisfying closure?
 
 ### Phase 5: Generate
 
@@ -183,7 +183,7 @@ Only run missing batches, then merge.
 
 ## Layout Philosophy
 
-A gallery needs **rhythm and variety** — loud moments, quiet moments, pairings that create meaning.
+A gallery needs **rhythm and variety**: loud moments, quiet moments, pairings that create meaning.
 
 | Layout | Purpose |
 |--------|---------|
@@ -201,11 +201,11 @@ A gallery needs **rhythm and variety** — loud moments, quiet moments, pairings
 
 Pair images when juxtaposition creates meaning beyond either image alone:
 
-1. **Temporal** — Same moment, different angles
-2. **Spatial** — Same scene, complementary views
-3. **Formal echo** — Compositional rhyme (lines, shapes, colors)
-4. **Emotional** — Contrast or reinforcement
-5. **Transformation** — Together they say something neither says alone
+1. **Temporal**: Same moment, different angles
+2. **Spatial**: Same scene, complementary views
+3. **Formal echo**: Compositional rhyme (lines, shapes, colors)
+4. **Emotional**: Contrast or reinforcement
+5. **Transformation**: Together they say something neither says alone
 
 A strong TwoUp is better than two mediocre WideImages.
 

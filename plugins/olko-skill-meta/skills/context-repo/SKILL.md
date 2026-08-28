@@ -1,0 +1,179 @@
+---
+name: context-repo
+description: Resolve a durable private GitHub repository for agent-produced context such as retro snapshots and shared-knowledge-artifact mirrors, creating it once with explicit consent and remembering the decision afterward. Returns a clone path and a verified receipt to the calling skill. Use when a skill needs a durable, private, cross-machine store for artifacts it generates, rather than a repo-local scratch directory that does not survive across machines or repos.
+license: MIT
+allowed-tools: Bash, Read, Write
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires the GitHub CLI (gh) authenticated with the repo scope.
+metadata:
+  author: Oleg Koval
+  targets: [_source-only]
+  tags:
+    - github
+    - gh
+    - context
+    - persistence
+    - bootstrap
+    - private-repo
+---
+
+# Context Repo
+
+Resolve a single durable, private GitHub repository that other skills use to persist context they produce: retrospective snapshots, shared-knowledge-artifact mirrors, and similar generated records. This skill owns exactly one job: find or create that store, and hand the caller a local clone path plus a receipt proving the store is real. It does not write the caller's actual content; the caller writes into the resolved clone and commits its own change.
+
+## When to use
+
+- A skill wants a durable place to persist something it generates (a snapshot, a mirror, a ledger) that should survive across machines and outlive the current repository checkout.
+- The caller has already decided what to write and where inside the store; it needs this skill only to answer "does the store exist, and where is it cloned."
+
+Do not use this skill to read or write arbitrary GitHub repositories. It manages exactly one repository: the agent context store.
+
+## State and layout
+
+Pointer file, the single source of truth for whether a store has been resolved:
+
+```
+${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json
+```
+
+Normal (resolved) shape:
+
+```json
+{"repo": "<owner>/<name>", "clone": "<path>", "created": "YYYY-MM-DD"}
+```
+
+Refusal shape, written only when the user picks `never` at the consent prompt:
+
+```json
+{"status": "declined", "asked": "YYYY-MM-DD"}
+```
+
+A pointer in the refusal shape means the answer is already known. Do not prompt again; resolve straight to `LOCAL_ONLY` and tell the caller why.
+
+Clone location, fixed regardless of the resolved repo name:
+
+```
+${XDG_DATA_HOME:-$HOME/.local/share}/agent-context/repo
+```
+
+Repository tree, seeded on creation and extended by callers afterward:
+
+```
+README.md
+.gitignore
+retros/<repo-slug>/<YYYY-MM-DD>-<window>.json
+retros/<repo-slug>/<YYYY-MM-DD>-<window>.md
+knowledge/<artifact-slug>/ledger.json
+knowledge/<artifact-slug>/page.html
+```
+
+`README.md` states what the repository is, which skills write to it, that it is private, and its retention expectations (append-only, not pruned automatically). `retros/` and `knowledge/` start empty aside from a placeholder so git tracks the directories; callers create the dated or slugged subpaths they need.
+
+## Resolution order
+
+Evaluate these in order. Stop at the first one that applies. Steps 1 and 2 never prompt.
+
+**1. Pointer exists in the normal shape, clone exists, and `gh repo view <repo>` succeeds.**
+Return the existing repo and clone path as-is. Zero writes, zero prompts. This is the common case on a machine that already resolved the store.
+
+If `gh repo view <repo>` fails, distinguish why before deciding anything. A failure that names the repository as not found, or reports access denied, means the pointer is stale: report the stale state and fall through to step 3 to re-prompt, and never assume a stale pointer still means "yes." A failure caused by no network, a `gh` API outage, or a rate limit is not staleness. In that case keep the pointer and the existing clone, resolve as `READY` with the SHA read locally from `git -C <clone> rev-parse HEAD`, and report that the remote could not be reached. Never prompt to create a store that the pointer says already exists just because GitHub was unreachable, and never create a replacement repository on a failed read.
+
+**2. Pointer exists in the normal shape, `gh repo view <repo>` succeeds, but the local clone directory is missing.**
+Re-clone silently into the fixed clone location. Report to the caller that a re-clone happened (this is expected the first time a given machine touches an already-resolved store). Zero prompts.
+
+**3. No pointer, or the pointer is in the refusal shape, or the pointer was found stale in step 1.**
+If the pointer is in the refusal shape, stop here: resolve to `LOCAL_ONLY` without prompting, and tell the caller the user previously declined. The one override: if the user has asked for the store in this run, explicitly and in their own words, treat that as consent already given, replace the refusal pointer, and continue to the preconditions below. A caller's need for the store is never such a request; only the user is.
+
+Otherwise check preconditions before offering to create anything:
+
+- `gh --version` must succeed.
+- `gh auth status` must succeed and the active account must carry the `repo` scope.
+
+If either check fails, resolve to `BLOCKED` with the exact remedy `gh auth login -s repo` and stop. Do not attempt to create a repository without `gh` authenticated. The caller must degrade gracefully (fall back to a local-only path of its own) rather than fail its own run.
+
+If preconditions pass, ask once, in one message, before creating anything. State plainly:
+
+- **Owner**: the account from `gh api user -q .login`.
+- **Name**: the proposed repository name, default `agent-context`.
+- **Visibility**: private.
+- **Paths that will be written**: the pointer file path, the clone path, and the seeded tree (`README.md`, `.gitignore`, `retros/`, `knowledge/`).
+- That nothing outside this one repository is touched: no other GitHub repository, no existing local files besides the two paths above.
+
+Offer exactly three answers:
+
+- `y`: proceed to step 4.
+- `n`: do not create anything and do not write a pointer. Resolve this run as `LOCAL_ONLY`. Ask again next time a caller needs the store.
+- `never`: do not create anything. Write the refusal-shape pointer so future runs stop asking. Resolve this run as `LOCAL_ONLY`.
+
+**Name collision.** If `<owner>/<name>` already exists on GitHub:
+
+- If it already carries this layout (a `retros/` directory and a `knowledge/` directory at the repository root, and a `README.md` that identifies it as an agent context store), adopt it: skip creation, clone it, and proceed as if step 4 had just run.
+- Otherwise it is an unrelated repository. Never write into it. Offer `agent-context-2` (incrementing further only if that also collides) as the name and re-run the consent prompt with the new name.
+
+**4. Create, seed, and push.**
+Only reached after explicit `y` consent (or an adopted existing repo with the right layout).
+
+```
+gh repo create <owner>/<name> --private
+git clone https://github.com/<owner>/<name>.git <clone>
+```
+
+Seed the tree inside `<clone>`: write `README.md`, `.gitignore`, and empty `retros/` and `knowledge/` directories (each holding a placeholder file so git tracks them). Then:
+
+```
+git -C <clone> add -A
+git -C <clone> commit -m "chore: initialize agent context store"
+git -C <clone> push -u origin HEAD
+```
+
+**5. Write the pointer, then verify from a fresh source.**
+Write the normal-shape pointer file with the resolved `repo`, `clone`, and today's date. Then re-read the state independently of anything cached during creation:
+
+```
+gh repo view <owner>/<name> --json nameWithOwner,visibility
+git -C <clone> rev-parse HEAD
+```
+
+Print a receipt before returning control to the caller:
+
+```
+owner/name: <owner>/<name>
+visibility: PRIVATE
+clone: <path>
+init SHA: <sha>
+```
+
+Never report the store as created or ready without this fresh read-back. A push that appears to succeed is not itself the proof; the proof is `gh repo view` and `git rev-parse HEAD` agreeing with what was just written.
+
+## Contract imposed on callers
+
+Once this skill returns a clone path, the caller owns everything it writes there:
+
+- One commit per skill run, with a conventional commit message.
+- `git pull --rebase` before pushing, to pick up writes from other machines or agents.
+- Never force push.
+- Never delete or rewrite a file that already exists in the store; only add new files or append within a file the caller itself owns.
+- If push fails, report the failure and keep the local commit as-is. Do not retry silently and do not discard the commit.
+
+## Secrets rule
+
+Never commit raw session content, tokens, private prompts, or customer data into the store. Callers may only write aggregate counts and redacted references. This skill does not inspect caller content for secrets; that responsibility stays with the caller writing into the resolved clone.
+
+## Non-goals
+
+- Never makes the repository public. Visibility stays private for the life of the store.
+- Never adds collaborators.
+- Never targets a GitHub organization unless the user explicitly names one; the default owner is always the authenticated user's own account.
+- Never manages any repository other than the single resolved agent context store.
+
+## Minimal final status
+
+End every run with:
+
+```text
+CONTEXT_REPO_STATUS: READY | CREATED | LOCAL_ONLY | BLOCKED
+REPO: <owner/name, or NOT_AVAILABLE>
+CLONE: <path, or NOT_AVAILABLE>
+SHA: <current or init commit sha, or NOT_AVAILABLE>
+```
+
+Use `READY` when an existing store resolved without creating anything (steps 1 or 2). Use `CREATED` only after the fresh verification in step 5 succeeded. Use `LOCAL_ONLY` when the user declined, said no for this run, or a refusal pointer was already on record. Use `BLOCKED` only when `gh` is missing or unauthenticated; always include the `gh auth login -s repo` remedy in the surrounding report when this status appears.

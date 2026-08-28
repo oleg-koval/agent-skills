@@ -1,6 +1,6 @@
 # Torrent Stall & YouTube Fallback Pattern
 
-**Context:** May 2026 session adding "Dexter Gordon — Go" to Plex revealed a reliability pattern in RuTracker sourcing.
+**Context:** May 2026 session adding "Dexter Gordon - Go" to Plex revealed a reliability pattern in RuTracker sourcing.
 
 ## The Pattern
 
@@ -11,7 +11,7 @@ RuTracker torrent searches often succeed (find 5–10 versions), but the selecte
 
 Rather than wait indefinitely, the workflow should detect stall within 5 minutes and pivot to YouTube + MP3.
 
-## Dexter Gordon — Go (Case Study)
+## Dexter Gordon - Go (Case Study)
 
 Search returned multiple FLAC versions:
 - `[SACD-R][OF] Dexter Gordon – Go - 2010` (9 seeds, 1 GB)
@@ -24,7 +24,7 @@ Search returned multiple FLAC versions:
 ## 5-Minute Timeout Rationale
 
 - 30 seconds: too aggressive, may give up on legitimate slow starts
-- 5 minutes: Oleg's preference — balances hope vs. pragmatism
+- 5 minutes: Oleg's preference, balancing hope vs. pragmatism
 - 10+ minutes: frustrating UX; YouTube is known-good
 
 ## YouTube Fallback Quality
@@ -38,13 +38,13 @@ When switching to YouTube, the skill currently:
 
 Result: playable album in Plexamp. Quality is typically 128–320 kbps MP3 (YT limits). Not lossless, but reliable and fast.
 
-## Detection & Automation (current behavior — June 2026)
+## Detection & Automation (current behavior, June 2026)
 
 This is now **automated and interactive**. The background notifier
 (`mtp-notify`) polls `mtp status <task_id>` every 30s. If percent-done stays
 flat for the stuck window (default 10 min; `stuck_timeout` in the chat-state
 blob), it flips the chat to the `STUCK` state and posts a message with **four
-numbered options** — it does NOT auto-pivot to YouTube:
+numbered options**, and it does NOT auto-pivot to YouTube:
 
 ```
 1️⃣ Wait 1 more hour
@@ -58,5 +58,5 @@ verbatim to `mtp-bot handle`, which routes it through the `STUCK` /
 `STUCK_WAIT_INPUT` handlers in `mtp/bot/machine.py`. Option 4 returns the
 `__YOUTUBE_FALLBACK__` signal that hands the YouTube acquisition to Hermes.
 
-Operator choice is preserved by design — the user decides per-stall, rather than
+Operator choice is preserved by design: the user decides per-stall, rather than
 the tool silently switching sources.

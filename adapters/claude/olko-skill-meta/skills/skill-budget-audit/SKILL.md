@@ -1,6 +1,6 @@
 ---
 name: skill-budget-audit
-description: Diagnose and fix Claude Code's skill context budget overflow — identify heavy plugin bundles that exceed the 2% budget, remove domain-specific ones, deactivate rarely-used skill sets, and validate the warning clears. Use when Claude Code shows "Exceeded skills context budget" or skill descriptions are stripped.
+description: Diagnose and fix Claude Code's skill context budget overflow, identify heavy plugin bundles that exceed the 2% budget, remove domain-specific ones, deactivate rarely-used skill sets, and validate the warning clears. Use when Claude Code shows "Exceeded skills context budget" or skill descriptions are stripped.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Claude Code only. Requires access to ~/.claude/ and ~/.claude/plugins/
@@ -123,7 +123,7 @@ For security-focused skills (`secskills`):
 rtk gain 2>/dev/null || echo "rtk not available"
 ```
 
-Open a new Claude Code session and run a skill that was previously failing — verify it activates correctly.
+Open a new Claude Code session and run a skill that was previously failing: verify it activates correctly.
 
 ### 7. Prevent Recurrence
 

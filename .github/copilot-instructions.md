@@ -33,6 +33,7 @@ Available reusable prompt files:
 - mvp-oneshot: .github/prompts/mvp-oneshot.prompt.md
 - starter-rules: .github/prompts/starter-rules.prompt.md
 - viral-launch: .github/prompts/viral-launch.prompt.md
+- context-repo: .github/prompts/context-repo.prompt.md
 - add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
 - promptctl: .github/prompts/promptctl.prompt.md
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md

@@ -34,27 +34,27 @@ Do not use for repos outside the `oleg-koval` namespace unless they explicitly r
 
 ## Workflow
 
-1. **Load the rules** — read `RULES.md` from the repo root. If absent, fetch it from `https://github.com/oleg-koval/starters/blob/main/RULES.md` and note that the starter is missing a local copy.
+1. **Load the rules**: read `RULES.md` from the repo root. If absent, fetch it from `https://github.com/oleg-koval/starters/blob/main/RULES.md` and note that the starter is missing a local copy.
 
-2. **Apply §2 hard rules** — for the current task or PR diff, verify:
+2. **Apply §2 hard rules**: for the current task or PR diff, verify:
    - No file exceeds 300 lines (`find . -name '*.ts' -o -name '*.py' -o -name '*.go' | xargs wc -l | awk '$1 > 300 && $2 != "total"'`)
    - No functions produce side effects outside of boundary layers
    - New code has no WHAT-comments; WHY-comments are one line max
    - Tests are E2E-first; unit tests only for pure logic with non-trivial branching
 
-3. **Verify hooks and lint** — check that pre-commit hooks are installed and configured:
+3. **Verify hooks and lint**: check that pre-commit hooks are installed and configured:
    - TypeScript: `cat .eslintrc* | grep max-lines` and `cat package.json | grep -A5 '"lint-staged"\|"husky"\|"lefthook"'`
    - Python: `cat .pre-commit-config.yaml` and check for `ruff` + format hooks
    - Go: `cat .golangci.yml` or `.pre-commit-config.yaml` and check for `golangci-lint` + `gofmt`
 
-4. **Check architecture** — for app/SaaS starters: confirm feature code is organized as vertical slices (feature directory contains handler + DTO + service + tests together). For library starters: skip.
+4. **Check architecture**: for app/SaaS starters: confirm feature code is organized as vertical slices (feature directory contains handler + DTO + service + tests together). For library starters: skip.
 
-5. **Report gaps** — list any violations found in steps 2–4. For each gap:
+5. **Report gaps**: list any violations found in steps 2–4. For each gap:
    - Name the rule (e.g., "§2.2 file length")
    - Name the file and line count or violation
    - Propose the minimal fix
 
-6. **Fix on request** — if the user asks to fix the gaps, apply them one at a time, smallest change first. Do not refactor beyond what the rule requires.
+6. **Fix on request**: if the user asks to fix the gaps, apply them one at a time, smallest change first. Do not refactor beyond what the rule requires.
 
 ## Reference
 

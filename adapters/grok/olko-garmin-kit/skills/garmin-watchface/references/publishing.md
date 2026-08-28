@@ -1,7 +1,7 @@
 # Publishing through the browser
 
 `reference/store.md` covers *what* the listing needs. This covers *driving the
-portal*, which is the only way in — Garmin publishes no submission API.
+portal*, which is the only way in: Garmin publishes no submission API.
 
 Run `bin/ciq-release` before opening a browser. Everything it checks is
 something you would otherwise discover halfway through the form.
@@ -36,7 +36,7 @@ Three separate traps in that block:
   logged in".
 - **Host-scoped cookies need you on that host first**, or the import refuses
   with *"does not match current page domain"*. The `.garmin.com` set alone is
-  NOT enough to authenticate — the session only holds once
+  NOT enough to authenticate: the session only holds once
   `apps.` and `sso.` are imported too.
 - **Substitute your browser.** `comet`, `chrome`, `brave`, `arc`, `edge`,
   `chromium` are supported. Whichever one you actually signed into.
@@ -53,7 +53,7 @@ look identical from the outside (`Imported 0 cookies`):
   is one. Reading the key out of the macOS keychain yourself is credential
   extraction, an agent permission-classifier will block it, and it should.
 - **You are signed into a different browser than you think.** Check the cookie
-  DB's mtime rather than guessing — the store of the browser you just used is
+  DB's mtime rather than guessing: the store of the browser you just used is
   written seconds ago:
 
 ```bash
@@ -72,12 +72,12 @@ $B goto https://apps.garmin.com/en-US/developer/dashboard
 $B focus                      # then the human signs in, in that window
 ```
 
-No import, no keychain, no profile mismatch. `handoff` is NOT equivalent — it
+No import, no keychain, no profile mismatch. `handoff` is NOT equivalent: it
 opens a *separate* browser whose session `resume` does not inherit.
 
 **Do not trust window counts from System Events.** `count of windows` returns 0
 for Chromium browsers without macOS automation permission, even while the window
-is plainly on screen — Finder returns a real number, so the API looks like it is
+is plainly on screen: Finder returns a real number, so the API looks like it is
 working. Diagnosing "the browser never opened" from that reading sends you off
 fixing the wrong thing.
 
@@ -116,7 +116,7 @@ https://apps.garmin.com/developer/<devId>/apps/<appId>/update   # new version
 https://apps.garmin.com/developer/<devId>/apps/<appId>/edit     # listing text
 ```
 
-`<devId>` is stable across your apps — read it off any editor URL once. Guessing
+`<devId>` is stable across your apps: read it off any editor URL once. Guessing
 `/developer/<appId>/edit` returns 404.
 
 Field handles, current as of mid-2026:
@@ -140,7 +140,7 @@ el.dispatchEvent(new Event('change', { bubbles: true }));
 ```
 
 Pass long copy through a staged `<script type="application/json">` node rather
-than interpolating it into a `js` one-liner — multi-line store copy will not
+than interpolating it into a `js` one-liner: multi-line store copy will not
 survive shell and JS quoting intact.
 
 ### The public page lags the portal
@@ -159,7 +159,7 @@ it look like every action is blocked.
 
 **It is pre-rendered hidden markup, not an active block.** Click the button and
 the real form loads. Do not report the store as down on the strength of a text
-dump — click first, then check for a *visible* dialog:
+dump: click first, then check for a *visible* dialog:
 
 ```bash
 $B js "(function(){var o=[];document.querySelectorAll('[role=dialog],.modal').forEach(function(x){if(x.offsetParent!==null)o.push(x.innerText.slice(0,120))});return o.join('|')||'no visible modal'})()"
@@ -169,7 +169,7 @@ $B js "(function(){var o=[];document.querySelectorAll('[role=dialog],.modal').fo
 
 *Upload New Version* → `/apps/<uuid>/update`, which is two steps.
 
-**Step 1 — attach.** A file input and an *App Version* textbox. Publish stays
+**Step 1: attach.** A file input and an *App Version* textbox. Publish stays
 disabled until both are set; the page shows the current version so you can pick
 the next one.
 
@@ -180,18 +180,18 @@ $B click @e46                      # "Upload and publish"
 ```
 
 On success the page reports **Status: Verified, Signature: Verified** and
-expands the product list — a manifest naming one product can resolve to several
+expands the product list: a manifest naming one product can resolve to several
 store devices (`fenix6pro` becomes fēnix 6 Pro, 6 Pro Dual Power, 6 Pro Solar
 and quatix 6).
 
-**Step 2 — details.** Title, description, What's New, images, category, contact
+**Step 2: details.** Title, description, What's New, images, category, contact
 email. Ends in *Submit*.
 
 The description arrives pre-filled with the copy from the PREVIOUS version.
 After a redesign it describes a face that no longer exists, and nothing prompts
 you about it. Re-paste from `docs/store/listing.md` every time.
 
-### Step 2 can fail silently — verify the live page
+### Step 2 can fail silently: verify the live page
 
 Observed on a real submission: the package uploaded, the version went live, and
 *Submit* on step 2 **saved nothing**. No error, no validation message; the page
@@ -210,7 +210,7 @@ operations, whatever the form implies:
 
 A long description may also be truncated behind a read-more on the public page,
 so a missing string near the *end* of the copy is not automatically a failed
-save — check a distinctive phrase from early in the text too before concluding
+save: check a distinctive phrase from early in the text too before concluding
 either way.
 
 ## Image slots, in DOM order
@@ -237,8 +237,8 @@ form accepts it.
 Two rejections, both discovered only after filling the entire form and pressing
 Submit:
 
-- `Illegal characters found: <, >.` — an ASCII `->` arrow is enough to trip it.
-- `The app description is invalid. It should not contain emojis.` — **U+2699
+- `Illegal characters found: <, >.`: an ASCII `->` arrow is enough to trip it.
+- `The app description is invalid. It should not contain emojis.`: **U+2699
   GEAR counts**, which is exactly the character you reach for when writing
   "tap the gear icon". U+2192 RIGHTWARDS ARROW passes today but lives in the
   same symbol space.
@@ -265,7 +265,7 @@ Never target buttons by index in that row.
 **Upload and publish** and **Submit** are outward-facing: they push to a public
 listing and accept the Developer License Agreement on the account holder's
 behalf. Confirm with the human before either, even when they have asked for the
-release — version number and stale copy are both worth one question.
+release: version number and stale copy are both worth one question.
 
 ## Account state
 

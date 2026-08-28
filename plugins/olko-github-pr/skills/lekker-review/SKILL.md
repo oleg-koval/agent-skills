@@ -6,7 +6,7 @@ description: >
   checks, and (optionally) production monitoring, runs 5 parallel specialized
   review agents (quality/implementation/simplification/conventions/test-quality),
   verifies every finding against the diff, then outputs a single unified markdown
-  review — file + risk + bad code + why it's wrong + fix — ready to paste directly
+  review: file + risk + bad code + why it's wrong + fix, ready to paste directly
   into GitHub. Saves every review to ~/code-reviews/*.md. Covers business logic,
   scalability, complexity, data integrity, security, integration contracts, error
   handling, and migration safety. Critical findings come with PROOF: a prover
@@ -24,7 +24,7 @@ description: >
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact
 compatibility: Claude Code only. Requires the Workflow tool (multi-agent orchestration)
-  and the Artifact tool (living review page) — other Agent Skills-compatible tools
+  and the Artifact tool (living review page): other Agent Skills-compatible tools
   without an equivalent to Workflow cannot run the review/verify/critic pipeline this
   skill depends on. Requires git and gh (GitHub CLI) authenticated.
 metadata:
@@ -69,11 +69,11 @@ are about to present the review without it, stop and compute it first.
 
 ## Set up before first use
 
-This skill ships with **no** hard rules of its own — `references/house-rules.md`
+This skill ships with **no** hard rules of its own: `references/house-rules.md`
 is a template. Fill it in with your team's own non-negotiable conventions
 (type safety, pagination, PR-title format, repo-placement taxonomy, stack
 context) before relying on the Critical-severity hard-rule gate. Until then,
-the 5 specialist agents still run and still find real bugs — they just don't
+the 5 specialist agents still run and still find real bugs. They just don't
 have a codified "always Critical" rule list to check against.
 
 If any hard rule you define carries a `rule` tag (e.g. `"TS-1"`), reviewer
@@ -86,8 +86,8 @@ your policy declares non-negotiable. A tagged finding keeps its Critical
 severity; the workflow returns how many were exempted as `hardRuleCount`, and
 each carries a `verifierReasoning` saying so.
 
-`${CLAUDE_PLUGIN_ROOT}` below refers to this skill's own installed directory
-— resolve every `references/...` and script path relative to it.
+`${CLAUDE_PLUGIN_ROOT}` below refers to this skill's own installed directory:
+resolve every `references/...` and script path relative to it.
 
 ---
 
@@ -270,12 +270,26 @@ args: {
 }
 ```
 
+Two optional args tune concurrency; omit both unless a run needs it:
+
+- `reviewBatchPlan` - batch sizes for the review dimensions, default `[5]`
+  (all five at once). The last entry repeats to cover any remainder, so
+  `[2]` would mean two at a time.
+- `maxConcurrent` - cap for the per-finding fan-outs (verify, critic, prove),
+  default `5`.
+
+Lowering them is always safe: it costs wall-clock, never findings. Reach for
+that only when a specific run needs a smaller footprint.
+
 The workflow runs three phases:
 
 - **Review:** scan uses `[triage-quality, triage-logic]` on `haiku`; medium/deep
   use 5 specialists (quality, implementation, simplification, conventions,
   test-quality) on `sonnet`. Agents receive DIFF_FILE + CONTEXT_FILE by path.
-  All reviewers run to completion before verification starts.
+  All five run concurrently: the stage is self-limiting at one agent per
+  dimension. All reviewers run to completion before verification starts.
+  Override per run with the `reviewBatchPlan` arg (e.g. `[1]` runs them
+  strictly one at a time on a constrained machine).
 - **Dedup:** findings are merged across dimensions on `file:line` + title
   token-similarity, so one issue found by three agents is verified once, not
   three times. A merge keeps the highest severity and the longest
@@ -286,13 +300,15 @@ The workflow runs three phases:
   Criticals + Importants. Hard-rule findings (`rule` set) are always exempt.
   Each verifier runs the five-challenge adversarial refutation from
   `references/agents/verifier.md` against one finding, returns
-  `{verdict, newSeverity?, reasoning}`.
+  `{verdict, newSeverity?, reasoning}`. Verifiers run `maxConcurrent` at a time
+  (default 5): this stage spawns one agent PER FINDING, so without a ceiling a
+  thirty-finding PR launches thirty concurrent agents.
 - **Critic (deep only):** completeness critic gets the full deduped finding
   list + DIFF_FILE; its findings go through verifier agents before promotion.
 - **Prove (medium/deep, worktree required):** each non-hard-rule Critical gets
-  one prover agent (`references/agents/prover.md`, sonnet, max 5) that writes a
-  test asserting the CORRECT behavior, runs it in the worktree, and captures it
-  failing because of the bug. The proof rides on the finding as
+  one prover agent (`references/agents/prover.md`, sonnet, max 5, run
+  `maxConcurrent` at a time) that writes a test asserting the CORRECT behaviour,
+  runs it in the worktree, and captures it failing because of the bug. The proof rides on the finding as
   `proof: {attempted, proven, reason, testCode?, testCommand?, redOutput?}`.
   A proof that comes back GREEN (code behaved correctly) is counter-evidence -
   Step 3 must downgrade or explicitly justify the finding, never ignore it.
@@ -523,7 +539,7 @@ repo-short-name + PR author login, instructed to follow
 `references/post-review.md` if you've written one for your own setup:
 - Log durable patterns (recurring findings, confirmed false positives) scoped
   to the repo, never to the author.
-- Skip entirely if you have no such system — nothing else in this skill
+- Skip entirely if you have no such system: nothing else in this skill
   depends on it.
 
 ### Cleanup (when a worktree was created)
@@ -549,11 +565,17 @@ Remove the delta file if `deltaFile` was set in worktree.json. Verify with
 
 Two identical failures = stop and diagnose, don't loop blindly.
 
-If the Workflow tool is unavailable or the run dies: fall back to launching the
-5 agents via the Agent tool with the same prompt files, do verification inline
-per `references/agents/verifier.md`, and state this fallback in the review
-output under a `**Note:** Workflow tool unavailable - ran agents directly`
-line in the header.
+If the Workflow tool is unavailable or the run dies: first re-check that
+DIFF_FILE, CONTEXT_FILE and WORKTREE_PATH still exist. A killed run often means
+the session was torn down, and a teardown takes the worktree and scratchpad with
+it - agents launched against vanished inputs return nothing and the tokens are
+wasted. Re-run Step 1 before Step 2 if any input is missing.
+
+Once the inputs are confirmed present, fall back to launching the 5 agents via
+the Agent tool with the same prompt files,
+do verification inline per `references/agents/verifier.md`, and state this
+fallback in the review output under a
+`**Note:** Workflow tool unavailable - ran agents directly` line in the header.
 
 Fix-mode specific:
 - Never claim a fix landed without a `git log` / `git status` receipt from the

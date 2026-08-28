@@ -8,7 +8,7 @@ description: "Self-improvement loop that pulls the last 24h of ICM memories, git
 
 Self-improvement loop. Analyze recent sessions, find durable patterns, propose fixes.
 
-## Step 1 — Gather raw signals (run in parallel)
+## Step 1: Gather raw signals (run in parallel)
 
 ```bash
 # A: ICM memories from last 24h
@@ -45,19 +45,19 @@ _LEARN_FILE="$_GSTACK_HOME/projects/${SLUG:-unknown}/learnings.jsonl"
 [ -f "$_LEARN_FILE" ] && tail -20 "$_LEARN_FILE" || echo "NO_LEARNINGS"
 ```
 
-## Step 2 — Synthesize patterns
+## Step 2: Synthesize patterns
 
 Read all signals. Classify findings into these categories:
 
-**Repeated mistakes** — same error, same fix, same confusion appearing more than once in the signals. E.g., always forgetting to handle null on a specific field, always hitting the same linting error.
+**Repeated mistakes**: same error, same fix, same confusion appearing more than once in the signals. E.g., always forgetting to handle null on a specific field, always hitting the same linting error.
 
-**Slow workflows** — multi-step sequences that took many tool calls but could be a single skill. E.g., always doing manual `git log` + `grep` + read 3 files before every PR review.
+**Slow workflows**: multi-step sequences that took many tool calls but could be a single skill. E.g., always doing manual `git log` + `grep` + read 3 files before every PR review.
 
-**Missing coverage** — areas where work was done but no test was written or no memory was stored.
+**Missing coverage**: areas where work was done but no test was written or no memory was stored.
 
-**Underused skills** — skills that would have applied but were not invoked (check skill-usage.jsonl gaps vs. git activity).
+**Underused skills**: skills that would have applied but were not invoked (check skill-usage.jsonl gaps vs. git activity).
 
-**Knowledge gaps** — concepts that came up repeatedly as questions or confusion.
+**Knowledge gaps**: concepts that came up repeatedly as questions or confusion.
 
 Score each finding:
 - **Frequency**: how many times it appeared (1 = once, 3 = three or more)
@@ -66,42 +66,42 @@ Score each finding:
 
 Pick the top 1-3 findings by `frequency × time_cost × fixability_inverse`.
 
-## Step 3 — Formulate proposals
+## Step 3: Formulate proposals
 
 For each finding, produce exactly one proposal. Proposal types:
 
-**Type A — New skill**: The repeated sequence can be codified. Provide:
+**Type A, New skill**: The repeated sequence can be codified. Provide:
 - Proposed skill name (lowercase, dashes, ≤32 chars)
 - Trigger phrases (3-5)
 - 5-8 line SKILL.md workflow skeleton
 - Estimated time savings per occurrence
 
-**Type B — Skill tweak**: An existing skill is close but missing a step or check. Provide:
+**Type B, Skill tweak**: An existing skill is close but missing a step or check. Provide:
 - Which skill (`/skill-name`)
 - What specific text to add/change (before/after diff)
 - Why this covers the gap
 
-**Type C — ICM memory / eval criteria**: A pattern should be captured as a durable memory or eval rule. Provide:
+**Type C, ICM memory / eval criteria**: A pattern should be captured as a durable memory or eval rule. Provide:
 - `icm store` command (with topic, content, importance)
 - Or: a yes/no eval question to add to an existing skill
 
-## Step 4 — Present findings (D1)
+## Step 4: Present findings (D1)
 
 Use AskUserQuestion:
 
 ```
-D1 — Performance review: N patterns found, N proposals
-Project/branch/task: 24h session review — git, ICM memories, skill analytics.
+D1, Performance review: N patterns found, N proposals
+Project/branch/task: 24h session review: git, ICM memories, skill analytics.
 ELI10: I looked at your last 24 hours of work: git commits, ICM memories,
 skill runs, and resolved errors. Here's what I found repeating and what
 I'd do about it. Approve proposals individually or skip any.
 Stakes if we pick wrong: skipping a proposal leaves the pattern unfixed;
 approving a bad proposal adds noise. You can always /skillify or rm a skill later.
-Recommendation: A — review each proposal and approve what resonates.
-Note: options differ in kind, not coverage — no completeness score.
+Recommendation: A, review each proposal and approve what resonates.
+Note: options differ in kind, not coverage: no completeness score.
 A) Walk me through each proposal (recommended)
 B) Show summary only, I'll decide what to dig into
-C) Abort — nothing to act on today
+C) Abort, nothing to act on today
 ```
 
 If B: print a one-line summary table (proposal number, type, finding, estimated savings). Stop.
@@ -110,7 +110,7 @@ If C: print "No changes made. Run /review-past-performance again anytime." Stop.
 
 If A: proceed to Step 5.
 
-## Step 5 — Proposal gate (one per proposal)
+## Step 5: Proposal gate (one per proposal)
 
 For each proposal (D2, D3, D4 ...):
 
@@ -127,12 +127,12 @@ Estimated savings: ~X min/occurrence
 Then AskUserQuestion:
 
 ```
-D<N> — Apply proposal N: <short title>?
+D<N>, Apply proposal N: <short title>?
 Project/branch/task: <finding in one sentence>
 ELI10: <plain English: what this proposes, what changes, what you gain>
 Stakes if we pick wrong: <what happens if you apply a bad one, or skip a good one>
-Recommendation: A — apply it — the evidence is clear enough to try it.
-Note: options differ in kind, not coverage — no completeness score.
+Recommendation: A, apply it. The evidence is clear enough to try it.
+Note: options differ in kind, not coverage: no completeness score.
 A) Apply this proposal (recommended)
 B) Skip this one
 C) Modify before applying (describe what to change)
@@ -140,7 +140,7 @@ C) Modify before applying (describe what to change)
 
 If C: ask what to change, update the proposal in-memory, re-show, re-ask A/B only.
 
-## Step 6 — Execute approved proposals
+## Step 6: Execute approved proposals
 
 For each approved proposal:
 
@@ -149,7 +149,7 @@ For each approved proposal:
 mkdir -p ~/.claude/skills/<name>
 ```
 Write `~/.claude/skills/<name>/SKILL.md` with the skeleton from Step 3.
-Print: "Skill /<name> created at ~/.claude/skills/<name>/SKILL.md — invoke it with /<name>."
+Print: "Skill /<name> created at ~/.claude/skills/<name>/SKILL.md. Invoke it with /<name>."
 
 **Type B (skill tweak):**
 Read the target skill file. Apply the diff. Print the before/after. Do NOT commit.
@@ -160,7 +160,7 @@ icm store -t "<topic>" -c "<content>" -i <importance> -k "<keywords>"
 ```
 Print the stored memory ID.
 
-## Step 7 — Summary
+## Step 7: Summary
 
 After all proposals are processed, print a compact summary:
 
@@ -194,7 +194,7 @@ icm store -t "context-workflow" \
 
 ## Notes
 
-- This skill reads only — no git mutations, no PR actions, no Notion/Linear writes.
+- This skill reads only: no git mutations, no PR actions, no Notion/Linear writes.
 - Type A skills created here are skeletons. Run them once and tune before relying on them.
 - If ICM is unavailable (`ICM_UNAVAILABLE`), fall back to git log + gstack analytics only; note the limitation in findings.
 - If there are fewer than 3 signals available, say so and offer to run again after more sessions.

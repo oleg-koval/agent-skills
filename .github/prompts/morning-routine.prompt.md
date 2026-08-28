@@ -11,7 +11,7 @@ Use the olko:morning-routine skill.
 # Morning Routine
 
 Run the three start-of-day workflows in sequence, then summarize what needs your
-attention today. Each phase is idempotent — re-running is safe.
+attention today. Each phase is idempotent: re-running is safe.
 
 ## Inputs
 
@@ -22,9 +22,9 @@ attention today. Each phase is idempotent — re-running is safe.
 - **--skip-pr-sync** (optional): skip GitHub PR sync
 - **--skip-dependabot** (optional): skip Dependabot triage
 
-If any required config is missing, ask once before starting — don't abort midway.
+If any required config is missing, ask once before starting. Don't abort midway.
 
-## Phase 1 — Task rollover
+## Phase 1: Task rollover
 
 Initialize the daily note path once, before any optional phase:
 
@@ -34,7 +34,7 @@ NOTE="${VAULT_DAILY}/$(date +%Y-%m-%d).md"
 
 Run `olko:obsidian-task-rollover` on the **previous workday's** note.
 
-`obsidian-task-rollover` is an end-of-day migration skill — it copies unchecked tasks
+`obsidian-task-rollover` is an end-of-day migration skill: it copies unchecked tasks
 from a given day's note into the next workday's note with a `[>]` marker. When invoked
 here in the morning, it should operate on **yesterday's** (or the last workday's) note
 so those unchecked tasks are pulled forward into today's note. If yesterday's note does
@@ -51,7 +51,7 @@ grep -c "^\- \[>\]" "$NOTE" 2>/dev/null || echo "0"  # migrated tasks
 
 Record counts for the final report.
 
-## Phase 2 — PR sync
+## Phase 2: PR sync
 
 Run `olko:obsidian-pr-sync`.
 
@@ -66,13 +66,13 @@ After this phase, count PRs written:
 grep -c "^\- \[ \] \[" "$NOTE" 2>/dev/null || echo "0"
 ```
 
-## Phase 3 — Dependabot triage (quick sweep)
+## Phase 3: Dependabot triage (quick sweep)
 
 Run `olko:dependabot-triage` with `patch-only` auto-merge policy.
 
 This auto-approves and merges safe patch bumps whose CI is green, flags major
 upgrades for human review, and posts a digest. The `patch-only` policy means no
-minor or major bumps are merged automatically — just the safest dependency noise.
+minor or major bumps are merged automatically, just the safest dependency noise.
 
 **Skip if** `--skip-dependabot` is set, or if there are no open dependency PRs:
 
@@ -91,7 +91,7 @@ If the count is 0, skip phase 3 and note it in the report.
 Print a compact brief suitable for the start of the day:
 
 ```
-Morning routine complete — YYYY-MM-DD
+Morning routine complete: YYYY-MM-DD
 
   Tasks:        N open today (M carried over from yesterday)
   PRs:          X work PRs, Y personal PRs → see ## PRs to review in today's note
@@ -125,6 +125,6 @@ If the user wants to re-sync only PRs mid-day: `--skip-rollover --skip-dependabo
 
 | Before this skill | After this skill |
 |---|---|
-| — (start of session) | Work the PR queue (`olko:pr-to-green` on flagged items) |
-| — | `olko:dependabot-triage` with `patch-and-minor` if the quick sweep flagged many |
-| `olko:obsidian-task-rollover` alone | nothing — this skill already calls it |
+| (none, start of session) | Work the PR queue (`olko:pr-to-green` on flagged items) |
+| (none) | `olko:dependabot-triage` with `patch-and-minor` if the quick sweep flagged many |
+| `olko:obsidian-task-rollover` alone | nothing: this skill already calls it |

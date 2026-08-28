@@ -207,6 +207,42 @@ function shouldVerify(finding, depth) {
   return finding.severity === 'critical' || finding.severity === 'important'
 }
 
+// Run thunks in sequential batches, giving the per-finding stages a ceiling.
+//
+// The review stage is bounded by its dimension count, but verify, critic and
+// prove spawn one agent per finding: a PR with thirty findings would otherwise
+// launch thirty concurrent agents in a single call. This caps them without
+// changing results.
+//
+// `plan` gives the size of each successive batch and its final entry repeats
+// to cover any remainder, so a plan of [5] means "five at a time, forever".
+// Return value matches parallel(): input order preserved, a failed thunk
+// resolves to null rather than rejecting the batch.
+async function batched(thunks, plan) {
+  if (thunks.length === 0) {
+    return []
+  }
+
+  const sizes = (plan && plan.length > 0) ? plan : [thunks.length]
+  const out = []
+  let index = 0
+  let batchNo = 0
+
+  while (index < thunks.length) {
+    const size = Math.max(1, sizes[Math.min(batchNo, sizes.length - 1)])
+    const slice = thunks.slice(index, index + size)
+    const results = await parallel(slice)
+    for (const r of results) {
+      out.push(r)
+    }
+    index += slice.length
+    batchNo++
+    log(`batch ${batchNo}: ${slice.length} agent(s) done (${index}/${thunks.length})`)
+  }
+
+  return out
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -225,6 +261,8 @@ const {
   worktreePath,
   promptDir,
   prevSha,
+  reviewBatchPlan,
+  maxConcurrent,
 } = input
 
 if (!repoSlug || !prNumber || !depth || !diffFile || !contextFile || !promptDir) {
@@ -233,7 +271,18 @@ if (!repoSlug || !prNumber || !depth || !diffFile || !contextFile || !promptDir)
     '): ' + JSON.stringify({ repoSlug, prNumber, depth, diffFile, contextFile, promptDir })
   )
 }
-log(`args ok: PR #${prNumber} in ${repoSlug}, depth=${depth}`)
+
+// Concurrency. The review stage is self-limiting: five dimensions means five
+// agents, so it runs them all at once. The other stages are not. Verify,
+// critic and prove spawn one agent PER FINDING, so a finding-heavy PR would
+// fan out far wider than the review that produced it, with no ceiling. Those
+// are capped at the review stage's own width.
+const REVIEW_PLAN = (Array.isArray(reviewBatchPlan) && reviewBatchPlan.length > 0)
+  ? reviewBatchPlan
+  : [5]
+const FANOUT_PLAN = [Math.max(1, maxConcurrent || 5)]
+
+log(`args ok: PR #${prNumber} in ${repoSlug}, depth=${depth}, reviewPlan=[${REVIEW_PLAN}], fanout=${FANOUT_PLAN[0]}`)
 
 const budgetAtStart = budget.spent()
 
@@ -360,7 +409,7 @@ const budgetAtStart = budget.spent()
       return exempted
     }
 
-    const verified = await parallel(inScope.map(function(finding) {
+    const verified = await batched(inScope.map(function(finding) {
       return async function() {
         agentCount++
         const verdict = await agent(verifierPrompt(finding), {
@@ -396,7 +445,7 @@ const budgetAtStart = budget.spent()
         confirmed.verifierReasoning = verdict.reasoning
         return confirmed
       }
-    }))
+    }), FANOUT_PLAN)
 
     return exempted.concat(verified.filter(Boolean))
   }
@@ -410,9 +459,11 @@ const budgetAtStart = budget.spent()
 
   phase('Review')
 
-  const reviewed = await parallel(dimensions.map(function(dim) {
+  log(`Review: ${dimensions.length} dimension(s) in batches of [${REVIEW_PLAN}]`)
+
+  const reviewed = await batched(dimensions.map(function(dim) {
     return function() { return reviewStage(dim) }
-  }))
+  }), REVIEW_PLAN)
 
   const deduped = dedup(reviewed.filter(Boolean).flat())
 
@@ -459,7 +510,7 @@ const budgetAtStart = budget.spent()
     log(`Critic: ${angles.length} angles to re-examine`)
 
     if (angles.length > 0) {
-      const angleResults = await parallel(angles.map(function(angle) {
+      const angleResults = await batched(angles.map(function(angle) {
         return async function() {
           agentCount++
           const reResult = await agent(
@@ -511,7 +562,7 @@ const budgetAtStart = budget.spent()
 
           return [newFinding]
         }
-      }))
+      }), FANOUT_PLAN)
 
       const newFindings = angleResults.flat().filter(Boolean)
       if (newFindings.length > 0) {
@@ -553,7 +604,7 @@ const budgetAtStart = budget.spent()
         log(`Prove: capping at 5 provers, skipping ${skipped} additional critical finding(s)`)
       }
 
-      await parallel(capped.map(function(finding) {
+      await batched(capped.map(function(finding) {
         return async function() {
           agentCount++
           proveAttemptCount++
@@ -576,7 +627,7 @@ const budgetAtStart = budget.spent()
             provenCount++
           }
         }
-      }))
+      }), FANOUT_PLAN)
 
       log('Prove: ' + provenCount + '/' + proveAttemptCount + ' finding(s) demonstrated with a failing test')
     }
