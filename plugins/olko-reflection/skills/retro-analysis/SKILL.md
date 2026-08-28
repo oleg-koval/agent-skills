@@ -34,12 +34,12 @@ If the argument is invalid, print the accepted forms and stop. Do not silently c
 
 Calendar windows are aligned to midnight in the operator's local timezone. A short hourly window may use a relative timestamp. State the resolved start, end, timezone, scope, and comparison window at the beginning of the report.
 
-Step 0, before collecting any evidence: resolve the durable context store by invoking the `context-repo` skill. If it returns `BLOCKED` or `LOCAL_ONLY`, continue local-only and label the limitation in the report. This retro must never fail because the store is unavailable.
+Step 0, before collecting any evidence: resolve the durable context store by invoking the `context-repo` skill. If it returns `BLOCKED` or `LOCAL_ONLY`, continue local-only and label the limitation in the report. Resolving a store does not authorize writing a snapshot to it. This retro must never fail because the store is unavailable.
 
 ## Safety and evidence rules
 
-- Be read-only by default in the analyzed repository. The one named exception: this skill may invoke `context-repo` for a consented store bootstrap, and may make one snapshot commit and push per run into the context store only. Outside that exception, it never pushes, merges, deploys, closes issues, edits source, or rewrites history in the analyzed repository.
-- A retro may write one task-owned snapshot per run: to the context store's `retros/<repo-slug>/` when the store resolves, otherwise to `.context/retros/` when that directory exists or when persistence is explicitly requested. Never overwrite an existing snapshot; use a date and window-specific filename.
+- Be read-only by default in the analyzed repository. The named exceptions are a `context-repo` bootstrap performed under that skill's own consent flow, and one context-store snapshot commit and push when the user explicitly consented to remote snapshot persistence for this run or through a recorded standing workflow preference. Outside those exceptions, this skill never pushes, merges, deploys, closes issues, edits source, or rewrites history in the analyzed repository.
+- A retro may write one task-owned snapshot per run. Generate one collision-resistant run id and reuse it for the whole run, in the form `<YYYYMMDDTHHMMSSZ>-<short-unique-suffix>`. Derive one scope key: the normalized `<owner>-<repo>` slug in repository mode and the literal `global` in global mode, independent of which repositories were discovered or their order. The filename is `<run-id>-<scope-key>-<window>.md`. Write it to the context store's `retro/` only with explicit remote-persistence consent; otherwise use `.context/retros/` when that directory exists or local persistence was explicitly requested. Create the file only if absent and generate a new run id on collision; never overwrite an existing snapshot.
 - Do not fetch or refresh remote refs unless the user or the surrounding workflow authorized that read-side state change. If refs may be stale, say so and use the available evidence.
 - Preserve dirty work, untracked files, existing snapshots, credentials, and unrelated temporary artifacts.
 - Never infer delivery from a local commit. Treat local Git, remote/PR state, CI, deployment, and device or human QA as separate evidence gates.
@@ -55,7 +55,7 @@ For repository mode:
 2. Preserve and report pre-existing dirty paths; do not include their changes as delivered work unless the evidence links them to the window.
 3. Use the repository's local timezone for calendar boundaries. Use UTC timestamps in stored machine-readable data.
 4. Read only relevant project documentation and task artifacts needed to interpret the changes. Do not invent milestones, objectives, or acceptance criteria.
-5. Locate prior snapshots in the context store's `retros/<repo-slug>/` first, then in `.context/retros/`. Reading the store first is what makes `compare` and `global` work across machines instead of only where the last run happened. Load the immediately preceding comparable snapshot when available.
+5. Locate prior snapshots by the same scope key and window, newest run timestamp first: the context store's `retro/`, then its legacy `retros/`, then `.context/retros/`. For pre-run-id repository snapshots, fall back to matching the repository slug; never treat a repository snapshot as a global snapshot. Reading the store first is what makes `compare` and `global` work across machines instead of only where the last run happened. Load the immediately preceding comparable snapshot when available.
 
 For global mode:
 
@@ -63,6 +63,7 @@ For global mode:
 2. For each repository, collect the same bounded evidence as repository mode and skip missing, inaccessible, or non-Git directories.
 3. Optionally include available agent/session summaries or tool telemetry, but only as aggregate, redacted evidence. Do not require a specific agent vendor, plugin, or telemetry format.
 4. Keep per-project results separate before producing cross-project totals. Never hide a repository-level failure in an aggregate.
+5. Use the literal `global` scope key to locate the prior global snapshot with the same store-first ordering as repository mode. Never derive the lookup key from the discovered repository set or its order.
 
 ## 2. Collect raw evidence
 
@@ -150,7 +151,7 @@ For `compare` or any window with a prior snapshot:
 - preserve the same metric definitions between periods; do not compare a repository window to a global window as if they were equivalent
 - report streaks, recurring hotspots, repeated failure modes, and unresolved improvements only when snapshots support them
 
-Store a JSON snapshot with stable keys, UTC timestamps, resolved window, scope, repository identity, commit/PR identifiers, metric values, evidence limitations, and a short list of findings. Keep narrative prose out of fields intended for machine comparison. If the store pointer resolved, write the snapshot to `<clone>/retros/<repo-slug>/<YYYY-MM-DD>-<window>.json` plus the matching `.md`, then commit and push per the `context-repo` caller contract. Otherwise fall back to `.context/retros/` exactly as today. A snapshot is an aid to future analysis, not a source of truth that overrides current evidence.
+Store a JSON snapshot with stable keys, the run id, UTC timestamps, resolved window, scope key, repository identity, commit/PR identifiers, metric values, evidence limitations, and a short list of findings. Keep narrative prose out of fields intended for machine comparison. When the store pointer resolved and the user explicitly consented to remote snapshot persistence for this run or through a recorded standing workflow preference, create `<clone>/retro/<run-id>-<scope-key>-<window>.md`, with the machine-comparable JSON in a fenced block inside that file rather than as a separate sidecar, then commit and push per the `context-repo` caller contract, lease and validator included. Store resolution alone never authorizes the write, commit, or push. Without that consent, or when the store is unavailable, fall back to `.context/retros/` exactly as described above and do not modify the store. A snapshot is an aid to future analysis, not a source of truth that overrides current evidence.
 
 ## 5. Optionally promote durable lessons
 

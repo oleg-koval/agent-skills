@@ -551,7 +551,7 @@
           "name": "context-repo",
           "lookupName": "olko:context-repo",
           "path": "plugins/olko-skill-meta/skills/context-repo",
-          "description": "Bootstrap and maintain one private GitHub repository as the durable store for agent-produced context, creating it once with explicit consent and returning a verified receipt.",
+          "description": "Resolve one private GitHub repository as the durable store for agent-produced context, searching the account for a store that already exists before ever offering to create one, and returning a verified receipt.",
           "tags": [
             "github",
             "storage",
