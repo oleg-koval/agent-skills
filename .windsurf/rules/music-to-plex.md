@@ -67,7 +67,7 @@ The user posts once ("add <album>") and gets a status stream back. The mechanics
 messages) are handled by the tool chain. **Your only creative job is the DJ
 blurb.**
 
-### Step 1 — Run the handler once
+### Step 1: run the handler once
 
 ```bash
 mtp-bot handle "<exact user message>" --chat <chat_id>
@@ -84,22 +84,22 @@ background notifier. It returns:
 
 Post that result as-is.
 
-### Step 2 — Write the notes in strict order
+### Step 2: write the notes in strict order
 
 Immediately after posting "Accepted", while the download runs in the background,
 write one enrichment package, in this order:
 
-1. **Artist note** — a specific, substantial paragraph in the original WFMU / LDBK / Radio Brussels / classic-underground-radio lane: the artist's broader sound, history, scene, collaborators, and lane. Include at least one verified fact that gives the listener a reason to care.
-2. **Album note** — a separate, juicy paragraph: year, label, recording/release context, key players, unusual backstory, samples or scene connections, cultural impact, and two or three concrete things to listen for. Use only facts verified from authoritative sources; turn them into a human invitation rather than a database dump.
-3. Optional one-line DJ summary or recommendation — tactile, specific, curious, and emotionally inviting.
+1. **Artist note**: a specific, substantial paragraph in the original WFMU / LDBK / Radio Brussels / classic-underground-radio lane: the artist's broader sound, history, scene, collaborators, and lane. Include at least one verified fact that gives the listener a reason to care.
+2. **Album note**: a separate, juicy paragraph: year, label, recording/release context, key players, unusual backstory, samples or scene connections, cultural impact, and two or three concrete things to listen for. Use only facts verified from authoritative sources; turn them into a human invitation rather than a database dump.
+3. Optional one-line DJ summary or recommendation: tactile, specific, curious, and emotionally inviting.
 
-Keep artist note first and album note second — never merge them into one generic promo paragraph. Sound like a great late-night radio host with a crate-digger’s memory, not a press release or a Wikipedia entry. See
+Keep artist note first and album note second, never merge them into one generic promo paragraph. Sound like a great late-night radio host with a crate-digger’s memory, not a press release or a Wikipedia entry. See
 `references/music-note-blurb-order.md`. Optional extras: 🎵 YouTube link,
 `🎶 You might also like:` + 2 short recommendations.
 
-### Step 3 — Let the notifier stream the rest
+### Step 3: let the notifier stream the rest
 
-The background notifier posts these on its own — **do not poll or re-run**:
+The background notifier posts these on its own, so **do not poll or re-run**:
 
 ```
 📥 Downloaded → 📂 Moving to library folder → 🔄 Rescanning Plex → ✅ Ready in Plexamp
@@ -113,11 +113,11 @@ the user asked for album art, save the release image as `cover.jpg` in the
 artist/release folder and verify it exists. See
 `references/cover-art-sourcing-session.md`.
 
-### Step 4 — Follow-up replies (stuck downloads)
+### Step 4: follow-up replies (stuck downloads)
 
 If a download stalls, the notifier posts a "stuck" message with 4 numbered
 options (wait 1h / wait N hours / next release / YouTube). When the user replies
-— a bare number `1`–`4`, a count of hours, or "next" / "youtube" — **pass the
+with a bare number `1`-`4`, a count of hours, or "next" / "youtube", **pass the
 reply verbatim to `mtp-bot handle`**, exactly like an add request. Post whatever
 it returns.
 
@@ -203,7 +203,7 @@ verification steps: `references/youtube-playlist-import.md`.
 
 - **Target layout beats generic configuration.** Before creating a genre bucket, inspect where Plex stores an existing album from the same artist and confirm the transfer account can write that parent. Do not redirect a release to an unrelated writable folder or `unsorted` solely to make the copy succeed; repair access to the canonical target instead. See `references/nas-library-layout-and-write-preflight.md`.
 - **Corrupt source ≠ Plex problem.** If a chapter-based rip yields a zero-byte or
-  corrupt final track, switch source first, then tag and move — don't just
+  corrupt final track, switch source first, then tag and move, don't just
   re-refresh. See `references/malformed-flac-fallbacks.md`.
 - **NAS codec tools may be unavailable.** Some NAS images ship neither `ffprobe`
   nor an AAC decoder in `ffmpeg`. In that case, fully decode each staged source
@@ -211,17 +211,17 @@ verification steps: `references/youtube-playlist-import.md`.
   plus Plex’s album-and-track read-back as the remote verification receipt. Do
   not describe a remote decode as passed when the NAS tool cannot decode it.
 - **Duplicate torrent.** On Synology `Duplicate torrent file`, do not retry
-  blindly — `list_tasks` first; repeated attempts stack failed tasks. Clean stale
+  blindly: `list_tasks` first; repeated attempts stack failed tasks. Clean stale
   tasks, then re-search with plain artist/album text (no magnet URLs in replies).
   See `references/duplicate-torrent-handling.md`.
 - **Image/typo identification.** If the user sends cover art or a misspelled/clip
-  title (`Single`, `Official clip`, `teaser`), use it as a *clue* — confirm the
+  title (`Single`, `Official clip`, `teaser`), use it as a *clue*: confirm the
   real release name and track count on the store/release page before importing.
   See `references/image-driven-identification-and-verification.md` and
   `references/bandcamp-album-identification.md`.
 - **Lesson (scanner health):** when an album repeatedly "won't ingest" after the
   files are correctly placed, stop re-moving files. The cause is usually scanner/
-  DB state, not placement — a direct scanner probe can crash with `DB::Exception`
+  DB state, not placement: a direct scanner probe can crash with `DB::Exception`
   while a plain refresh succeeds. At that point the album is a **plex-music-ingest**
   case: check scanner health, DB state, and crash cause before touching tags again.
   (Real example: an album sat correctly at `/volume1/music/Various Artists/…`

@@ -147,7 +147,7 @@ contract instead of demoting them to Observations because a location is absent:
 
 For an `important` sizing finding:
 
-### #N — Sizing
+### #N: Sizing
 
 **Scope:** PR-level · **Severity:** Important
 
@@ -157,7 +157,7 @@ For an `important` sizing finding:
 
 For a missing verification story:
 
-### Verification story — action required
+### Verification story: action required
 
 **Missing evidence:** <tests run, manual exercise, screenshots for UI, or
 before/after for behaviour or performance>

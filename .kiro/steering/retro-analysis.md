@@ -151,10 +151,10 @@ Before adding any finding:
 
 1. Locate and read the current shared ledger. When a Git-backed repository ledger exists, read that repository file directly and treat it as authoritative. If it is absent or inaccessible, report `NOT_AVAILABLE` and do not claim that the ledger was checked.
 2. Classify the finding as one of:
-   - `local action` — a project- or task-specific follow-up that belongs in the report or backlog, not the shared ledger.
-   - `lesson` — a durable practice that generalizes across projects.
-   - `trap` — a non-obvious failure mode that can silently produce incorrect work.
-   - `preference` — a stable way the operator wants agents to work.
+   - `local action`: a project- or task-specific follow-up that belongs in the report or backlog, not the shared ledger.
+   - `lesson`: a durable practice that generalizes across projects.
+   - `trap`: a non-obvious failure mode that can silently produce incorrect work.
+   - `preference`: a stable way the operator wants agents to work.
 3. Promote only non-obvious, durable, cross-project lessons, traps, or preferences. Keep local actions in the retrospective or project task system.
 4. Attach evidence to every promoted finding: a source path, commit, check, or other redacted reference, or the concrete failure that caused the rule. Do not promote an unsupported impression.
 5. Do not duplicate existing project instructions, shared-ledger notes, or behavior already enforced by an automated check. A thin ledger is more useful than a repetitive one.
