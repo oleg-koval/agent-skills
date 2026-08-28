@@ -1,3 +1,10 @@
+## [1.38.2](https://github.com/oleg-koval/agent-skills/compare/v1.38.1...v1.38.2) (2026-08-28)
+
+
+### 📚 Documentation
+
+* **context-repo:** document resolution flow ([#70](https://github.com/oleg-koval/agent-skills/issues/70)) ([8528dab](https://github.com/oleg-koval/agent-skills/commit/8528dab63c37785384ec1f862c00f2fbd45357fc))
+
 ## [1.38.1](https://github.com/oleg-koval/agent-skills/compare/v1.38.0...v1.38.1) (2026-08-28)
 
 
