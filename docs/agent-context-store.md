@@ -186,10 +186,12 @@ one ledger and one rendered page per shared-knowledge-artifact instance.
 5. On `y`, `context-repo` runs `gh repo create <owner>/<name> --private`, clones it
    to `${XDG_DATA_HOME:-$HOME/.local/share}/agent-context/repo`, seeds the tree, and
    pushes one commit: `chore: initialize agent context store`.
-6. It writes the pointer, then re-reads the state from a fresh source
-   (`gh repo view --json nameWithOwner,visibility` and `git rev-parse HEAD` in the
-   clone) before reporting anything back. Nothing is reported as created until that
-   fresh read-back agrees with what was just written.
+6. It re-reads the state from a fresh source (`gh repo view --json
+   nameWithOwner,visibility` and `git rev-parse HEAD` in the clone), and only writes
+   the pointer once both reads agree with what was just pushed. Verification comes
+   before the record, so a pointer never outlives a store that failed to materialise.
+   If either read fails or disagrees, the result is `BLOCKED`, no pointer is written,
+   and the disagreeing read is reported.
 7. It prints a receipt: `owner/name`, `visibility: PRIVATE`, clone path, and the
    init commit SHA, then hands control back to the caller.
 
@@ -202,6 +204,9 @@ one ledger and one rendered page per shared-knowledge-artifact instance.
 | Repo deleted (or renamed, or access revoked) on GitHub | The pointer is treated as stale, not as a live answer. `context-repo` reports the stale state and re-prompts as if resolving for the first time. |
 | User picks `n` | Local-only for that run. No pointer is written, so the next caller that needs the store asks again. |
 | User picks `never` | A refusal-shape pointer (`{"status": "declined", ...}`) is written. Local-only forever; no future prompts. |
+| Offline, `gh` outage, or rate limit, with the clone present | Not treated as a deleted repo. The pointer and clone are kept, the result is `READY` with the SHA read locally, and the report says the remote could not be reached. No prompt. |
+| Offline, with the clone also missing | Nothing local to fall back on and nothing to clone from. The result is `LOCAL_ONLY` with that reason, the pointer is left untouched, and no prompt is shown. Retrying when the network returns is the fix. |
+| Verification disagrees after creation | `BLOCKED`, and no pointer is written. The repository may exist on GitHub, so the next run finds it through the name-collision path rather than creating a duplicate. Nothing is deleted to tidy up. |
 | `gh` gets logged out after the store was already resolved | The next run's `gh repo view` fails, the pointer is treated as stale, and the fallback precondition check finds `gh auth status` failing too, so resolution stops at `BLOCKED`. Repo, clone, and SHA report as `NOT_AVAILABLE`; the caller falls back to local-only and still completes its own run. |
 
 ## Caller contract
