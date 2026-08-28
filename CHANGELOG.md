@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/oleg-koval/agent-skills/compare/v1.37.0...v1.38.0) (2026-08-28)
+
+
+### ✨ Features
+
+* **skill-meta:** durable private context store, replayed onto main ([#67](https://github.com/oleg-koval/agent-skills/issues/67)) ([aaaffd4](https://github.com/oleg-koval/agent-skills/commit/aaaffd43eb8170cd86087e6b0a9aa5e6148b30f2)), closes [#63](https://github.com/oleg-koval/agent-skills/issues/63)
+
 # [1.37.0](https://github.com/oleg-koval/agent-skills/compare/v1.36.0...v1.37.0) (2026-08-27)
 
 
