@@ -70,6 +70,8 @@ If `gh repo view <repo>` fails, distinguish why before deciding anything. A fail
 **2. Pointer exists in the normal shape, `gh repo view <repo>` succeeds, but the local clone directory is missing.**
 Re-clone silently into the fixed clone location. Report to the caller that a re-clone happened (this is expected the first time a given machine touches an already-resolved store). Zero prompts.
 
+If the clone is missing and the remote cannot be reached for a network reason, there is nothing local to fall back on and nothing to re-clone from. Resolve as `LOCAL_ONLY` with the reason that the store is known but unreachable and not yet cloned on this machine, keep the pointer untouched, and do not prompt. Retrying when the network returns is the fix, not creating a second store.
+
 **3. No pointer, or the pointer is in the refusal shape, or the pointer was found stale in step 1.**
 If the pointer is in the refusal shape, stop here: resolve to `LOCAL_ONLY` without prompting, and tell the caller the user previously declined. The one override: if the user has asked for the store in this run, explicitly and in their own words, treat that as consent already given, replace the refusal pointer, and continue to the preconditions below. A caller's need for the store is never such a request; only the user is.
 
@@ -115,8 +117,8 @@ git -C <clone> commit -m "chore: initialize agent context store"
 git -C <clone> push -u origin HEAD
 ```
 
-**5. Write the pointer, then verify from a fresh source.**
-Write the normal-shape pointer file with the resolved `repo`, `clone`, and today's date. Then re-read the state independently of anything cached during creation:
+**5. Verify from a fresh source, then write the pointer.**
+Verify before recording anything, so a pointer never outlives a store that failed to materialise. Re-read the state independently of anything cached during creation:
 
 ```
 gh repo view <owner>/<name> --json nameWithOwner,visibility
@@ -131,6 +133,10 @@ visibility: PRIVATE
 clone: <path>
 init SHA: <sha>
 ```
+
+If both reads agree with what was just written, write the normal-shape pointer file with the resolved `repo`, `clone`, and today's date, then print the receipt.
+
+If either read fails or disagrees, resolve as `BLOCKED` and do not write the pointer. Report which read disagreed and what it returned, and state that the repository may exist on GitHub even though the store is not recorded, so the next run will find it through the name-collision path in step 3 rather than creating a duplicate. Never delete a repository to tidy up after a failed verification.
 
 Never report the store as created or ready without this fresh read-back. A push that appears to succeed is not itself the proof; the proof is `gh repo view` and `git rev-parse HEAD` agreeing with what was just written.
 
@@ -166,4 +172,4 @@ CLONE: <path, or NOT_AVAILABLE>
 SHA: <current or init commit sha, or NOT_AVAILABLE>
 ```
 
-Use `READY` when an existing store resolved without creating anything (steps 1 or 2). Use `CREATED` only after the fresh verification in step 5 succeeded. Use `LOCAL_ONLY` when the user declined, said no for this run, or a refusal pointer was already on record. Use `BLOCKED` only when `gh` is missing or unauthenticated; always include the `gh auth login -s repo` remedy in the surrounding report when this status appears.
+Use `READY` when an existing store resolved without creating anything (steps 1 or 2). Use `CREATED` only after the fresh verification in step 5 succeeded. Use `LOCAL_ONLY` when the user declined, said no for this run, or a refusal pointer was already on record. Use `BLOCKED` when `gh` is missing or unauthenticated, and when the step 5 verification fails or disagrees. Include the `gh auth login -s repo` remedy whenever the cause is authentication, and the disagreeing read when the cause is verification.
