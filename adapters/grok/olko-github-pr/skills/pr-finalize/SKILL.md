@@ -17,7 +17,7 @@ allowed-tools: Bash(gh:*) Bash(git:*)
 
 # PR Finalize
 
-One PR, taken all the way to merge-ready. The job is not "make the bots stop talking" — it is **land the change in a state a careful reviewer would sign off on**, with evidence for every claim.
+One PR, taken all the way to merge-ready. The job is not "make the bots stop talking": it is **land the change in a state a careful reviewer would sign off on**, with evidence for every claim.
 
 ## Inputs
 
@@ -44,10 +44,10 @@ gh pr view <PR> --json number,title,body,state,isDraft,headRefName,baseRefName,m
 
 Record four things before touching code:
 
-- **`mergeable`** — `CONFLICTING` means step 2 is mandatory.
-- **Which checks are failing**, and for each, whether it is *required*. Check branch protection (`gh api repos/{owner}/{repo}/branches/<base>/protection`) rather than assuming — a red optional job (a flaky bot-review runner, a nightly) is not a blocker, and burning the run waiting on one is a classic waste.
+- **`mergeable`**: `CONFLICTING` means step 2 is mandatory.
+- **Which checks are failing**, and for each, whether it is *required*. Check branch protection (`gh api repos/{owner}/{repo}/branches/<base>/protection`) rather than assuming: a red optional job (a flaky bot-review runner, a nightly) is not a blocker, and burning the run waiting on one is a classic waste.
 - **Whether the repo auto-merges.** Look for a shepherd/automerge workflow in `.github/workflows/` and read its *gating conditions* (required labels, required checks). If pushing could trigger an immediate merge, decide deliberately: either satisfy the review sweep first, or tell the user before you push. Never let an auto-merge race a review you were asked to complete.
-- **Whether a bot review actually ran.** A `SUCCESS` status from a review bot can still mean "rate-limited, never reviewed" — read its comment body, not just the check state.
+- **Whether a bot review actually ran.** A `SUCCESS` status from a review bot can still mean "rate-limited, never reviewed": read its comment body, not just the check state.
 
 ### 2. Rebase onto the base branch
 
@@ -58,9 +58,9 @@ git fetch origin <base>
 git rebase origin/<base>
 ```
 
-Resolve conflicts by **understanding both sides**, not by picking one. Read the base-side commit that introduced the conflicting hunk (`git log -1 --format=%s <base> -- <file>`, then the diff) — a conflict usually means main changed an invariant your branch is unaware of, and blindly keeping "your" side silently reverts it. State in the PR comment which invariant you preserved and why.
+Resolve conflicts by **understanding both sides**, not by picking one. Read the base-side commit that introduced the conflicting hunk (`git log -1 --format=%s <base> -- <file>`, then the diff): a conflict usually means main changed an invariant your branch is unaware of, and blindly keeping "your" side silently reverts it. State in the PR comment which invariant you preserved and why.
 
-After resolving, re-run the tests before continuing — a rebase that compiles is not a rebase that works.
+After resolving, re-run the tests before continuing: a rebase that compiles is not a rebase that works.
 
 ### 3. Sweep every review source
 
@@ -75,7 +75,7 @@ gh api repos/{owner}/{repo}/issues/<PR>/comments --paginate
 gh pr view <PR> --json reviews
 ```
 
-**Delegate to the dedicated loop skill when one exists** rather than reimplementing its bot's protocol — `qodoloop` for Qodo, `coderabbitloop` for CodeRabbit, `greploop` for Greptile. Each already encodes that bot's posting shape, its ready-made per-finding fix prompt, and its real terminal states. Use this skill's own sweep for human comments and for bots without a dedicated loop.
+**Delegate to the dedicated loop skill when one exists** rather than reimplementing its bot's protocol: `qodoloop` for Qodo, `coderabbitloop` for CodeRabbit, `greploop` for Greptile. Each already encodes that bot's posting shape, its ready-made per-finding fix prompt, and its real terminal states. Use this skill's own sweep for human comments and for bots without a dedicated loop.
 
 Triage every finding into exactly one bucket:
 
@@ -86,22 +86,22 @@ Triage every finding into exactly one bucket:
 | **False positive** | Reply explaining *specifically* why the bot is wrong. Do not resolve silently. |
 | **Needs a human call** | Reply, leave open, surface in the final report. |
 
-Bot findings are suggestions from something that has not run the code. A "🐞 Bug" label is a hypothesis — verify it against the actual source before fixing, and against the actual behavior before dismissing.
+Bot findings are suggestions from something that has not run the code. A "🐞 Bug" label is a hypothesis: verify it against the actual source before fixing, and against the actual behavior before dismissing.
 
 ### 4. Close the coverage gap
 
-Ask, for the change as a whole, what would catch a regression here — then check whether the PR actually has it.
+Ask, for the change as a whole, what would catch a regression here: then check whether the PR actually has it.
 
 - **Unit / integration tests:** does every new branch have a test that fails if you invert it? Bots frequently and correctly flag helper functions exercised only *indirectly* through a caller. A direct test per branch is cheap and is usually the right response.
 - **Browser / E2E tests:** determine whether the repo supports them (`playwright.config.*`, `cypress.config.*`, a `test:e2e` script) **and** whether this change has any surface they can reach. Then do one of exactly two things:
   - it has a reachable surface → add or extend the E2E spec;
   - it does not → **say so explicitly in the PR comment**, name why (e.g. "this is entirely inside a Durable Object alarm loop; the E2E harness only serves static assets"), and name the suite that is the real gate.
 
-  Silence here reads as an oversight. An explicit "not applicable, because X" reads as diligence — and is checkable.
+  Silence here reads as an oversight. An explicit "not applicable, because X" reads as diligence, and is checkable.
 
 ### 5. Run the real gates
 
-Discover them from the repo (`Makefile`, `package.json` scripts, CI workflow) — do not guess target names. Run, at minimum, the equivalents of:
+Discover them from the repo (`Makefile`, `package.json` scripts, CI workflow): do not guess target names. Run, at minimum, the equivalents of:
 
 ```bash
 <lint>        # e.g. make lint / npm run lint
@@ -115,36 +115,36 @@ If a gate fails, fix it. Do not push red.
 
 ### 6. Push and explain
 
-Stage only the files you touched, commit, and push (`--force-with-lease` after a rebase — never bare `--force`).
+Stage only the files you touched, commit, and push (`--force-with-lease` after a rebase, never bare `--force`).
 
 Then post **one** PR comment that a reviewer can audit without re-reading the diff:
 
 - what the rebase conflict was and which side won, with the reason;
 - each finding, and what you did about it (including the ones you rejected, with the argument);
 - the coverage decision from step 4, including the explicit not-applicable if that's the answer;
-- **verbatim** gate output — real numbers (`# pass 480 / # fail 0`, `0 issues.`), not adjectives.
+- **verbatim** gate output: real numbers (`# pass 480 / # fail 0`, `0 issues.`), not adjectives.
 
 Re-trigger any bot that never actually reviewed (e.g. `@coderabbitai review`) so the PR gets the pass it was owed.
 
 ### 7. Verify and report
 
-Re-read the PR state after the push — confirm `mergeable` flipped, checks went green, and clear now-stale labels (`needs-rebase`, etc.). Poll re-triggered bots for their new pass and handle anything it raises.
+Re-read the PR state after the push: confirm `mergeable` flipped, checks went green, and clear now-stale labels (`needs-rebase`, etc.). Poll re-triggered bots for their new pass and handle anything it raises.
 
 ```text
 PR #965 finalized.
   Rebase:      1 conflict resolved (kept main's #834 D1-first ordering)
   Findings:    2 addressed, 0 rejected, 0 blocked
-  Coverage:    +5 unit tests; E2E not applicable (no browser surface) — stated on the PR
+  Coverage:    +5 unit tests; E2E not applicable (no browser surface), stated on the PR
   Gates:       tests 480/480, lint 0 issues, format clean
   State:       MERGEABLE, checks green
   Needs human: none
 ```
 
-If anything is left, say precisely what and why — an honest "blocked on X" is the deliverable when X is genuinely a human call.
+If anything is left, say precisely what and why: an honest "blocked on X" is the deliverable when X is genuinely a human call.
 
 ## Related skills
 
-- `qodoloop` — full Qodo thread protocol (per-finding Agent Prompts, resolve mutations).
-- `coderabbitloop` — full CodeRabbit protocol.
-- `greploop` — drives a PR to a 5/5 Greptile confidence score.
-- `ci-fix-loop` — when the blocker is a failing pipeline rather than review feedback.
+- `qodoloop`: full Qodo thread protocol (per-finding Agent Prompts, resolve mutations).
+- `coderabbitloop`: full CodeRabbit protocol.
+- `greploop`: drives a PR to a 5/5 Greptile confidence score.
+- `ci-fix-loop`: when the blocker is a failing pipeline rather than review feedback.

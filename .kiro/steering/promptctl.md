@@ -5,7 +5,7 @@ inclusion: manual
 description: "Use promptctl for template-based prompt engineering, scoring, and workflow automation."
 ---
 
-# promptctl — Template-Based Prompt Engineering
+# promptctl: Template-Based Prompt Engineering
 
 promptctl is a CLI for version control and testing of LLM prompt templates. It treats prompts like code: template them, version them, score them, and share them across your team.
 
@@ -36,17 +36,17 @@ promptctl create "review auth for security"  # Create prompt from raw intent (of
 ## Pi integration commands
 
 When the user is inside pi:
-- `/promptctl review --file=src/auth.ts` — renders the review template and injects it as the next user message
-- `/quick-templates` — lists all available templates
-- `/cost-score <file>` — scores a prompt file on structure and clarity
+- `/promptctl review --file=src/auth.ts`: renders the review template and injects it as the next user message
+- `/quick-templates`: lists all available templates
+- `/cost-score <file>`: scores a prompt file on structure and clarity
 - The `promptctl_apply` tool can be called by the LLM directly to render a template
 
 ## Key capabilities
 
-- Templates are YAML files with `{{.variable}}` substitution — stored in `~/.promptctl/templates/` or `.promptctl/templates/` in your project
+- Templates are YAML files with `{{.variable}}` substitution, stored in `~/.promptctl/templates/` or `.promptctl/templates/` in your project
 - `--file=path` auto-populates `{{.file_content}}`, `{{.file_name}}`, `{{.file_ext}}`
 - Prompt scoring (0–100) on: structure, clarity, constraints, persona
-- Offline rule-based enhance (`promptctl create`) — no API key or network needed
+- Offline rule-based enhance (`promptctl create`): no API key or network needed
 - JSON output and exit codes for CI pipelines (`promptctl score --min-score=80`)
 - Direct LLM send (`promptctl send review --file=main.go`) with Anthropic/OpenAI support
 

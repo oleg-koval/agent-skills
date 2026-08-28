@@ -5,7 +5,7 @@ Session note:
   live in `~/.config/music-to-plex/.env`, NOT in `config.toml`. `config.toml` holds
   only non-secret structure (URLs, `music_section_id`, paths).
 - `Config.load()` sources that `.env` automatically (via `load_env()`), so every
-  entrypoint — `mtp`, `mtp-bot`, `mtp doctor` — sees the token without the shell
+  entrypoint (`mtp`, `mtp-bot`, `mtp doctor`) sees the token without the shell
   having to `export` anything. If a check says "PLEX_TOKEN not set", the fix is the
   `.env` file, not the shell env and not `config.toml`.
 - Verify quickly with: `mtp doctor` (look for "PLEX_TOKEN set" and

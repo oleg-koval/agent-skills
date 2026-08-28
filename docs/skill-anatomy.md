@@ -135,17 +135,17 @@ Current adapter targets:
 
 | Adapter | Generated files | Root output |
 |---------|----------------|-------------|
-| `codex` | `adapters/codex/README.md` (static stub) | — |
+| `codex` | `adapters/codex/README.md` (static stub) | n/a |
 | `claude` | `adapters/claude/olko-{plugin}/plugin.json` + `adapters/claude/olko-{plugin}/skills/{name}/SKILL.md` | `.claude-plugin/` |
 | `cursor` | `adapters/cursor/olko-{plugin}/plugin.json` + `adapters/cursor/olko-{plugin}/skills/{name}/SKILL.md` | `.cursor-plugin/index.json` |
 | `grok` | `adapters/grok/olko-{plugin}/...` | `.grok-plugin/index.json` |
-| `pi` | `adapters/pi/olko-{plugin}/...` | — |
-| `hermes` | `adapters/hermes/olko-{plugin}/...` | — |
-| `copilot` | — | `.github/prompts/{name}.prompt.md` |
-| `windsurf` | — | `.windsurf/rules/{name}.md` |
-| `kiro` | — | `.kiro/steering/{name}.md` |
+| `pi` | `adapters/pi/olko-{plugin}/...` | n/a |
+| `hermes` | `adapters/hermes/olko-{plugin}/...` | n/a |
+| `copilot` | n/a | `.github/prompts/{name}.prompt.md` |
+| `windsurf` | n/a | `.windsurf/rules/{name}.md` |
+| `kiro` | n/a | `.kiro/steering/{name}.md` |
 
-Adapter coverage is not uniform across the catalog; a skill only ships the adapters listed in its `adapters` array in `catalog/skills.json`. As of this writing: claude 48, grok 46, cursor 44, copilot 44, codex 41, windsurf 34, kiro 34, pi 2, hermes 2 (out of 48 canonical skills).
+Adapter coverage is not uniform across the catalog; a skill only ships the adapters listed in its `adapters` array in `catalog/skills.json`. As of this writing: claude 49, grok 47, cursor 45, copilot 45, codex 42, windsurf 35, kiro 35, pi 2, hermes 2 (out of 49 canonical skills).
 
 Claude plugin and marketplace identifiers must be kebab-case. Keep `olko:*` names for Codex and Cursor lookup names, but do not use colons or spaces in Claude marketplace/plugin names.
 
