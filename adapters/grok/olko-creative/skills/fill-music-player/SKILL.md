@@ -70,7 +70,7 @@ Run `fill-music-player --help` for all options.
 |-----------|-------------|-----|
 | NAS disconnects mid-copy | Copy fails for that file, logged as error, continues with next track | Re-run; already-copied files are skipped (`if not dst.exists()`) |
 | Source has only FLAC/lossless | 0 files selected (FLAC not in default formats) | Use `--formats flac` or `--formats mp3,flac` |
-| FAT32 filename too long or illegal chars | Filenames are sanitized: `<>:"/\|?*` replaced with `_`, truncated to 80 chars | Automatic — no action needed |
+| FAT32 filename too long or illegal chars | Filenames are sanitized: `<>:"/\|?*` replaced with `_`, truncated to 80 chars | Automatic, no action needed |
 | Mixed/broken ID3 tags | Falls back to folder name parsing (`Genre/Artist - Album/track.mp3`) | Works transparently; folder structure is the reliable fallback |
 | Very large files (DJ mixes, radio shows) | Skipped by default (>20 MB) | Adjust with `--max-file-mb 50` to include mixes |
 | Tiny files (jingles, corrupt) | Skipped by default (<300 KB) | Adjust with `--min-file-kb 100` to be more permissive |

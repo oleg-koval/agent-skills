@@ -35,12 +35,12 @@ dry-run so you see exactly what will be deleted before anything is removed.
 ## Inputs
 
 - **Remote** (optional, default: `origin`)
-- **Base branch** (optional, default: `main` — detect from `gh repo view`)
+- **Base branch** (optional, default: `main`, detect from `gh repo view`)
 - **--dry-run** (optional, default: on): preview deletions without executing them
-- **--execute**: actually delete branches (requires explicit flag — safety default)
+- **--execute**: actually delete branches (requires explicit flag, safety default)
 - **--include-local**: also clean up merged local branches (off by default)
 
-## Step 1 — Fetch and prune remote tracking references
+## Step 1: Fetch and prune remote tracking references
 
 Always start here. This removes local tracking refs for remote branches that are
 already gone, without touching anything else:
@@ -56,7 +56,7 @@ After pruning, print the count of removed tracking refs:
 git branch -vv | grep ': gone]' | wc -l
 ```
 
-## Step 2 — Identify stale remote branches
+## Step 2: Identify stale remote branches
 
 Find remote branches whose associated PR is merged or closed:
 
@@ -72,7 +72,7 @@ git branch -r --merged "$REMOTE/$BASE" \
 ```
 
 Cross-reference with GitHub to confirm each branch's PR state. Only include branches
-with a confirmed merged or closed PR — an empty result means the branch is not eligible:
+with a confirmed merged or closed PR. An empty result means the branch is not eligible:
 
 ```bash
 STALE_BRANCHES=()
@@ -103,7 +103,7 @@ dependabot/npm_and_yarn/eslint-8.57.0    ←  43 merged 2026-07-31
 feature/login-refresh                    ←  38 merged 2026-07-28
 ```
 
-## Step 3 — Safety filter
+## Step 3: Safety filter
 
 **Never propose deletion of:**
 
@@ -122,14 +122,14 @@ OPEN=$(gh pr list --head "$branch" --state open --json number --jq 'length')
 [ "$OPEN" -gt 0 ] && echo "SKIP (open PR): $branch"
 ```
 
-## Step 4 — Preview or execute
+## Step 4: Preview or execute
 
 ### Dry-run (default)
 
 Print the deletion plan and stop. Never touch the remote without `--execute`:
 
 ```
-Branch cleanup preview — dry-run (pass --execute to apply)
+Branch cleanup preview, dry-run (pass --execute to apply)
 
   Remote branches to delete (all merged to main):
     origin/dependabot/npm_and_yarn/lodash-4.17.21     (PR #42, merged 2026-07-31)
@@ -154,7 +154,7 @@ for branch in "${STALE_BRANCHES[@]}"; do
 done
 ```
 
-## Step 5 — Local branch cleanup (optional, --include-local)
+## Step 5: Local branch cleanup (optional, --include-local)
 
 Only runs when `--include-local` is explicitly passed.
 
@@ -172,10 +172,10 @@ gone before deleting:
 
 ```bash
 git branch -vv "$branch"   # should show ': gone]' if remote is deleted
-git branch -d "$branch"    # safe delete — fails if unmerged work exists
+git branch -d "$branch"    # safe delete: fails if unmerged work exists
 ```
 
-Never use `-D` (force delete) — let `-d` protect you from accidental data loss.
+Never use `-D` (force delete): let `-d` protect you from accidental data loss.
 
 ## Report
 
@@ -183,7 +183,7 @@ Never use `-D` (force delete) — let `-d` protect you from accidental data loss
 Branch cleanup complete
 
   Remote:
-    Deleted:   12 branches (10 Dependabot, 2 feature branches — all merged)
+    Deleted:   12 branches (10 Dependabot, 2 feature branches, all merged)
     Protected: 2 skipped (beta, open PR)
 
   Local tracking refs:
@@ -202,4 +202,4 @@ Branch cleanup complete
 |---|---|
 | `olko:dependabot-triage` (merged patch PRs) | next `olko:morning-routine` starts clean |
 | Sprint wind-down / milestone close | `git fetch` confirms clean state |
-| Any large batch merge | nothing — maintenance complete |
+| Any large batch merge | nothing: maintenance complete |

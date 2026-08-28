@@ -1,6 +1,6 @@
 ---
 name: macos-menubar-app
-description: Build a production-quality macOS menubar or notch app in SwiftUI — covering MenuBarExtra setup, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and /critique-driven polish cycles. Use when starting or extending a macOS agent app that lives in the status bar or Mac notch area.
+description: Build a production-quality macOS menubar or notch app in SwiftUI, covering MenuBarExtra setup, sandbox entitlements, keyboard shortcuts, sound effects, accessibility permissions, and /critique-driven polish cycles. Use when starting or extending a macOS agent app that lives in the status bar or Mac notch area.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires Xcode 15+, macOS 13+ deployment target, and an Apple Developer account for App Store distribution.
@@ -50,7 +50,7 @@ In `Info.plist`, set:
 <true/>
 ```
 
-This hides the app from the Dock — the menu bar becomes the only entry point.
+This hides the app from the Dock: the menu bar becomes the only entry point.
 
 ### 2. MenuBarExtra (SwiftUI native)
 
@@ -164,7 +164,7 @@ NSSound(named: .init("Hero"))?.play()
 
 ### 7. Keyboard Shortcuts
 
-Global shortcuts (work when app is not focused) — requires Accessibility permission:
+Global shortcuts (work when app is not focused); requires Accessibility permission:
 
 ```swift
 NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
@@ -195,7 +195,7 @@ After each implementation slice:
 
 > **Optional skills**: Steps 1 and 3 require `/critique` and `/whimsy-injector` from the agent-skills catalog. Install them via `skillshare` if not already available; skip these steps if not installed.
 
-1. Run `/critique` — evaluate against Apple HIG, WCAG contrast, interaction consistency
+1. Run `/critique`: evaluate against Apple HIG, WCAG contrast, interaction consistency
 2. Fix all P0/P1 findings
 3. Run `/whimsy-injector` on completion screens and idle states
 4. Test on a machine **without** a notch to verify layout

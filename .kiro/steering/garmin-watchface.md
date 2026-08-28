@@ -12,7 +12,7 @@ that draws off the bottom of the screen, a test suite that contains no tests, an
 a colour that is not the colour you get. Everything below is a failure mode that
 looked like success first.
 
-**Read `reference/` files as needed — do not read them all up front.**
+**Read `reference/` files as needed: do not read them all up front.**
 
 | File | When |
 | --- | --- |
@@ -54,7 +54,7 @@ plausible PNG of the wrong thing.
 
 If `monkey.jungle` sets `base.excludeAnnotations = test`, every `(:test)`
 function is stripped from **every** target, including the unit-test build. You
-get `BUILD SUCCESSFUL` and a green run with nothing compiled — even when the test
+get `BUILD SUCCESSFUL` and a green run with nothing compiled, even when the test
 files reference symbols that no longer exist.
 
 Fix: a second jungle passed as an additional `-f`. See
@@ -86,7 +86,7 @@ LENGTH that failed to scale, never the font. Do not add screen-size branching
 to pick a bigger tier -- doing so double-scales, and labels end up wider than
 the containers naming them.
 
-Content drawn past the screen height is simply invisible — no error, no warning,
+Content drawn past the screen height is simply invisible: no error, no warning,
 no clipping indicator. A two-line `FONT_NUMBER_MEDIUM` block is 148px of a 260px
 face.
 
@@ -145,8 +145,8 @@ See `reference/simulator.md`.
 ### 6. On AMOLED, the face you designed is the one that fails review
 
 `requiresBurnInProtection` devices must show a restricted always-on frame
-between wrist raises. The trap is that the *stronger* your face's identity —
-a bright panel, a filled dial — the worse a dimmed version of it performs,
+between wrist raises. The trap is that the *stronger* your face's identity
+(a bright panel, a filled dial), the worse a dimmed version of it performs,
 because it still lights most of the screen. The always-on frame has to be a
 different drawing: outlines where there were fills, and shifted a few pixels on
 a cycle so no pixel is driven continuously.
@@ -160,7 +160,7 @@ See the AMOLED section of `reference/display.md`.
 
 `AppBase.getSettingsView()` has existed since **API 3.2.0** and the SDK
 documents it as "only applicable to watch faces and data fields". Plenty of
-store copy — including, at one point, this author's own — claims settings are
+store copy (including, at one point, this author's own) claims settings are
 reachable only from the phone. They are not.
 
 The override signature must include `or Null` or the compiler rejects it as
@@ -179,19 +179,19 @@ Two things to get right in the menu itself:
   runs. Read `isEnabled()`; negating the stored value inverts the setting.
 - A picker should `setFocus()` the current choice, not open at the top of a long
   list. If the list filters out unavailable options, item position is *not* the
-  option id — count the focus row as you build the list.
+  option id: count the focus row as you build the list.
 
 Keep one module that owns every property read, each wrapped with a default, and
 have both the phone path and the on-watch menu go through it. Two readers with
 two sets of defaults is exactly how the watch and the phone come to disagree
-about what "off" means — and check the fallbacks actually match
+about what "off" means, and check the fallbacks actually match
 `properties.xml`, because nothing enforces that.
 
 ## Workflow
 
 ### Starting a face
 
-1. `bin/ciq-doctor` — confirm SDK, JDK, developer key, target device installed.
+1. `bin/ciq-doctor`: confirm SDK, JDK, developer key, target device installed.
 2. Copy `templates/Makefile`, `templates/monkey.jungle`, `templates/monkey.test.jungle`.
 3. Generate a fresh app id: `python3 -c "import uuid;print(uuid.uuid4().hex)"`.
 4. Split source by responsibility. This structure has held up well:
@@ -199,9 +199,9 @@ about what "off" means — and check the fallbacks actually match
 | Module | Holds |
 | --- | --- |
 | `Palette.mc` | Colours only, all lattice-exact |
-| `Layout.mc` | Geometry, derivations, bezel maths — no drawing |
+| `Layout.mc` | Geometry, derivations, bezel maths: no drawing |
 | `<Widget>.mc` | Drawing primitives (rows, bars, segments) |
-| `Fields.mc` | Formatting and thresholds — pure, easy to test |
+| `Fields.mc` | Formatting and thresholds: pure, easy to test |
 | `Sensors.mc` | Sensor reads with null handling |
 | `<Name>View.mc` | Composition only |
 
@@ -238,7 +238,7 @@ not by testing.
 - `Application.Properties.getValue()` **throws** when a key is absent, which
   happens on a fresh install before settings have ever been written. Wrap every
   read with a default.
-- Integer division everywhere. Centring an odd width leaves a 1px skew — write
+- Integer division everywhere. Centring an odd width leaves a 1px skew: write
   tests that allow it rather than forcing constants to stay even.
 
 ## Reference watches and homages
@@ -251,7 +251,7 @@ are what makes it recognisable:
   screen.
 - **Proportion.** Bezels on vintage digitals are thick; the window is smaller
   than memory suggests.
-- **Where the legends sit** — maker's name on the bezel, not the glass.
+- **Where the legends sit**: maker's name on the bezel, not the glass.
 
 No system font is a segment display. If you need one, draw it: see
 `reference/layout.md` for a working seven-segment renderer, including the ghost

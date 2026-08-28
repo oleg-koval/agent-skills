@@ -10,6 +10,12 @@ cd "$ROOT"
 
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
+# Snapshot the plugin tree before running, so uncommitted work in progress cannot
+# masquerade as the script having written something. Asserting an empty status here
+# instead makes this test fail for anyone with a dirty tree, which is a false alarm:
+# what matters is that the script changes nothing, not that the tree started clean.
+plugins_before="$(git status --porcelain plugins)"
+
 # sync-from-sources.sh must parse, run, and report the no-op rather than erroring.
 out="$(./scripts/sync-from-sources.sh 2>&1)" || fail "sync-from-sources.sh exited non-zero: $out"
 case "$out" in
@@ -18,7 +24,7 @@ case "$out" in
 esac
 
 # It must not have written into the plugin tree.
-if [ -n "$(git status --porcelain plugins)" ]; then
+if [ "$(git status --porcelain plugins)" != "$plugins_before" ]; then
   fail "sync-from-sources.sh modified the plugin tree while no sourcePath is configured"
 fi
 

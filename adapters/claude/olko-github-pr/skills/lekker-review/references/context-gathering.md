@@ -1,6 +1,6 @@
 # Context gathering (Step 1)
 
-## Step 1 — Gather Context (run in parallel)
+## Step 1: Gather Context (run in parallel)
 
 ### 1a. PR metadata
 ```bash
@@ -9,7 +9,7 @@ gh pr view <PR_NUMBER> --repo <REPO_SLUG> \
 linkedBranches,mergeStateStatus,additions,deletions,changedFiles,isDraft,headRefOid
 ```
 
-**PR-1 title check (run immediately after 1a, before other steps)** — only if
+**PR-1 title check (run immediately after 1a, before other steps)**, only if
 your `house-rules.md` defines a title/ticket-prefix rule:
 
 ```bash
@@ -30,15 +30,15 @@ gh pr view <PR_NUMBER> --repo <REPO_SLUG> --json commits \
 gh pr diff <PR_NUMBER> --repo <REPO_SLUG> > "$DIFF_FILE"   # fetched ONCE; all agents read this file
 ```
 
-### 1c. Issue tracker (optional — skip if you have no ticket-tracker MCP configured)
+### 1c. Issue tracker (optional, skip if you have no ticket-tracker MCP configured)
 Search for tickets referenced in the PR title, body, or branch name using
 whatever issue-tracker MCP tool (Linear, Jira, GitHub Issues, etc.) is
 available in your setup.
 
 Extract: ticket description, acceptance criteria, linked issues, comments.
-Collect ACs as a numbered list — this becomes `AC_LIST` used in Step 3.
+Collect ACs as a numbered list: this becomes `AC_LIST` used in Step 3.
 
-If no issue-tracker MCP is configured, skip silently — the review still runs
+If no issue-tracker MCP is configured, skip silently: the review still runs
 fine on the PR body + diff alone.
 
 ### 1d. Team chat *(scan: skip, optional)*
@@ -57,7 +57,7 @@ If the diff touches a specific framework or third-party API and a docs-search
 MCP for it is available, verify the implementation matches current API
 behaviour and best practices. Skip if not relevant or not configured.
 
-### 1g. Repo placement check — see references/house-rules.md
+### 1g. Repo placement check: see references/house-rules.md
 Only applicable if your org splits work across sibling repos and you've
 filled in the repo-taxonomy table in `house-rules.md`.
 
@@ -67,9 +67,9 @@ wiki page, a memory MCP, or even a running Markdown file of "patterns we keep
 seeing in this repo"), pull relevant entries here: known conventions not yet
 in the repo's own CLAUDE.md/README, confirmed false positives from past
 reviews, and recurring bug classes to watch for. Skip entirely if you don't
-have such a system — this step adds value but nothing depends on it.
+have such a system: this step adds value but nothing depends on it.
 
-Do NOT recall or store author-specific patterns ("author X tends to...") —
+Do NOT recall or store author-specific patterns ("author X tends to..."):
 scope any such memory to the repo, not the person, so the review stays about
 the code, not the author.
 
@@ -85,16 +85,16 @@ query: "<key function/export names introduced or modified in the diff>"
 Collect into `MONITORING_SIGNALS`. For each match, note:
 - Issue title and link
 - Event count and affected users in a recent window
-- First seen / last seen — chronic vs. newly introduced
+- First seen / last seen: chronic vs. newly introduced
 - Whether the culprit or stack trace references a file in the diff
 
 If `MONITORING_SIGNALS` is non-empty, include a `## 🔥 Production Signals`
 section in the review output (place it immediately after the Summary, before
 findings). Format each entry as:
 ```
-- [<title>](<url>) — <N> events / <M> users (recent window) · first seen <date>
+- [<title>](<url>), <N> events / <M> users (recent window) · first seen <date>
   Files: <relevant files from stack trace>
-  Note: <one sentence — does this PR fix, worsen, or not affect this error?>
+  Note: <one sentence: does this PR fix, worsen, or not affect this error?>
 ```
 
 If an error traces directly to a function this PR modifies and the PR does
@@ -107,7 +107,7 @@ a single failed call; either produce the signals or state the actual reason
 (auth, no project, genuinely zero matches).
 
 An error in the subsystem that corroborates a finding is worth reporting even
-when this PR neither causes nor fixes it — say so explicitly ("not caused or
+when this PR neither causes nor fixes it: say so explicitly ("not caused or
 worsened by this PR") and tie it to the finding it supports. Check the
 environment tag: a staging-only error is weaker evidence than a production
 one, and claiming otherwise overstates the case.
@@ -136,24 +136,24 @@ gh api "repos/<REPO_SLUG>/pulls/<PR_NUMBER>/comments" \
 ```
 
 Collect into `EXISTING_REVIEWS`. Purpose:
-- **Awareness only** — do NOT anchor your findings on what other reviewers said.
-  If you independently reach the same conclusion, that is fine — but earn it
+- **Awareness only**: do NOT anchor your findings on what other reviewers said.
+  If you independently reach the same conclusion, that is fine, but earn it
   from the diff, not from their comment.
-- **Deduplication** — if an existing review already raised a finding at a
+- **Deduplication**: if an existing review already raised a finding at a
   specific `file:line`, skip that finding in your output and note
   `(already raised by <reviewer>)` internally in your deduplication pass.
-- **Design decisions** — if the author replied to a review comment explaining
+- **Design decisions**: if the author replied to a review comment explaining
   an intentional choice, that context informs whether a pattern is a bug or
   a deliberate trade-off.
 
-### 1 post-gather — Draft / state check
+### 1 post-gather: Draft / state check
 
 After Step 1a completes, check the `isDraft` field in the PR metadata.
 
 If `isDraft: true`, prepend this notice to the final review output (before
 the Summary):
 
-> ⚠️ **Draft PR** — this review is on a work-in-progress branch. Some findings
+> ⚠️ **Draft PR**: this review is on a work-in-progress branch. Some findings
 > may reflect intentionally incomplete work.
 
 Also check `mergeStateStatus`:

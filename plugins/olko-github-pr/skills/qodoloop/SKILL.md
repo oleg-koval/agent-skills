@@ -21,18 +21,18 @@ Fix every actionable Qodo finding on a PR, answer each thread, resolve it, and k
 - **PR number** (optional): detect from the current branch if not given.
 - **Include optional findings** (optional, default off): Qodo tags each finding "Review recommended" (actionable) or "Optional" (informational/lower-confidence). By default only "Review recommended" findings count toward done; pass `--include-optional` to also fix and resolve the optional ones.
 
-## How Qodo actually posts (verified against a live install — don't assume otherwise)
+## How Qodo actually posts (verified against a live install: don't assume otherwise)
 
 Qodo runs as `qodo-code-review[bot]` and posts **two independent things** per review pass, not one:
 
-1. A rollup **issue comment** titled `<h3>Code Review by Qodo</h3>` — human-readable, all findings in one place. A separate `<h3>PR Summary by Qodo</h3>` comment is a plain description, not a review — ignore it. While running, Qodo posts `<h3>Qodo is busy working</h3>` as its own comment (not an edit of a prior one).
-2. A **formal PR review** (`state: COMMENTED`) carrying one **inline review comment per finding**, each a real, resolvable GitHub review thread at the finding's file/line — same machinery as any human inline comment.
+1. A rollup **issue comment** titled `<h3>Code Review by Qodo</h3>`: human-readable, all findings in one place. A separate `<h3>PR Summary by Qodo</h3>` comment is a plain description, not a review: ignore it. While running, Qodo posts `<h3>Qodo is busy working</h3>` as its own comment (not an edit of a prior one).
+2. A **formal PR review** (`state: COMMENTED`) carrying one **inline review comment per finding**, each a real, resolvable GitHub review thread at the finding's file/line: same machinery as any human inline comment.
 
 **Use the inline threads as the source of truth.** They carry `isResolved` state natively (fetch via GraphQL, see `references/graphql-queries.md`), so "done" is answerable directly instead of re-parsing the rollup's HTML on every iteration. Each thread's body contains a `<details><summary>Agent Prompt</summary>` (or `**Agent Prompt**`) section with a ready-made fix spec, and a severity badge image whose `alt` text is `Remediation recommended` or `Informational` (recommended ↔ "Review recommended", informational ↔ "Optional").
 
-Qodo has **no check run to poll** — there is nothing in `gh pr checks` to wait on. Completion means a new `qodo-code-review[bot]` comment/review appears after your push; poll comments, not checks.
+Qodo has **no check run to poll**: there is nothing in `gh pr checks` to wait on. Completion means a new `qodo-code-review[bot]` comment/review appears after your push; poll comments, not checks.
 
-**Rate limit is a real terminal state, not a bug.** A completed-looking comment reading "Qodo reviews are paused" / "you've reached your PR review limit" means Qodo will not review again this cycle — stop and report it, don't loop waiting for something that isn't coming.
+**Rate limit is a real terminal state, not a bug.** A completed-looking comment reading "Qodo reviews are paused" / "you've reached your PR review limit" means Qodo will not review again this cycle: stop and report it, don't loop waiting for something that isn't coming.
 
 ## Instructions
 
@@ -46,21 +46,21 @@ Check out the branch if not already on it, **then require a clean working
 tree** (`git status --porcelain` empty) before touching anything:
 
 ```bash
-[ -z "$(git status --porcelain)" ] || { echo "working tree not clean — refusing to start, would risk committing unrelated changes"; exit 1; }
+[ -z "$(git status --porcelain)" ] || { echo "working tree not clean, refusing to start: would risk committing unrelated changes"; exit 1; }
 ```
 
 This is the precondition step E's scoped `git add <file>` depends on: staging
 only the files a fix touched is safe *because* the tree started clean, so
 nothing else could be sitting in those files. Skip this check and a file
 with pre-existing local edits will have those edits swept into the fix
-commit right along with it — the exact failure `git add -A` had, just
+commit right along with it: the exact failure `git add -A` had, just
 narrower.
 
 ### 2. Loop (max 5 iterations)
 
 #### A. Wait for a review of the current head
 
-On **iteration 1**, if there is nothing to push yet (you haven't fixed anything in this loop), don't wait for a brand-new review — use whatever Qodo has already posted as your starting point and go straight to step B. Otherwise:
+On **iteration 1**, if there is nothing to push yet (you haven't fixed anything in this loop), don't wait for a brand-new review: use whatever Qodo has already posted as your starting point and go straight to step B. Otherwise:
 
 ```bash
 SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -74,14 +74,14 @@ gh api --paginate "repos/{owner}/{repo}/issues/<PR_NUMBER>/comments?per_page=100
   add | map(select(.user.login == "qodo-code-review[bot]")) | sort_by(.created_at)'
 ```
 
-From the comments created **after `$SINCE`** (ignore anything older — that's leftover from a prior push, not this one):
+From the comments created **after `$SINCE`** (ignore anything older: that's leftover from a prior push, not this one):
 - Any of them contains "review limit" or "paused" → **stop the loop now**, go to Report with `blocked: rate-limited`.
 - The latest one starts with `<h3>Code Review by Qodo</h3>` → proceed to step B.
 - Otherwise (nothing yet, or only "Qodo is busy working") → sleep 10s and poll again, up to the 5-minute timeout.
 
 #### B. Fetch unresolved findings
 
-Run the paginated GraphQL query in `references/graphql-queries.md` (`unresolvedQodoThreads`) — **follow `pageInfo.hasNextPage`/`endCursor` until it's exhausted**; a PR with more than 100 Qodo threads silently loses every finding past the first page otherwise. For each unresolved thread from `qodo-code-review[bot]`: parse the finding title, severity (recommended/optional), file/line, and the **Agent Prompt** block.
+Run the paginated GraphQL query in `references/graphql-queries.md` (`unresolvedQodoThreads`): **follow `pageInfo.hasNextPage`/`endCursor` until it's exhausted**; a PR with more than 100 Qodo threads silently loses every finding past the first page otherwise. For each unresolved thread from `qodo-code-review[bot]`: parse the finding title, severity (recommended/optional), file/line, and the **Agent Prompt** block.
 
 Build the working set: all `recommended` threads, plus `optional` ones too if `--include-optional`.
 
@@ -91,11 +91,11 @@ Stop if the working set is empty, or max iterations reached.
 
 #### D. Fix each finding
 
-For each thread in the working set, in order: read the Agent Prompt in full — it already names the issue, the context, the fix focus files/lines, and often the suggested fix. Apply it. Do not go beyond its stated scope. Track two lists as you go: **fixed** (thread id + the exact files you touched for it) and **blocked** (thread id + why — the prompt's suggestion was wrong, unsafe, or needs a product decision). Do not force a fix into the blocked list; do not resolve anything yet.
+For each thread in the working set, in order: read the Agent Prompt in full: it already names the issue, the context, the fix focus files/lines, and often the suggested fix. Apply it. Do not go beyond its stated scope. Track two lists as you go: **fixed** (thread id + the exact files you touched for it) and **blocked** (thread id + why: the prompt's suggestion was wrong, unsafe, or needs a product decision). Do not force a fix into the blocked list; do not resolve anything yet.
 
 #### E. Commit and push
 
-If **fixed** is empty, skip straight to F (nothing to commit). Otherwise, stage **only the files you touched in D** — never `git add -A`, which can sweep in unrelated local changes or secrets that have nothing to do with this loop:
+If **fixed** is empty, skip straight to F (nothing to commit). Otherwise, stage **only the files you touched in D**: never `git add -A`, which can sweep in unrelated local changes or secrets that have nothing to do with this loop:
 
 ```bash
 git add <files touched by this iteration's fixes>
@@ -103,11 +103,11 @@ git commit -m "address Qodo review feedback (qodoloop iteration N)"
 git push
 ```
 
-Confirm the push actually succeeded before moving on — a resolved thread whose fix never made it to the branch is worse than an unresolved one.
+Confirm the push actually succeeded before moving on: a resolved thread whose fix never made it to the branch is worse than an unresolved one.
 
 #### F. Answer each finding
 
-This is the "answer to the comments" half of the job, not optional cleanup — and it only runs **after** E's push is confirmed durable, so a thread is never marked resolved while its fix still only exists locally:
+This is the "answer to the comments" half of the job, not optional cleanup, and it only runs **after** E's push is confirmed durable, so a thread is never marked resolved while its fix still only exists locally:
 
 - **Fixed** findings: reply with one or two sentences (what you changed and why), **then** resolve:
   ```bash
@@ -118,8 +118,8 @@ This is the "answer to the comments" half of the job, not optional cleanup — a
       }
     }' -f threadId="$THREAD_ID" -f body="$REPLY_TEXT"
   ```
-  Pass the thread id and reply text as GraphQL **variables** (`-f threadId=... -f body=...`), never interpolated into the query string itself — a reply containing a quote, backtick, or newline breaks (or worse, injects into) a hand-built query. Then resolve with `resolveReviewThread` (see references file).
-- **Blocked** findings: reply explaining exactly why (false positive / needs a human call), but **do not resolve** — leave the thread open. A blocked finding that gets silently resolved is a false "done".
+  Pass the thread id and reply text as GraphQL **variables** (`-f threadId=... -f body=...`), never interpolated into the query string itself: a reply containing a quote, backtick, or newline breaks (or worse, injects into) a hand-built query. Then resolve with `resolveReviewThread` (see references file).
+- **Blocked** findings: reply explaining exactly why (false positive / needs a human call), but **do not resolve**: leave the thread open. A blocked finding that gets silently resolved is a false "done".
 
 Go back to step A.
 
@@ -143,4 +143,4 @@ Qodoloop complete.
 
 ## References
 
-- `references/graphql-queries.md` — the exact `unresolvedQodoThreads` query and the `resolveReviewThread` / `addPullRequestReviewThreadReply` mutations, with field notes.
+- `references/graphql-queries.md`: the exact `unresolvedQodoThreads` query and the `resolveReviewThread` / `addPullRequestReviewThreadReply` mutations, with field notes.

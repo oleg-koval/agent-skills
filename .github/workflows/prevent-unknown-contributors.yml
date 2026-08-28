@@ -55,7 +55,7 @@ jobs:
               commentMarker,
               `Hi @${login}! 👋`,
               ``,
-              `Thank you for your first contribution to ${repo} — really appreciate the time you put into this! 🙏`,
+              `Thank you for your first contribution to ${repo}. Really appreciate the time you put into this! 🙏`,
               ``,
               `To keep the review process healthy, we ask that all contributors follow these steps:`,
               ``,
@@ -64,7 +64,7 @@ jobs:
               `3. Reference the approved issue in your PR`,
               ``,
               `This ensures everyone is aligned before code is written and avoids wasted effort on both sides.`,
-              `Please feel free to open an issue — we'd love to collaborate from there!`,
+              `Please feel free to open an issue, we'd love to collaborate from there!`,
               ``,
               `_This PR will be closed automatically. Open an issue and we'll get back to you shortly._`,
             ].join('\n');

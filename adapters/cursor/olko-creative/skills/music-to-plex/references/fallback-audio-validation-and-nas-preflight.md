@@ -25,7 +25,7 @@ For every canonical track:
 1. Search separately; prefer an official audio upload.
 2. Reject live, remix, edit, video, and compilation variants unless the canonical release requires one.
 3. Check normalized title and source duration against the canonical duration before download.
-4. Tag *every* FLAC and embed the same verified cover art. Never skip tagging merely because a filename already exists—the process may have timed out between conversion and tagging.
+4. Tag *every* FLAC and embed the same verified cover art. Never skip tagging merely because a filename already exists: the process may have timed out between conversion and tagging.
 
 ## 4. Decode and duration validation are mandatory
 

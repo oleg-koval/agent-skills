@@ -456,7 +456,7 @@ def main():
 <meta charset="utf-8">
 <title>Connect IQ design proposals</title>
 <style>{CSS}</style>
-<h1>Design proposals &mdash; {w}&times;{h}{' round' if round_screen else ''}</h1>
+<h1>Design proposals - {w}&times;{h}{' round' if round_screen else ''}</h1>
 <p class="sub">{html.escape(note)}</p>
 <button id="dim">Ambient: bright</button>
 <div class="sheet">{''.join(cards)}</div>

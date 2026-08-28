@@ -3,14 +3,22 @@ BUILD A SHARED AGENT-KNOWLEDGE ARTIFACT
 Goal
 Publish a single private Claude Artifact page that acts as an append-only, self-persisting
 knowledge ledger which multiple agents (and I) read before starting work and write to when
-reality corrects us. The page IS the record: it stores its own data and saves new versions of
-itself, so nothing depends on a server or on my local files.
+reality corrects us. The page stores its own data and saves new versions of itself, so nothing
+depends on a server. When a durable store resolves (see below), the ledger.json in that store is
+the canonical record and the page is the view onto it; with no store, the page IS the record.
 
 Before writing any code
 1. Load the artifact-capabilities skill (you must, before declaring capabilities or writing any
    window.claude.* code) and the artifact-design skill (calibrates the design treatment).
-2. Read my global rules (CLAUDE.md / VERIFICATION.md / memory) and seed the ledger with 6-10
-   REAL lessons already recorded there. No lorem, no invented examples.
+2. Resolve a durable private store before building. If a pointer file exists at
+   ${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json, use the clone it names.
+   Otherwise, if a context-repo skill is available in this environment, invoke it to get one.
+   Otherwise skip mirroring entirely for this run. A missing store must never block publishing
+   the artifact.
+3. Read my global rules (CLAUDE.md / VERIFICATION.md / memory) and seed the ledger with 6-10
+   REAL lessons already recorded there. If a store resolved in step 2, also read
+   knowledge/*/ledger.json from it and skip any lesson already present there, so the new ledger
+   doesn't reseed what's already recorded elsewhere. No lorem, no invented examples.
 
 Required behaviour
 - Declare capabilities: {artifact: {}} so the page can publish new versions of itself.
@@ -26,6 +34,23 @@ Required behaviour
   to the winner (no retry - tell the person to re-add); "not_granted"/"not_writer" means
   read-only. Publish only after an explicit user action, never on page load, and batch rapid
   edits into one publish.
+
+Write through to the context store
+The store holds the canonical ledger; the page is the view onto it. After
+a successful publish you perform (not a later edit a viewer makes on the page), extract the
+#ledger-state JSON from the published document and commit knowledge/<slug>/ledger.json plus
+page.html to the resolved store, message "chore(knowledge): mirror <slug>, <n> notes" where <n>
+is the current note count. One commit per run, git pull --rebase before push, never force push,
+never delete an existing file. Never commit raw session content, tokens, private prompts, or
+customer data.
+
+If no store resolved in step 2 of "Before writing any code", skip this section entirely and
+report NOT_MIRRORED with the reason; don't retry the resolution mid-run.
+
+Limitation, stated plainly: notes a viewer adds on the page later are not written through, because
+no agent is present when that happens. Those notes reach the ledger only on the next agent-driven
+publish, and until then they are not shared guidance. Say so on the page rather than letting a
+viewer assume their note is already canonical.
 
 Note schema (one fact per entry)
   {"id":"...", "kind":"lesson|trap|pref", "scope":"shell|review|github|...",
@@ -75,4 +100,5 @@ Write the HTML to a file, publish it with the Artifact tool, and report back: th
 that it is private until shared from the page's share menu, and the exact instructions another
 agent needs - read via Artifact action "read" with that URL, and write by appending to notes and
 republishing with `url` set to that URL (a publish WITHOUT url forks a separate artifact instead
-of updating this one).
+of updating this one); and the mirror path and commit SHA in the context store
+(knowledge/<slug>/ledger.json at <sha>), or NOT_MIRRORED: <reason> if no store resolved.

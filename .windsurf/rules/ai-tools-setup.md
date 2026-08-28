@@ -4,7 +4,7 @@
 description: "Set up, repair, and report on the RTK+ICM+Vox AI development toolkit, including hooks and MCP configuration."
 ---
 
-# AI Tools Setup — RTK + ICM + Vox
+# AI Tools Setup: RTK + ICM + Vox
 
 Install, repair, and measure the RTK+ICM+Vox toolkit for Claude Code.
 
@@ -13,7 +13,7 @@ Install, repair, and measure the RTK+ICM+Vox toolkit for Claude Code.
 | Mode | When to use |
 |------|-------------|
 | **Setup** | First install on a new machine |
-| **Repair** | Something broke — hooks missing, MCP not loading |
+| **Repair** | Something broke: hooks missing, MCP not loading |
 | **Digest** | Weekly check: token savings, memory health, voice stats |
 
 ## Tools in the Bundle
@@ -22,7 +22,7 @@ Install, repair, and measure the RTK+ICM+Vox toolkit for Claude Code.
 |------|---------|---------|
 | **RTK** | latest | Compresses CLI output by ~89% before it reaches the model |
 | **ICM** | latest | Persistent SQLite memory across sessions (knowledge graph + hybrid search) |
-| **Vox** | latest | Spoken task notifications via local TTS — zero API calls |
+| **Vox** | latest | Spoken task notifications via local TTS (zero API calls) |
 
 ---
 
@@ -177,8 +177,8 @@ echo "=============================="
 
 ### What healthy output looks like
 
-- **RTK**: `Tokens saved: 5M+ (85%+)` across `500+ commands` — if savings are low, run `rtk discover` to find uncovered commands
-- **ICM**: Topics like `decisions-*`, `errors-resolved`, `preferences` with recent timestamps — if empty, start storing manually with `icm store`
+- **RTK**: `Tokens saved: 5M+ (85%+)` across `500+ commands`. If savings are low, run `rtk discover` to find uncovered commands
+- **ICM**: Topics like `decisions-*`, `errors-resolved`, `preferences` with recent timestamps. If empty, start storing manually with `icm store`
 - **Vox**: Non-zero speak count means the Stop hook fired
 
 ---
@@ -191,7 +191,7 @@ To get a weekly automated report without having to remember to run this skill:
 # Create a weekly digest script
 cat > ~/ai-tools-digest.sh << 'EOF'
 #!/bin/bash
-echo "=== Weekly AI Tools Digest — $(date) ===" | tee -a ~/ai-tools-digest.log
+echo "=== Weekly AI Tools Digest: $(date) ===" | tee -a ~/ai-tools-digest.log
 echo "" | tee -a ~/ai-tools-digest.log
 rtk gain 2>/dev/null | tee -a ~/ai-tools-digest.log
 echo "" | tee -a ~/ai-tools-digest.log
@@ -253,7 +253,7 @@ To unload: `launchctl unload ~/Library/LaunchAgents/com.oleg.ai-tools-digest.pli
 | `rtk gain` | Total tokens saved to date |
 | `rtk discover` | Find commands not yet covered by RTK |
 | `icm topics` | List all memory topic buckets |
-| `icm health` | Memory hygiene — stale, redundant, decay stats |
+| `icm health` | Memory hygiene: stale, redundant, decay stats |
 | `icm recall "query"` | Search memories semantically |
 | `icm store -t topic -c "content" -i high` | Store a memory manually |
 | `vox "text"` | Speak text immediately |

@@ -11,10 +11,10 @@ colour's brightness *is* how much light it returns to the eye.
 
 | Colour | Reflects |
 | --- | --- |
-| `0xFFFFFF` | all three channels — brightest available |
+| `0xFFFFFF` | all three channels: brightest available |
 | `0xAAAAAA` | about two-thirds of white |
 | `0x555555` | about a third |
-| `0x00FF00` | green only — roughly a third of white |
+| `0x00FF00` | green only: roughly a third of white |
 
 **Consequence 1: large areas must be bright.** Choosing a photographically
 accurate mid-grey for the biggest region on the face makes the whole watch read
@@ -110,7 +110,7 @@ function panelIsLighterThanItsSegments(logger as Logger) as Boolean {
   colour.
 - Set thresholds against the device, not phone habits. A 14-day watch at 50% has
   a week left; that is not a warning.
-- Prefer luminance hierarchy — label grey, value white — over hue.
+- Prefer luminance hierarchy (label grey, value white) over hue.
 - One accent colour on the whole face, used once.
 
 ## AMOLED devices
@@ -119,7 +119,7 @@ Venu, Forerunner 265/965/970, fenix 8 (non-solar) and epix are **emissive**.
 Almost every rule above inverts, and the one that matters most is not about
 colour at all.
 
-Read the device rather than guessing — `compiler.json` carries `displayType`,
+Read the device rather than guessing: `compiler.json` carries `displayType`,
 `bitsPerPixel` and `alphaBlendingSupport`:
 
 | | fenix 6 Pro | Forerunner 970 |
@@ -132,7 +132,7 @@ Read the device rather than guessing — `compiler.json` carries `displayType`,
 
 So on AMOLED you get anti-aliasing and real colour, and the 4×4×4 lattice stops
 being a constraint. Lattice colours still render correctly, so a palette tuned
-for MIP is safe to ship to both — it is merely conservative.
+for MIP is safe to ship to both: it is merely conservative.
 
 ### The always-on frame is the whole problem
 
@@ -142,7 +142,7 @@ pixels lit, and not always the *same* pixels. Garmin rejects faces that ignore
 this.
 
 The property arrived after some supported products shipped and **can be null**,
-so check both the symbol and the value — a null flowing into a `Boolean` field
+so check both the symbol and the value: a null flowing into a `Boolean` field
 throws at the first wrist drop:
 
 ```monkeyc
@@ -155,14 +155,14 @@ private function needsAlwaysOn() as Boolean {
 ```
 
 **The always-on frame is a different drawing, not a dimmed one.** This is the
-part that bites: if the face's identity is a large bright area — a lit LCD
-panel, a white dial, a filled gauge — then dimming it still lights most of the
+part that bites: if the face's identity is a large bright area (a lit LCD
+panel, a white dial, a filled gauge), then dimming it still lights most of the
 screen. Reach instead for what the real object looks like with the power off.
 An outline where there was a fill; strokes where there was a panel.
 
 Budget check: on 454×454 (206k pixels), seven-segment strokes for four digits
 plus a 1px frame outline is roughly 2% lit. A filled rounded rectangle the size
-of that frame alone is 40k pixels — 19%.
+of that frame alone is 40k pixels (19%).
 
 ### Move the lit pixels
 
@@ -182,7 +182,7 @@ function shiftX(minute as Number) as Number {
 Both periods dividing into 60 is the trap: with 6 and 3 you get 6 positions and
 park a segment edge on the same pixels ten times an hour.
 
-Test the arithmetic even though you cannot test the drawing — that the offsets
+Test the arithmetic even though you cannot test the drawing: that the offsets
 stay small enough to keep content on screen, that **every** offset in range is
 actually visited (a `shiftX` stuck at 0 passes "stays small" and protects
 nothing), and that the (x, y) pair yields the full period.

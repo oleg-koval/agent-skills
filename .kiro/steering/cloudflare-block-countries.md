@@ -36,7 +36,7 @@ curl -s -X GET \
   jq '.result[] | select(.phase == "http_request_firewall_custom")'
 ```
 
-If the output is empty — no existing ruleset. Go to **3a**. If a ruleset exists, note its `id` and go to **3b**.
+If the output is empty: no existing ruleset. Go to **3a**. If a ruleset exists, note its `id` and go to **3b**.
 
 ### 3a. Create NEW Ruleset with Block Rule
 

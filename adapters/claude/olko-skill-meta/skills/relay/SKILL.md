@@ -29,7 +29,7 @@ Binary: `claude-relay` (alias `relay` if added to shell). Config: `~/.claude-rel
 
 ---
 
-## Step 1 — Decide: relay or inline?
+## Step 1: Decide: relay or inline?
 
 **Use relay when:**
 - Task will take many turns or hours (big refactor, migration, research + implementation)
@@ -43,15 +43,15 @@ Binary: `claude-relay` (alias `relay` if added to shell). Config: `~/.claude-rel
 
 ---
 
-## Step 2 — Write the goal
+## Step 2: Write the goal
 
 A relay goal is a self-contained spec a fresh Claude agent can execute cold. Write it to
 `/tmp/relay-goal-<short-name>.md`. It must include:
 
-- **What to do** — concrete deliverables, not vague intent
-- **How to verify** — the exact command proving success (`npm test`, `curl /api/health`, etc.)
-- **Scope** — explicit list of what NOT to do (no commits, no PRs, no migrations — unless stated)
-- **Key files** — paths the agent should read first if the context isn't obvious
+- **What to do**: concrete deliverables, not vague intent
+- **How to verify**: the exact command proving success (`npm test`, `curl /api/health`, etc.)
+- **Scope**: explicit list of what NOT to do (no commits, no PRs, no migrations, unless stated)
+- **Key files**: paths the agent should read first if the context isn't obvious
 
 **Template:**
 ```markdown
@@ -66,25 +66,25 @@ Run `<command>` and confirm it exits 0 / returns the expected result.
 - DO NOT: open PRs / push commits / run migrations / touch unrelated files
 
 ## Key files
-- <path> — <why it matters>
+- <path>: <why it matters>
 ```
 
 Good goals are specific. "Add input validation to all POST routes in `app/api/`" beats "improve the API".
 
 ---
 
-## Step 3 — Pick flags
+## Step 3: Pick flags
 
 | Situation | Flag |
 |-----------|------|
 | Task needs uncommitted changes, local `.env`, or a local database | `--in-place` |
-| Everything is committed; task is self-contained | *(default — isolated git worktree)* |
+| Everything is committed; task is self-contained | *(default, isolated git worktree)* |
 
 When in doubt: if the repo has a `.env` or `node_modules` the task depends on, use `--in-place`.
 
 ---
 
-## Step 4 — Run
+## Step 4: Run
 
 ```bash
 claude-relay run /tmp/relay-goal-<name>.md <absolute-path-to-repo> [--in-place]
@@ -95,7 +95,7 @@ line, or hits a hard cap (400 turns / 48h wall clock).
 
 ---
 
-## Step 5 — Tell the user
+## Step 5: Tell the user
 
 After starting, report:
 - The exact command you ran

@@ -138,7 +138,7 @@ const installSection = (sample) => `<section class="band" id="install">
       ${slab("any session", `Use the ${sample} skill.`)}
     </div>
   </div>
-  <p class="sub">Cursor, Copilot, Windsurf and Kiro consume the generated wrappers under <code>adapters/&lt;tool&gt;/&lt;plugin&gt;/</code> &mdash; see the <a href="${REPO}#quick-start">repository README</a>.</p>
+  <p class="sub">Cursor, Copilot, Windsurf and Kiro consume the generated wrappers under <code>adapters/&lt;tool&gt;/&lt;plugin&gt;/</code>. See the <a href="${REPO}#quick-start">repository README</a>.</p>
 </section>`;
 
 const card = (pkg) => {
@@ -165,7 +165,7 @@ const indexPage = ({ packages, categories, adapters }) => {
   <p class="kicker">Agent-agnostic skill catalog</p>
   <h1 data-reactive>Skills in a paper bag</h1>
   <div class="stamp" aria-hidden="true">Opinionated<br>by design</div>
-  <p class="lede">${packages.length} canonical skills for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Pi and Hermes. They encode working defaults and repeatable workflows instead of neutral snippets &mdash; starting points with taste, easy to inspect, specific enough for an agent to execute the same way twice.</p>
+  <p class="lede">${packages.length} canonical skills for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Pi and Hermes. They encode working defaults and repeatable workflows instead of neutral snippets: starting points with taste, easy to inspect, specific enough for an agent to execute the same way twice.</p>
 </section>
 
 <div class="ticker" aria-hidden="true"><span>${packages
@@ -215,7 +215,7 @@ ${installSection(packages[0].lookupName)}
 </section>`;
 
   return layout({
-    title: "agent skills — an agent-agnostic skill catalog",
+    title: "agent skills: an agent-agnostic skill catalog",
     ogTitle: "agent skills",
     description: `${packages.length} opinionated, agent-agnostic skills for Codex, Claude, Cursor, Grok, Copilot, Windsurf and Kiro.`,
     canonical: `${SITE_URL}/`,
@@ -264,7 +264,7 @@ ${
 </nav>`;
 
   return layout({
-    title: `${label} — agent skills`,
+    title: `${label}, agent skills`,
     description: pkg.description,
     canonical: `${SITE_URL}/skills/${pkg.name}/`,
     body,
@@ -342,7 +342,7 @@ const main = async () => {
   await writeFile(
     join(out, "404.html"),
     layout({
-      title: "Not in the bag — agent skills",
+      title: "Not in the bag, agent skills",
       description: "That page does not exist.",
       canonical: `${SITE_URL}/404.html`,
       body: `<section class="hero">
