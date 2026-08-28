@@ -40,7 +40,7 @@ Step 0, before collecting any evidence: resolve the durable context store by inv
 ## Safety and evidence rules
 
 - Be read-only by default in the analyzed repository. The one named exception: this skill may invoke `context-repo` for a consented store bootstrap, and may make one snapshot commit and push per run into the context store only. Outside that exception, it never pushes, merges, deploys, closes issues, edits source, or rewrites history in the analyzed repository.
-- A retro may write one task-owned snapshot per run: to the context store's `retros/<repo-slug>/` when the store resolves, otherwise to `.context/retros/` when that directory exists or when persistence is explicitly requested. Never overwrite an existing snapshot; use a date and window-specific filename.
+- A retro may write one task-owned snapshot per run: to the context store's `retro/` when the store resolves, otherwise to `.context/retros/` when that directory exists or when persistence is explicitly requested. Never overwrite an existing snapshot; the filename carries the date, the analyzed repository and the window.
 - Do not fetch or refresh remote refs unless the user or the surrounding workflow authorized that read-side state change. If refs may be stale, say so and use the available evidence.
 - Preserve dirty work, untracked files, existing snapshots, credentials, and unrelated temporary artifacts.
 - Never infer delivery from a local commit. Treat local Git, remote/PR state, CI, deployment, and device or human QA as separate evidence gates.
@@ -56,7 +56,7 @@ For repository mode:
 2. Preserve and report pre-existing dirty paths; do not include their changes as delivered work unless the evidence links them to the window.
 3. Use the repository's local timezone for calendar boundaries. Use UTC timestamps in stored machine-readable data.
 4. Read only relevant project documentation and task artifacts needed to interpret the changes. Do not invent milestones, objectives, or acceptance criteria.
-5. Locate prior snapshots in the context store's `retros/<repo-slug>/` first, then in `.context/retros/`. Reading the store first is what makes `compare` and `global` work across machines instead of only where the last run happened. Load the immediately preceding comparable snapshot when available.
+5. Locate prior snapshots in the context store's `retro/` first, matching on the repository slug in the filename, then in `.context/retros/`. Reading the store first is what makes `compare` and `global` work across machines instead of only where the last run happened. Load the immediately preceding comparable snapshot when available.
 
 For global mode:
 
@@ -151,7 +151,7 @@ For `compare` or any window with a prior snapshot:
 - preserve the same metric definitions between periods; do not compare a repository window to a global window as if they were equivalent
 - report streaks, recurring hotspots, repeated failure modes, and unresolved improvements only when snapshots support them
 
-Store a JSON snapshot with stable keys, UTC timestamps, resolved window, scope, repository identity, commit/PR identifiers, metric values, evidence limitations, and a short list of findings. Keep narrative prose out of fields intended for machine comparison. If the store pointer resolved, write the snapshot to `<clone>/retros/<repo-slug>/<YYYY-MM-DD>-<window>.json` plus the matching `.md`, then commit and push per the `context-repo` caller contract. Otherwise fall back to `.context/retros/` exactly as today. A snapshot is an aid to future analysis, not a source of truth that overrides current evidence.
+Store a JSON snapshot with stable keys, UTC timestamps, resolved window, scope, repository identity, commit/PR identifiers, metric values, evidence limitations, and a short list of findings. Keep narrative prose out of fields intended for machine comparison. If the store pointer resolved, write the snapshot to `<clone>/retro/<YYYY-MM-DD>-<repo-slug>-<window>.md`, with the machine-comparable JSON in a fenced block inside that file rather than as a separate sidecar, then commit and push per the `context-repo` caller contract, lease and validator included. Otherwise fall back to `.context/retros/` exactly as today. A snapshot is an aid to future analysis, not a source of truth that overrides current evidence.
 
 ## 5. Optionally promote durable lessons
 

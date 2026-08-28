@@ -12,13 +12,14 @@ Before writing any code
    window.claude.* code) and the artifact-design skill (calibrates the design treatment).
 2. Resolve a durable private store before building. If a pointer file exists at
    ${XDG_CONFIG_HOME:-$HOME/.config}/agent-context/config.json, use the clone it names.
-   Otherwise, if a context-repo skill is available in this environment, invoke it to get one.
+   Otherwise, if a context-repo skill is available in this environment, invoke it to get one; it
+   searches the account for an existing store by layout before it ever offers to create one.
    Otherwise skip mirroring entirely for this run. A missing store must never block publishing
    the artifact.
 3. Read my global rules (CLAUDE.md / VERIFICATION.md / memory) and seed the ledger with 6-10
-   REAL lessons already recorded there. If a store resolved in step 2, also read
-   knowledge/*/ledger.json from it and skip any lesson already present there, so the new ledger
-   doesn't reseed what's already recorded elsewhere. No lorem, no invented examples.
+   REAL lessons already recorded there. If a store resolved in step 2, also read ledger.json from
+   its ROOT and skip any lesson already present there, so the new page doesn't reseed what's
+   already recorded elsewhere. No lorem, no invented examples.
 
 Required behaviour
 - Declare capabilities: {artifact: {}} so the page can publish new versions of itself.
@@ -38,11 +39,13 @@ Required behaviour
 Write through to the context store
 The store holds the canonical ledger; the page is the view onto it. After
 a successful publish you perform (not a later edit a viewer makes on the page), extract the
-#ledger-state JSON from the published document and commit knowledge/<slug>/ledger.json plus
-page.html to the resolved store, message "chore(knowledge): mirror <slug>, <n> notes" where <n>
-is the current note count. One commit per run, git pull --rebase before push, never force push,
-never delete an existing file. Never commit raw session content, tokens, private prompts, or
-customer data.
+#ledger-state JSON from the published document and append any note it holds that the store does
+not to the notes array of the store's ROOT ledger.json, with a fresh id in the store's own
+sequence. One shared ledger, not one per artifact. Message "chore(knowledge): append <n> notes
+from <slug>" where <n> is the number actually appended. Take the store's lease first if it ships
+one, git pull --rebase before push, run the store's validator if it has one, one commit per run,
+never force push, never edit or remove an existing note. Never commit raw session content,
+tokens, private prompts, or customer data.
 
 If no store resolved in step 2 of "Before writing any code", skip this section entirely and
 report NOT_MIRRORED with the reason; don't retry the resolution mid-run.
@@ -100,5 +103,5 @@ Write the HTML to a file, publish it with the Artifact tool, and report back: th
 that it is private until shared from the page's share menu, and the exact instructions another
 agent needs - read via Artifact action "read" with that URL, and write by appending to notes and
 republishing with `url` set to that URL (a publish WITHOUT url forks a separate artifact instead
-of updating this one); and the mirror path and commit SHA in the context store
-(knowledge/<slug>/ledger.json at <sha>), or NOT_MIRRORED: <reason> if no store resolved.
+of updating this one); and the note ids appended plus the commit SHA in the context store
+(ledger.json at <sha>), or NOT_MIRRORED: <reason> if no store resolved.

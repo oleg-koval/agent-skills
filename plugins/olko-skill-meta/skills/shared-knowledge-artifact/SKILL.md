@@ -32,7 +32,7 @@ Use a private Artifact page as an optional rendered and editing surface for an a
 1. Invoke the `artifact-capabilities` skill, mandatory before declaring `capabilities` or writing any `window.claude.*` code.
 2. Invoke the `artifact-design` skill, which calibrates the design treatment.
 3. Resolve the durable store by invoking the `context-repo` skill. That store holds the Git-backed ledger. If it comes back BLOCKED, or the user declines when that skill asks, publish the artifact anyway and skip the Git ledger, labelled `NOT_MIRRORED: <reason>` in the deliverable. The store must never block publishing.
-4. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory), and read the current Git ledger directly when one exists (`knowledge/*/ledger.json` in a resolved store, or a repository ledger already in the checkout). **Seed the ledger with real lessons already recorded there, 6-10 when that many exist, or all available real lessons if fewer than six are found**. Skip any lesson already present in a resolved store's `ledger.json` so a new ledger does not reseed what is already recorded elsewhere. No lorem, no invented examples: a ledger that opens with fake entries never gets used.
+4. Read the user's actual rules (`CLAUDE.md`, any verification/preferences doc, agent memory), and read the current Git ledger directly when one exists (`ledger.json` at the root of a resolved store, or a repository ledger already in the checkout). **Seed the ledger with real lessons already recorded there, 6-10 when that many exist, or all available real lessons if fewer than six are found**. Skip any lesson already present in the store's `ledger.json` so a new page does not reseed what is already recorded there. No lorem, no invented examples: a ledger that opens with fake entries never gets used.
 
 ## Authority and reconciliation
 
@@ -54,7 +54,7 @@ Use a private Artifact page as an optional rendered and editing surface for an a
 
 ## Write through to the context store
 
-The store holds the Git-backed ledger, so per "Authority and reconciliation" it is the canonical record and the page is the view onto it. After a successful publish performed by this skill (not a viewer's later edit on the page), extract the `#ledger-state` JSON from the published document and commit `knowledge/<slug>/ledger.json` plus `page.html` to the resolved store, message `chore(knowledge): mirror <slug>, <n> notes` where `<n>` is the current note count. Follow the `context-repo` caller contract: one commit per run, `git pull --rebase` before push, never force, never delete an existing file.
+The store holds the Git-backed ledger, so per "Authority and reconciliation" it is the canonical record and the page is the view onto it. After a successful publish performed by this skill (not a viewer's later edit on the page), extract the `#ledger-state` JSON from the published document and append any note it holds that the store does not, to the `notes` array of the store's root `ledger.json`, with a fresh id in the store's own sequence. One shared ledger, not one per artifact: never add a `knowledge/<slug>/` tree beside it. Message `chore(knowledge): append <n> notes from <slug>` where `<n>` is the number actually appended. Follow the `context-repo` caller contract in full: take the lease, `git pull --rebase`, run the store's validator, one commit, never force, never edit or remove an existing note.
 
 If the store did not resolve (BLOCKED or declined in the "Before writing any code" step), skip this section entirely and report `NOT_MIRRORED` with the reason; do not retry the resolution mid-run.
 
@@ -99,7 +99,7 @@ When an Artifact surface is requested, write the HTML to a file and publish it w
 - the URL;
 - that it stays private until shared from the page's share menu;
 - the exact instructions another agent needs: read via Artifact `action: "read"` with that URL, and write by appending to `notes` and republishing **with `url` set to that URL** (a publish *without* `url` forks a separate artifact instead of updating this one);
-- when a Git ledger exists, the repository path and the reconciliation result, making clear that other agents should read and write Git directly and that Git wins any disagreement, plus the commit SHA in the context store (`knowledge/<slug>/ledger.json` at `<sha>`), or `NOT_MIRRORED: <reason>` if the store did not resolve.
+- when a Git ledger exists, the repository path and the reconciliation result, making clear that other agents should read and write Git directly and that Git wins any disagreement, plus the note ids appended and the commit SHA in the context store (`ledger.json` at `<sha>`), or `NOT_MIRRORED: <reason>` if the store did not resolve.
 
 ## Notes
 
