@@ -6,10 +6,12 @@
 Upload is a single file: the `.iq` from `make package`. It is a multi-device
 bundle — every declared product is inside it. Nothing else to attach.
 
-## App settings live on the phone, not the watch
+## App settings on compatible watches, phones, and desktop
 
-Connect IQ watch face settings are **not reachable from the watch**. The
-on-device face menu offers only Apply. Users configure via:
+Compatible devices can expose an app-defined on-device settings flow when the
+watch face implements one. Properties and settings declared in XML remain
+configurable through the Garmin Connect mobile app or Garmin Express. In Garmin
+Connect, users configure via:
 
 Garmin Connect app → device → Connect IQ Apps → Watch Faces → *your face* → gear.
 
@@ -32,9 +34,9 @@ Wiring, three files plus a handler:
 ```
 
 ```monkeyc
-// getValue THROWS when a key is absent -- which happens on a fresh install
-// before the Connect app has ever written settings. Default every read.
-private function boolSetting(key as String, fallback as Boolean) as Boolean {
+// getValue THROWS when a key is absent from the app settings XML.
+// Wrap every read and supply a default.
+function boolSetting(key as String, fallback as Boolean) as Boolean {
     try {
         var value = Application.Properties.getValue(key);
         if (value instanceof Lang.Boolean) { return value as Boolean; }
@@ -55,37 +57,23 @@ function onSettingsChanged() as Void {
 
 Re-read settings in both `onLayout` and `onShow`.
 
-See `reference/simulator.md` for why the simulator will lie to you about this.
+See `references/simulator.md` for why the simulator will lie to you about this.
 
 ## Intellectual property
 
-Section 3(a) is stricter than people expect and explicitly covers your **listing
-text and images**, not just code:
-
-> You may not infringe any copyright, trademark, patent, trade secret, or any
-> other form of intellectual property. You must own or have a license to use all
-> IP included in or used by your app. This includes your app's software and
-> content, your developer account name, as well as the logos, images, and content
-> that you use to promote your app in the Connect IQ store.
-
-> Be careful using brand names and logos ... Be careful before making any mention
-> of a brand or using any logo or name that is not yours.
-
-And Garmin will not adjudicate:
-
-> It is not for us to decide whether your use of a third party's IP may be
-> infringing, properly used under a license, or fair use.
-
-So there is no approval to win. They accept it, and §5(b) lets them suspend with
-**no notice** if a rights holder complains — against the account, which carries
-your other apps too.
+Review the live [Garmin Connect IQ Developer
+Agreement](https://developer.garmin.com/downloads/connect-iq/sdks/agreement.html)
+before publishing. It requires developers to hold the necessary intellectual
+property rights for the app and its store materials. Garmin may refuse or remove
+a listing, and may immediately remove or suspend an app that violates the
+agreement.
 
 Practical tiers for an homage:
 
 - **Highest risk:** a film title or real brand in the app name, launcher icon, or
   screenshots. That is trademark use for product identity.
 - **Lower risk:** one factual, referential sentence in the description body.
-- **No risk, and usually better copy:** describe the *object* and the *era*. The
+- **Lower risk, and usually better copy:** describe the *object* and the *era*. The
   people who will recognise it recognise the shape, not the name.
 
 "The brand is dead so I can use it" does not hold. Abandonment is a legal finding
@@ -93,18 +81,18 @@ requiring genuine non-use with no intent to resume, and it is moot if anyone hol
 a live registration — renewal is cheap and dormant heritage marks are routinely
 warehoused and revived. Check the registers before relying on it: USPTO Trademark
 Search, EUIPO eSearch, WIPO Global Brand Database, and the national register of
-the owner's country. A lapsed mark you do not own is still not a mark you *own*,
-which is what §3(a) asks for.
+the owner's country.
 
-Not legal advice. When it matters, ask a lawyer, not the store.
+These tiers reduce risk; none eliminates it. Require legal review before
+publishing an homage.
 
 ## Donation links
 
-Permitted, with care. §1(a) prohibits listings that are advertising-focused or
-"serve primarily to drive affiliate traffic to a website", and §4(d) requires
-stating whether payment is needed. A single support line **after** a complete
-description, prefixed with *free*, clears both. Leading with it, or repeating it
-in the short description, does not.
+Permitted, with care. The agreement restricts advertising-focused listings and
+affiliate traffic, and store requirements call for disclosing whether payment is
+needed. A single support line **after** a complete description, prefixed with
+*free*, addresses both concerns. Leading with it, or repeating it in the short
+description, does not.
 
 ## Screenshots
 
@@ -114,7 +102,7 @@ version under review.
 
 ```bash
 make build && make sim
-bin/ciq-capture docs/store/screenshot.png --face --size 260 --mask
+<skill-dir>/scripts/ciq-capture docs/store/screenshot.png --face --size 260 --mask
 ```
 
 Generate the launcher icon and any hero image from the same geometry the face
@@ -128,13 +116,13 @@ Two things that bite when reusing face-drawing code for artwork:
 
 ## Checklist
 
-- [ ] `make test` passes — and the tests actually compile (`reference/testing.md`)
+- [ ] `make test` passes — and the tests actually compile (`references/testing.md`)
 - [ ] `make lint` clean at level 3
 - [ ] `make package` builds every declared device
 - [ ] Developer key not committed
 - [ ] Screenshots regenerated from this build
 - [ ] Launcher icon is yours, at the size each device wants
-- [ ] Listing states that settings are in the Garmin Connect app
+- [ ] Listing explains where settings are available for supported devices
 - [ ] No third-party marks in name, icon, screenshots, or copy
 - [ ] Verified on real hardware in daylight, not just the simulator
 

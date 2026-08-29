@@ -88,7 +88,7 @@ function isLatticeExact(color as Number) as Boolean {
 function everyPaletteColourSurvivesQuantization(logger as Logger) as Boolean {
     var colors = [Palette.BG, Palette.VALUE, Palette.LABEL /* ... */];
     for (var i = 0; i < colors.size(); i += 1) {
-        if (!Palette.isLatticeExact(colors[i])) { return false; }
+        if (!isLatticeExact(colors[i])) { return false; }
     }
     return true;
 }
@@ -97,9 +97,16 @@ function everyPaletteColourSurvivesQuantization(logger as Logger) as Boolean {
 Also pin the *relationships*, which is what actually breaks:
 
 ```monkeyc
+function luminance(color as Number) as Number {
+    var red = (color >> 16) & 0xFF;
+    var green = (color >> 8) & 0xFF;
+    var blue = color & 0xFF;
+    return ((red * 2126) + (green * 7152) + (blue * 722)) / 10000;
+}
+
 (:test)
 function panelIsLighterThanItsSegments(logger as Logger) as Boolean {
-    return Palette.PANEL > Palette.SEGMENT;
+    return luminance(Palette.PANEL) > luminance(Palette.SEGMENT);
 }
 ```
 

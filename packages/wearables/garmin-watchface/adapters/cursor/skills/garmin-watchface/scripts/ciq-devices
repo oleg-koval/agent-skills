@@ -170,7 +170,7 @@ def main():
     elif args.same_as:
         cmd_same_as(devs, args.same_as, args.min_api)
     else:
-        cmd_list(devs, None)
+        cmd_list(devs, args.min_api)
 
 
 if __name__ == "__main__":

@@ -140,7 +140,7 @@ history was found by looking.
 
 ```bash
 make build && make sim
-bin/ciq-capture /tmp/face.png --face --size 260
+<skill-dir>/scripts/ciq-capture /tmp/face.png --face --size 260
 # then Read the PNG
 ```
 
@@ -151,4 +151,4 @@ make test          # compile with the test jungle and run
 ```
 
 `monkeydo ... -t` prints per-test PASS/FAIL and a summary. It also wedges often;
-see `reference/simulator.md`.
+see `references/simulator.md`.

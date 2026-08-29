@@ -30,6 +30,7 @@ fi
 
 if [ -f "$CIQ/current-sdk.cfg" ]; then
   SDK="$(tr -d '\n' < "$CIQ/current-sdk.cfg")"
+  SDK="${SDK%/}"
   ok "sdk       $(basename "$SDK")"
 else
   bad "sdk       no current-sdk.cfg -- open SdkManager.app and select an SDK"
@@ -37,10 +38,10 @@ else
 fi
 
 for tool in monkeyc monkeydo connectiq; do
-  if [ -n "$SDK" ] && [ -x "${SDK}bin/$tool" ]; then
+  if [ -n "$SDK" ] && [ -x "$SDK/bin/$tool" ]; then
     ok "$tool"
   else
-    bad "$tool    not found under \${SDK}bin/"
+    bad "$tool    not found under \${SDK}/bin/"
   fi
 done
 
@@ -77,7 +78,8 @@ if [ -f monkey.jungle ]; then
       printf '        and reports success. See the skill README.\n'
     fi
   fi
-  if [ -d .git ] && git ls-files --error-unmatch "$KEY" >/dev/null 2>&1; then
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+      && [ -n "$(git ls-files -- '*.der')" ]; then
     bad "key       DEVELOPER KEY IS TRACKED IN GIT -- remove it now"
   fi
 fi

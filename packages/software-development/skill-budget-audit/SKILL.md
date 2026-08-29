@@ -139,10 +139,18 @@ Don't remove everything at once — test incrementally:
 # Back up first
 cp -r ~/.claude/plugins ~/.claude/plugins.backup
 
-# Remove unused bundles
-rm -rf ~/.claude/plugins/financial-services-bundle
-rm -rf ~/.claude/plugins/bitwize-music
-rm -rf ~/.claude/plugins/cc-skills-golang
+# Dry run: list candidate bundle paths for review
+find ~/.claude/plugins -maxdepth 1 -type d \
+  \( -name 'financial-services-bundle' -o -name 'bitwize-music' -o -name 'cc-skills-golang' \) \
+  -print
+
+# After reviewing the list, repeat this block once per exact path the user approves.
+# The user must type the complete path back before deletion proceeds.
+candidate="$HOME/.claude/plugins/<exact-reviewed-bundle-directory>"
+printf 'Type the exact path to confirm deletion: '
+read -r confirmed
+[ "$confirmed" = "$candidate" ] || exit 1
+rm -rf -- "$candidate"
 
 # Restart Claude Code
 # Expected: Budget warning gone, normal skill descriptions restored
@@ -150,9 +158,15 @@ rm -rf ~/.claude/plugins/cc-skills-golang
 
 **Phase 2: Remove duplicates**
 ```bash
-rm -rf ~/.claude/plugins/superpowers-v2-duplicate
-# or if there are multiple with same name:
-find ~/.claude/plugins -name "superpowers" -type d | tail -n +2 | xargs rm -rf
+# Dry run: list every possible duplicate for review
+find ~/.claude/plugins -type d -name 'superpowers*' -print
+
+# Set this to one exact reviewed duplicate; never select one from find automatically.
+candidate="$HOME/.claude/plugins/<exact-reviewed-duplicate-directory>"
+printf 'Type the exact path to confirm deletion: '
+read -r confirmed
+[ "$confirmed" = "$candidate" ] || exit 1
+rm -rf -- "$candidate"
 ```
 
 **Phase 3: Validate (critical)**
@@ -162,7 +176,7 @@ find ~/.claude/plugins -maxdepth 1 -type d | wc -l
 # Should drop from 37 to ~15
 
 # Check skill count
-find ~/.claude/plugins -name "SKILL.md" | wc -l
+find ~/.claude/plugins -type f \( -name "SKILL.md" -o -name "*.skill.yaml" \) | wc -l
 # Should drop from 575 to ~150-200
 
 # Restart Claude Code and verify:

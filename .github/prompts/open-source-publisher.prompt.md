@@ -32,12 +32,11 @@ Use this skill to audit whether an OSS repository is ready to publish, then help
 5. For existing usable pieces, do not propose replacement by default. Ask a change-oriented question only when useful, for example:
    - "You already have a terminal-style GitHub Pages site. Do you want to keep it or restyle it?"
    - "You already have an icon and social card. Do you want a refresh, or should I leave them as-is?"
-   - "You already have a static social card. Do you want me to animate it with pixel2motion, or leave it static?"
    - "You already have release automation. Do you want me to audit only, or also tighten it?"
 6. Ask only for choices needed to fix missing or weak pieces:
    - If GitHub Pages is missing or weak, ask for style: `oldschool linux`, `terminal`, `modern`, `brutalist`, `glassmorphism`, `y2k`, `hacker`, or custom.
    - If donation wiring is missing, ask whether to enable it: `none`, `GitHub Sponsors`, `Ko-fi`, `Buy Me a Coffee`, `Open Collective`, `Thanks.dev`, or custom URL.
-   - If the repo has a generated static social image or hero card, ask whether to animate it using `nolangz/pixel2motion`.
+   - If the repo has a generated logo or simple hero artwork supported by `nolangz/pixel2motion`, ask whether to animate it or leave it static.
    - If the repo has no clear product essence, ask for a one-sentence positioning statement.
 7. Implement only approved, missing, or weak work in this order:
    - OSS governance and support files
@@ -201,8 +200,8 @@ Use `magick` or another renderer when `rsvg-convert` is unavailable.
 
 Some repos benefit from a short animated preview. Keep this opt-in.
 
-- If you already generated a static image, ask: `Do you want me to animate the static image using pixel2motion?`
-- If the user says yes, use `nolangz/pixel2motion` as the optional dependency for logo animation, animated HTML demos, and GIF/video previews.
+- If you already generated a supported logo or simple artwork, ask: `Do you want me to animate it using pixel2motion?`
+- If the user says yes, use `nolangz/pixel2motion` as the optional dependency for that logo or simple-artwork animation, animated HTML demos, and GIF/video previews.
 - Do not auto-animate by default.
 
 ## README Standard

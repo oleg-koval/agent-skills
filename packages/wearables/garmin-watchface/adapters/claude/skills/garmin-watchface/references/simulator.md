@@ -46,7 +46,7 @@ normal; Ctrl-C once the face renders.
 
 ## Screenshots
 
-Use `bin/ciq-capture`. If you must do it by hand, know the three failure modes:
+Use `<skill-dir>/scripts/ciq-capture`. If you must do it by hand, know the three failure modes:
 
 **1. `screencapture -R` grabs a screen region, not a window.** If the simulator is
 not in front you get a photograph of your terminal, saved successfully, with no
@@ -66,7 +66,7 @@ osascript -e 'tell application "System Events" to tell process "simulator" to ge
 
 **3. The display is a sub-rectangle of the window.** Do not guess it. Render a
 full-screen marker colour, capture, and take its bounding box — that is the
-display rect exactly. `bin/ciq-calibrate` automates this. On a 2x Retina Mac with
+display rect exactly. `<skill-dir>/scripts/ciq-calibrate` automates this. On a 2x Retina Mac with
 the fenix 6 Pro skin the answer is 518x518 at (155,345), a clean 2:1 for the
 260x260 display.
 
@@ -117,14 +117,16 @@ function bodyBattery() as Number? {
         return null;
     }
     var it = Toybox.SensorHistory.getBodyBatteryHistory(
-        {:period => SCAN_DEPTH, :order => SensorHistory.ORDER_NEWEST_FIRST});
+        {:period => SCAN_DEPTH,
+         :order => Toybox.SensorHistory.ORDER_NEWEST_FIRST});
     if (it == null) { return null; }
-    var sample = it.next();
     var seen = 0;
-    while (sample != null && seen < SCAN_DEPTH) {
-        if (sample.data != null) { return sample.data.toNumber(); }
-        sample = it.next();
+    while (seen < SCAN_DEPTH) {
+        var sample = it.next();
         seen += 1;
+        if (sample != null && sample.data != null) {
+            return sample.data.toNumber();
+        }
     }
     return null;
 }

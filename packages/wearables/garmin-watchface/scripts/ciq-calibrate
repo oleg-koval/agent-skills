@@ -138,10 +138,13 @@ def main():
 
         out = osa('tell application "System Events" to tell process "simulator" to get '
                   '{position, size} of (first window whose name contains "CIQ Simulator")')
-        parts = [p.strip() for p in out.split(",") if p.strip()]
+        parts = [p.strip(" {}") for p in out.split(",") if p.strip(" {}")]
         if len(parts) != 4:
             sys.exit("could not read the simulator window bounds")
-        x, y, w, h = (int(p) for p in parts)
+        try:
+            x, y, w, h = (int(p) for p in parts)
+        except ValueError:
+            sys.exit("could not read the simulator window bounds")
 
         shot = root / "cal.png"
         subprocess.run(["screencapture", "-x", f"-R{x},{y},{w},{h}", str(shot)], check=True)
@@ -168,9 +171,18 @@ def main():
             print(f"warning: marker is {width}x{height}, not square -- "
                   "non-square display or a partial capture", file=sys.stderr)
 
-        scale = round(width / max(im.width and 1, 1)) or 1
-        rect = {"left": left, "top": top, "size": max(width, height),
-                "scale": 2 if width > 300 else 1, "device": args.device}
+        scale_x = im.width / max(w, 1)
+        scale_y = im.height / max(h, 1)
+        scale = max(1, (scale_x + scale_y) / 2)
+        rect = {
+            "left": left / scale,
+            "top": top / scale,
+            "width": width / scale,
+            "height": height / scale,
+            "scale": scale,
+            "units": "window-points",
+            "device": args.device,
+        }
 
         CACHE.mkdir(parents=True, exist_ok=True)
         CALIB = CACHE / "calibration.json"

@@ -98,8 +98,9 @@ function halfWidthAt(y as Number) as Number {
 
 // Usable X corridor for a row, measured at whichever edge the curve cuts first.
 function rowXBounds(topY as Number, height as Number) as Array<Number> {
-    var worstY = topY < CENTER ? topY : topY + height;
-    var half = halfWidthAt(worstY) - MARGIN;
+    var topHalf = halfWidthAt(topY);
+    var bottomHalf = halfWidthAt(topY + height);
+    var half = (topHalf < bottomHalf ? topHalf : bottomHalf) - MARGIN;
     if (half < 0) { half = 0; }
     return [CENTER - half, CENTER + half] as Array<Number>;
 }

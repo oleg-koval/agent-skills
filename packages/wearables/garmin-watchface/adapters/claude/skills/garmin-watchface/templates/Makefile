@@ -63,10 +63,10 @@ key:
 	@echo "Developer key written to $(KEY) -- back it up, never commit it."
 
 doctor:
-	@~/.claude/skills/garmin-watchface/bin/ciq-doctor $(DEVICE)
+	@~/.claude/skills/garmin-watchface/scripts/ciq-doctor $(DEVICE)
 
 devices:
-	@~/.claude/skills/garmin-watchface/bin/ciq-devices --same-as $(DEVICE)
+	@~/.claude/skills/garmin-watchface/scripts/ciq-devices --same-as $(DEVICE)
 
 clean:
 	rm -rf bin/

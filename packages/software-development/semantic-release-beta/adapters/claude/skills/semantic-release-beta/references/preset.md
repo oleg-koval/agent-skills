@@ -39,7 +39,6 @@ branches:
     channel: beta
     prerelease: beta
 extends: semantic-release-npm-github-publish
-ci: false
 dryRun: false
 debug: false
 ```

@@ -31,7 +31,7 @@ const injectTargets = (content, targets) => {
   return content.replace(/^(metadata:)$/m, `$1\n${targetsYaml}`)
 }
 const stripTrailingLineWhitespace = (content) => content.replace(/[ \t]+$/gm, '')
-const copySkillResources = (pkg, destDir) => {
+const copySkillResources = (pkg, destDir, adapter) => {
   for (const resourceDir of ['scripts', 'references', 'templates']) {
     const source = path.join(root, pkg.path, resourceDir)
     const dest = path.join(destDir, resourceDir)
@@ -40,6 +40,12 @@ const copySkillResources = (pkg, destDir) => {
     }
     fs.rmSync(dest, { recursive: true, force: true })
     fs.cpSync(source, dest, { recursive: true })
+    if (adapter === 'cursor' && pkg.name === 'garmin-watchface' && resourceDir === 'templates') {
+      const makefile = path.join(dest, 'Makefile')
+      const content = fs.readFileSync(makefile, 'utf8')
+        .replaceAll('~/.claude/skills/garmin-watchface/', '~/.cursor/skills/garmin-watchface/')
+      fs.writeFileSync(makefile, content)
+    }
   }
 }
 
@@ -218,7 +224,7 @@ for (const pkg of catalog.packages) {
       ) + '\n',
     )
     fs.writeFileSync(path.join(claudeDestDir, 'SKILL.md'), [fm + generatedHeader, '', body, ''].join('\n'))
-    copySkillResources(pkg, claudeDestDir)
+    copySkillResources(pkg, claudeDestDir, 'claude')
   }
 
   if (pkg.adapters.includes('cursor')) {
@@ -242,7 +248,7 @@ for (const pkg of catalog.packages) {
     const cursorFrontmatter = extractFrontmatter(cursorCanonical)
     const cursorBody = stripTrailingLineWhitespace(stripFrontmatter(cursorCanonical).trimStart().trimEnd())
     fs.writeFileSync(path.join(destDir, 'SKILL.md'), [cursorFrontmatter + generatedHeader, '', cursorBody, ''].join('\n'))
-    copySkillResources(pkg, destDir)
+    copySkillResources(pkg, destDir, 'cursor')
   }
 
   if (pkg.adapters.includes('windsurf')) {

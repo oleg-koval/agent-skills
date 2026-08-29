@@ -80,10 +80,6 @@ For App Store submission, add to `MyApp.entitlements`:
     <key>com.apple.security.app-sandbox</key>
     <true/>
     
-    <!-- Audio capabilities -->
-    <key>com.apple.security.device.audio-input</key>
-    <true/>
-    
     <!-- User-selected files -->
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
@@ -101,7 +97,9 @@ For App Store submission, add to `MyApp.entitlements`:
 
 Add entitlements file to Xcode:
 1. Build Settings → Code Signing Entitlements → set to `MyApp.entitlements`
-2. Verify in Build Phases → Copy Bundle Resources
+
+Only apps that record or otherwise need microphone input should add the
+`com.apple.security.device.audio-input` entitlement.
 
 ## Step 3: AVFoundation Audio Integration
 

@@ -13,7 +13,7 @@ A face written against one resolution ports for free to every device sharing it 
 a manifest edit, no code change.
 
 ```bash
-bin/ciq-devices --same-as fenix6pro
+<skill-dir>/scripts/ciq-devices --same-as fenix6pro
 ```
 
 That prints the `<iq:product>` lines to paste, flags devices below your
@@ -35,6 +35,7 @@ Representative clusters (installed SDK, mid-2026):
 Compiling is the cheapest verification and it catches real problems:
 
 ```bash
+set -o pipefail
 for d in fenix6 fenix7 fr955 vivoactive4; do
   monkeyc -f monkey.jungle -d $d -o bin/t-$d.prg -y $KEY -w -l 3 \
     | sed "s/^/$d: /"
@@ -76,7 +77,7 @@ Before declaring a device of a different size or shape:
    exist on a rectangular screen and needlessly squeezes content; on 240x400 it
    is badly wrong. Branch on `System.getDeviceSettings().screenShape`.
 3. **Font heights.** They differ between devices at the *same* resolution. Derive
-   everything (see `reference/layout.md`); a fixed Y that fits a 19px glyph
+   everything (see `references/layout.md`); a fixed Y that fits a 19px glyph
    overflows a 24px one.
 4. **Sensor availability.** Body Battery and stress are absent on older and
    cheaper devices. Guard with `Toybox has :SensorHistory` and degrade to `--`.
