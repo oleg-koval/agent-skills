@@ -1,3 +1,10 @@
+# [1.40.0](https://github.com/oleg-koval/agent-skills/compare/v1.39.0...v1.40.0) (2026-08-29)
+
+
+### ✨ Features
+
+* **site:** redesign marketplace and add analytics ([#74](https://github.com/oleg-koval/agent-skills/issues/74)) ([98e7d6b](https://github.com/oleg-koval/agent-skills/commit/98e7d6b94ac1591f71538b8192b6c0600cf86a30))
+
 # [1.39.0](https://github.com/oleg-koval/agent-skills/compare/v1.38.3...v1.39.0) (2026-08-29)
 
 
