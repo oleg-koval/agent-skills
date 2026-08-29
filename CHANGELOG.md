@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/oleg-koval/agent-skills/compare/v1.38.3...v1.39.0) (2026-08-29)
+
+
+### ✨ Features
+
+* **skill-meta:** add Veto routing skill ([#72](https://github.com/oleg-koval/agent-skills/issues/72)) ([6934e00](https://github.com/oleg-koval/agent-skills/commit/6934e002177e526a06aaa8e7a4944ff8dc0899c6))
+
 ## [1.38.3](https://github.com/oleg-koval/agent-skills/compare/v1.38.2...v1.38.3) (2026-08-29)
 
 
