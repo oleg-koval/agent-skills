@@ -2,14 +2,13 @@
 /*
  * Static site generator for the agent-skills catalog.
  *
- * Reads the machine-readable catalog (the same file `npm test` validates) and
- * emits a dependency-free static site into `_site/` for GitHub Pages.
- * There is no templating library on purpose: the catalog is small, the output
- * must stay auditable, and CI should not need a lockfile refresh to publish.
+ * Reads the machine-readable catalog and emits a dependency-free site into
+ * `_site/`. The catalog stays the source of truth for plugin and skill data.
  */
 
 import { mkdir, readFile, readdir, copyFile, writeFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadCatalog } from "../scripts/lib/catalog.mjs";
@@ -19,10 +18,16 @@ const root = join(here, "..");
 const out = join(root, "_site");
 
 const SITE_URL = "https://skills.olegkoval.com";
+const PORTFOLIO = "https://www.olegkoval.com";
 const REPO = "https://github.com/oleg-koval/agent-skills";
 const CNAME = "skills.olegkoval.com";
-
-/* ------------------------------------------------------------- utilities */
+const GA_MEASUREMENT_ID = "G-NV8Q2H8YV0";
+const MARKETPLACE_NAME = "olko-agent-skills";
+const assetVersion = createHash("sha256")
+  .update(await readFile(join(here, "assets", "catalog.css")))
+  .update(await readFile(join(here, "assets", "catalog.js")))
+  .digest("hex")
+  .slice(0, 10);
 
 const esc = (value) =>
   String(value)
@@ -34,7 +39,8 @@ const esc = (value) =>
 const titleCase = (slug) =>
   slug.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-/** Pulls the YAML-ish frontmatter block off a SKILL.md without a YAML dep. */
+const displayPlugin = (name) => name.replace(/^olko-/, "").replace(/-/g, " ");
+
 const readFrontmatter = async (path) => {
   if (!existsSync(path)) return {};
   const raw = await readFile(path, "utf8");
@@ -49,13 +55,12 @@ const readFrontmatter = async (path) => {
   return fields;
 };
 
-/** Counts the extra reference material shipped alongside a skill. */
 const countSupportFiles = async (dir) => {
   let files = 0;
   const walk = async (current) => {
     const entries = await readdir(current, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.name === "adapters") continue; // wrappers, not content
+      if (entry.name === "adapters") continue;
       if (entry.isDirectory()) await walk(join(current, entry.name));
       else if (entry.name !== "SKILL.md") files += 1;
     }
@@ -64,9 +69,7 @@ const countSupportFiles = async (dir) => {
   return files;
 };
 
-/* ----------------------------------------------------------------- chrome */
-
-const layout = ({ title, description, canonical, body, ogTitle }) => `<!doctype html>
+const layout = ({ title, description, canonical, body, ogTitle, pageType }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -80,219 +83,283 @@ const layout = ({ title, description, canonical, body, ogTitle }) => `<!doctype 
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}">
 <meta name="twitter:card" content="summary">
-<meta name="theme-color" content="#c3ac84">
+<meta name="theme-color" content="#f5f7f4">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/paperbag.css">
+<link rel="stylesheet" href="/assets/catalog.css?v=${assetVersion}">
 </head>
-<body>
-<div class="grain" aria-hidden="true"></div>
-<div class="halftone" aria-hidden="true"></div>
-<div class="blotch" aria-hidden="true"></div>
-<div class="smudge" aria-hidden="true"></div>
+<body data-page-type="${esc(pageType)}" data-ga-measurement-id="${GA_MEASUREMENT_ID}">
+<a class="skip-link" href="#main">Skip to content</a>
 <div class="shell">
 <header class="masthead">
-  <a class="wordmark" href="/">agent&nbsp;skills</a>
+  <div class="identity">
+    <a class="wordmark" href="/" aria-label="Agent Skills home"><span aria-hidden="true">as</span>agent skills</a>
+    <a class="maker" href="${PORTFOLIO}" data-analytics-event="portfolio_visit" data-analytics-location="header">by Oleg Koval <span aria-hidden="true">↗</span></a>
+  </div>
   <nav aria-label="Primary">
-    <a href="/#catalog">Catalog</a>
+    <a href="/#marketplace">Marketplace</a>
+    <a href="/#catalog">Skills</a>
     <a href="/#install">Install</a>
-    <a href="/#about">About</a>
-    <a href="${REPO}">GitHub</a>
+    <a href="${REPO}" data-analytics-event="github_visit" data-analytics-location="header">GitHub <span aria-hidden="true">↗</span></a>
   </nav>
 </header>
-${body}
+<main id="main">${body}</main>
 <footer class="colophon">
-  <span>MIT licensed &middot; <a href="${REPO}">oleg-koval/agent-skills</a></span>
-  <span>Lo-fi homage to p2output.com, c. 1998</span>
+  <p>Open source under MIT. Built and maintained by <a href="${PORTFOLIO}" data-analytics-event="portfolio_visit" data-analytics-location="footer">Oleg Koval</a>.</p>
+  <div>
+    <button class="text-button" type="button" data-consent-open>Analytics preferences</button>
+    <a href="${REPO}">Source</a>
+  </div>
 </footer>
 </div>
-<script src="/assets/paperbag.js" defer></script>
+<section class="consent" data-consent-banner hidden aria-label="Analytics preference">
+  <div>
+    <strong>Optional traffic analytics</strong>
+    <p>Off until you allow. Page and install interaction counts help improve this catalog. Search text is never sent.</p>
+  </div>
+  <div class="consent-actions">
+    <button class="button button-secondary" type="button" data-consent-decline>Decline</button>
+    <button class="button button-primary" type="button" data-consent-accept>Allow analytics</button>
+  </div>
+</section>
+<script src="/assets/catalog.js?v=${assetVersion}" defer></script>
 </body>
 </html>
 `;
 
-const slab = (label, code) => `<div class="slab">
-  <header><span>${esc(label)}</span><button class="copy" type="button">Copy</button></header>
+const command = (label, code, analytics = {}) => `<div class="command">
+  <div class="command-head"><span>${esc(label)}</span><button class="copy" type="button" data-copy ${Object.entries(analytics)
+    .map(([key, value]) => `data-analytics-${esc(key)}="${esc(value)}"`)
+    .join(" ")}>Copy</button></div>
   <pre>${esc(code)}</pre>
 </div>`;
 
-/* ------------------------------------------------------------ index page */
+const pluginCard = (plugin) => {
+  const install = `/plugin install ${plugin.name}@${MARKETPLACE_NAME}`;
+  return `<article class="plugin-card">
+    <div class="plugin-card-main">
+      <span class="eyebrow">${plugin.count} skill${plugin.count === 1 ? "" : "s"}</span>
+      <h3><a href="/?category=${encodeURIComponent(plugin.name)}#catalog">${esc(plugin.name)}</a></h3>
+      <p>${esc(plugin.description)}</p>
+    </div>
+    <div class="install-line">
+      <code>${esc(install)}</code>
+      <button class="copy-icon" type="button" data-copy data-analytics-event="marketplace_install_copy" data-analytics-plugin="${esc(plugin.name)}" aria-label="Copy install command for ${esc(plugin.name)}">Copy</button>
+    </div>
+  </article>`;
+};
 
-const installSection = (sample) => `<section class="band" id="install">
-  <h2 data-reactive>Get them</h2>
-  <p class="sub">Pick your agent. The canonical package is the same either way; only the wrapper changes.</p>
-  <div class="cols">
+const installSection = (sample) => `<section class="section" id="install">
+  <div class="section-heading">
     <div>
-      <h3>Claude Code</h3>
-      ${slab("marketplace", "/plugin marketplace add oleg-koval/agent-skills\n/plugin install olko-agent-skills@olko-agent-skills")}
+      <p class="eyebrow">Installation</p>
+      <h2>Use the same catalog anywhere.</h2>
     </div>
-    <div>
-      <h3>Codex</h3>
-      ${slab("symlink install", "git clone https://github.com/oleg-koval/agent-skills.git\ncd agent-skills\n./scripts/install-codex-symlinks.sh")}
-    </div>
-    <div>
-      <h3>Grok</h3>
-      ${slab("marketplace", "grok plugin marketplace add oleg-koval/agent-skills")}
-    </div>
-    <div>
-      <h3>Then just ask</h3>
-      ${slab("any session", `Use the ${sample} skill.`)}
-    </div>
+    <p>Marketplace installs are quickest in Claude Code and Grok. Codex and the other adapters use the same canonical skill packages.</p>
   </div>
-  <p class="sub">Cursor, Copilot, Windsurf and Kiro consume the generated wrappers under <code>adapters/&lt;tool&gt;/&lt;plugin&gt;/</code>. See the <a href="${REPO}#quick-start">repository README</a>.</p>
+  <div class="install-grid">
+    <article>
+      <h3>Claude Code</h3>
+      <p>Add the marketplace once. Then copy a plugin command from the shelf above.</p>
+      ${command("Marketplace", "/plugin marketplace add oleg-koval/agent-skills", { event: "marketplace_add_copy", agent: "claude" })}
+    </article>
+    <article>
+      <h3>Codex</h3>
+      <p>Clone the catalog and link its canonical packages into your local skills directory.</p>
+      ${command("Local install", "git clone https://github.com/oleg-koval/agent-skills.git\ncd agent-skills\n./scripts/install-codex-symlinks.sh", { event: "catalog_install_copy", agent: "codex" })}
+    </article>
+    <article>
+      <h3>Grok</h3>
+      <p>Add the public marketplace. Its generated wrappers stay in sync with the source skills.</p>
+      ${command("Marketplace", "grok plugin marketplace add oleg-koval/agent-skills", { event: "marketplace_add_copy", agent: "grok" })}
+    </article>
+    <article>
+      <h3>Then ask directly</h3>
+      <p>Skills can be discovered automatically or named explicitly in a session.</p>
+      ${command("Any agent", `Use the ${sample} skill.`, { event: "skill_prompt_copy", agent: "any" })}
+    </article>
+  </div>
+  <p class="section-note">Cursor, Copilot, Windsurf, Kiro, Pi and Hermes wrappers live under <code>adapters/</code>. See the <a href="${REPO}#quick-start">installation guide</a> for agent-specific paths.</p>
 </section>`;
 
-const card = (pkg) => {
+const skillCard = (pkg) => {
   const search = [pkg.name, pkg.description, pkg.plugin.name, ...(pkg.tags || [])]
     .join(" ")
     .toLowerCase();
-  return `<li class="card"
+  return `<li class="skill-card"
     data-category="${esc(pkg.plugin.name)}"
     data-adapters="${esc((pkg.adapters || []).join(" "))}"
     data-search="${esc(search)}">
-    <span class="cat">${esc(pkg.plugin.name.replace(/^olko-/, "").replace(/-/g, " "))}</span>
-    <h2><a href="/skills/${esc(pkg.name)}/" data-reactive>${esc(titleCase(pkg.name))}</a></h2>
+    <div class="skill-card-top">
+      <span>${esc(displayPlugin(pkg.plugin.name))}</span>
+      <code>${esc(pkg.lookupName)}</code>
+    </div>
+    <h3><a href="/skills/${esc(pkg.name)}/" data-analytics-event="skill_open" data-analytics-skill="${esc(pkg.name)}">${esc(titleCase(pkg.name))}</a></h3>
     <p>${esc(pkg.description)}</p>
-    <span class="lookup">${esc(pkg.lookupName)}</span>
     <ul class="tags">${(pkg.tags || [])
-      .slice(0, 6)
-      .map((t) => `<li>${esc(t)}</li>`)
+      .slice(0, 4)
+      .map((tag) => `<li>${esc(tag)}</li>`)
       .join("")}</ul>
   </li>`;
 };
 
-const indexPage = ({ packages, categories, adapters }) => {
+const indexPage = ({ packages, plugins, categories, adapters }) => {
   const body = `<section class="hero">
-  <p class="kicker">Agent-agnostic skill catalog</p>
-  <h1 data-reactive>Skills in a paper bag</h1>
-  <div class="stamp" aria-hidden="true">Opinionated<br>by design</div>
-  <p class="lede">${packages.length} canonical skills for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Pi and Hermes. They encode working defaults and repeatable workflows instead of neutral snippets: starting points with taste, easy to inspect, specific enough for an agent to execute the same way twice.</p>
+  <div class="hero-copy">
+    <p class="eyebrow">Agent workflows by Oleg Koval</p>
+    <h1>Useful workflows, ready for your agent.</h1>
+    <p class="lede">A public marketplace of opinionated skills for shipping software, running products, and maintaining the work around them. Install by plugin, inspect every source file, and keep the same workflow across agents.</p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="#marketplace">Browse marketplace</a>
+      <a class="button button-secondary" href="${REPO}" data-analytics-event="github_visit" data-analytics-location="hero">View source</a>
+    </div>
+    <p class="facts"><strong>${packages.length}</strong> skills <span>·</span> <strong>${plugins.length}</strong> plugins <span>·</span> <strong>${adapters.length}</strong> agent adapters</p>
+  </div>
+  <aside class="hero-command" aria-label="Quick marketplace install">
+    <p class="eyebrow">Start here</p>
+    <h2>Add the marketplace once.</h2>
+    ${command("Claude Code", "/plugin marketplace add oleg-koval/agent-skills", { event: "marketplace_add_copy", agent: "claude" })}
+    <p>Then choose one focused plugin below. You can add more later without installing the whole catalog.</p>
+  </aside>
 </section>
 
-<div class="ticker" aria-hidden="true"><span>${packages
-    .map((p) => p.lookupName)
-    .join(" &nbsp;&bull;&nbsp; ")}</span></div>
+<section class="section marketplace" id="marketplace">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Marketplace plugins</p>
+      <h2>Install by the work you do.</h2>
+    </div>
+    <p>Each plugin is a focused bundle. Copy its Claude Code install command, or open it to see the individual skills it includes.</p>
+  </div>
+  <div class="plugin-grid">
+    ${plugins.map(pluginCard).join("\n    ")}
+  </div>
+</section>
 
-<div class="statbar">
-  <div><b>${packages.length}</b><small>Skills</small></div>
-  <div><b>${adapters.length}</b><small>Agent adapters</small></div>
-  <div><b>${categories.length}</b><small>Plugins</small></div>
-</div>
-
-<section class="band" id="catalog">
+<section class="section catalog" id="catalog">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Skill catalog</p>
+      <h2>Inspect before you install.</h2>
+    </div>
+    <p>Search the complete source-backed catalog, then narrow it by plugin or supported agent.</p>
+  </div>
   <div class="controls">
-    <label for="q">Search the catalog</label>
-    <input id="q" type="search" autocomplete="off" placeholder="release, pull requests, obsidian, watch face&hellip;">
-    <div class="chips" role="group" aria-label="Filter by plugin">
-      ${categories
-        .map(
-          (c) =>
-            `<button class="chip" type="button" aria-pressed="false" data-kind="category" data-value="${esc(c.name)}">${esc(c.name.replace(/^olko-/, "").replace(/-/g, " "))} <span aria-hidden="true">${c.count}</span></button>`,
-        )
-        .join("\n      ")}
-    </div>
-    <div class="chips" role="group" aria-label="Filter by agent">
-      ${adapters
-        .map(
-          (a) =>
-            `<button class="chip" type="button" aria-pressed="false" data-kind="adapter" data-value="${esc(a.name)}">${esc(a.name)} <span aria-hidden="true">${a.count}</span></button>`,
-        )
-        .join("\n      ")}
-    </div>
+    <label for="q">Search skills</label>
+    <input id="q" type="search" autocomplete="off" placeholder="Pull requests, releases, analytics, watch faces...">
+    <details>
+      <summary>Filter by plugin <span aria-hidden="true"></span></summary>
+      <div class="chips" role="group" aria-label="Filter by plugin">
+        ${categories
+          .map(
+            (category) =>
+              `<button class="chip" type="button" aria-pressed="false" data-kind="category" data-value="${esc(category.name)}">${esc(displayPlugin(category.name))} <span>${category.count}</span></button>`,
+          )
+          .join("\n        ")}
+      </div>
+    </details>
+    <details>
+      <summary>Filter by agent <span aria-hidden="true"></span></summary>
+      <div class="chips" role="group" aria-label="Filter by agent">
+        ${adapters
+          .map(
+            (adapter) =>
+              `<button class="chip" type="button" aria-pressed="false" data-kind="adapter" data-value="${esc(adapter.name)}">${esc(adapter.name)} <span>${adapter.count}</span></button>`,
+          )
+          .join("\n        ")}
+      </div>
+    </details>
     <p class="count" id="count" role="status">${packages.length} skills</p>
   </div>
-  <ul class="grid" id="grid">
-    ${packages.map(card).join("\n    ")}
+  <ul class="skill-grid" id="grid">
+    ${packages.map(skillCard).join("\n    ")}
   </ul>
-  <p class="empty" id="empty" hidden>Nothing in the bag matches that.</p>
+  <p class="empty" id="empty" hidden>No skills match those filters.</p>
 </section>
 
 ${installSection(packages[0].lookupName)}
 
-<section class="band" id="about">
-  <h2 data-reactive>About</h2>
-  <p class="sub">One canonical package per workflow. Agent-specific wrappers live in <code>adapters/</code> rather than duplicating the skill. Catalogs stay neutral and machine-readable, so this page is generated from <code>catalog/skills.json</code> and can never drift from what actually ships.</p>
-  <p class="sub">The styling is a deliberate homage to <strong>p2output.com</strong>, a late-1990s experimental web design and motion graphics project written up in <em>Fresh Styles for Web Designers: Eye Candy from the Underground</em> for its lo-fi paper-bag surface, busy background graphics, and text that lit up as your cursor swept across it. The original domain has been dark for years. Move your pointer over the headlines.</p>
+<section class="section about" id="about">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">How it stays useful</p>
+      <h2>One source, many agents.</h2>
+    </div>
+    <p>Every workflow has one canonical skill package. Tool-specific adapters are generated from it, so the marketplace, source files, and this site stay aligned.</p>
+  </div>
+  <a class="quiet-link" href="${PORTFOLIO}" data-analytics-event="portfolio_visit" data-analytics-location="about">More open-source work and writing at olegkoval.com <span aria-hidden="true">↗</span></a>
 </section>`;
 
   return layout({
-    title: "agent skills: an agent-agnostic skill catalog",
-    ogTitle: "agent skills",
-    description: `${packages.length} opinionated, agent-agnostic skills for Codex, Claude, Cursor, Grok, Copilot, Windsurf and Kiro.`,
+    title: "Agent Skills by Oleg Koval",
+    ogTitle: "Agent Skills",
+    description: `${packages.length} open-source agent skills packaged for Claude Code, Codex, Grok, Cursor, Copilot, Windsurf, Kiro, Pi and Hermes.`,
     canonical: `${SITE_URL}/`,
     body,
+    pageType: "catalog",
   });
 };
 
-/* ----------------------------------------------------------- detail page */
-
 const detailPage = (pkg, prev, next) => {
   const label = titleCase(pkg.name);
-  const body = `<p class="crumb"><a href="/">Catalog</a> / ${esc(pkg.plugin.name.replace(/^olko-/, "").replace(/-/g, " "))}</p>
-<div class="detail-head">
-  <span class="cat">${esc(pkg.lookupName)}</span>
-  <h1 data-reactive>${esc(label)}</h1>
+  const body = `<p class="crumb"><a href="/">Skills</a><span>/</span><a href="/?category=${encodeURIComponent(pkg.plugin.name)}#catalog">${esc(displayPlugin(pkg.plugin.name))}</a></p>
+<header class="detail-head">
+  <p class="eyebrow">${esc(pkg.lookupName)}</p>
+  <h1>${esc(label)}</h1>
   <p>${esc(pkg.longDescription || pkg.description)}</p>
-</div>
+</header>
 
 <dl class="meta">
-  <div><dt>Lookup name</dt><dd>${esc(pkg.lookupName)}</dd></div>
-  <div><dt>Plugin</dt><dd>${esc(pkg.plugin.name.replace(/^olko-/, "").replace(/-/g, " "))}</dd></div>
+  <div><dt>Plugin</dt><dd>${esc(pkg.plugin.name)}</dd></div>
   <div><dt>Agents</dt><dd>${esc((pkg.adapters || []).join(", "))}</dd></div>
   <div><dt>Bundled references</dt><dd>${pkg.supportFiles} file${pkg.supportFiles === 1 ? "" : "s"}</dd></div>
 </dl>
 
-<section class="band">
-  <h2 data-reactive>Use it</h2>
-  <p class="sub">Once the catalog is installed, name the skill in a session.</p>
-  ${slab("any agent", `Use the ${pkg.lookupName} skill.`)}
-  ${slab("claude code", `/plugin marketplace add oleg-koval/agent-skills\n/plugin install olko-agent-skills@olko-agent-skills`)}
-  <p class="sub"><a href="${REPO}/blob/main/${esc(pkg.path)}/SKILL.md">Read the full SKILL.md on GitHub</a> &middot; <a href="${REPO}/tree/main/${esc(pkg.path)}">Browse the package</a></p>
+<section class="section detail-use">
+  <div class="section-heading">
+    <div><p class="eyebrow">Install and use</p><h2>Add its plugin, then ask.</h2></div>
+    <p>The marketplace command is needed once per Claude Code setup. The plugin command installs this skill and its related workflows.</p>
+  </div>
+  <div class="install-grid">
+    <article>${command("Add marketplace", "/plugin marketplace add oleg-koval/agent-skills", { event: "marketplace_add_copy", agent: "claude" })}</article>
+    <article>${command("Install plugin", `/plugin install ${pkg.plugin.name}@${MARKETPLACE_NAME}`, { event: "marketplace_install_copy", plugin: pkg.plugin.name })}</article>
+    <article>${command("Invoke skill", `Use the ${pkg.lookupName} skill.`, { event: "skill_prompt_copy", skill: pkg.name })}</article>
+  </div>
+  <p class="section-note"><a href="${REPO}/blob/main/${esc(pkg.path)}/SKILL.md">Read the full SKILL.md</a> <span>·</span> <a href="${REPO}/tree/main/${esc(pkg.path)}">Browse package files</a></p>
 </section>
 
 ${
   (pkg.tags || []).length
-    ? `<section class="band">
-  <h2 data-reactive>Tags</h2>
-  <ul class="tags">${pkg.tags.map((t) => `<li><a href="/?q=${encodeURIComponent(t)}">${esc(t)}</a></li>`).join("")}</ul>
-</section>`
+    ? `<section class="section compact-section"><p class="eyebrow">Tags</p><ul class="tags detail-tags">${pkg.tags.map((tag) => `<li><a href="/?q=${encodeURIComponent(tag)}#catalog">${esc(tag)}</a></li>`).join("")}</ul></section>`
     : ""
 }
 
-<nav class="pager" aria-label="Catalog">
-  <a href="/skills/${esc(prev.name)}/">&larr; ${esc(titleCase(prev.name))}</a>
-  <a href="/skills/${esc(next.name)}/">${esc(titleCase(next.name))} &rarr;</a>
+<nav class="pager" aria-label="Skill catalog">
+  <a href="/skills/${esc(prev.name)}/"><span>Previous</span>${esc(titleCase(prev.name))}</a>
+  <a href="/skills/${esc(next.name)}/"><span>Next</span>${esc(titleCase(next.name))}</a>
 </nav>`;
 
   return layout({
-    title: `${label}, agent skills`,
+    title: `${label} | Agent Skills`,
     description: pkg.description,
     canonical: `${SITE_URL}/skills/${pkg.name}/`,
     body,
+    pageType: "skill",
   });
 };
 
-/* ------------------------------------------------------------------ main */
-
 const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-<rect width="32" height="32" fill="#c3ac84"/>
-<path d="M7 9h18v16H7z" fill="none" stroke="#191410" stroke-width="2.5"/>
-<path d="M7 9l4-4h10l4 4" fill="none" stroke="#191410" stroke-width="2.5"/>
-<circle cx="16" cy="18" r="3.4" fill="#a8321f"/>
+<rect width="32" height="32" rx="8" fill="#365b4a"/>
+<path d="M9 10h14M9 16h14M9 22h9" fill="none" stroke="#f5f7f4" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
 `;
 
 const main = async () => {
   const catalog = loadCatalog(join(root, "catalog", "skills.json"));
-
-  const packages = [...catalog.skills].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const packages = [...catalog.skills].sort((a, b) => a.name.localeCompare(b.name));
 
   for (const pkg of packages) {
     const dir = join(root, pkg.path);
     const front = await readFrontmatter(join(dir, "SKILL.md"));
-    // The catalog description is the source of truth; frontmatter only fills
-    // the longer detail-page blurb when it is genuinely richer.
     if (front.description && front.description.length > pkg.description.length) {
       pkg.longDescription = front.description;
     }
@@ -302,8 +369,7 @@ const main = async () => {
   const tally = (getValues) => {
     const counts = new Map();
     for (const pkg of packages) {
-      const values = getValues(pkg);
-      for (const value of values) counts.set(value, (counts.get(value) || 0) + 1);
+      for (const value of getValues(pkg)) counts.set(value, (counts.get(value) || 0) + 1);
     }
     return [...counts]
       .map(([name, count]) => ({ name, count }))
@@ -312,28 +378,22 @@ const main = async () => {
 
   const categories = tally((pkg) => [pkg.plugin.name]);
   const adapters = tally((pkg) => pkg.adapters || []);
+  const plugins = catalog.plugins.map((plugin) => ({
+    name: plugin.name,
+    description: plugin.description,
+    count: plugin.skills.length,
+  }));
 
   await rm(out, { recursive: true, force: true });
   await mkdir(join(out, "assets"), { recursive: true });
-
-  await copyFile(
-    join(here, "assets", "paperbag.css"),
-    join(out, "assets", "paperbag.css"),
-  );
-  await copyFile(
-    join(here, "assets", "paperbag.js"),
-    join(out, "assets", "paperbag.js"),
-  );
+  await copyFile(join(here, "assets", "catalog.css"), join(out, "assets", "catalog.css"));
+  await copyFile(join(here, "assets", "catalog.js"), join(out, "assets", "catalog.js"));
   await writeFile(join(out, "assets", "favicon.svg"), favicon);
+  await writeFile(join(out, "index.html"), indexPage({ packages, plugins, categories, adapters }));
 
-  await writeFile(
-    join(out, "index.html"),
-    indexPage({ packages, categories, adapters }),
-  );
-
-  for (const [i, pkg] of packages.entries()) {
-    const prev = packages[(i - 1 + packages.length) % packages.length];
-    const next = packages[(i + 1) % packages.length];
+  for (const [index, pkg] of packages.entries()) {
+    const prev = packages[(index - 1 + packages.length) % packages.length];
+    const next = packages[(index + 1) % packages.length];
     const dir = join(out, "skills", pkg.name);
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, "index.html"), detailPage(pkg, prev, next));
@@ -342,34 +402,26 @@ const main = async () => {
   await writeFile(
     join(out, "404.html"),
     layout({
-      title: "Not in the bag, agent skills",
+      title: "Page not found | Agent Skills",
       description: "That page does not exist.",
       canonical: `${SITE_URL}/404.html`,
-      body: `<section class="hero">
-  <p class="kicker">404</p>
-  <h1 data-reactive>Not in the bag</h1>
-  <p class="lede">Whatever you reached for is not here. <a href="/">Go back to the catalog</a>.</p>
-</section>`,
+      pageType: "not-found",
+      body: `<section class="not-found"><p class="eyebrow">404</p><h1>That skill is not here.</h1><p>Return to the catalog to find another workflow.</p><a class="button button-primary" href="/">Browse skills</a></section>`,
     }),
   );
 
-  const urls = [`${SITE_URL}/`, ...packages.map((p) => `${SITE_URL}/skills/${p.name}/`)];
+  const urls = [`${SITE_URL}/`, ...packages.map((pkg) => `${SITE_URL}/skills/${pkg.name}/`)];
   await writeFile(
     join(out, "sitemap.xml"),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
-      .map((u) => `  <url><loc>${u}</loc></url>`)
+      .map((url) => `  <url><loc>${url}</loc></url>`)
       .join("\n")}\n</urlset>\n`,
   );
-  await writeFile(
-    join(out, "robots.txt"),
-    `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`,
-  );
+  await writeFile(join(out, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`);
   await writeFile(join(out, "CNAME"), `${CNAME}\n`);
   await writeFile(join(out, ".nojekyll"), "");
 
-  console.log(
-    `site: ${packages.length} skills, ${categories.length} categories, ${adapters.length} adapters -> _site/`,
-  );
+  console.log(`site: ${packages.length} skills, ${categories.length} categories, ${adapters.length} adapters -> _site/`);
 };
 
 await main();
