@@ -23,7 +23,8 @@ description: >
   form.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact
-compatibility: Claude Code only. Requires the Workflow tool (multi-agent orchestration)
+compatibility: >
+  Claude Code only. Requires the Workflow tool (multi-agent orchestration)
   and the Artifact tool (living review page): other Agent Skills-compatible tools
   without an equivalent to Workflow cannot run the review/verify/critic pipeline this
   skill depends on. Requires git and gh (GitHub CLI) authenticated.
