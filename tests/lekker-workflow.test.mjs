@@ -27,6 +27,9 @@ const baseFinding = {
   fix: 'return working()',
 }
 
+/**
+ * Runs a test scenario for the lekker-review workflow with mocked agent responses.
+ */
 async function runScenario({ depth = 'medium', worktreePath = null, respond }) {
   const calls = []
   const agent = async (prompt, options) => {
