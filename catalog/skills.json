@@ -632,6 +632,29 @@
           ]
         },
         {
+          "name": "veto-routing",
+          "lookupName": "olko:veto-routing",
+          "path": "plugins/olko-skill-meta/skills/veto-routing",
+          "description": "Use Veto to route or execute AI tasks across configured providers with explicit privacy, cost, transport, and output boundaries.",
+          "tags": [
+            "veto",
+            "model-routing",
+            "multi-provider",
+            "cli",
+            "cost-control",
+            "agents"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
           "name": "ai-tools-setup",
           "lookupName": "olko:ai-tools-setup",
           "path": "plugins/olko-skill-meta/skills/ai-tools-setup",
