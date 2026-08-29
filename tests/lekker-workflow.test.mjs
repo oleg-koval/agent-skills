@@ -216,6 +216,20 @@ test('contradictory proof tuples cannot change a finding verdict', async () => {
       outcome: 'not_attempted',
       reason: 'No test ran.',
     },
+    {
+      attempted: true,
+      proven: false,
+      outcome: 'passed',
+      reason: 'Claimed green without executable evidence.',
+    },
+    {
+      attempted: true,
+      proven: true,
+      outcome: 'proven',
+      reason: 'Claimed red without failure output.',
+      testCode: 'test("fails", () => {})',
+      testCommand: 'npm test -- fails',
+    },
   ]) {
     const { result } = await runScenario({
       worktreePath: '/tmp/fake-worktree',
@@ -256,6 +270,24 @@ test('hard-rule verifier receives the canonical rules-file instruction', async (
   assert.equal(result.findings[0].verificationStatus, 'hard-rule-confirmed')
   assert.match(verifierPrompt, /HOUSE_RULES_FILE/)
   assert.match(verifierPrompt, /houseRulesFile/)
+})
+
+test('custom non-empty rule tags use hard-rule verification', async () => {
+  const { result } = await runScenario({
+    respond: ({ options }) => {
+      if (options.label === 'review:quality') {
+        return { findings: [{ ...baseFinding, rule: 'SEC-1' }] }
+      }
+      if (options.label.startsWith('review:')) return { findings: [] }
+      if (options.label.startsWith('verify:')) {
+        return { verdict: 'confirmed', reasoning: 'SEC-1 is anchored and applicable.' }
+      }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  assert.equal(result.hardRuleCount, 1)
+  assert.equal(result.findings[0].verificationStatus, 'hard-rule-confirmed')
 })
 
 test('acceptance and test-quality metadata survive aggregation', async () => {
@@ -302,4 +334,52 @@ test('reviewer prompts explicitly require structured metadata fields', () => {
   assert.match(testQualityPrompt, /coverageVerdict/)
   assert.match(testQualityPrompt, /mutationSlip/)
   assert.match(testQualityPrompt, /mockSmells/)
+})
+
+test('dimension schemas enforce structured metadata contracts', async () => {
+  const schemas = new Map()
+  await runScenario({
+    respond: ({ options }) => {
+      if (options.label.startsWith('review:')) {
+        schemas.set(options.label, options.schema)
+        if (options.label === 'review:implementation') {
+          return { findings: [], acCoverage: 'All acceptance criteria met.' }
+        }
+        if (options.label === 'review:test-quality') {
+          return {
+            findings: [],
+            coverageVerdict: 'Covered',
+            mutationSlip: 'No obvious gap.',
+            mockSmells: [],
+          }
+        }
+        return { findings: [] }
+      }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  assert.ok(schemas.get('review:implementation').required.includes('acCoverage'))
+  const testQualitySchema = schemas.get('review:test-quality')
+  assert.ok(testQualitySchema.required.includes('coverageVerdict'))
+  assert.ok(testQualitySchema.required.includes('mutationSlip'))
+  assert.ok(testQualitySchema.required.includes('mockSmells'))
+  assert.deepEqual(
+    testQualitySchema.properties.mockSmells.items.required,
+    ['file', 'line', 'description', 'fix'],
+  )
+  assert.equal(
+    schemas.get('review:quality').properties.findings.items.properties.rule.type,
+    'string',
+  )
+})
+
+test('artifact contract renders passed-proof counter-evidence', () => {
+  const artifactPrompt = readFileSync(
+    'plugins/olko-github-pr/skills/lekker-review/references/artifact-page.md',
+    'utf8',
+  )
+
+  assert.match(artifactPrompt, /proof\.outcome === 'passed'/)
+  assert.match(artifactPrompt, /COUNTER-EVIDENCE/)
 })

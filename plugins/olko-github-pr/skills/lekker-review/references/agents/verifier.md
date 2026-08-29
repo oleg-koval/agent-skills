@@ -28,8 +28,9 @@ unless Step 0 validates it through the house hard-rule path.
 
 ## Step 0 -- Hard-rule validation (check this FIRST)
 
-If the FINDING JSON has a `rule` field set to `TS-1`, `TS-2`, `GQL-1`, or
-`PR-1`, do NOT run the five adversarial challenges below. They ask
+If the FINDING JSON has any non-empty `rule` field, including built-in tags
+such as `TS-1`, `TS-2`, `GQL-1`, or `PR-1`, do NOT run the five adversarial
+challenges below. They ask
 runtime-failure questions that a standards violation can never answer, and
 answering them honestly would drop a finding that house-rules policy declares
 Critical on standards grounds rather than on runtime behaviour.

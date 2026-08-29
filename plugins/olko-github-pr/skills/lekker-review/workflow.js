@@ -8,43 +8,68 @@ export const meta = {
 // Schemas
 // ---------------------------------------------------------------------------
 
+const FINDINGS_ARRAY_SCHEMA = {
+  type: 'array',
+  items: {
+    type: 'object',
+    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
+    properties: {
+      file:        { type: 'string' },
+      line:        { type: 'integer' },
+      severity:    { enum: ['critical', 'important', 'observation', 'idiomatic'] },
+      title:       { type: 'string' },
+      description: { type: 'string' },
+      badCode:     { type: 'string' },
+      fix:         { type: 'string' },
+      precedent:   { type: 'string' },
+      rule:        { type: 'string', minLength: 1, pattern: '\\S' },
+    },
+  },
+}
+
+const MOCK_SMELLS_SCHEMA = {
+  type: 'array',
+  items: {
+    type: 'object',
+    required: ['file', 'line', 'description', 'fix'],
+    properties: {
+      file:        { type: 'string' },
+      line:        { type: 'integer' },
+      description: { type: 'string' },
+      fix:         { type: 'string' },
+    },
+  },
+}
+
 const FINDINGS_SCHEMA = {
   type: 'object',
   required: ['findings'],
   properties: {
-    findings: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
-        properties: {
-          file:        { type: 'string' },
-          line:        { type: 'integer' },
-          severity:    { enum: ['critical', 'important', 'observation', 'idiomatic'] },
-          title:       { type: 'string' },
-          description: { type: 'string' },
-          badCode:     { type: 'string' },
-          fix:         { type: 'string' },
-          precedent:   { type: 'string' },
-          rule:        { enum: ['TS-1', 'TS-2', 'GQL-1', 'PR-1'] },
-        },
-      },
-    },
+    findings: FINDINGS_ARRAY_SCHEMA,
     acCoverage:      { type: 'string' },
     mutationSlip:    { type: 'string' },
     coverageVerdict: { type: 'string' },
-    mockSmells: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          file:        { type: 'string' },
-          line:        { type: 'integer' },
-          description: { type: 'string' },
-          fix:         { type: 'string' },
-        },
-      },
-    },
+    mockSmells: MOCK_SMELLS_SCHEMA,
+  },
+}
+
+const IMPLEMENTATION_SCHEMA = {
+  type: 'object',
+  required: ['findings', 'acCoverage'],
+  properties: {
+    findings: FINDINGS_ARRAY_SCHEMA,
+    acCoverage: { type: 'string' },
+  },
+}
+
+const TEST_QUALITY_SCHEMA = {
+  type: 'object',
+  required: ['findings', 'coverageVerdict', 'mutationSlip', 'mockSmells'],
+  properties: {
+    findings: FINDINGS_ARRAY_SCHEMA,
+    coverageVerdict: { type: 'string' },
+    mutationSlip: { type: 'string' },
+    mockSmells: MOCK_SMELLS_SCHEMA,
   },
 }
 
@@ -96,10 +121,8 @@ const PROOF_SCHEMA = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const HARD_RULES = ['TS-1', 'TS-2', 'GQL-1', 'PR-1']
-
 function isHardRule(finding) {
-  return typeof finding.rule === 'string' && HARD_RULES.indexOf(finding.rule) !== -1
+  return typeof finding.rule === 'string' && finding.rule.trim().length > 0
 }
 
 const SEVERITY_RANK = { critical: 3, important: 2, observation: 1, idiomatic: 0 }
@@ -206,14 +229,26 @@ function shouldVerify(finding) {
 }
 
 function normalizeProof(result) {
+  const hasText = function(value) {
+    return typeof value === 'string' && value.trim().length > 0
+  }
   const coherent = (
     result.attempted === true
     && result.proven === true
     && result.outcome === 'proven'
+    && hasText(result.testCode)
+    && hasText(result.testCommand)
+    && hasText(result.redOutput)
   ) || (
     result.attempted === true
     && result.proven === false
-    && (result.outcome === 'passed' || result.outcome === 'inconclusive')
+    && result.outcome === 'passed'
+    && hasText(result.testCode)
+    && hasText(result.testCommand)
+  ) || (
+    result.attempted === true
+    && result.proven === false
+    && result.outcome === 'inconclusive'
   ) || (
     result.attempted === false
     && result.proven === false
@@ -382,10 +417,16 @@ const budgetAtStart = budget.spent()
 
   async function reviewStage(dim) {
     agentCount++
+    let schema = FINDINGS_SCHEMA
+    if (dim.key === 'implementation') {
+      schema = IMPLEMENTATION_SCHEMA
+    } else if (dim.key === 'test-quality') {
+      schema = TEST_QUALITY_SCHEMA
+    }
     const result = await agent(reviewPrompt(dim), {
       label:  `review:${dim.key}`,
       phase:  'Review',
-      schema: FINDINGS_SCHEMA,
+      schema,
       model:  dim.model,
     })
 
