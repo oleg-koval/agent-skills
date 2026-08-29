@@ -36,6 +36,7 @@ Available reusable prompt files:
 - context-repo: .github/prompts/context-repo.prompt.md
 - add-to-my-skills: .github/prompts/add-to-my-skills.prompt.md
 - promptctl: .github/prompts/promptctl.prompt.md
+- veto-routing: .github/prompts/veto-routing.prompt.md
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
 - self-critique: .github/prompts/self-critique.prompt.md
 - review-past-performance: .github/prompts/review-past-performance.prompt.md
