@@ -42,10 +42,27 @@ if [ "$site_out" != "$expected" ]; then
 fi
 
 test -f _site/index.html || fail "site build produced no _site/index.html"
+test -f _site/assets/catalog.css || fail "site build produced no catalog stylesheet"
+test -f _site/assets/catalog.js || fail "site build produced no catalog script"
 
 # The built site must not reference the deleted layout.
 if grep -q 'packages/' _site/index.html; then
   fail "_site/index.html references the deleted packages/ layout"
 fi
+
+grep -q '/plugin install olko-product@olko-agent-skills' _site/index.html || \
+  fail "site does not render plugin-specific marketplace installation"
+grep -q 'https://www.olegkoval.com' _site/index.html || \
+  fail "site does not link to the Oleg Koval portfolio"
+grep -q 'data-consent-banner' _site/index.html || \
+  fail "site does not render analytics consent controls"
+grep -q 'skillsDataLayer' _site/assets/catalog.js || \
+  fail "site analytics does not use the dedicated skills data layer"
+grep -q 'skills.olegkoval.com' _site/assets/catalog.js || \
+  fail "site analytics does not guard production collection by hostname"
+grep -q 'G-NV8Q2H8YV0' _site/index.html || \
+  fail "site does not use the olegkoval.com GA4 measurement id"
+grep -q '/plugin install olko-product@olko-agent-skills' _site/skills/product-builder/index.html || \
+  fail "skill detail page does not install its owning plugin"
 
 echo "PASS: test-scripts-smoke (sync no-op, site $skills skills / $plugins plugins)"
