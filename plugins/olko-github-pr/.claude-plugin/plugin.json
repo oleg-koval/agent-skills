@@ -1,7 +1,7 @@
 {
   "name": "olko-github-pr",
   "description": "Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.",
-  "version": "1.38.2",
+  "version": "1.38.3",
   "author": {
     "name": "Oleg Koval"
   },

@@ -1,3 +1,10 @@
+## [1.38.3](https://github.com/oleg-koval/agent-skills/compare/v1.38.2...v1.38.3) (2026-08-29)
+
+
+### 🐛 Bug Fixes
+
+* repair lekker-review front matter ([#71](https://github.com/oleg-koval/agent-skills/issues/71)) ([6d971f5](https://github.com/oleg-koval/agent-skills/commit/6d971f5a7f2d5123b155064bdd75d5a52e9edc58))
+
 ## [1.38.2](https://github.com/oleg-koval/agent-skills/compare/v1.38.1...v1.38.2) (2026-08-28)
 
 
