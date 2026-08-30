@@ -477,6 +477,10 @@ const budgetAtStart = budget.spent()
     const verified = await batched(inScope.map(function(finding) {
       return async function() {
         agentCount++
+        if (isHardRule(finding)) {
+          hardRuleCount++
+        }
+
         const verdict = await agent(verifierPrompt(finding), {
           label:  `verify:${finding.file}:${finding.line}`,
           model:  'sonnet',
@@ -493,10 +497,6 @@ const budgetAtStart = budget.spent()
           kept.verificationStatus = 'unavailable'
           kept.verifierReasoning = 'verifier agent returned no usable result; downgraded to non-blocking'
           return kept
-        }
-
-        if (isHardRule(finding)) {
-          hardRuleCount++
         }
 
         if (verdict.verdict === 'dropped') {

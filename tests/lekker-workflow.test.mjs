@@ -178,6 +178,26 @@ test('hard rules go through anchor and applicability validation', async () => {
   assert.deepEqual(result.findings, [])
 })
 
+test('hard-rule verification is counted when the verifier returns no result', async () => {
+  const hardRuleFinding = { ...baseFinding, rule: 'TS-1' }
+  const { result } = await runScenario({
+    respond: ({ options }) => {
+      if (options.label === 'review:quality') return { findings: [hardRuleFinding] }
+      if (options.label.startsWith('review:')) return { findings: [] }
+      if (options.label.startsWith('verify:')) return null
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  assert.equal(result.hardRuleCount, 1)
+  assert.equal(result.findings[0].severity, 'observation')
+  assert.equal(result.findings[0].verificationStatus, 'unavailable')
+  assert.equal(
+    result.findings[0].verifierReasoning,
+    'verifier agent returned no usable result; downgraded to non-blocking',
+  )
+})
+
 test('a passing proof automatically downgrades a Critical finding', async () => {
   const { result } = await runScenario({
     worktreePath: '/tmp/fake-worktree',
@@ -385,4 +405,8 @@ test('artifact contract renders passed-proof counter-evidence', () => {
 
   assert.match(artifactPrompt, /proof\.outcome === 'passed'/)
   assert.match(artifactPrompt, /COUNTER-EVIDENCE/)
+  assert.match(artifactPrompt, /with `reason`,/)
+  assert.match(artifactPrompt, /`testCommand`/)
+  assert.match(artifactPrompt, /downgraded the finding to Important/)
+  assert.match(artifactPrompt, /do not present the\s+passing input as proof that every related input is safe/)
 })
