@@ -8,6 +8,7 @@ Axes to cover:
 - Business Logic / AC coverage: for each AC in the list below, mark
   ✅ met / ⚠️ partial / ❌ missing. Scope creep is also worth flagging.
   AC_LIST: read key "acList" from CONTEXT_FILE.
+  Return the complete status summary in the structured `acCoverage` field.
 - Scalability: N+1 queries, missing pagination, unbounded in-memory
   collections, missing rate-limit handling, cron jobs without overlap guard,
   missing DB indexes for new query patterns.
@@ -23,7 +24,7 @@ Axes to cover:
   Set `rule: "GQL-1"` on any Critical finding raised under this axis.
 
 Setting rule tags the finding as a house hard rule: it keeps its Critical
-severity and skips adversarial verification. Only set it for a genuine GQL-1
+severity only after rule-specific validation and skips runtime challenges. Only set it for a genuine GQL-1
 violation: never to shield an ordinary finding from verification.
 
 CI_STATUS: read key "ciStatus" from the JSON file CONTEXT_FILE.

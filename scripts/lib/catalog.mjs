@@ -54,6 +54,9 @@ export const PLUGIN_ASSIGNMENT = {
   },
 }
 
+/**
+ * Loads and parses the skills catalog from the specified JSON file.
+ */
 export function loadCatalog(catalogPath = 'catalog/skills.json') {
   const raw = JSON.parse(readFileSync(catalogPath, 'utf8'))
   const plugins = raw.plugins || []

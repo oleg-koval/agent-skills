@@ -5,7 +5,7 @@ description: >
   isolated worktree, gathers context from your issue tracker, chat, docs, CI
   checks, and (optionally) production monitoring, runs 5 parallel specialized
   review agents (quality/implementation/simplification/conventions/test-quality),
-  verifies every finding against the diff, then outputs a single unified markdown
+  verifies every verdict-affecting finding against the diff, then outputs a single unified markdown
   review: file + risk + bad code + why it's wrong + fix, ready to paste directly
   into GitHub. Saves every review to ~/code-reviews/*.md. Covers business logic,
   scalability, complexity, data integrity, security, integration contracts, error
@@ -79,14 +79,11 @@ the 5 specialist agents still run and still find real bugs. They just don't
 have a codified "always Critical" rule list to check against.
 
 If any hard rule you define carries a `rule` tag (e.g. `"TS-1"`), reviewer
-agents attach that tag to matching findings and the workflow **skips
-adversarial verification** for them. This is deliberate: the verifier's five
-challenges ask runtime-failure questions ("does this fail on a normal
-execution?", "can you write the failing test?") that a standards violation
-can never answer, so verifying them systematically drops the very findings
-your policy declares non-negotiable. A tagged finding keeps its Critical
-severity; the workflow returns how many were exempted as `hardRuleCount`, and
-each carries a `verifierReasoning` saying so.
+agents attach that tag to matching findings. The verifier checks the diff
+anchor and rule applicability, but skips its five runtime-failure challenges.
+Those challenges cannot evaluate a standards violation. A tagged finding keeps
+Critical severity only when both rule-specific checks pass. The workflow
+returns the number checked as `hardRuleCount`.
 
 `${CLAUDE_PLUGIN_ROOT}` below refers to this skill's own installed directory:
 resolve every `references/...` and script path relative to it.
@@ -150,7 +147,7 @@ treat as a full review and leave PREV_SHA unset. Also grep the same file for
 | Context: chat/docs/framework-docs/monitoring/prior-review-memory (optional, MCP-dependent) | skip | included | included + broader recall |
 | Worktree + static checks    | skip (WORKTREE_PATH=null) unless `--fix` | included | included          |
 | Review agents               | 2 triage (haiku)      | 5 specialists (sonnet) | 5 specialists (sonnet)  |
-| Per-finding verification    | none                  | Criticals only (hard rules exempt) | Criticals + Importants (hard rules exempt) |
+| Per-finding verification    | Criticals + Importants | Criticals + Importants | Criticals + Importants |
 | Completeness critic         | skip                  | skip                | included                   |
 | Proof-of-bug (failing test per Critical) | skip     | included (max 5)    | included (max 5)           |
 | Living review artifact      | included              | included            | included                   |
@@ -298,8 +295,9 @@ The workflow runs three phases:
   description/badCode/fix of the set - a Critical is never demoted by an
   Observation someone else filed at the same line - and records every
   contributing dimension in `agreedBy`.
-- **Verify:** scan verifies nothing; medium verifies Criticals; deep verifies
-  Criticals + Importants. Hard-rule findings (`rule` set) are always exempt.
+- **Verify:** every Critical and Important is checked at every depth because it
+  can affect the verdict. Hard-rule findings (`rule` set) use the verifier's
+  diff-anchor and rule-applicability checks instead of runtime challenges.
   Each verifier runs the five-challenge adversarial refutation from
   `references/agents/verifier.md` against one finding, returns
   `{verdict, newSeverity?, reasoning}`. Verifiers run `maxConcurrent` at a time
@@ -311,13 +309,13 @@ The workflow runs three phases:
   one prover agent (`references/agents/prover.md`, sonnet, max 5, run
   `maxConcurrent` at a time) that writes a test asserting the CORRECT behaviour,
   runs it in the worktree, and captures it failing because of the bug. The proof rides on the finding as
-  `proof: {attempted, proven, reason, testCode?, testCommand?, redOutput?}`.
+  `proof: {attempted, proven, outcome, reason, testCode?, testCommand?, redOutput?}`.
   A proof that comes back GREEN (code behaved correctly) is counter-evidence -
-  Step 3 must downgrade or explicitly justify the finding, never ignore it.
+  the workflow automatically downgrades the finding from Critical to Important.
   Hard-rule findings are never proved (policy violations have no failing test).
 
 Findings have schema:
-`{file, line, severity, title, description, badCode, fix, rule?, precedent?, agreedBy?, verifierReasoning?, proof?}`
+`{file, line, severity, title, description, badCode, fix, rule?, precedent?, agreedBy?, verificationStatus?, verifierReasoning?, proof?}`
 `badCode` and `fix` are schema-required: an empty string is allowed only on
 `observation` / `idiomatic` findings.
 
@@ -326,7 +324,7 @@ provers on `sonnet`, housekeeping on `haiku`. Only the synthesis in Step 3 runs
 on the session model.
 
 Return value from the workflow:
-`{findings, droppedCount, downgradedCount, hardRuleCount, proveAttemptCount, provenCount, agentCount, outputTokens, turnTokensTotal}`
+`{findings, droppedCount, downgradedCount, hardRuleCount, proveAttemptCount, provenCount, acCoverage, coverageVerdict, mutationSlip, mockSmells, agentCount, outputTokens, turnTokensTotal}`
 `outputTokens` is this workflow's own output spend; `turnTokensTotal` is the
 whole turn's shared pool (main loop included).
 
@@ -411,7 +409,7 @@ requirements:
 - When `PREV_SHA` is set: include `## 🔁 Since last review` comparing
   `PREV_REVIEW_FILE` findings against the new head - list each as fixed or
   still open, before any new findings.
-- Test Quality section: populate from the test-quality agent's fields
+- Test Quality section: populate from the workflow return fields
   (`coverageVerdict`, `mutationSlip`, `mockSmells`).
 - Idiomatic section: populated from severity=idiomatic findings only.
 - **💰 Review Cost block:** `outputTokens` from the workflow return is the

@@ -217,7 +217,7 @@ if empty.)*
 Depth:            <⚡ scan | 🔍 medium | 🔬 deep>
 Diff size:        ~<N> lines (~<N> tokens)
 Agents run:       <N total>: <breakdown, e.g. "5 reviewers (sonnet) + 6 verifiers (sonnet) + 2 provers (sonnet) + 1 critic (sonnet)">
-Verify skipped:   <N> hard-rule finding(s) exempt from adversarial verification (omit the line when 0)
+Rule checks:      <N> hard-rule finding(s) validated with rule-specific checks (omit the line when 0)
 Context sources:  <the subset of issue-tracker / chat / docs / framework-docs / monitoring / CI / prior-review-memory actually used>
 
 Output tokens:    <N>   ← ACTUAL workflow spend, from the workflow's outputTokens return value
@@ -253,10 +253,7 @@ Reviewer agents, verifiers, provers, and the critic all run on sonnet; triage an
   self-contained but silently breaks callers.
 - Blank line between findings. No double blank lines.
 - No trailing whitespace, no HTML tags, no ANSI escapes.
-- **Proof counter-evidence rule**: when `proof.attempted` is true but `proven`
-  is false because the code behaved correctly for the tested input, the
-  synthesis MUST treat that as counter-evidence: either downgrade the finding
-  or state in the finding body why the proof attempt doesn't exonerate it
-  (e.g. the tested input wasn't the one that actually breaks). A finding whose
-  proof came back green cannot silently stay Critical. When `attempted` is
-  false, say nothing: untestable is not evidence either way.
+- **Proof counter-evidence rule**: when `proof.outcome` is `passed`, the
+  workflow has already downgraded the finding from Critical to Important.
+  Explain the passing proof in the finding body. When `attempted` is false,
+  say nothing: untestable is not evidence either way.

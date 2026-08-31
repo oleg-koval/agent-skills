@@ -56,7 +56,7 @@ Axes to cover:
   or a `node_modules` path.
 
 Setting rule tags the finding as a house hard rule: it keeps its Critical
-severity and skips adversarial verification. Only set it for a genuine
+severity only after rule-specific validation and skips runtime challenges. Only set it for a genuine
 TS-1/TS-2 violation: never to shield an ordinary finding from verification.
 
 CI_STATUS: read key "ciStatus" from the JSON file CONTEXT_FILE.

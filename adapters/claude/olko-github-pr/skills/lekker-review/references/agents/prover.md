@@ -1,6 +1,6 @@
 # prover -- lekker-review agent prompt
 # Receives: one FINDING as JSON, WORKTREE_PATH path, DIFF_FILE path, CONTEXT_FILE path
-# Returns: PROOF_SCHEMA { attempted: boolean, proven: boolean, reason: string, testCode?: string, testCommand?: string, redOutput?: string }
+# Returns: PROOF_SCHEMA { attempted: boolean, proven: boolean, outcome: 'proven'|'passed'|'inconclusive'|'not_attempted', reason: string, testCode?: string, testCommand?: string, redOutput?: string }
 
 ## Mission
 
@@ -29,8 +29,9 @@ explicitly.
 ## Step 1 -- Testability gate
 
 Read the FINDING, the real code at `file:line` in `WORKTREE_PATH`, and the diff
-context in `DIFF_FILE`. Return `attempted: false` with an honest one-sentence
-`reason` when any of these hold:
+context in `DIFF_FILE`. Return `attempted: false, proven: false,
+outcome: "not_attempted"` with an honest one-sentence `reason` when any of these
+hold:
 
 - The failure path requires live IO (Shopify/BC/Salesforce API, a real DB, the
   network) and the repo has no test infra to fake it cheaply.
@@ -77,25 +78,26 @@ Exactly one run command, scoped to your file only:
 Set the Bash tool's `timeout` parameter to 120000 for this call.
 
 If the runner hangs or the environment fails (missing config, transform
-errors), that is `attempted: true, proven: false` with the reason. Report
-honestly -- never retry more than once for a pure environment issue (e.g. a
-wrong config flag), and never loop.
+errors), that is `attempted: true, proven: false, outcome: "inconclusive"`
+with the reason. Report honestly -- never retry more than once for a pure
+environment issue (e.g. a wrong config flag), and never loop.
 
 ---
 
 ## Step 4 -- Judge the outcome
 
 - **Test FAILS, and the mismatch matches what the finding predicts** ->
-  `proven: true`. `redOutput` = the failure excerpt, trimmed to the
+  `proven: true, outcome: "proven"`. `redOutput` = the failure excerpt, trimmed to the
   informative ~15 lines (expected vs received + the failing assertion line).
   `testCode` = the full test file content. `testCommand` = the exact command
   you ran.
-- **Test PASSES** -> the finding did not reproduce. `proven: false`, and
+- **Test PASSES** -> the finding did not reproduce. `proven: false,
+  outcome: "passed"`, and
   `reason` states plainly that the code behaved correctly for the tested
   input. This is important review signal, not a failure of yours. Do NOT alter
   the test to force a failure.
 - **Test fails for an unrelated reason** (import error, env issue) ->
-  `proven: false`, honest `reason`.
+  `proven: false, outcome: "inconclusive"`, honest `reason`.
 
 ---
 
@@ -124,6 +126,7 @@ Return EXACTLY one JSON object matching PROOF_SCHEMA:
 {
   "attempted": true | false,
   "proven": true | false,
+  "outcome": "proven" | "passed" | "inconclusive" | "not_attempted",
   "reason": "<one or two sentences: why not attempted, why it proved, or why it didn't reproduce>",
   "testCode": "<full test file content -- only when attempted>",
   "testCommand": "<exact command run -- only when attempted>",
@@ -131,5 +134,5 @@ Return EXACTLY one JSON object matching PROOF_SCHEMA:
 }
 ```
 
-`attempted: false` implies `proven: false` and omits `testCode`/`testCommand`/
+`attempted: false` implies `proven: false, outcome: "not_attempted"` and omits `testCode`/`testCommand`/
 `redOutput`. Do not narrate outside the object.
