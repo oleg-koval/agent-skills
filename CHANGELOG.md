@@ -1,3 +1,10 @@
+## [1.41.1](https://github.com/oleg-koval/agent-skills/compare/v1.41.0...v1.41.1) (2026-08-31)
+
+
+### 📚 Documentation
+
+* **context-store:** document how the store is read ([#78](https://github.com/oleg-koval/agent-skills/issues/78)) ([d65604c](https://github.com/oleg-koval/agent-skills/commit/d65604c5b98d53ba6ba5db0e68d3a34350dfa333))
+
 # [1.41.0](https://github.com/oleg-koval/agent-skills/compare/v1.40.1...v1.41.0) (2026-08-31)
 
 
