@@ -2,7 +2,7 @@
 
 FAANG-quality PR code review for GitHub. It gathers the context a human reviewer
 would gather and checks the branch out into an isolated worktree when the depth
-requires one. `scan` runs two triage agents without a verifier. `medium` and
+requires one. `scan` runs two triage agents. `medium` and
 `deep` run five specialists and attempt proofs for at most five non-rule
 Critical findings.
 
@@ -15,16 +15,16 @@ This skill spends most of its budget trying to disprove itself.
 
 ![How findings are proved](assets/poster-proof.png)
 
-- **Adversarial verification.** `medium` sends non-rule Criticals through an
-  independent verifier's five-challenge refutation; `deep` also sends
-  Importants. `scan` does not run verifiers.
+- **Adversarial verification.** Every Critical and Important is checked at
+  every depth because either can affect the verdict. Runtime findings use the
+  verifier's five-challenge refutation.
 - **Proof of bug.** In `medium` and `deep`, up to five non-rule Criticals are
   sent to prover agents that attempt to write and run a failing test. A proof
-  that comes back green is counter-evidence: the finding is downgraded or
-  explicitly justified, never quietly kept.
-- **Hard-rule exemption.** A finding tagged with a `rule` keeps Critical
-  severity and skips verification, because the verifier asks runtime-failure
-  questions that a standards violation can never answer.
+  that comes back green is counter-evidence: the workflow automatically
+  downgrades the finding from Critical to Important.
+- **Hard-rule validation.** A finding tagged with a `rule` keeps Critical
+  severity only after the verifier confirms its diff anchor and rule
+  applicability. It skips only the runtime-failure challenges.
 - **Fix mode.** `--fix` has one agent edit each file, a read-only verifier read
   the real `git diff`, and the captured proof re-run. If the proof stays red the
   group is reverted. Nothing is pushed without explicit confirmation.

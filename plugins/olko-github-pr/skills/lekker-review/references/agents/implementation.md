@@ -8,6 +8,7 @@ Axes to cover:
 - Business Logic / AC coverage: for each AC in the list below, mark
   ✅ met / ⚠️ partial / ❌ missing. Scope creep is also worth flagging.
   AC_LIST: read key "acList" from CONTEXT_FILE.
+  Return the complete status summary in the structured `acCoverage` field.
 - Scalability: N+1 queries, missing pagination, unbounded in-memory
   collections, missing rate-limit handling, cron jobs without overlap guard,
   missing DB indexes for new query patterns.

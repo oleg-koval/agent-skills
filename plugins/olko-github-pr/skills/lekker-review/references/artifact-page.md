@@ -18,7 +18,7 @@ All of the following are already in hand after Step 3 of SKILL.md:
 - `findings.json` path (scratchpad) -- each finding carries: `file`, `line`,
   `severity`, `title`, `description`, `badCode`, `fix`, `rule?`, `precedent?`,
   `agreedBy?`, `verifierReasoning?`, `proof?` (proof = `{attempted, proven,
-  reason, testCode?, testCommand?, redOutput?}`).
+  outcome, reason, testCode?, testCommand?, redOutput?}`).
 - The saved review file path: `~/code-reviews/YYYY-MM-DD-pr-N-repo.md`.
 - PR metadata: `REPO_SLUG`, `PR_NUMBER`, `PR_URL`, title, author, `headRefName`
   → `baseRefName`, head sha, depth, verdict, `isDraft`, `mergeStateStatus`, CI
@@ -96,6 +96,11 @@ Hard requirements for the HTML page:
   `<pre>`, a one-line explanation that the test asserts correct behavior, and
   `testCode` collapsed behind its own `<details>`. This is the page's
   centerpiece -- make it prominent (e.g. a red left border) but not garish.
+  When `proof.outcome === 'passed'`, render a distinct
+  "COUNTER-EVIDENCE -- focused proof test passed" panel with `reason`,
+  `testCommand`, and `testCode` collapsed behind its own `<details>`. Explain
+  that the workflow downgraded the finding to Important; do not present the
+  passing input as proof that every related input is safe.
 - **Test Quality + Review Cost sections**, mirrored from the review file,
   kept concise (verdict + gaps + cost table; no need to reproduce every
   sentence).
