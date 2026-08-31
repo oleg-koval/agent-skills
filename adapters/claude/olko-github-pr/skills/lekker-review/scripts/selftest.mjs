@@ -41,9 +41,17 @@ function liftConst(name) {
 }
 
 const preamble = [
-  liftConst('HARD_RULES'),
+  // HARD_RULES is absent from the current workflow.js: the allowlist went away
+  // with the exemption it gated. It is still lifted-with-a-fallback rather than
+  // dropped, because this suite must stay runnable against an OLDER workflow.js
+  // (see the target argument above) to prove it discriminates. Without the
+  // fallback the old file throws ReferenceError instead of reporting FAIL, and a
+  // suite that crashes on the pre-fix input has proved nothing.
+  (() => { try { return liftConst('HARD_RULES') } catch { return 'const HARD_RULES = []' } })(),
   (() => { try { return liftConst('SAME_ISSUE_LINE_WINDOW') } catch { return 'const SAME_ISSUE_LINE_WINDOW = 30' } })(),
   "const SEVERITY_RANK = { observation: 0, idiomatic: 1, important: 2, critical: 3 }",
+  // hardRuleCorroborated is likewise gone from the current file and kept in this
+  // list for the same reason: an older workflow.js calls it from isHardRule.
   ...['titleTokens', 'sameIssue', 'nearbyLines', 'spanWithinWindow', 'hardRuleCorroborated',
       'isHardRule', 'longest', 'mergeFindings', 'dedup', 'shouldVerify'].map(n => {
         try { return lift(n) } catch { return `function ${n}() { throw new Error('${n} absent from this workflow.js') }` }
@@ -98,46 +106,51 @@ check('different files never merge', dedup([
   { file: 'b.ts', line: 7, severity: 'critical', title: 'Off-by-one loop skips the first line', badCode: '', description: '' },
 ]).length, 2)
 
-console.log('\nhard rules: a tag must be corroborated to skip verification')
-// Regression: any agent could bypass the verifier by writing rule: "TS-1".
-// Observed live - a test-coverage finding and a comment-policy finding both did.
-check('TS-1 on a comment-policy finding is NOT exempt',
-  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 6, title: 'Comment restates the function', badCode: '/** Sum a cart. */', description: 'a comment earns its place' }), false)
-check('TS-1 on a test-coverage finding is NOT exempt',
-  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 8, title: 'No test coverage', badCode: 'for (let i = 1;', description: 'zero test files added' }), false)
-check('an unknown rule string is NOT exempt',
-  isHardRule({ rule: 'MADE-UP', file: 'a.ts', line: 1, title: 't', badCode: 'x as Foo', description: '' }), false)
-// TS-1 is judged on quoted code only: prose is full of `as` and `any`.
-check('the word "any" in PROSE alone is NOT exempt',
-  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'fails on any cart with items', badCode: 'total += lines[i].price', description: 'any agent could trip this' }), false)
-check('the phrase "such as" in prose alone is NOT exempt',
-  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'issue', badCode: 'const n = 1', description: 'a primitive such as String is used' }), false)
+// This section used to assert that a `rule` tag had to be corroborated against a
+// hardcoded HARD_RULES list before it could SKIP verification. That guard existed
+// because a fabricated tag could buy exemption. It is gone because the exemption
+// is gone: shouldVerify now returns true for every Critical and Important finding,
+// and a hard rule takes the verifier's rule-specific anchor and applicability path
+// instead of its runtime challenges, validated against the configured canonical
+// rules file. A hardcoded list also could not recognise a custom house rule, which
+// the current design supports on purpose.
+//
+// So the tag no longer buys a free pass; it selects a verification path. The
+// predicate is correspondingly narrow: does this finding claim a rule at all.
+console.log('\nhard rules: the tag selects a verification path, it does not skip one')
+// Regression, still worth holding: a finding with no rule tag must never be
+// treated as one. That is what routes it to the runtime challenges.
+check('no rule tag is not a hard rule',
+  isHardRule({ file: 'a.ts', line: 1, title: 't', badCode: 'x as Foo', description: '' }), false)
+check('an empty rule tag is not a hard rule',
+  isHardRule({ rule: '', file: 'a.ts', line: 1, title: 't', badCode: '', description: '' }), false)
+check('a whitespace-only rule tag is not a hard rule',
+  isHardRule({ rule: '   ', file: 'a.ts', line: 1, title: 't', badCode: '', description: '' }), false)
+check('a non-string rule tag is not a hard rule',
+  isHardRule({ rule: 1, file: 'a.ts', line: 1, title: 't', badCode: '', description: '' }), false)
 
-console.log('\nhard rules: genuine violations must STILL be exempt')
-check('TS-1 with a real cast',   isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'cast', badCode: 'const x = y as Foo;', description: '' }), true)
-check('TS-1 with a real any',    isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'any',  badCode: 'function f(x: any) {}', description: '' }), true)
-check('TS-2 with a .js path',    isHardRule({ rule: 'TS-2', file: 'web/thing.js', line: 1, title: 'js added', badCode: '', description: '' }), true)
-check('GQL-1 with a nodes query',isHardRule({ rule: 'GQL-1', file: 'q.graphql', line: 1, title: 'no pageInfo', badCode: 'products { nodes { id } }', description: '' }), true)
-check('PR-1 anchored on the PR title', isHardRule({ rule: 'PR-1', file: 'PR title', line: 1, title: 'missing prefix', badCode: '', description: '' }), true)
-// A cast to a lowercase built-in is as much a TS-1 violation as a cast to a
-// named type. Missing it sent a genuine hard rule to a verifier that cannot
-// answer a policy claim, where it could be dropped.
-for (const cast of ['x as string', 'x as number', 'x as unknown as Foo', 'x as const', 'x as boolean']) {
-  check(`TS-1 corroborated by \`${cast}\``,
-    isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'cast', badCode: cast, description: '' }), true)
+console.log('\nhard rules: built-in and custom tags both route to rule-specific verification')
+for (const rule of ['TS-1', 'TS-2', 'GQL-1', 'PR-1']) {
+  check(`built-in ${rule} is a hard rule`,
+    isHardRule({ rule, file: 'a.ts', line: 1, title: 't', badCode: '', description: '' }), true)
 }
-check('TS-1 corroborated by an any annotation',
-  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'any', badCode: 'function f(x: any) {}', description: '' }), true)
-check('TS-1 corroborated by an any[] ',
-  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'any', badCode: 'const xs: any[] = []', description: '' }), true)
+// A house rule defined in the operator's canonical rules file cannot be known to
+// this workflow. Rejecting it here is what a hardcoded list did, and it silently
+// disabled every custom rule a deployment configured.
+check('a custom house rule is a hard rule',
+  isHardRule({ rule: 'SEC-1', file: 'a.ts', line: 1, title: 't', badCode: '', description: '' }), true)
 
-console.log('\nverification scope by depth')
+console.log('\nverification scope: depth controls breadth, never the trust bar')
 const crit = { severity: 'critical' }, imp = { severity: 'important' }, obs = { severity: 'observation' }
-check('scan verifies nothing',            [crit, imp, obs].map(f => shouldVerify(f, 'scan')),   [false, false, false])
-check('medium verifies criticals only',   [crit, imp, obs].map(f => shouldVerify(f, 'medium')), [true, false, false])
-check('deep verifies crit + important',   [crit, imp, obs].map(f => shouldVerify(f, 'deep')),   [true, true, false])
-check('a corroborated hard rule is never verified',
-  shouldVerify({ severity: 'critical', rule: 'TS-2', file: 'x.js', badCode: '', description: '', title: '' }, 'deep'), false)
+// shouldVerify takes one argument now. Depth used to be able to switch verification
+// off entirely, which meant a scan-depth review shipped unverified Criticals.
+check('shouldVerify takes the finding alone', shouldVerify.length, 1)
+check('critical and important are verified, observation is not',
+  [crit, imp, obs].map(f => shouldVerify(f)), [true, true, false])
+check('a hard rule is NOT exempt from verification',
+  shouldVerify({ severity: 'critical', rule: 'TS-2', file: 'x.js', badCode: '', description: '', title: '' }), true)
+check('a custom hard rule is NOT exempt either',
+  shouldVerify({ severity: 'critical', rule: 'SEC-1', file: 'x.ts', badCode: '', description: '', title: '' }), true)
 
 // Per-host model routing is optional: a deployment may pin models per host via
 // a MODEL_TABLE, or leave every agent() call to name its own model. Test it
