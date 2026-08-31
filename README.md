@@ -342,7 +342,7 @@ When adding or changing a skill:
 
 ### Shared context store
 
-![How the agent context store works: the five resolution steps, the three skills that use the store, and the four states every run ends in](docs/assets/context-store-card.png)
+![How the agent context store works: the five resolution steps, the three skills that use the store, the four states every run ends in, and how the store is read](docs/assets/context-store-card.png)
 
 `retro-analysis` and `shared-knowledge-artifact` share one private GitHub repository,
 resolved through the `context-repo` skill the first time either one runs. It finds a
