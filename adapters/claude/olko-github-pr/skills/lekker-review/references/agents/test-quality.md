@@ -141,6 +141,13 @@ criticism without a fix is incomplete.
 Report the mutation-slip analysis as a single paragraph under a
 "**Mutation-slip risk:**" heading, not as line items.
 
+Return the review summary through these structured fields in addition to
+`findings`:
+- `coverageVerdict`: one concise overall coverage verdict.
+- `mutationSlip`: the mutation-slip risk paragraph.
+- `mockSmells`: every mock-smell issue as `{file, line, description, fix}`.
+  Return an empty array when there are no mock smells.
+
 EXISTING_REVIEWS: read key "existingReviews" from CONTEXT_FILE (awareness only, skip findings already raised)
 
 PROJECT_RULES to verify: read key "projectRules" from CONTEXT_FILE.

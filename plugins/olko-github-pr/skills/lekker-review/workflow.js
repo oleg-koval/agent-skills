@@ -8,43 +8,68 @@ export const meta = {
 // Schemas
 // ---------------------------------------------------------------------------
 
+const FINDINGS_ARRAY_SCHEMA = {
+  type: 'array',
+  items: {
+    type: 'object',
+    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
+    properties: {
+      file:        { type: 'string' },
+      line:        { type: 'integer' },
+      severity:    { enum: ['critical', 'important', 'observation', 'idiomatic'] },
+      title:       { type: 'string' },
+      description: { type: 'string' },
+      badCode:     { type: 'string' },
+      fix:         { type: 'string' },
+      precedent:   { type: 'string' },
+      rule:        { type: 'string', minLength: 1, pattern: '\\S' },
+    },
+  },
+}
+
+const MOCK_SMELLS_SCHEMA = {
+  type: 'array',
+  items: {
+    type: 'object',
+    required: ['file', 'line', 'description', 'fix'],
+    properties: {
+      file:        { type: 'string' },
+      line:        { type: 'integer' },
+      description: { type: 'string' },
+      fix:         { type: 'string' },
+    },
+  },
+}
+
 const FINDINGS_SCHEMA = {
   type: 'object',
   required: ['findings'],
   properties: {
-    findings: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
-        properties: {
-          file:        { type: 'string' },
-          line:        { type: 'integer' },
-          severity:    { enum: ['critical', 'important', 'observation', 'idiomatic'] },
-          title:       { type: 'string' },
-          description: { type: 'string' },
-          badCode:     { type: 'string' },
-          fix:         { type: 'string' },
-          precedent:   { type: 'string' },
-          rule:        { enum: ['TS-1', 'TS-2', 'GQL-1', 'PR-1'] },
-        },
-      },
-    },
+    findings: FINDINGS_ARRAY_SCHEMA,
     acCoverage:      { type: 'string' },
     mutationSlip:    { type: 'string' },
     coverageVerdict: { type: 'string' },
-    mockSmells: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          file:        { type: 'string' },
-          line:        { type: 'integer' },
-          description: { type: 'string' },
-          fix:         { type: 'string' },
-        },
-      },
-    },
+    mockSmells: MOCK_SMELLS_SCHEMA,
+  },
+}
+
+const IMPLEMENTATION_SCHEMA = {
+  type: 'object',
+  required: ['findings', 'acCoverage'],
+  properties: {
+    findings: FINDINGS_ARRAY_SCHEMA,
+    acCoverage: { type: 'string' },
+  },
+}
+
+const TEST_QUALITY_SCHEMA = {
+  type: 'object',
+  required: ['findings', 'coverageVerdict', 'mutationSlip', 'mockSmells'],
+  properties: {
+    findings: FINDINGS_ARRAY_SCHEMA,
+    coverageVerdict: { type: 'string' },
+    mutationSlip: { type: 'string' },
+    mockSmells: MOCK_SMELLS_SCHEMA,
   },
 }
 
@@ -80,10 +105,11 @@ const CRITIC_SCHEMA = {
 
 const PROOF_SCHEMA = {
   type: 'object',
-  required: ['attempted', 'proven', 'reason'],
+  required: ['attempted', 'proven', 'outcome', 'reason'],
   properties: {
     attempted:   { type: 'boolean' },
     proven:      { type: 'boolean' },
+    outcome:     { enum: ['proven', 'passed', 'inconclusive', 'not_attempted'] },
     reason:      { type: 'string' },
     testCode:    { type: 'string' },
     testCommand: { type: 'string' },
@@ -95,10 +121,8 @@ const PROOF_SCHEMA = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const HARD_RULES = ['TS-1', 'TS-2', 'GQL-1', 'PR-1']
-
 function isHardRule(finding) {
-  return typeof finding.rule === 'string' && HARD_RULES.indexOf(finding.rule) !== -1
+  return typeof finding.rule === 'string' && finding.rule.trim().length > 0
 }
 
 const SEVERITY_RANK = { critical: 3, important: 2, observation: 1, idiomatic: 0 }
@@ -136,6 +160,13 @@ function mergeFindings(a, b) {
 
   if (SEVERITY_RANK[b.severity] > SEVERITY_RANK[merged.severity]) {
     merged.severity = b.severity
+    for (const field of ['verificationStatus', 'verifierReasoning', 'proof']) {
+      if (Object.prototype.hasOwnProperty.call(b, field)) {
+        merged[field] = b[field]
+      } else {
+        delete merged[field]
+      }
+    }
   }
 
   merged.description = longest(a.description, b.description)
@@ -162,10 +193,43 @@ function mergeFindings(a, b) {
   return merged
 }
 
+// How far apart two anchor lines may be and still count as the same issue.
+// Reviewers routinely anchor one defect at different lines: the loop header,
+// the body, the function signature. Kept tight enough that two genuinely
+// distinct findings in one file are not merged because their titles rhyme.
+const SAME_ISSUE_LINE_WINDOW = 30
+
+function nearbyLines(a, b) {
+  const la = Number(a.line)
+  const lb = Number(b.line)
+  if (!Number.isFinite(la) || !Number.isFinite(lb)) {
+    // A finding with no usable line (a PR-level note) only merges with another
+    // one at the same missing line, which is what strict equality gives.
+    return a.line === b.line
+  }
+  return Math.abs(la - lb) <= SAME_ISSUE_LINE_WINDOW
+}
+
+// Would adding `candidate` keep the whole group inside the window? Uses the
+// group's min and max so the answer never depends on arrival order.
+function spanWithinWindow(group, candidate) {
+  const lines = group.concat([candidate]).map(function(f) { return Number(f.line) })
+  if (!lines.every(function(n) { return Number.isFinite(n) })) {
+    // Any unusable line falls back to the strict pairwise rule.
+    return group.every(function(m) { return nearbyLines(m, candidate) })
+  }
+  return Math.max.apply(null, lines) - Math.min.apply(null, lines) <= SAME_ISSUE_LINE_WINDOW
+}
+
 function dedup(allFindings) {
+  // Bucket by FILE, not by `file:line`. Bucketing on the exact line meant two
+  // reviewers describing one defect at lines 9 and 14 landed in different
+  // buckets, so `sameIssue` was never consulted: the issue was verified twice,
+  // burning two verifier agents and emitting two inline comments for one
+  // problem, which is exactly what this pass exists to prevent.
   const byLocation = new Map()
   for (const f of allFindings) {
-    const key = `${f.file}:${f.line}`
+    const key = String(f.file)
     if (!byLocation.has(key)) {
       byLocation.set(key, [])
     }
@@ -176,7 +240,13 @@ function dedup(allFindings) {
   for (const candidates of byLocation.values()) {
     const groups = []
     for (const candidate of candidates) {
-      const match = groups.find(function(g) { return sameIssue(g[0], candidate) })
+      // Compare against the whole group's SPAN, not just its first member.
+      // Checking only g[0] made grouping order-dependent: findings at 25, 50
+      // and 1 all joined when 25 arrived first, leaving a group spanning 49
+      // lines despite a 30-line window.
+      const match = groups.find(function(g) {
+        return sameIssue(g[0], candidate) && spanWithinWindow(g, candidate)
+      })
       if (match) {
         match.push(candidate)
       } else {
@@ -190,21 +260,51 @@ function dedup(allFindings) {
   return result
 }
 
-function shouldVerify(finding, depth) {
-  // house hard rules are policy violations, not runtime-failure claims. The
-  // five adversarial challenges cannot be answered for them, so verifying
-  // would systematically drop findings that are Critical by policy.
-  if (isHardRule(finding)) {
-    return false
-  }
-  if (depth === 'scan') {
-    return false
-  }
-  if (depth === 'medium') {
-    return finding.severity === 'critical'
-  }
-  // deep: critical + important
+function shouldVerify(finding) {
+  // Review depth controls breadth, not the trust bar. Every finding that can
+  // affect the verdict must be checked. Hard rules take the verifier's
+  // rule-specific anchor/applicability path instead of its runtime challenges.
   return finding.severity === 'critical' || finding.severity === 'important'
+}
+
+function normalizeProof(result) {
+  const hasText = function(value) {
+    return typeof value === 'string' && value.trim().length > 0
+  }
+  const coherent = (
+    result.attempted === true
+    && result.proven === true
+    && result.outcome === 'proven'
+    && hasText(result.testCode)
+    && hasText(result.testCommand)
+    && hasText(result.redOutput)
+  ) || (
+    result.attempted === true
+    && result.proven === false
+    && result.outcome === 'passed'
+    && hasText(result.testCode)
+    && hasText(result.testCommand)
+  ) || (
+    result.attempted === true
+    && result.proven === false
+    && result.outcome === 'inconclusive'
+  ) || (
+    result.attempted === false
+    && result.proven === false
+    && result.outcome === 'not_attempted'
+  )
+
+  if (coherent) {
+    return result
+  }
+
+  const attempted = result.attempted === true
+  return {
+    attempted,
+    proven: false,
+    outcome: attempted ? 'inconclusive' : 'not_attempted',
+    reason: `Prover returned an inconsistent proof state; ignored. ${result.reason || ''}`.trim(),
+  }
 }
 
 // Run thunks in sequential batches, giving the per-finding stages a ceiling.
@@ -345,6 +445,7 @@ const budgetAtStart = budget.spent()
       `Read and follow ${promptDir}/verifier.md.`,
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${wtDisplay}.`,
+      `HOUSE_RULES_FILE: read key "houseRulesFile" from CONTEXT_FILE, then read that exact path before validating a hard rule.`,
       `Default to dropping when uncertain.`,
     ].join(' ')
   }
@@ -355,16 +456,22 @@ const budgetAtStart = budget.spent()
 
   async function reviewStage(dim) {
     agentCount++
+    let schema = FINDINGS_SCHEMA
+    if (dim.key === 'implementation') {
+      schema = IMPLEMENTATION_SCHEMA
+    } else if (dim.key === 'test-quality') {
+      schema = TEST_QUALITY_SCHEMA
+    }
     const result = await agent(reviewPrompt(dim), {
       label:  `review:${dim.key}`,
       phase:  'Review',
-      schema: FINDINGS_SCHEMA,
+      schema,
       model:  dim.model,
     })
 
     if (!result) {
       log(`${dim.key}: agent returned null, skipping`)
-      return []
+      return { key: dim.key, findings: [] }
     }
 
     const findings = (result.findings || []).map(function(f) {
@@ -374,44 +481,45 @@ const budgetAtStart = budget.spent()
     })
 
     log(`${dim.key}: ${findings.length} findings, ${
-      findings.filter(function(f) { return shouldVerify(f, depth) }).length
+      findings.filter(function(f) { return shouldVerify(f) }).length
     } to verify`)
 
-    return findings
+    return {
+      key: dim.key,
+      findings,
+      acCoverage: dim.key === 'implementation' ? result.acCoverage : undefined,
+      coverageVerdict: dim.key === 'test-quality' ? result.coverageVerdict : undefined,
+      mutationSlip: dim.key === 'test-quality' ? result.mutationSlip : undefined,
+      mockSmells: dim.key === 'test-quality' ? result.mockSmells : undefined,
+    }
   }
 
   // -------------------------------------------------------------------------
   // Verify stage: takes the deduped cross-dimension finding set, splits into
-  // in-scope (adversarially verified) and out-of-scope (kept as-is, including
-  // house hard rules which are exempt by policy), and runs verifiers in
-  // parallel over the in-scope set.
+  // in-scope (verdict-affecting) and out-of-scope (non-blocking), and runs
+  // verifiers in parallel over the in-scope set. Hard rules use the verifier's
+  // rule-specific checks and skip only its runtime-oriented challenges.
   // -------------------------------------------------------------------------
 
   async function verifyAll(findings) {
     const inScope = findings.filter(function(f) {
-      return shouldVerify(f, depth)
+      return shouldVerify(f)
     })
     const outOfScope = findings.filter(function(f) {
-      return !shouldVerify(f, depth)
-    })
-
-    const exempted = outOfScope.map(function(f) {
-      if (!isHardRule(f)) {
-        return f
-      }
-      hardRuleCount++
-      const exempt = Object.assign({}, f)
-      exempt.verifierReasoning = `hard rule ${f.rule}: exempt from adversarial verification (standards violation, not a runtime-failure claim)`
-      return exempt
+      return !shouldVerify(f)
     })
 
     if (inScope.length === 0) {
-      return exempted
+      return outOfScope
     }
 
     const verified = await batched(inScope.map(function(finding) {
       return async function() {
         agentCount++
+        if (isHardRule(finding)) {
+          hardRuleCount++
+        }
+
         const verdict = await agent(verifierPrompt(finding), {
           label:  `verify:${finding.file}:${finding.line}`,
           model:  'sonnet',
@@ -421,9 +529,12 @@ const budgetAtStart = budget.spent()
         })
 
         if (!verdict) {
-          // Null agent result: treat as confirmed-unverified
+          // Missing verification cannot support a blocking finding.
+          downgradedCount++
           const kept = Object.assign({}, finding)
-          kept.verifierReasoning = 'verifier agent returned null; kept unverified'
+          kept.severity = 'observation'
+          kept.verificationStatus = 'unavailable'
+          kept.verifierReasoning = 'verifier agent returned no usable result; downgraded to non-blocking'
           return kept
         }
 
@@ -436,18 +547,20 @@ const budgetAtStart = budget.spent()
           downgradedCount++
           const downgraded = Object.assign({}, finding)
           downgraded.severity = verdict.newSeverity || 'observation'
+          downgraded.verificationStatus = 'downgraded'
           downgraded.verifierReasoning = verdict.reasoning
           return downgraded
         }
 
         // confirmed
         const confirmed = Object.assign({}, finding)
+        confirmed.verificationStatus = isHardRule(finding) ? 'hard-rule-confirmed' : 'confirmed'
         confirmed.verifierReasoning = verdict.reasoning
         return confirmed
       }
     }), FANOUT_PLAN)
 
-    return exempted.concat(verified.filter(Boolean))
+    return outOfScope.concat(verified.filter(Boolean))
   }
 
   // -------------------------------------------------------------------------
@@ -465,10 +578,19 @@ const budgetAtStart = budget.spent()
     return function() { return reviewStage(dim) }
   }), REVIEW_PLAN)
 
-  const deduped = dedup(reviewed.filter(Boolean).flat())
+  const reviewResults = reviewed.filter(Boolean)
+  const implementationResult = reviewResults.find(function(result) {
+    return result.key === 'implementation'
+  }) || {}
+  const testQualityResult = reviewResults.find(function(result) {
+    return result.key === 'test-quality'
+  }) || {}
+  const deduped = dedup(reviewResults.flatMap(function(result) {
+    return result.findings
+  }))
 
   log(`${deduped.length} unique finding(s) after dedup; verifying ${
-    deduped.filter(function(f) { return shouldVerify(f, depth) }).length
+    deduped.filter(function(f) { return shouldVerify(f) }).length
   }`)
 
   phase('Verify')
@@ -552,11 +674,17 @@ const budgetAtStart = budget.spent()
             return []
           }
 
+          if (isHardRule(newFinding)) {
+            hardRuleCount++
+          }
+
           if (verdict.verdict === 'downgraded') {
             downgradedCount++
             newFinding.severity = verdict.newSeverity || 'observation'
+            newFinding.verificationStatus = 'downgraded'
             newFinding.verifierReasoning = verdict.reasoning
           } else {
+            newFinding.verificationStatus = isHardRule(newFinding) ? 'hard-rule-confirmed' : 'confirmed'
             newFinding.verifierReasoning = verdict.reasoning
           }
 
@@ -622,9 +750,19 @@ const budgetAtStart = budget.spent()
             return
           }
 
-          finding.proof = result
-          if (result.proven === true) {
+          const proof = normalizeProof(result)
+          finding.proof = proof
+          if (proof.proven === true) {
             provenCount++
+            finding.verificationStatus = 'proven'
+          } else if (proof.outcome === 'passed') {
+            downgradedCount++
+            finding.severity = 'important'
+            finding.verificationStatus = 'counter-evidence'
+            finding.verifierReasoning = [
+              finding.verifierReasoning,
+              `Proof test passed: ${proof.reason}`,
+            ].filter(Boolean).join(' ')
           }
         }
       }), FANOUT_PLAN)
@@ -648,6 +786,10 @@ const budgetAtStart = budget.spent()
     agentCount,
     proveAttemptCount,
     provenCount,
+    acCoverage:        implementationResult.acCoverage || null,
+    coverageVerdict:   testQualityResult.coverageVerdict || null,
+    mutationSlip:      testQualityResult.mutationSlip || null,
+    mockSmells:        Array.isArray(testQualityResult.mockSmells) ? testQualityResult.mockSmells : [],
     outputTokens:      budget.spent() - budgetAtStart,
     turnTokensTotal:   budget.spent(),
   }

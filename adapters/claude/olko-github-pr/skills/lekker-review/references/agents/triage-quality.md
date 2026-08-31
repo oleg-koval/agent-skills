@@ -20,7 +20,7 @@ Axes to cover (Critical/Important only):
   set `rule: "GQL-1"` when Critical
 
 Setting rule tags the finding as a house hard rule: it keeps its Critical
-severity and skips adversarial verification. Only set it for a genuine
+severity only after rule-specific validation and skips runtime challenges. Only set it for a genuine
 TS-1/TS-2/GQL-1 violation: never to shield an ordinary finding from
 verification.
 

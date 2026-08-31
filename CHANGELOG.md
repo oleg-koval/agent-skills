@@ -1,3 +1,50 @@
+# [1.41.0](https://github.com/oleg-koval/agent-skills/compare/v1.40.1...v1.41.0) (2026-08-31)
+
+
+### ✨ Features
+
+* **open-source-publisher:** scope pixel2motion offers to supported logos/artwork ([#75](https://github.com/oleg-koval/agent-skills/issues/75)) ([bc424db](https://github.com/oleg-koval/agent-skills/commit/bc424db562f4fa3b507404a8bc994cca9a4efc9e)), closes [#39](https://github.com/oleg-koval/agent-skills/issues/39) [#58](https://github.com/oleg-koval/agent-skills/issues/58) [#39](https://github.com/oleg-koval/agent-skills/issues/39)
+
+
+### 🐛 Bug Fixes
+
+* enforce Lekker review trust invariants ([#73](https://github.com/oleg-koval/agent-skills/issues/73)) ([02ca9f8](https://github.com/oleg-koval/agent-skills/commit/02ca9f82c35ee91170140370c7eb75ac89bb8cdc))
+
+## [1.40.1](https://github.com/oleg-koval/agent-skills/compare/v1.40.0...v1.40.1) (2026-08-31)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** dedup a defect reported at two lines, gate the hard-rule bypass ([#76](https://github.com/oleg-koval/agent-skills/issues/76)) ([dfa7473](https://github.com/oleg-koval/agent-skills/commit/dfa74731c7e292cd0ca622cf0f94a7c2a07674bb))
+
+# [1.40.0](https://github.com/oleg-koval/agent-skills/compare/v1.39.0...v1.40.0) (2026-08-29)
+
+
+### ✨ Features
+
+* **site:** redesign marketplace and add analytics ([#74](https://github.com/oleg-koval/agent-skills/issues/74)) ([98e7d6b](https://github.com/oleg-koval/agent-skills/commit/98e7d6b94ac1591f71538b8192b6c0600cf86a30))
+
+# [1.39.0](https://github.com/oleg-koval/agent-skills/compare/v1.38.3...v1.39.0) (2026-08-29)
+
+
+### ✨ Features
+
+* **skill-meta:** add Veto routing skill ([#72](https://github.com/oleg-koval/agent-skills/issues/72)) ([6934e00](https://github.com/oleg-koval/agent-skills/commit/6934e002177e526a06aaa8e7a4944ff8dc0899c6))
+
+## [1.38.3](https://github.com/oleg-koval/agent-skills/compare/v1.38.2...v1.38.3) (2026-08-29)
+
+
+### 🐛 Bug Fixes
+
+* repair lekker-review front matter ([#71](https://github.com/oleg-koval/agent-skills/issues/71)) ([6d971f5](https://github.com/oleg-koval/agent-skills/commit/6d971f5a7f2d5123b155064bdd75d5a52e9edc58))
+
+## [1.38.2](https://github.com/oleg-koval/agent-skills/compare/v1.38.1...v1.38.2) (2026-08-28)
+
+
+### 📚 Documentation
+
+* **context-repo:** document resolution flow ([#70](https://github.com/oleg-koval/agent-skills/issues/70)) ([8528dab](https://github.com/oleg-koval/agent-skills/commit/8528dab63c37785384ec1f862c00f2fbd45357fc))
+
 ## [1.38.1](https://github.com/oleg-koval/agent-skills/compare/v1.38.0...v1.38.1) (2026-08-28)
 
 

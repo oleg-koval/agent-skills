@@ -24,7 +24,7 @@ export const PLUGIN_ASSIGNMENT = {
   },
   'olko-skill-meta': {
     description: 'Author and maintain agent skills and the AI toolchain itself.',
-    skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'ai-tools-setup',
+    skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'veto-routing', 'ai-tools-setup',
              'relay', 'shared-knowledge-artifact'],
   },
   'olko-reflection': {
@@ -54,6 +54,9 @@ export const PLUGIN_ASSIGNMENT = {
   },
 }
 
+/**
+ * Loads and parses the skills catalog from the specified JSON file.
+ */
 export function loadCatalog(catalogPath = 'catalog/skills.json') {
   const raw = JSON.parse(readFileSync(catalogPath, 'utf8'))
   const plugins = raw.plugins || []

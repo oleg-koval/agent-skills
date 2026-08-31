@@ -1,5 +1,5 @@
 # verifier -- lekker-review agent prompt
-# Receives: one FINDING as JSON, DIFF_FILE path, CONTEXT_FILE path, WORKTREE_PATH path
+# Receives: one FINDING as JSON, DIFF_FILE path, CONTEXT_FILE path, WORKTREE_PATH path, HOUSE_RULES_FILE path
 # Returns: VERDICT_SCHEMA { verdict: 'confirmed'|'downgraded'|'dropped', newSeverity?, reasoning }
 
 ## Mindset
@@ -18,17 +18,19 @@ verified yourself are not confirmed findings.
 
 You have received one candidate finding as JSON (field `FINDING` in your task
 message). Run all applicable verification checks below against the finding using
-`DIFF_FILE`, `CONTEXT_FILE`, and `WORKTREE_PATH` (read from the task message).
+`DIFF_FILE`, `CONTEXT_FILE`, `WORKTREE_PATH`, and `HOUSE_RULES_FILE` (read from
+the task message).
 
 When in doubt, drop. A Critical must pass ALL FIVE challenges to remain Critical
--- unless Step 0 exempts it as a house hard rule, which is the one exception.
+unless Step 0 validates it through the house hard-rule path.
 
 ---
 
-## Step 0 -- Hard-rule exemption (check this FIRST)
+## Step 0 -- Hard-rule validation (check this FIRST)
 
-If the FINDING JSON has a `rule` field set to `TS-1`, `TS-2`, `GQL-1`, or
-`PR-1`, do NOT run the five adversarial challenges below. They ask
+If the FINDING JSON has any non-empty `rule` field, including built-in tags
+such as `TS-1`, `TS-2`, `GQL-1`, or `PR-1`, do NOT run the five adversarial
+challenges below. They ask
 runtime-failure questions that a standards violation can never answer, and
 answering them honestly would drop a finding that house-rules policy declares
 Critical on standards grounds rather than on runtime behaviour.
@@ -41,8 +43,9 @@ Instead run exactly two checks:
    ```bash
    grep "^+" "$DIFF_FILE" | grep "<snippet>"
    ```
-2. **Rule applicability**: the code really does violate the rule as written
-   in `references/house-rules.md` -- e.g. an `as const` is not a type cast in
+2. **Rule applicability**: read the exact `HOUSE_RULES_FILE` path from the task
+   message, then confirm the code really violates the rule as written there --
+   e.g. an `as const` is not a type cast in
    the TS-1 sense; a `nodes` query that legitimately fetches a single known
    node with a documented comment may satisfy GQL-1; a `.js` file inside a
    Liquid theme repo is exempt from TS-2.
@@ -253,7 +256,7 @@ the inference is the crux of the claim
 ## Outcome rules
 
 The one exception to "a Critical must pass ALL FIVE challenges" is the
-hard-rule path in Step 0: a `rule`-tagged finding is judged solely on the
+hard-rule path in Step 0: a `rule`-tagged finding is validated solely on the
 anchor + rule-applicability checks and never runs the five challenges.
 
 A Critical finding must pass ALL FIVE challenges. Any failure downgrades:
