@@ -212,8 +212,8 @@ Use `magick` or another renderer when `rsvg-convert` is unavailable.
 
 Some repos benefit from a short animated preview. Keep this opt-in.
 
-- If you already generated a supported logo or simple artwork, ask: `Do you want me to animate it using pixel2motion?`
-- If the user says yes, use `nolangz/pixel2motion` as the optional dependency for that logo or simple-artwork animation, animated HTML demos, and GIF/video previews.
+- After the user opts in during workflow step 6, animate only the approved generated logo or simple artwork.
+- Use `nolangz/pixel2motion` as the optional dependency for that animation, animated HTML demos, and GIF/video previews.
 - Do not auto-animate by default.
 
 ## README Standard
