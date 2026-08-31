@@ -93,7 +93,16 @@ test('verifier failure cannot leave verdict-affecting findings', async () => {
 })
 
 test('every verdict-affecting finding is verified regardless of depth', async () => {
-  const important = { ...baseFinding, line: 11, severity: 'important' }
+  // A genuinely different defect, not the same one reported at the next line.
+  // Dedup collapses one defect repeated across nearby lines, and this test is
+  // about depth rather than dedup: it must show that an Important finding is
+  // verified at scan depth, which needs two findings that survive dedup.
+  const important = {
+    ...baseFinding,
+    line: 42,
+    severity: 'important',
+    title: 'Unchecked null dereference',
+  }
   const { calls, result } = await runScenario({
     depth: 'scan',
     respond: ({ options }) => {

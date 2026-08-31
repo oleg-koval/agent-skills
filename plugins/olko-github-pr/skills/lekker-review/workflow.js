@@ -193,10 +193,43 @@ function mergeFindings(a, b) {
   return merged
 }
 
+// How far apart two anchor lines may be and still count as the same issue.
+// Reviewers routinely anchor one defect at different lines: the loop header,
+// the body, the function signature. Kept tight enough that two genuinely
+// distinct findings in one file are not merged because their titles rhyme.
+const SAME_ISSUE_LINE_WINDOW = 30
+
+function nearbyLines(a, b) {
+  const la = Number(a.line)
+  const lb = Number(b.line)
+  if (!Number.isFinite(la) || !Number.isFinite(lb)) {
+    // A finding with no usable line (a PR-level note) only merges with another
+    // one at the same missing line, which is what strict equality gives.
+    return a.line === b.line
+  }
+  return Math.abs(la - lb) <= SAME_ISSUE_LINE_WINDOW
+}
+
+// Would adding `candidate` keep the whole group inside the window? Uses the
+// group's min and max so the answer never depends on arrival order.
+function spanWithinWindow(group, candidate) {
+  const lines = group.concat([candidate]).map(function(f) { return Number(f.line) })
+  if (!lines.every(function(n) { return Number.isFinite(n) })) {
+    // Any unusable line falls back to the strict pairwise rule.
+    return group.every(function(m) { return nearbyLines(m, candidate) })
+  }
+  return Math.max.apply(null, lines) - Math.min.apply(null, lines) <= SAME_ISSUE_LINE_WINDOW
+}
+
 function dedup(allFindings) {
+  // Bucket by FILE, not by `file:line`. Bucketing on the exact line meant two
+  // reviewers describing one defect at lines 9 and 14 landed in different
+  // buckets, so `sameIssue` was never consulted: the issue was verified twice,
+  // burning two verifier agents and emitting two inline comments for one
+  // problem, which is exactly what this pass exists to prevent.
   const byLocation = new Map()
   for (const f of allFindings) {
-    const key = `${f.file}:${f.line}`
+    const key = String(f.file)
     if (!byLocation.has(key)) {
       byLocation.set(key, [])
     }
@@ -207,7 +240,13 @@ function dedup(allFindings) {
   for (const candidates of byLocation.values()) {
     const groups = []
     for (const candidate of candidates) {
-      const match = groups.find(function(g) { return sameIssue(g[0], candidate) })
+      // Compare against the whole group's SPAN, not just its first member.
+      // Checking only g[0] made grouping order-dependent: findings at 25, 50
+      // and 1 all joined when 25 arrived first, leaving a group spanning 49
+      // lines despite a 30-line window.
+      const match = groups.find(function(g) {
+        return sameIssue(g[0], candidate) && spanWithinWindow(g, candidate)
+      })
       if (match) {
         match.push(candidate)
       } else {
