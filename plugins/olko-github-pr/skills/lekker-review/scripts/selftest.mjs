@@ -44,8 +44,8 @@ const preamble = [
   liftConst('HARD_RULES'),
   (() => { try { return liftConst('SAME_ISSUE_LINE_WINDOW') } catch { return 'const SAME_ISSUE_LINE_WINDOW = 30' } })(),
   "const SEVERITY_RANK = { observation: 0, idiomatic: 1, important: 2, critical: 3 }",
-  ...['titleTokens', 'sameIssue', 'nearbyLines', 'hardRuleCorroborated', 'isHardRule',
-      'longest', 'mergeFindings', 'dedup', 'shouldVerify'].map(n => {
+  ...['titleTokens', 'sameIssue', 'nearbyLines', 'spanWithinWindow', 'hardRuleCorroborated',
+      'isHardRule', 'longest', 'mergeFindings', 'dedup', 'shouldVerify'].map(n => {
         try { return lift(n) } catch { return `function ${n}() { throw new Error('${n} absent from this workflow.js') }` }
       }),
 ].join('\n')
@@ -82,6 +82,17 @@ check('same line, unrelated titles stay separate', dedup([
   { file: 'a.ts', line: 7, severity: 'important', title: 'Unbounded retry loop hides throttling', badCode: '', description: '' },
   { file: 'a.ts', line: 7, severity: 'important', title: 'Metafield namespace hardcoded in the query', badCode: '', description: '' },
 ]).length, 2)
+// Grouping must not depend on arrival order. With only g[0] compared, findings
+// at 25, 50 and 1 all joined when 25 arrived first, spanning 49 lines.
+const spanCase = [
+  { file: 'a.ts', line: 25, severity: 'important', title: 'Missing pagination on the query', badCode: '', description: '' },
+  { file: 'a.ts', line: 50, severity: 'important', title: 'Missing pagination on the query', badCode: '', description: '' },
+  { file: 'a.ts', line: 1,  severity: 'important', title: 'Missing pagination on the query', badCode: '', description: '' },
+]
+check('a group never spans more than the window (25, 50, 1)', dedup(spanCase).length, 2)
+check('the same set in a different order gives the same answer',
+  dedup([spanCase[2], spanCase[0], spanCase[1]]).length, dedup(spanCase).length)
+
 check('different files never merge', dedup([
   { file: 'a.ts', line: 7, severity: 'critical', title: 'Off-by-one loop skips the first line', badCode: '', description: '' },
   { file: 'b.ts', line: 7, severity: 'critical', title: 'Off-by-one loop skips the first line', badCode: '', description: '' },
@@ -96,6 +107,11 @@ check('TS-1 on a test-coverage finding is NOT exempt',
   isHardRule({ rule: 'TS-1', file: 'a.ts', line: 8, title: 'No test coverage', badCode: 'for (let i = 1;', description: 'zero test files added' }), false)
 check('an unknown rule string is NOT exempt',
   isHardRule({ rule: 'MADE-UP', file: 'a.ts', line: 1, title: 't', badCode: 'x as Foo', description: '' }), false)
+// TS-1 is judged on quoted code only: prose is full of `as` and `any`.
+check('the word "any" in PROSE alone is NOT exempt',
+  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'fails on any cart with items', badCode: 'total += lines[i].price', description: 'any agent could trip this' }), false)
+check('the phrase "such as" in prose alone is NOT exempt',
+  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'issue', badCode: 'const n = 1', description: 'a primitive such as String is used' }), false)
 
 console.log('\nhard rules: genuine violations must STILL be exempt')
 check('TS-1 with a real cast',   isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'cast', badCode: 'const x = y as Foo;', description: '' }), true)
@@ -103,6 +119,17 @@ check('TS-1 with a real any',    isHardRule({ rule: 'TS-1', file: 'a.ts', line: 
 check('TS-2 with a .js path',    isHardRule({ rule: 'TS-2', file: 'web/thing.js', line: 1, title: 'js added', badCode: '', description: '' }), true)
 check('GQL-1 with a nodes query',isHardRule({ rule: 'GQL-1', file: 'q.graphql', line: 1, title: 'no pageInfo', badCode: 'products { nodes { id } }', description: '' }), true)
 check('PR-1 anchored on the PR title', isHardRule({ rule: 'PR-1', file: 'PR title', line: 1, title: 'missing prefix', badCode: '', description: '' }), true)
+// A cast to a lowercase built-in is as much a TS-1 violation as a cast to a
+// named type. Missing it sent a genuine hard rule to a verifier that cannot
+// answer a policy claim, where it could be dropped.
+for (const cast of ['x as string', 'x as number', 'x as unknown as Foo', 'x as const', 'x as boolean']) {
+  check(`TS-1 corroborated by \`${cast}\``,
+    isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'cast', badCode: cast, description: '' }), true)
+}
+check('TS-1 corroborated by an any annotation',
+  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'any', badCode: 'function f(x: any) {}', description: '' }), true)
+check('TS-1 corroborated by an any[] ',
+  isHardRule({ rule: 'TS-1', file: 'a.ts', line: 1, title: 'any', badCode: 'const xs: any[] = []', description: '' }), true)
 
 console.log('\nverification scope by depth')
 const crit = { severity: 'critical' }, imp = { severity: 'important' }, obs = { severity: 'observation' }
@@ -115,13 +142,20 @@ check('a corroborated hard rule is never verified',
 // Per-host model routing is optional: a deployment may pin models per host via
 // a MODEL_TABLE, or leave every agent() call to name its own model. Test it
 // only when it is present, so this suite runs against either shape.
-const hasRouting = src.includes('const MODEL = MODEL_TABLE[HOST]')
+const routingAssign = /const\s+MODEL\s*=\s*MODEL_TABLE\s*\[\s*HOST\s*\]/.exec(src)
+const hasRouting = Boolean(routingAssign)
+// A guard that can silently disable itself is worse than no guard. If the file
+// clearly HAS a MODEL_TABLE but the assignment did not parse, that is a failure,
+// not a reason to skip.
+if (!hasRouting && /MODEL_TABLE/.test(src)) {
+  check('MODEL_TABLE is present but its assignment was not recognised', false, true)
+}
 if (!hasRouting) {
   console.log('\nmodel + effort routing: not configured in this workflow.js, skipped')
 } else {
   console.log('\nmodel + effort routing is pinned per host, never inherited')
   const routing = new Function('input', [
-    src.slice(src.indexOf('const HOST = '), src.indexOf('const MODEL = MODEL_TABLE[HOST]') + 'const MODEL = MODEL_TABLE[HOST]'.length),
+    src.slice(src.indexOf('const HOST = '), routingAssign.index + routingAssign[0].length),
     'return { HOST, MODEL }',
   ].join('\n'))
   check('an absent host arg falls back to the default table', routing({}).MODEL, routing({ host: 'claude' }).MODEL)

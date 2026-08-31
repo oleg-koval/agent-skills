@@ -113,10 +113,19 @@ function hardRuleCorroborated(finding) {
   const evidence = [finding.badCode, finding.description, finding.title]
     .map(function(x) { return String(x || '') }).join('\n')
   const file = String(finding.file || '')
+  // TS-1 is judged on the QUOTED CODE only. Prose is full of the words `as` and
+  // `any` ("any cart with items"), and matching those re-opened the very bypass
+  // this function exists to close.
+  const code = String(finding.badCode || '')
 
   switch (finding.rule) {
     case 'TS-1':
-      return /\bas\s+[A-Z_$]/.test(evidence) || /\bany\b/.test(evidence)
+      // A cast to a capitalised type OR to a lowercase built-in: `as string`
+      // is every bit as much a TS-1 violation as `as Foo`, and missing it sent
+      // a genuine hard-rule finding to a verifier whose five challenges cannot
+      // answer a standards claim, where it could be dropped outright.
+      return /\bas\s+(?:[A-Z_$][\w$]*|string|number|boolean|bigint|symbol|object|unknown|never|any|const)\b/.test(code)
+        || /:\s*any\b|<\s*any[\s,>]|\bany\[\]/.test(code)
     case 'TS-2':
       return /\.js$/.test(file)
     case 'GQL-1':
@@ -214,6 +223,17 @@ function nearbyLines(a, b) {
   return Math.abs(la - lb) <= SAME_ISSUE_LINE_WINDOW
 }
 
+// Would adding `candidate` keep the whole group inside the window? Uses the
+// group's min and max so the answer never depends on arrival order.
+function spanWithinWindow(group, candidate) {
+  const lines = group.concat([candidate]).map(function(f) { return Number(f.line) })
+  if (!lines.every(function(n) { return Number.isFinite(n) })) {
+    // Any unusable line falls back to the strict pairwise rule.
+    return group.every(function(m) { return nearbyLines(m, candidate) })
+  }
+  return Math.max.apply(null, lines) - Math.min.apply(null, lines) <= SAME_ISSUE_LINE_WINDOW
+}
+
 function dedup(allFindings) {
   // Bucket by FILE, not by `file:line`. Bucketing on the exact line meant two
   // reviewers describing one defect at lines 9 and 14 landed in different
@@ -233,8 +253,12 @@ function dedup(allFindings) {
   for (const candidates of byLocation.values()) {
     const groups = []
     for (const candidate of candidates) {
+      // Compare against the whole group's SPAN, not just its first member.
+      // Checking only g[0] made grouping order-dependent: findings at 25, 50
+      // and 1 all joined when 25 arrived first, leaving a group spanning 49
+      // lines despite a 30-line window.
       const match = groups.find(function(g) {
-        return sameIssue(g[0], candidate) && nearbyLines(g[0], candidate)
+        return sameIssue(g[0], candidate) && spanWithinWindow(g, candidate)
       })
       if (match) {
         match.push(candidate)
