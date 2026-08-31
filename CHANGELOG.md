@@ -1,3 +1,10 @@
+## [1.40.1](https://github.com/oleg-koval/agent-skills/compare/v1.40.0...v1.40.1) (2026-08-31)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** dedup a defect reported at two lines, gate the hard-rule bypass ([#76](https://github.com/oleg-koval/agent-skills/issues/76)) ([dfa7473](https://github.com/oleg-koval/agent-skills/commit/dfa74731c7e292cd0ca622cf0f94a7c2a07674bb))
+
 # [1.40.0](https://github.com/oleg-koval/agent-skills/compare/v1.39.0...v1.40.0) (2026-08-29)
 
 
