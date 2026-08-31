@@ -1,3 +1,10 @@
+## [1.41.2](https://github.com/oleg-koval/agent-skills/compare/v1.41.1...v1.41.2) (2026-08-31)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** repair the selftest and run it in CI ([#77](https://github.com/oleg-koval/agent-skills/issues/77)) ([32ae3c7](https://github.com/oleg-koval/agent-skills/commit/32ae3c734395116c5cab61b60b83081704e3597c)), closes [#73](https://github.com/oleg-koval/agent-skills/issues/73) [pre-#73](https://github.com/pre-/issues/73)
+
 ## [1.41.1](https://github.com/oleg-koval/agent-skills/compare/v1.41.0...v1.41.1) (2026-08-31)
 
 
