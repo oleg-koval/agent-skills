@@ -1,3 +1,15 @@
+# [1.41.0](https://github.com/oleg-koval/agent-skills/compare/v1.40.1...v1.41.0) (2026-08-31)
+
+
+### ✨ Features
+
+* **open-source-publisher:** scope pixel2motion offers to supported logos/artwork ([#75](https://github.com/oleg-koval/agent-skills/issues/75)) ([bc424db](https://github.com/oleg-koval/agent-skills/commit/bc424db562f4fa3b507404a8bc994cca9a4efc9e)), closes [#39](https://github.com/oleg-koval/agent-skills/issues/39) [#58](https://github.com/oleg-koval/agent-skills/issues/58) [#39](https://github.com/oleg-koval/agent-skills/issues/39)
+
+
+### 🐛 Bug Fixes
+
+* enforce Lekker review trust invariants ([#73](https://github.com/oleg-koval/agent-skills/issues/73)) ([02ca9f8](https://github.com/oleg-koval/agent-skills/commit/02ca9f82c35ee91170140370c7eb75ac89bb8cdc))
+
 ## [1.40.1](https://github.com/oleg-koval/agent-skills/compare/v1.40.0...v1.40.1) (2026-08-31)
 
 

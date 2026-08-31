@@ -1,7 +1,7 @@
 {
   "name": "olko-product",
   "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.",
-  "version": "1.40.1",
+  "version": "1.41.0",
   "author": {
     "name": "Oleg Koval"
   },
