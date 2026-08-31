@@ -97,8 +97,52 @@ const PROOF_SCHEMA = {
 
 const HARD_RULES = ['TS-1', 'TS-2', 'GQL-1', 'PR-1']
 
+// Does the finding's OWN evidence corroborate the hard rule it claims?
+//
+// A `rule` tag is worth a lot: it preserves Critical severity AND skips
+// adversarial verification. Nothing used to check that the tag matched the
+// finding, so any reviewer agent could bypass the verifier by writing
+// `rule: "TS-1"`. Seen in practice: a missing-test-coverage finding and a
+// comment-policy finding were both tagged TS-1, which is about `as X` casts
+// and `any`, and both shipped Critical and unverified.
+//
+// An uncorroborated tag does NOT lose its severity here; it simply stops being
+// exempt, so the verifier weighs it like any other finding. That is the
+// conservative direction: unproven claims get scrutiny, not a free pass.
+function hardRuleCorroborated(finding) {
+  const evidence = [finding.badCode, finding.description, finding.title]
+    .map(function(x) { return String(x || '') }).join('\n')
+  const file = String(finding.file || '')
+  // TS-1 is judged on the QUOTED CODE only. Prose is full of the words `as` and
+  // `any` ("any cart with items"), and matching those re-opened the very bypass
+  // this function exists to close.
+  const code = String(finding.badCode || '')
+
+  switch (finding.rule) {
+    case 'TS-1':
+      // A cast to a capitalised type OR to a lowercase built-in: `as string`
+      // is every bit as much a TS-1 violation as `as Foo`, and missing it sent
+      // a genuine hard-rule finding to a verifier whose five challenges cannot
+      // answer a standards claim, where it could be dropped outright.
+      return /\bas\s+(?:[A-Z_$][\w$]*|string|number|boolean|bigint|symbol|object|unknown|never|any|const)\b/.test(code)
+        || /:\s*any\b|<\s*any[\s,>]|\bany\[\]/.test(code)
+    case 'TS-2':
+      return /\.js$/.test(file)
+    case 'GQL-1':
+      return /\bnodes\b|\bpageInfo\b|\bedges\b/.test(evidence)
+    case 'PR-1':
+      // PR-1 is about the PR title, so it has no source file to anchor to.
+      return /pr\s*(title|description)/i.test(file + '\n' + evidence)
+    default:
+      return false
+  }
+}
+
 function isHardRule(finding) {
-  return typeof finding.rule === 'string' && HARD_RULES.indexOf(finding.rule) !== -1
+  if (typeof finding.rule !== 'string' || HARD_RULES.indexOf(finding.rule) === -1) {
+    return false
+  }
+  return hardRuleCorroborated(finding)
 }
 
 const SEVERITY_RANK = { critical: 3, important: 2, observation: 1, idiomatic: 0 }
@@ -162,10 +206,43 @@ function mergeFindings(a, b) {
   return merged
 }
 
+// How far apart two anchor lines may be and still count as the same issue.
+// Reviewers routinely anchor one defect at different lines: the loop header,
+// the body, the function signature. Kept tight enough that two genuinely
+// distinct findings in one file are not merged because their titles rhyme.
+const SAME_ISSUE_LINE_WINDOW = 30
+
+function nearbyLines(a, b) {
+  const la = Number(a.line)
+  const lb = Number(b.line)
+  if (!Number.isFinite(la) || !Number.isFinite(lb)) {
+    // A finding with no usable line (a PR-level note) only merges with another
+    // one at the same missing line, which is what strict equality gives.
+    return a.line === b.line
+  }
+  return Math.abs(la - lb) <= SAME_ISSUE_LINE_WINDOW
+}
+
+// Would adding `candidate` keep the whole group inside the window? Uses the
+// group's min and max so the answer never depends on arrival order.
+function spanWithinWindow(group, candidate) {
+  const lines = group.concat([candidate]).map(function(f) { return Number(f.line) })
+  if (!lines.every(function(n) { return Number.isFinite(n) })) {
+    // Any unusable line falls back to the strict pairwise rule.
+    return group.every(function(m) { return nearbyLines(m, candidate) })
+  }
+  return Math.max.apply(null, lines) - Math.min.apply(null, lines) <= SAME_ISSUE_LINE_WINDOW
+}
+
 function dedup(allFindings) {
+  // Bucket by FILE, not by `file:line`. Bucketing on the exact line meant two
+  // reviewers describing one defect at lines 9 and 14 landed in different
+  // buckets, so `sameIssue` was never consulted: the issue was verified twice,
+  // burning two verifier agents and emitting two inline comments for one
+  // problem, which is exactly what this pass exists to prevent.
   const byLocation = new Map()
   for (const f of allFindings) {
-    const key = `${f.file}:${f.line}`
+    const key = String(f.file)
     if (!byLocation.has(key)) {
       byLocation.set(key, [])
     }
@@ -176,7 +253,13 @@ function dedup(allFindings) {
   for (const candidates of byLocation.values()) {
     const groups = []
     for (const candidate of candidates) {
-      const match = groups.find(function(g) { return sameIssue(g[0], candidate) })
+      // Compare against the whole group's SPAN, not just its first member.
+      // Checking only g[0] made grouping order-dependent: findings at 25, 50
+      // and 1 all joined when 25 arrived first, leaving a group spanning 49
+      // lines despite a 30-line window.
+      const match = groups.find(function(g) {
+        return sameIssue(g[0], candidate) && spanWithinWindow(g, candidate)
+      })
       if (match) {
         match.push(candidate)
       } else {
