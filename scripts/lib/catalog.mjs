@@ -29,7 +29,7 @@ export const PLUGIN_ASSIGNMENT = {
   },
   'olko-reflection': {
     description: 'Look back and improve: self-critique, retrospectives, performance review, rapid learning.',
-    skills: ['self-critique', 'review-past-performance', 'retro-analysis', 'crash-course', 'wrap-up'],
+    skills: ['self-critique', 'review-past-performance', 'retro-analysis', 'agent-ops-retro', 'crash-course', 'wrap-up'],
   },
   'olko-obsidian': {
     description: 'Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine.',
