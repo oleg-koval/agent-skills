@@ -41,6 +41,7 @@ Available reusable prompt files:
 - self-critique: .github/prompts/self-critique.prompt.md
 - review-past-performance: .github/prompts/review-past-performance.prompt.md
 - retro-analysis: .github/prompts/retro-analysis.prompt.md
+- agent-ops-retro: .github/prompts/agent-ops-retro.prompt.md
 - crash-course: .github/prompts/crash-course.prompt.md
 - wrap-up: .github/prompts/wrap-up.prompt.md
 - obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md

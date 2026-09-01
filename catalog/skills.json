@@ -784,6 +784,30 @@
           ]
         },
         {
+          "name": "agent-ops-retro",
+          "lookupName": "olko:agent-ops-retro",
+          "path": "plugins/olko-reflection/skills/agent-ops-retro",
+          "description": "Retrospective on how the agents themselves are being operated, from local transcripts plus the reports other jobs already produce: what the human keeps repeating, what the guardrails caught, and where delivery leaked, with unactioned findings carried forward.",
+          "tags": [
+            "retrospective",
+            "agent-operations",
+            "telemetry",
+            "skills",
+            "knowledge-ledger",
+            "delegation",
+            "cost"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
           "name": "crash-course",
           "lookupName": "olko:crash-course",
           "path": "plugins/olko-reflection/skills/crash-course",
