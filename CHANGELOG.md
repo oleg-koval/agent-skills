@@ -1,3 +1,15 @@
+# [1.42.0](https://github.com/oleg-koval/agent-skills/compare/v1.41.4...v1.42.0) (2026-09-01)
+
+
+### ✨ Features
+
+* **olko-reflection:** add agent-ops-retro skill ([#79](https://github.com/oleg-koval/agent-skills/issues/79)) ([09f854b](https://github.com/oleg-koval/agent-skills/commit/09f854b07ce546709f9835b824d02517a7f4528d))
+
+
+### 🛠 Builds
+
+* **deps:** bump actions/checkout from 4 to 7 ([#86](https://github.com/oleg-koval/agent-skills/issues/86)) ([eda704b](https://github.com/oleg-koval/agent-skills/commit/eda704bae081784a664e4497703cce192913dfb5))
+
 ## [1.41.4](https://github.com/oleg-koval/agent-skills/compare/v1.41.3...v1.41.4) (2026-09-01)
 
 
