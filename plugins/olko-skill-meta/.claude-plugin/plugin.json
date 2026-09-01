@@ -1,7 +1,7 @@
 {
   "name": "olko-skill-meta",
   "description": "Author and maintain agent skills and the AI toolchain itself.",
-  "version": "1.41.3",
+  "version": "1.41.4",
   "author": {
     "name": "Oleg Koval"
   },
