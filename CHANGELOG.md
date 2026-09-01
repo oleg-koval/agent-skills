@@ -1,3 +1,10 @@
+## [1.41.3](https://github.com/oleg-koval/agent-skills/compare/v1.41.2...v1.41.3) (2026-09-01)
+
+
+### 📚 Documentation
+
+* Add SECURITY.md with security policy details ([b8fa08d](https://github.com/oleg-koval/agent-skills/commit/b8fa08d77c6b72479f2c3c4bdadd1633dbe7aa23))
+
 ## [1.41.2](https://github.com/oleg-koval/agent-skills/compare/v1.41.1...v1.41.2) (2026-08-31)
 
 
