@@ -27,7 +27,7 @@ const OUT = arg('out', './mine.json');
 const SINCE = Date.parse(`${arg('since', '')}T00:00:00Z`);
 const UNTIL = Date.parse(`${arg('until', '')}T00:00:00Z`);
 
-if (!Number.isFinite(SINCE) || !Number.isFinite(UNTIL)) {
+if (!Number.isFinite(SINCE) || !Number.isFinite(UNTIL) || UNTIL <= SINCE) {
   console.error('usage: mine-transcripts.mjs --since YYYY-MM-DD --until YYYY-MM-DD [--out path] [--root dir]');
   process.exit(2);
 }
@@ -134,8 +134,16 @@ for (const f of files) {
 
     if (r.type === 'assistant') {
       const model = r.message?.model;
-      if (model) bump(S.models, model);
       const u = r.message?.usage;
+      if (model) {
+        const stats = S.models.get(model) || { messages: 0, in: 0, out: 0, cacheRead: 0, cacheWrite: 0 };
+        stats.messages++;
+        stats.in += u?.input_tokens || 0;
+        stats.out += u?.output_tokens || 0;
+        stats.cacheRead += u?.cache_read_input_tokens || 0;
+        stats.cacheWrite += u?.cache_creation_input_tokens || 0;
+        S.models.set(model, stats);
+      }
       if (u) {
         S.usage.in += u.input_tokens || 0;
         S.usage.out += u.output_tokens || 0;
@@ -217,7 +225,7 @@ const report = {
   capacityLimitSamples: S.limits.slice(0, 10),
   usage: S.usage,
   cacheReadToOutputRatio: S.usage.out ? +(S.usage.cacheRead / S.usage.out).toFixed(1) : null,
-  models: [...S.models].sort((a, b) => b[1] - a[1]),
+  models: [...S.models].sort((a, b) => b[1].messages - a[1].messages),
   topTools: [...S.tools].sort((a, b) => b[1] - a[1]).slice(0, 40),
   agentSpawns: [...S.agents].sort((a, b) => b[1] - a[1]),
   skillInvocations: [...S.skills].sort((a, b) => b[1] - a[1]),
