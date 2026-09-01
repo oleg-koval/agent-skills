@@ -1,3 +1,16 @@
+## [1.41.4](https://github.com/oleg-koval/agent-skills/compare/v1.41.3...v1.41.4) (2026-09-01)
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump [@semantic-release](https://github.com/semantic-release)/github from 12.0.6 to 12.0.9 ([#83](https://github.com/oleg-koval/agent-skills/issues/83)) ([cc4e8b0](https://github.com/oleg-koval/agent-skills/commit/cc4e8b0fd528f9cf9f128ed0074b1f1597e8aa2e))
+* **deps-dev:** bump [@semantic-release](https://github.com/semantic-release)/release-notes-generator ([#81](https://github.com/oleg-koval/agent-skills/issues/81)) ([034b8e9](https://github.com/oleg-koval/agent-skills/commit/034b8e9602c7a3d39125f1512558a4137ed06731))
+* **deps-dev:** bump semantic-release from 25.0.3 to 25.0.9 ([#85](https://github.com/oleg-koval/agent-skills/issues/85)) ([c5b4e8f](https://github.com/oleg-koval/agent-skills/commit/c5b4e8fa204258077fc151ba441fa7a4533eb81d))
+* **deps:** bump actions/deploy-pages from 4.0.5 to 5.0.0 ([#87](https://github.com/oleg-koval/agent-skills/issues/87)) ([7765c5e](https://github.com/oleg-koval/agent-skills/commit/7765c5e740a1c07031fa75532969439c70ac82ac))
+* **deps:** bump actions/github-script from 7.1.0 to 9.0.0 ([#80](https://github.com/oleg-koval/agent-skills/issues/80)) ([4ea162e](https://github.com/oleg-koval/agent-skills/commit/4ea162e61b6f688f9bb059aef115a29883737ee2))
+* **deps:** bump actions/setup-node from 4 to 7 ([#88](https://github.com/oleg-koval/agent-skills/issues/88)) ([b768ba5](https://github.com/oleg-koval/agent-skills/commit/b768ba5ca2b3a2beea1a2b4d76c036750fa13c2c))
+* **deps:** bump actions/upload-pages-artifact from 3.0.1 to 5.0.0 ([#89](https://github.com/oleg-koval/agent-skills/issues/89)) ([3ba8f56](https://github.com/oleg-koval/agent-skills/commit/3ba8f56a64275d86ccfd254fb981a94d2552e1f0))
+
 ## [1.41.3](https://github.com/oleg-koval/agent-skills/compare/v1.41.2...v1.41.3) (2026-09-01)
 
 
