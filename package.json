@@ -1,6 +1,6 @@
 {
   "name": "@olegkoval/agent-skills",
-  "version": "1.41.2",
+  "version": "1.41.3",
   "private": false,
   "publishConfig": {
     "access": "public"
