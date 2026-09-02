@@ -27,7 +27,7 @@ const OUT = arg('out', './mine.json');
 const SINCE = Date.parse(`${arg('since', '')}T00:00:00Z`);
 const UNTIL = Date.parse(`${arg('until', '')}T00:00:00Z`);
 
-if (!Number.isFinite(SINCE) || !Number.isFinite(UNTIL) || UNTIL <= SINCE) {
+if (!Number.isFinite(SINCE) || !Number.isFinite(UNTIL)) {
   console.error('usage: mine-transcripts.mjs --since YYYY-MM-DD --until YYYY-MM-DD [--out path] [--root dir]');
   process.exit(2);
 }
@@ -46,7 +46,23 @@ function walk(dir, out = []) {
 }
 
 // A user-role text record that is really harness output, not something a person typed.
-const HARNESS = /^(<system-reminder|<command-name|<command-message|<local-command|<bash-input|<bash-stdout|<user-prompt-submit-hook|<task-notification|Caveat: The messages below|\[Request interrupted)/;
+// A user-role text record that is really harness output, not something a person typed.
+// Each alternative below was found by a run that mis-counted. The first pass caught the
+// obvious wrappers and still let 26% through: skill body dumps, image attachments,
+// already-loaded stubs and permission-grant echoes all sit in human-turn position.
+const HARNESS = new RegExp('^(' + [
+  '<system-reminder', '<command-name', '<command-message', '<local-command',
+  '<bash-input', '<bash-stdout', '<bash-stderr', '<user-prompt-submit-hook',
+  '<task-notification', '<cross-session-message',
+  'Caveat: The messages below',
+  '\\[Request interrupted',
+  'Base directory for this skill:',      // a skill body dumped into the turn
+  'Skill /[^ ]+ is already loaded',      // re-invocation stub
+  'Permission granted for:',             // permission-grant echo
+  '\\[Image #\\d+\\]',                    // bare attachment
+  '\\[Image: source:',
+  '\\[Pasted text',
+].join('|') + ')');
 
 const textOf = (msg) => {
   const c = msg?.content;
@@ -68,7 +84,8 @@ const S = {
   limits: [],
   humanTurns: [],
   echoTurns: 0,
-  interrupts: 0,
+  interruptsAll: 0,
+  interruptsMain: 0,
   compacts: 0,
   usage: { in: 0, out: 0, cacheRead: 0, cacheWrite: 0 },
 };
@@ -134,16 +151,8 @@ for (const f of files) {
 
     if (r.type === 'assistant') {
       const model = r.message?.model;
+      if (model) bump(S.models, model);
       const u = r.message?.usage;
-      if (model) {
-        const stats = S.models.get(model) || { messages: 0, in: 0, out: 0, cacheRead: 0, cacheWrite: 0 };
-        stats.messages++;
-        stats.in += u?.input_tokens || 0;
-        stats.out += u?.output_tokens || 0;
-        stats.cacheRead += u?.cache_read_input_tokens || 0;
-        stats.cacheWrite += u?.cache_creation_input_tokens || 0;
-        S.models.set(model, stats);
-      }
       if (u) {
         S.usage.in += u.input_tokens || 0;
         S.usage.out += u.output_tokens || 0;
@@ -182,9 +191,12 @@ for (const f of files) {
     }
 
     const raw = textOf(r.message);
+    // Two scopes, two names. The first version reported the all-records count and the
+    // per-session count under one label `interrupts`, so the top-level figure (27) did not
+    // match the sum of the per-session rows (15) and neither number could be trusted.
     if (raw.includes('[Request interrupted')) {
-      S.interrupts++;
-      if (sess) sess.interrupts++;
+      S.interruptsAll++;
+      if (sess) { S.interruptsMain++; sess.interrupts++; }
     }
     if (!main || r.userType !== 'external' || !raw || sawToolResult) continue;
 
@@ -219,19 +231,37 @@ const report = {
   humanTurnsPerDay: byDay,
   turnsPerSession: { median: pct(0.5), p90: pct(0.9), max: humanCounts.at(-1) ?? 0 },
   shortTurnsUnder40Chars: S.humanTurns.filter((t) => t.text.trim().length < 40).length,
-  interrupts: S.interrupts,
+  interruptsMainSessions: S.interruptsMain,
+  interruptsAllRecords: S.interruptsAll,
   compactEvents: S.compacts,
   capacityLimitEvents: S.limits.length,
   capacityLimitSamples: S.limits.slice(0, 10),
   usage: S.usage,
   cacheReadToOutputRatio: S.usage.out ? +(S.usage.cacheRead / S.usage.out).toFixed(1) : null,
-  models: [...S.models].sort((a, b) => b[1].messages - a[1].messages),
+  models: [...S.models].sort((a, b) => b[1] - a[1]),
   topTools: [...S.tools].sort((a, b) => b[1] - a[1]).slice(0, 40),
   agentSpawns: [...S.agents].sort((a, b) => b[1] - a[1]),
   skillInvocations: [...S.skills].sort((a, b) => b[1] - a[1]),
   errorKinds: [...S.errorKinds].sort((a, b) => b[1] - a[1]),
   sessions,
 };
+
+// Internal consistency gate. A report whose aggregates disagree with its own rows is not
+// evidence, and a previous version shipped exactly that. Fail loudly rather than emit it.
+const rowInterrupts = sessions.reduce((n, s) => n + s.interrupts, 0);
+const rowHuman = sessions.reduce((n, s) => n + s.human, 0);
+const problems = [];
+if (rowInterrupts !== report.interruptsMainSessions) {
+  problems.push(`interruptsMainSessions ${report.interruptsMainSessions} != sum of session rows ${rowInterrupts}`);
+}
+if (rowHuman !== report.humanTurnsOrganic) {
+  problems.push(`humanTurnsOrganic ${report.humanTurnsOrganic} != sum of session rows ${rowHuman}`);
+}
+if (problems.length) {
+  console.error('INCONSISTENT REPORT, refusing to write:\n  ' + problems.join('\n  '));
+  process.exit(3);
+}
+report.echoFilterVersion = 2;
 
 fs.writeFileSync(OUT, JSON.stringify(report, null, 1));
 fs.writeFileSync(OUT.replace(/\.json$/, '') + '-turns.json', JSON.stringify(S.humanTurns, null, 1));
