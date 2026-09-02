@@ -424,6 +424,10 @@ const budgetAtStart = budget.spent()
       `First Read and follow the prompt file: ${promptDir}/${dim.file}.`,
       `Parameters: REPO_SLUG=${repoSlug}, PR_NUMBER=${prNumber}, PR_URL=${prUrl},`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${wtDisplay}.`,
+      `Your StructuredOutput MUST be a JSON object with a top-level "findings" array`
+        + ` (it is a REQUIRED property, so do not omit it even when there is nothing to report).`
+        + ` If you found no issues, return {"findings": []}, never prose, never an empty object,`
+        + ` never a "findings" key nested under anything else.`,
     ].join(' ')
 
     if (prevSha) {
