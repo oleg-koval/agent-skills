@@ -1,3 +1,10 @@
+## [1.42.1](https://github.com/oleg-koval/agent-skills/compare/v1.42.0...v1.42.1) (2026-09-02)
+
+
+### 🐛 Bug Fixes
+
+* name findings field in review prompt, fix retro miner echo filter ([#90](https://github.com/oleg-koval/agent-skills/issues/90)) ([ab8ff4b](https://github.com/oleg-koval/agent-skills/commit/ab8ff4bb94207b333080ce0a58be04f08315bbb6))
+
 # [1.42.0](https://github.com/oleg-koval/agent-skills/compare/v1.41.4...v1.42.0) (2026-09-01)
 
 
