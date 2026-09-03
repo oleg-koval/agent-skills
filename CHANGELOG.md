@@ -1,3 +1,10 @@
+## [1.42.2](https://github.com/oleg-koval/agent-skills/compare/v1.42.1...v1.42.2) (2026-09-03)
+
+
+### 🐛 Bug Fixes
+
+* give every skill description an explicit Use-when trigger ([#91](https://github.com/oleg-koval/agent-skills/issues/91)) ([188b1ce](https://github.com/oleg-koval/agent-skills/commit/188b1ce35c08f8fd6d4e41fca16deaf622abb002))
+
 ## [1.42.1](https://github.com/oleg-koval/agent-skills/compare/v1.42.0...v1.42.1) (2026-09-02)
 
 
