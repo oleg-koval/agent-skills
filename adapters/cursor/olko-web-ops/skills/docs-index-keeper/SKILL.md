@@ -1,6 +1,10 @@
 ---
 name: docs-index-keeper
-description: Keep a repository's Markdown docs index in sync by installing and running docs-index-keeper in pre-commit hooks, CI, or one-off maintenance flows.
+description: >
+  Keep a repository's Markdown docs index in sync with the files that actually exist, by installing
+  and running docs-index-keeper in a pre-commit hook, in CI, or as a one-off sweep. Use when the
+  user says "the docs index is stale", "update the docs index", "add a docs index check to CI",
+  "our doc links are out of date", or when new docs were added without being linked anywhere.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires shell access and Node.js 18+ when installing from npm.

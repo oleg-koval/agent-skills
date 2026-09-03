@@ -1,6 +1,11 @@
 ---
 name: ai-tools-setup
-description: 'Set up, repair, and report on the RTK+ICM+Vox AI development toolkit. Installs missing tools, fixes broken hooks and MCP config, and shows an effectiveness digest (token savings, memory accumulation, voice health) on demand or as a scheduled weekly report.'
+description: >
+  Set up, repair, and report on the RTK+ICM+Vox AI development toolkit: installs missing tools,
+  fixes broken hooks and MCP config, and shows an effectiveness digest covering token savings,
+  memory accumulation and voice health. Use when the user says "set up my AI tools", "my hooks are
+  broken", "MCP is not loading", "check my toolkit", "is ICM working", "how much are these tools
+  saving me", or when the scheduled weekly toolkit report fires.
 license: MIT
 allowed-tools: Bash, Read, Edit, Write
 compatibility: Claude Code on macOS (Homebrew required)

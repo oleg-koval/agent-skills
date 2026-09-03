@@ -1,6 +1,12 @@
 ---
 name: vinted-listing
-description: Create, edit, and safely publish Vinted listings through the signed-in browser, using verified item details and the owner’s original photos.
+description: >
+  Create, edit, and safely publish a Vinted listing through the signed-in browser, using verified
+  item details and the owner's original photos. Suggests title, description, category, brand,
+  condition, colour and parcel size from the photos, saves a draft first, and requires explicit
+  confirmation before publishing. Use when the user wants to list, sell, relist or price an item on
+  Vinted, or says "put this on Vinted", "create a Vinted listing", "sell this on Vinted", "edit my
+  Vinted draft", or "publish that listing". Browser workflow, not an API integration.
 ---
 
 # Vinted Listing
