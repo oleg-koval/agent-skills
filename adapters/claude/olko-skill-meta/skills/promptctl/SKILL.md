@@ -1,6 +1,11 @@
 ---
 name: promptctl
-description: Use promptctl for template-based prompt engineering, prompt scoring, prompt generation, and reusable prompt workflows across repositories and teams.
+description: >
+  Manage reusable prompts with the promptctl CLI: template-based prompt engineering, prompt
+  generation, and scoring a prompt before it ships. Use when the user wants to "write a reusable
+  prompt", "score this prompt", "turn this into a prompt template", "share prompts across repos",
+  or names promptctl directly. For bringing an agent skill into this catalog use
+  add-to-my-skills.
 license: MIT
 allowed-tools: Bash, Read, Write
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires promptctl to be installed when the workflow depends on the CLI.
