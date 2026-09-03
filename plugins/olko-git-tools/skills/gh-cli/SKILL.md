@@ -1,6 +1,12 @@
 ---
 name: gh-cli
-description: GitHub CLI (gh) comprehensive reference for repositories, issues, pull requests, Actions, projects, releases, gists, codespaces, organizations, extensions, and all GitHub operations from the command line.
+description: >
+  Reach for the GitHub CLI (gh) to do something on GitHub from the command line: repositories,
+  issues, pull requests, Actions runs and logs, projects, releases, gists, codespaces, org and
+  extension management. Use when a task needs a gh command and the exact syntax, flag or API path
+  is not obvious, or the user says "use gh", "what is the gh command for", "list my PRs from the
+  CLI", or "query the GitHub API". For driving a PR through review bots and CI use the
+  olko-github-pr skills instead; this one is the command reference.
 license: MIT
 allowed-tools: Bash
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires the GitHub CLI and valid GitHub authentication.
