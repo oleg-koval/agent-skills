@@ -4,9 +4,9 @@ description: >
   Set up or repair a Node.js release pipeline built on semantic-release-npm-github-publish, with a
   stable channel on main and a prerelease channel on a beta branch, including the GitHub Actions
   validation and npm publishing behaviour. Use when the user wants "semantic release set up", "a
-  beta release channel", "prerelease publishing", "automated npm publishing", or when a repo's
-  releases are still manual and should become commit-driven. For writing the notes of a single
-  release use changelog-generator.
+  beta release channel", "prerelease publishing", "automated npm publishing", or when an npm
+  package's releases are still manual and should become commit-driven. For writing the notes of a
+  single release use changelog-generator.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires a Node.js package repository that uses git and GitHub Actions.
