@@ -15,42 +15,37 @@ Agent-agnostic skill collection for Codex, Claude, Cursor, Grok, and other skill
 
 These skills are opinionated by design. They encode working defaults, preferred tools, and repeatable workflows instead of trying to be neutral snippets. Treat them as starting points with taste: useful out of the box, easy to inspect, and specific enough for an agent to execute consistently.
 
-## Structure
+```
+  PR & GIT        BUILD         OPERATE        IMPROVE        PERSONAL
+ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
+ │ github-pr  │ │  product   │ │  web-ops   │ │ skill-meta │ │  creative  │
+ │ git-tools  │ │ apple-kit  │ │  obsidian  │ │ reflection │ │            │
+ │  release   │ │ garmin-kit │ │            │ │            │ │            │
+ └────────────┘ └────────────┘ └────────────┘ └────────────┘ └────────────┘
+```
 
-- `plugins/olko-{plugin}/skills/{skill}/`: canonical skill packages, one per plugin
-- `catalog/skills.json`: machine-readable inventory, the source of truth
-- `adapters/`: generated per-tool wrappers (Claude, Codex, Cursor, Grok, Pi, Hermes)
-- `scripts/`: sync, build, and validation helpers
-- `site/`: generator for the browsable catalog at [skills.olegkoval.com](https://skills.olegkoval.com) (`npm run build:site`)
-- `docs/versioning.md`: catalog/plugin versioning and release automation contract
+---
 
-## Principles
+## Start here
 
-- Keep one canonical skill package per workflow.
-- Put agent-specific wrappers in `adapters/` instead of duplicating the core skill.
-- Keep catalogs neutral and machine-readable.
-- Add marketplace-specific metadata on top of the canonical package, not instead of it.
+Ten skills across different plugins that cover the most common jobs. Full catalog is below.
+
+| What you're doing | Skill | Key principle |
+|--------------------|-------|----------------|
+| Reviewing a PR beyond a single pass or a bot | [lekker-review](plugins/olko-github-pr/skills/lekker-review/SKILL.md) (`olko:lekker-review`) | Findings need proof, not a confident tone |
+| Driving a PR to merge-ready in one pass | [pr-to-green](plugins/olko-github-pr/skills/pr-to-green/SKILL.md) (`olko:pr-to-green`) | Chain the fix loops instead of running them by hand |
+| Getting CI back to green after a push | [ci-fix-loop](plugins/olko-github-pr/skills/ci-fix-loop/SKILL.md) (`olko:ci-fix-loop`) | Diagnose from the real failing log, not a guess |
+| Committing with a real conventional message | [git-commit](plugins/olko-git-tools/skills/git-commit/SKILL.md) (`olko:git-commit`) | The message describes the diff, not the intent |
+| Closing out a finished piece of work | [wrap-up](plugins/olko-reflection/skills/wrap-up/SKILL.md) (`olko:wrap-up`) | Verify against the original objective before cleaning up |
+| Running a recurring engineering retrospective | [retro-analysis](plugins/olko-reflection/skills/retro-analysis/SKILL.md) (`olko:retro-analysis`) | Evidence from delivery and code, not vibes |
+| Going from idea to a shippable MVP | [mvp-oneshot](plugins/olko-product/skills/mvp-oneshot/SKILL.md) (`olko:mvp-oneshot`) | Scope for one week, not the whole roadmap |
+| Ramping up on an unfamiliar codebase fast | [crash-course](plugins/olko-reflection/skills/crash-course/SKILL.md) (`olko:crash-course`) | Source-grounded, timed, and testable |
+| Cutting a release from ready-code to submitted-build | [release-day](plugins/olko-release/skills/release-day/SKILL.md) (`olko:release-day`) | One orchestrated pass, not five manual steps |
+| Starting the workday with the queue synced | [morning-routine](plugins/olko-obsidian/skills/morning-routine/SKILL.md) (`olko:morning-routine`) | Chain the routines instead of running them separately |
+
+---
 
 ## Quick Start
-
-<details>
-<summary><b>Codex</b></summary>
-
-Install all package symlinks into your local Codex skills directory:
-
-```bash
-git clone https://github.com/oleg-koval/agent-skills.git
-cd agent-skills
-./scripts/install-codex-symlinks.sh
-```
-
-Then mention a lookup name in a new Codex session:
-
-```text
-Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
-```
-
-</details>
 
 <details>
 <summary><b>Claude Code</b></summary>
@@ -101,6 +96,25 @@ Clone the repo and point Claude Code at the plugin directory:
 ```bash
 git clone https://github.com/oleg-koval/agent-skills.git
 claude --plugin-dir /path/to/agent-skills
+```
+
+</details>
+
+<details>
+<summary><b>Codex</b></summary>
+
+Install all package symlinks into your local Codex skills directory:
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+cd agent-skills
+./scripts/install-codex-symlinks.sh
+```
+
+Then mention a lookup name in a new Codex session:
+
+```text
+Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
 ```
 
 </details>
@@ -165,7 +179,9 @@ plugins/{plugin}/skills/{skill}/SKILL.md
 
 </details>
 
-## All 49 Skills
+---
+
+## All 52 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
@@ -203,7 +219,7 @@ Everyday git and GitHub CLI operations: conventional commits, branch hygiene.
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [git-commit](plugins/olko-git-tools/skills/git-commit/SKILL.md) | Creates conventional commits with diff-aware staging and message generation | Asking to commit changes or wanting a conventional commit message from the current diff |
-| [gh-cli](plugins/olko-git-tools/skills/gh-cli/SKILL.md) | Guides GitHub CLI usage for repos, PRs, Actions, releases, issues, and all related GitHub operations | Working with GitHub from the command line and needing reliable `gh` commands |
+| [gh-cli](plugins/olko-git-tools/skills/gh-cli/SKILL.md) | Guides GitHub CLI usage for repos, PRs, Actions, releases, issues, and all related GitHub operations | A task needs a `gh` command and the exact syntax isn't obvious, or the user says "use gh" or "what is the gh command for"; for driving a PR through review bots and CI use the olko-github-pr skills instead |
 | [branch-cleanup](plugins/olko-git-tools/skills/branch-cleanup/SKILL.md) | Prunes stale git branches after a merge wave: deletes closed/merged remote branches, removes local tracking refs that no longer exist on the remote, and optionally cleans up merged local branches | Tidying up after a Dependabot triage batch merge or a sprint wind-down |
 
 ### olko-release (5)
@@ -212,10 +228,10 @@ Ship a release: semantic-release setup, changelogs, store listing copy, release-
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
-| [semantic-release-beta](plugins/olko-release/skills/semantic-release-beta/SKILL.md) | Sets up `semantic-release` with stable `main` releases and beta prereleases on a `beta` branch | A Node package needs stable npm publishing plus beta prereleases |
+| [semantic-release-beta](plugins/olko-release/skills/semantic-release-beta/SKILL.md) | Sets up `semantic-release` with stable `main` releases and beta prereleases on a `beta` branch | A Node package needs stable npm publishing plus beta prereleases, or its releases are still manual and should become commit-driven; for writing the notes of one release use changelog-generator |
 | [open-source-publisher](plugins/olko-release/skills/open-source-publisher/SKILL.md) | Prepares an open-source repository for public publishing with branding, CI/CD, and release hygiene | Releasing a private project publicly with proper GitHub Pages, README, and social preview |
 | [release-day](plugins/olko-release/skills/release-day/SKILL.md) | Orchestrates a full release-day workflow for iOS, Android, or Garmin apps: verifies CI is green, generates a changelog, drafts store listing copy, triggers semantic-release or tags manually, waits for the build, and queues the App Store submission | Cutting a release from "code is ready" to "build submitted" in one orchestrated pass |
-| [changelog-generator](plugins/olko-release/skills/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, app store update descriptions, or a public changelog |
+| [changelog-generator](plugins/olko-release/skills/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, a CHANGELOG entry, or "what changed since the last release"; for setting up the release pipeline itself use semantic-release-beta |
 | [store-listing-copy](plugins/olko-release/skills/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
 
 ### olko-product (4)
@@ -227,7 +243,7 @@ Take a product idea to a shippable build: MVP passes, full-stack scaffolds, laun
 | [product-builder](plugins/olko-product/skills/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | Building a complete app, SaaS, dashboard, or product rather than a prototype |
 | [mvp-oneshot](plugins/olko-product/skills/mvp-oneshot/SKILL.md) | Takes a rough product idea and produces a scoped, testable MVP plan and initial implementation in a single pass | Going from idea to a shippable one-week MVP without losing scope |
 | [starter-rules](plugins/olko-product/skills/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
-| [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, open-source package, or creator tool for public launch |
+| [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, or package for public launch ("prep for Product Hunt", "write the launch post", "make this shareable"); for building the thing itself use mvp-oneshot or product-builder |
 
 ### olko-skill-meta (8)
 
@@ -238,9 +254,9 @@ Author and maintain agent skills and the AI toolchain itself.
 | [context-repo](plugins/olko-skill-meta/skills/context-repo/SKILL.md) | Resolves a single durable, private GitHub repository other skills use to persist context they produce, retro snapshots and shared-knowledge notes among them, searching the account for a store that already exists before ever asking to create one | A skill needs a durable, cross-machine store for content it generates, rather than a local scratch directory that does not survive across machines or repos |
 | [add-to-my-skills](plugins/olko-skill-meta/skills/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
 | [skill-budget-audit](plugins/olko-skill-meta/skills/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow, identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
-| [promptctl](plugins/olko-skill-meta/skills/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, review, scoring, or reusable prompt workflows |
+| [promptctl](plugins/olko-skill-meta/skills/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, scoring, or reusable prompt templates, or the user names promptctl directly; for bringing a skill into this catalog use add-to-my-skills |
 | [veto-routing](plugins/olko-skill-meta/skills/veto-routing/SKILL.md) | Routes or executes AI tasks through Veto across configured providers while preserving privacy, cost, transport, and output boundaries | A task needs cost-aware multi-provider model selection, execution, fallback, or a machine-readable routing decision |
-| [ai-tools-setup](plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit, installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine or diagnosing broken integrations |
+| [ai-tools-setup](plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit, installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine, or the user says "my hooks are broken", "MCP is not loading", "check my toolkit", "is ICM working"; also runs as the scheduled weekly toolkit report |
 | [relay](plugins/olko-skill-meta/skills/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
 | [shared-knowledge-artifact](plugins/olko-skill-meta/skills/shared-knowledge-artifact/SKILL.md) | Builds a shared, self-persisting knowledge ledger as a Claude Artifact, a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons and append to them | Giving multiple agents one place to learn from each other instead of repeating the same mistakes |
 
@@ -252,10 +268,10 @@ Look back and improve: self-critique, retrospectives, performance review, rapid 
 |-------|-------------|----------|
 | [self-critique](plugins/olko-reflection/skills/self-critique/SKILL.md) | Adversarially critiques your own last answer: spawns a critic agent that verifies claims against live sources, then loops until satisfied and reports where you were wrong | Checking a substantial answer before the user has to |
 | [review-past-performance](plugins/olko-reflection/skills/review-past-performance/SKILL.md) | Pulls 24h of ICM memories, git history, and skill analytics; detects repeated mistakes and slow workflows; proposes 1-3 concrete fixes | Daily self-improvement loop or codifying a repeated workflow |
-| [retro-analysis](plugins/olko-reflection/skills/retro-analysis/SKILL.md) | Produces repository, comparison, and cross-project retrospectives from delivery, code-quality, work-pattern, and trend evidence | Recurring engineering retrospective or “what did we ship?” analysis |
+| [retro-analysis](plugins/olko-reflection/skills/retro-analysis/SKILL.md) | Produces repository, comparison, and cross-project retrospectives from delivery, code-quality, work-pattern, and trend evidence | The user asks for a retro over shipped work ("run a retrospective", "how did this quarter go", "what did we ship") or a scheduled retro job fires; for agent-operations retros use agent-ops-retro, for a single finished change use wrap-up |
 | [agent-ops-retro](plugins/olko-reflection/skills/agent-ops-retro/SKILL.md) | Retrospective on how the agents themselves are being operated: mines local transcripts and reads the reports other jobs already produce to surface what the human keeps repeating, what the guardrails caught, and where delivery leaked, carrying unactioned findings forward | Checking agent usage, delegation cost, or repeating corrections across sessions rather than shipped code |
 | [crash-course](plugins/olko-reflection/skills/crash-course/SKILL.md) | Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes | Ramping up on an unfamiliar codebase, project, or concept under time pressure |
-| [wrap-up](plugins/olko-reflection/skills/wrap-up/SKILL.md) | Verifies a completed task against its original objective, confirms applicable checks, and safely tidies task-owned artifacts, worktrees, and local branches | Periodic or end-of-task delivery and cleanup review |
+| [wrap-up](plugins/olko-reflection/skills/wrap-up/SKILL.md) | Verifies a completed task against its original objective, confirms applicable checks, and safely tidies task-owned artifacts, worktrees, and local branches | A change is believed done and the user says "wrap up", "we are done here", or "clean up after this", or before handing work off; for a retro over repository history use retro-analysis |
 
 ### olko-obsidian (3)
 
@@ -293,7 +309,7 @@ Creative and personal projects: photo galleries, music players, Plex ingest, lis
 | [gallery](plugins/olko-creative/skills/gallery/SKILL.md) | Creates photo galleries with AI-assisted layout curation and sequencing | Building a gallery from photos or planning photo layout, sequencing, and curation |
 | [fill-music-player](plugins/olko-creative/skills/fill-music-player/SKILL.md) | Fills a portable music player with a curated random selection while balancing formats, artists, albums, and capacity | Copying music from a NAS or local library to a Walkman, iPod, USB drive, or similar device |
 | [music-to-plex](plugins/olko-creative/skills/music-to-plex/SKILL.md) | Acquires albums, DJ crates, and YouTube playlists for Plex/Plexamp with verified NAS delivery, Plex visibility, and source-backed Obsidian radio notes | Adding or downloading music to Plex/Plexamp, including an album request, DJ crate, or YouTube playlist |
-| [vinted-listing](plugins/olko-creative/skills/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller’s original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Creating, editing, or publishing a Vinted listing |
+| [vinted-listing](plugins/olko-creative/skills/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller's original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Listing, selling, relisting, or pricing an item on Vinted, or editing and publishing an existing draft |
 | [wikipedia-uk-editor](plugins/olko-creative/skills/wikipedia-uk-editor/SKILL.md) | Drafts policy-compliant Ukrainian Wikipedia edits, en→uk translation, stub expansion, sourcing, backlog cleanup, returning ready-to-paste wikitext, an edit summary, and a verified source list | Editing, translating, or sourcing a uk.wikipedia.org article, or planning what to contribute next |
 
 ### olko-web-ops (4)
@@ -304,10 +320,37 @@ Operate a website: WAF rules, search console audits, analytics bootstrap, docs i
 |-------|-------------|----------|
 | [cloudflare-block-countries](plugins/olko-web-ops/skills/cloudflare-block-countries/SKILL.md) | Blocks specific countries via Cloudflare WAF Custom Rules using the API | Geo-blocking traffic or setting up WAF country rules across single or multiple zones |
 | [search-console-indexing-audit](plugins/olko-web-ops/skills/search-console-indexing-audit/SKILL.md) | Audits Google Search Console Coverage exports against sitemap, robots, canonical, redirect, and noindex signals | Diagnosing GSC indexing issues such as redirects, canonical alternates, and discovered-but-not-indexed pages |
-| [docs-index-keeper](plugins/olko-web-ops/skills/docs-index-keeper/SKILL.md) | Keeps a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows | A repo has `docs/` and needs `docs/README.md` updated automatically |
-| [website-analytics-bootstrap](plugins/olko-web-ops/skills/website-analytics-bootstrap/SKILL.md) | Sets up persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only SEO audits, and Telegram alerts on a local host or NAS | Bootstrapping SEO analytics and monitoring for a new website |
+| [docs-index-keeper](plugins/olko-web-ops/skills/docs-index-keeper/SKILL.md) | Keeps a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows | A repo's docs index is stale, needs a CI check added, or new docs were added without being linked anywhere |
+| [website-analytics-bootstrap](plugins/olko-web-ops/skills/website-analytics-bootstrap/SKILL.md) | Sets up persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only SEO audits, and Telegram alerts on a local host or NAS | Bootstrapping SEO analytics and monitoring for a site with no tracking yet; for diagnosing an existing indexing problem use search-console-indexing-audit |
 
-## How to use skills
+---
+
+## How Skills Work
+
+Every skill package follows a consistent anatomy:
+
+```text
+┌─────────────────────────────────────────────────────┐
+│  SKILL.md                                            │
+│                                                       │
+│  ┌─ Frontmatter ─────────────────────────────────┐   │
+│  │ name: lowercase-hyphen-name                    │   │
+│  │ description: What this skill does. Use when…   │   │
+│  │ license / allowed-tools / compatibility        │   │
+│  └─────────────────────────────────────────────────┘  │
+│  Body            → numbered steps or phases,          │
+│                     specific to the task               │
+│  Report          → what to hand back and how           │
+└─────────────────────────────────────────────────────┘
+```
+
+**Key design choices:**
+
+- **Progressive disclosure.** Only `name` and `description` load into an agent's context up front. The body loads on invocation, which is why every description also carries its own "Use when" clause: it is the only routing signal an agent sees before deciding whether to open the file.
+- **One canonical package per workflow.** `plugins/olko-{plugin}/skills/{skill}/SKILL.md` is the single source; agent-specific wrappers wrap it, they never fork it.
+- **Description is the router.** A skill's `description` must say what it does and name the phrases a user would actually type, because that sentence is what an agent matches against, not the body.
+- **Process over prose.** Skills read as workflows to follow (numbered steps, phases, gates), not as reference essays.
+- **Adapters stay generated.** Per-tool wrappers under `adapters/`, `.windsurf/rules/`, `.kiro/steering/`, `.github/prompts/` and similar are built from `catalog/skills.json`; nothing there is hand-written.
 
 Install the Codex symlinks, then mention a skill by its lookup name in a new agent session:
 
@@ -333,15 +376,69 @@ Use the olko:viral-launch skill to make this project launch-ready.
 
 Each skill has a canonical `SKILL.md` under `plugins/{plugin}/skills/{skill}/`. Agent-specific wrappers live under that plugin's `adapters/` directory.
 
-When adding or changing a skill:
+---
 
-1. Update the canonical `SKILL.md` first.
-2. Keep instructions concrete and operational.
-3. Add references only when the agent needs extra detail to execute the workflow.
-4. Update `catalog/skills.json` if the skill name, category, description, path, tags, or adapters change.
-5. Run local validation before publishing changes.
+## Project Structure
 
-### Shared context store
+```text
+agent-skills/
+├── plugins/
+│   └── olko-{plugin}/
+│       ├── .claude-plugin/plugin.json   # generated
+│       └── skills/{skill}/
+│           ├── SKILL.md                 # canonical, source of truth for the skill
+│           └── references/              # optional, loaded only when needed
+├── catalog/
+│   └── skills.json                      # source of truth for plugin/skill metadata
+├── adapters/                            # generated, one tree per tool
+│   ├── claude/
+│   ├── codex/
+│   ├── cursor/
+│   ├── grok/
+│   ├── pi/
+│   └── hermes/
+├── .claude-plugin/marketplace.json      # generated, lists all 11 plugins
+├── .cursor-plugin/index.json            # generated
+├── .grok-plugin/index.json              # generated
+├── .windsurf/rules/                     # generated
+├── .kiro/steering/                      # generated
+├── .github/prompts/                     # generated
+├── .github/copilot-instructions.md      # generated
+├── docs/
+│   ├── versioning.md                    # catalog/plugin versioning contract
+│   ├── agent-context-store.md           # shared context store contract
+│   ├── skill-anatomy.md                 # SKILL.md format spec
+│   ├── backlog/                         # durable, non-obvious lessons
+│   └── plans/completed/                 # finished planning docs
+├── scripts/                             # sync, build, and validation helpers
+├── site/                                # generator for skills.olegkoval.com
+└── tests/                               # bash + node validators
+```
+
+---
+
+## Why this catalog?
+
+AI agents left to their own defaults improvise a workflow every time, and that workflow drifts with whatever the model feels like doing that day. This catalog exists to pin the workflow down: a fixed set of steps, tools, and defaults for the jobs that come up often enough to be worth writing down once.
+
+The guiding rules:
+
+- **One canonical skill package per workflow.** No duplicated logic across tools.
+- **Agent-specific wrappers live in `adapters/`, not inside the skill.** The canonical package never forks per tool.
+- **Catalogs stay neutral and machine-readable.** `catalog/skills.json` is the one place metadata changes.
+- **Marketplace metadata sits on top of the canonical package, never instead of it.**
+
+And the catalog is opinionated on purpose. These are working defaults, preferred tools, and repeatable workflows, not neutral snippets meant to suit every team. Useful out of the box, easy to inspect, specific enough that an agent executes them the same way twice.
+
+---
+
+## How it compares
+
+[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) covers the software development lifecycle: spec, plan, build, test, review, ship. [obra/superpowers](https://github.com/obra/superpowers) is about process discipline while an agent works. This catalog sits next to both rather than competing with them: it is personal-workflow and operations oriented, built around the jobs that come up running a one-person shop across several codebases, not around building any single piece of software. That means PR review-bot loops and release-day orchestration, an Obsidian daily-note routine, retrospectives over what actually shipped, and skills for entirely personal projects (a watch face, a Vinted listing, a music player). Install this catalog alongside a lifecycle pack or a process-discipline pack; they cover different parts of the day.
+
+---
+
+## Shared context store
 
 ![How the agent context store works: the five resolution steps, the three skills that use the store, the four states every run ends in, and how the store is read](docs/assets/context-store-card.png)
 
@@ -386,79 +483,15 @@ decides which targets it ships to, so the file counts differ per target: Claude 
 Cursor 45, Copilot 45, Codex 42, Windsurf 35, Kiro 35, Pi 2, Hermes 2. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
-## How Skills Work
-
-Every package follows a consistent anatomy:
-
-```text
-plugins/{plugin}/skills/{skill}/
-├── SKILL.md              # Required canonical skill definition
-└── references/           # Optional supporting material loaded only when needed
-```
-
-Agent-specific wrappers do not live inside the skill directory. They are
-generated at the top level, one tree per tool, mirroring the same
-plugin/skill path underneath:
-
-```text
-adapters/
-├── claude/{plugin}/skills/{skill}/
-├── codex/{plugin}/skills/{skill}/
-├── cursor/{plugin}/skills/{skill}/
-├── grok/{plugin}/skills/{skill}/
-├── pi/{plugin}/skills/{skill}/
-└── hermes/{plugin}/skills/{skill}/
-```
-
-Windsurf, Kiro, and Copilot do not use `adapters/`; they get their own
-top-level generated directories (`.windsurf/rules/`, `.kiro/steering/`,
-`.github/prompts/` and `.github/copilot-instructions.md`).
-
-Key design choices:
-
-- Process over prose: skills are workflows agents follow, not generic reference essays.
-- Progressive disclosure: `SKILL.md` is the entry point; supporting files load only when needed.
-- Adapter separation: agent-specific wrappers wrap the canonical package instead of forking it.
-
-See [docs/skill-anatomy.md](docs/skill-anatomy.md) for the package format.
-
-## Project Structure
-
-```text
-agent-skills/
-├── plugins/
-│   └── olko-{plugin}/
-│       ├── .claude-plugin/plugin.json   # generated
-│       └── skills/{skill}/
-│           ├── SKILL.md
-│           └── references/
-├── catalog/
-│   └── skills.json                      # source of truth
-├── adapters/                            # generated, one tree per tool
-│   ├── claude/
-│   ├── codex/
-│   ├── cursor/
-│   ├── grok/
-│   ├── pi/
-│   └── hermes/
-├── .claude-plugin/marketplace.json      # generated
-├── .cursor-plugin/index.json            # generated
-├── .grok-plugin/index.json              # generated
-├── .windsurf/rules/                     # generated
-├── .kiro/steering/                      # generated
-├── .github/prompts/                     # generated
-├── .github/copilot-instructions.md      # generated
-├── docs/
-│   ├── backlog/
-│   └── plans/completed/
-├── scripts/
-├── site/
-└── tests/
-```
-
 ## Local validation
 
 Rebuild generated manifests:
+
+```bash
+npm run build
+```
+
+or directly:
 
 ```bash
 ./scripts/build-adapters.sh
@@ -467,11 +500,48 @@ Rebuild generated manifests:
 Validate the neutral catalog and generated root manifests:
 
 ```bash
-./scripts/validate-catalog.sh
+npm run validate
 ```
 
-Run both before pushing marketplace updates:
+Run the full test suite (validators plus the bash tests in `tests/`):
+
+```bash
+npm test
+```
+
+Run both build and validate before pushing marketplace updates:
 
 ```bash
 ./scripts/build-adapters.sh && ./scripts/validate-catalog.sh
 ```
+
+---
+
+## Contributing
+
+Adding a skill:
+
+1. Create `plugins/olko-<plugin>/skills/<skill>/SKILL.md` with valid frontmatter.
+2. Register it under that plugin's `skills` array in `catalog/skills.json`.
+3. Add it to `PLUGIN_ASSIGNMENT` in `scripts/lib/catalog.mjs`.
+4. Add its row to this README's skill table.
+5. Run `./scripts/build-adapters.sh && npm test`.
+
+The description rule is not optional: a skill's `description` must say what it does AND carry a "Use when" clause with the phrases a user would actually type. Because of progressive disclosure, that description is the only routing signal an agent sees before it decides whether to open the skill at all.
+
+No em dashes in skill content or generated text. Commit messages are conventional (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`); semantic-release parses them.
+
+---
+
+## Team
+
+| | Name | GitHub | Role |
+|---|------|--------|------|
+| <img src="https://github.com/oleg-koval.png?size=120" width="60" height="60" alt="Oleg Koval"> | **Oleg Koval** | [@oleg-koval](https://github.com/oleg-koval) | Creator |
+
+---
+
+## License
+
+MIT. Use these skills in your own projects and tools.
+</content>

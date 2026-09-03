@@ -1,6 +1,12 @@
 ---
 name: wrap-up
-description: Verify that a completed implementation matches its original objective, all applicable checks are green, and task-owned temporary files, worktrees, and local branches are safely tidied.
+description: >
+  Close out a finished piece of work: verify the implementation actually matches its original
+  objective, confirm every applicable check is green, and safely tidy the temporary files,
+  worktrees and local branches the task created. Use when a change is believed done and the user
+  says "wrap up", "we are done here", "finish up", "clean up after this", "tidy the worktrees", or
+  before handing work off. This is the single-change axis: for a retro over repository history use
+  retro-analysis, for how the agents are being operated use agent-ops-retro.
 license: MIT
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, Grok, and other Agent Skills compatible tools.
 metadata:

@@ -1,7 +1,11 @@
 ---
-
 name: viral-launch
-description: Set up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops without pretending virality is guaranteed.
+description: >
+  Prepare a project for a public launch: shareable positioning, a launch-readiness pass over the
+  repository, and the growth loops worth building, without pretending virality is guaranteed. Use
+  when the user says "help me launch this", "prep for Product Hunt", "write the launch post", "make
+  this shareable", "launch plan", or is about to make a repo or product public. For building the
+  thing itself use mvp-oneshot or product-builder.
 license: MIT
 allowed-tools: Bash, Read, Write, WebSearch, WebFetch
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Useful for product repos, open-source packages, SaaS launches, waitlists, and creator tools.

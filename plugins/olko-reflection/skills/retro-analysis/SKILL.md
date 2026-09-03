@@ -1,6 +1,12 @@
 ---
 name: retro-analysis
-description: Produce a recurring engineering retrospective from repository history, delivery evidence, work patterns, code-quality signals, and prior snapshots, with repository, comparison, and cross-project modes.
+description: >
+  Produce a recurring engineering retrospective from repository history, delivery evidence, work
+  patterns, code-quality signals and prior snapshots, in repository, comparison or cross-project
+  mode. Use when the user asks for a retro over shipped work: "run a retrospective", "how did this
+  quarter go", "compare this month to last", "what did we ship", "engineering retro across my
+  repos", or when a scheduled retro job fires. This is the repository axis: for how the agents
+  themselves are being operated use agent-ops-retro, for a single finished change use wrap-up.
 license: MIT
 metadata:
   author: Oleg Koval
