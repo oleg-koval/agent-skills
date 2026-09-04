@@ -2,6 +2,12 @@
 # setup-worktree.sh -- lekker-review helper
 # Usage: setup-worktree.sh REPO_SLUG PR_BRANCH OUT_JSON [PREV_SHA]
 # Emits a JSON result file at OUT_JSON and prints "OK <OUT_JSON>" on success.
+#
+# Local branch mode (pre-push review): set LEKKER_LOCAL_REPO=<path to a repo
+# working copy>. Repo discovery, the network fetch, and the origin/<branch>
+# checkout are all skipped; the worktree is created detached at the LOCAL ref
+# passed as PR_BRANCH (a branch name, HEAD, or a sha). Nothing is required to
+# exist on the remote. REPO_SLUG is still used for reporting only.
 
 set -euo pipefail
 
@@ -9,6 +15,8 @@ REPO_SLUG="${1:?REPO_SLUG required}"
 PR_BRANCH="${2:?PR_BRANCH required}"
 OUT_JSON="${3:?OUT_JSON required}"
 PREV_SHA="${4:-}"
+
+LOCAL_REPO="${LEKKER_LOCAL_REPO:-}"
 
 CACHE_DIR="$HOME/.cache/lekker-review"
 CACHE_FILE="$CACHE_DIR/repo-map.tsv"
@@ -38,9 +46,21 @@ SLUG_NORM="$(normalize_url "https://github.com/${REPO_SLUG}.git")"
 REPO_ROOT=""
 
 # ---------------------------------------------------------------------------
+# 1z. Local branch mode short-circuit -- the caller already knows the repo.
+# ---------------------------------------------------------------------------
+if [[ -n "$LOCAL_REPO" ]]; then
+    if ! git -C "$LOCAL_REPO" rev-parse --show-toplevel >/dev/null 2>&1; then
+        printf 'ERROR: LEKKER_LOCAL_REPO=%s is not a git repository\n' "$LOCAL_REPO" >&2
+        exit 1
+    fi
+    REPO_ROOT="$(git -C "$LOCAL_REPO" rev-parse --show-toplevel)"
+    NOTES="${NOTES}local-branch-mode;"
+fi
+
+# ---------------------------------------------------------------------------
 # 1a. Try the cache
 # ---------------------------------------------------------------------------
-if [[ -f "$CACHE_FILE" ]]; then
+if [[ -z "$REPO_ROOT" ]] && [[ -f "$CACHE_FILE" ]]; then
     while IFS=$'\t' read -r cached_slug cached_path; do
         [[ "$cached_slug" == "$REPO_SLUG" ]] || continue
         if [[ -d "$cached_path" ]]; then
@@ -85,7 +105,9 @@ fi
 # ---------------------------------------------------------------------------
 # 1d. Shallow clone as last resort (not cached)
 # ---------------------------------------------------------------------------
-if [[ -z "$REPO_ROOT" ]]; then
+if [[ -n "$LOCAL_REPO" ]]; then
+    : # local mode: repo already resolved, never clone and never cache
+elif [[ -z "$REPO_ROOT" ]]; then
     CLONE_DIR="/tmp/lekker-clone-$$"
     git clone --depth=100 "https://github.com/${REPO_SLUG}.git" "$CLONE_DIR"
     REPO_ROOT="$CLONE_DIR"
@@ -102,14 +124,25 @@ fi
 # ---------------------------------------------------------------------------
 # 2. Fetch + worktree
 # ---------------------------------------------------------------------------
-git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null || true
-
-if ! git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" "origin/$PR_BRANCH" 2>/dev/null; then
-    if ! git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" FETCH_HEAD 2>/dev/null; then
-        printf 'ERROR: could not create worktree at %s\n' "$WORKTREE_PATH" >&2
+if [[ -n "$LOCAL_REPO" ]]; then
+    # Detached, so a branch that is currently checked out in the user's own
+    # working copy can still be reviewed. No fetch: the point of this mode is
+    # that the commits are not on the remote yet.
+    if ! git -C "$REPO_ROOT" worktree add --detach "$WORKTREE_PATH" "$PR_BRANCH" 2>/dev/null; then
+        printf 'ERROR: could not create local worktree at %s from ref %s\n' \
+            "$WORKTREE_PATH" "$PR_BRANCH" >&2
         exit 1
     fi
-    NOTES="${NOTES}worktree-used-FETCH_HEAD;"
+else
+    git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null || true
+
+    if ! git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" "origin/$PR_BRANCH" 2>/dev/null; then
+        if ! git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" FETCH_HEAD 2>/dev/null; then
+            printf 'ERROR: could not create worktree at %s\n' "$WORKTREE_PATH" >&2
+            exit 1
+        fi
+        NOTES="${NOTES}worktree-used-FETCH_HEAD;"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -128,7 +161,12 @@ fi
 #     of the whole repo -- see scripts/changed-files.sh).
 # ---------------------------------------------------------------------------
 CHANGED_FILES_FILE="/tmp/lekker-changed-$$.txt"
-BASE_REF_NOTE="$("$(dirname "$0")/changed-files.sh" "$WORKTREE_PATH" 2>&1 >"$CHANGED_FILES_FILE" | sed -n 's/^base-ref: //p')" || true
+CF_ERR_FILE="/tmp/lekker-changed-err-$$.txt"
+"$(dirname "$0")/changed-files.sh" "$WORKTREE_PATH" \
+    >"$CHANGED_FILES_FILE" 2>"$CF_ERR_FILE" || true
+BASE_REF_NOTE="$(sed -n 's/^base-ref: //p' "$CF_ERR_FILE")"
+MERGE_BASE_NOTE="$(sed -n 's/^merge-base: //p' "$CF_ERR_FILE")"
+rm -f "$CF_ERR_FILE"
 
 # A blank line here would make `grep -F -f` match EVERY tsc error line, turning
 # the repo's standing type debt into "errors this PR introduced". Strip them.
@@ -137,6 +175,7 @@ if [[ -f "$CHANGED_FILES_FILE" ]]; then
     mv "${CHANGED_FILES_FILE}.clean" "$CHANGED_FILES_FILE" 2>/dev/null || true
 fi
 
+MERGE_BASE_VAL="${MERGE_BASE_NOTE:-null}"
 BASE_REF_VAL="null"
 if [[ -n "$BASE_REF_NOTE" ]] && [[ "$BASE_REF_NOTE" != "unknown" ]]; then
     BASE_REF_VAL="$BASE_REF_NOTE"
@@ -282,14 +321,15 @@ python3 - \
     "$ESLINT_SCOPE_FILE" \
     "$TSC_CHANGED_FILE" \
     "$TSC_COUNT_FILE" \
+    "$MERGE_BASE_VAL" \
     "$OUT_JSON" <<'PYEOF'
 import json, sys, os
 
 (worktree_path, repo_root, head_sha, head_sha_short,
  tsc_file, eslint_file, rules_file, delta_file, notes,
  changed_files_file, base_ref_val, eslint_scope_file,
- tsc_changed_file, tsc_count_file,
- out_json) = sys.argv[1:16]
+ tsc_changed_file, tsc_count_file, merge_base_val,
+ out_json) = sys.argv[1:17]
 
 def read_file(path):
     if not os.path.exists(path):
@@ -318,6 +358,7 @@ data = {
     "notes":          notes,
     "changedFiles":   changed_files,
     "baseRef":        None if base_ref_val == "null" else base_ref_val,
+    "mergeBase":      None if merge_base_val == "null" else merge_base_val,
     "eslintScope":    eslint_scope,
     "tscChangedTail": read_file(tsc_changed_file),
     "tscErrorCount":  tsc_error_count,

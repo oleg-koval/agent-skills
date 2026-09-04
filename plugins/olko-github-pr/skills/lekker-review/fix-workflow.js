@@ -55,13 +55,18 @@ const {
   contextFile,
   promptDir,
   findings,
+  targetLabel: fixTargetLabelArg,
 } = input
 
-if (!repoSlug || !prNumber || !worktreePath || !promptDir || !Array.isArray(findings)) {
+// Same as the review workflow: branch mode has no PR number, so the caller
+// names the target instead.
+const targetLabel = fixTargetLabelArg || `${targetLabel}`
+
+if (!repoSlug || (!prNumber && !fixTargetLabelArg) || !worktreePath || !promptDir || !Array.isArray(findings)) {
   throw new Error(
     'lekker-review fix workflow: missing required args (got type ' + typeof args +
     '): ' + JSON.stringify({
-      repoSlug, prNumber, worktreePath, promptDir,
+      repoSlug, prNumber, targetLabel, worktreePath, promptDir,
       findingCount: Array.isArray(findings) ? findings.length : null,
     })
   )
@@ -107,7 +112,7 @@ log(`fixing ${findings.length} finding(s) across ${groups.length} file(s)`)
 
 function fixPrompt(group, priorVerdict) {
   const parts = [
-    `You are the fix agent for PR #${prNumber} in ${repoSlug}.`,
+    `You are the fix agent for ${targetLabel} in ${repoSlug}.`,
     `Read and follow the prompt file: ${promptDir}/fixer.md.`,
     `WORKTREE_PATH=${worktreePath}, TARGET_FILE=${group.file},`,
     `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}.`,
@@ -130,7 +135,7 @@ function fixPrompt(group, priorVerdict) {
 
 function fixVerifyPrompt(group, fixResult) {
   return [
-    `You are the fix verifier for PR #${prNumber} in ${repoSlug}.`,
+    `You are the fix verifier for ${targetLabel} in ${repoSlug}.`,
     `Read and follow the prompt file: ${promptDir}/fix-verifier.md.`,
     `WORKTREE_PATH=${worktreePath}, TARGET_FILE=${group.file},`,
     `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}.`,

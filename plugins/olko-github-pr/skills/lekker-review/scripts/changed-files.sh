@@ -11,6 +11,11 @@
 #   tree + staged) changes -- what a fix agent just wrote, even if it wasn't
 #   part of the original PR diff.
 #
+# LEKKER_BASE_REF=<ref> overrides base-ref detection entirely (pre-push branch
+# mode passes the branch the PR would target). Also prints the resolved
+# "merge-base: <sha>" to stderr so a caller can produce a diff from the exact
+# same point this file list was scoped to.
+#
 # Never fails: if no base ref can be resolved (or merge-base fails), prints
 # NOTHING to stdout, "base-ref: unknown" to stderr, and exits 0. Callers
 # should treat empty stdout as "could not scope -- fall back to repo-wide".
@@ -25,10 +30,16 @@ INCLUDE_UNCOMMITTED=false
 # 1. Resolve a base ref: origin's default branch first, then a fixed
 #    fallback order.
 # ---------------------------------------------------------------------------
-BASE_REF=""
+BASE_REF="${LEKKER_BASE_REF:-}"
+if [[ -n "$BASE_REF" ]] && ! git -C "$WORKTREE_PATH" rev-parse --verify --quiet "$BASE_REF" >/dev/null 2>&1; then
+    # An override that does not resolve is a caller error, not a reason to
+    # silently review against the wrong base.
+    printf 'base-ref: unknown\n' >&2
+    exit 0
+fi
 
 SYM_REF="$(git -C "$WORKTREE_PATH" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null || true)"
-if [[ -n "$SYM_REF" ]]; then
+if [[ -z "$BASE_REF" ]] && [[ -n "$SYM_REF" ]]; then
     candidate="origin/${SYM_REF#refs/remotes/origin/}"
     if git -C "$WORKTREE_PATH" rev-parse --verify --quiet "$candidate" >/dev/null 2>&1; then
         BASE_REF="$candidate"
@@ -59,6 +70,7 @@ if [[ -z "$MERGE_BASE" ]]; then
 fi
 
 printf 'base-ref: %s\n' "$BASE_REF" >&2
+printf 'merge-base: %s\n' "$MERGE_BASE" >&2
 
 CHANGED_TMP="/tmp/lekker-changed-files-tmp-$$.txt"
 git -C "$WORKTREE_PATH" diff --name-only "$MERGE_BASE" HEAD > "$CHANGED_TMP" 2>/dev/null || true
