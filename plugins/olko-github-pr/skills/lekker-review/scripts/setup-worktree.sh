@@ -161,9 +161,14 @@ fi
 #     of the whole repo -- see scripts/changed-files.sh).
 # ---------------------------------------------------------------------------
 CHANGED_FILES_FILE="/tmp/lekker-changed-$$.txt"
-CF_ERR_FILE="/tmp/lekker-changed-err-$$.txt"
-"$(dirname "$0")/changed-files.sh" "$WORKTREE_PATH" \
-    >"$CHANGED_FILES_FILE" 2>"$CF_ERR_FILE" || true
+CF_ERR_FILE="$(mktemp "${TMPDIR:-/tmp}/lekker-changed-err.XXXXXX")"
+chmod 600 "$CF_ERR_FILE"
+trap 'rm -f "$CF_ERR_FILE"' EXIT
+if ! "$(dirname "$0")/changed-files.sh" "$WORKTREE_PATH" \
+    >"$CHANGED_FILES_FILE" 2>"$CF_ERR_FILE"; then
+    cat "$CF_ERR_FILE" >&2
+    exit 1
+fi
 BASE_REF_NOTE="$(sed -n 's/^base-ref: //p' "$CF_ERR_FILE")"
 MERGE_BASE_NOTE="$(sed -n 's/^merge-base: //p' "$CF_ERR_FILE")"
 rm -f "$CF_ERR_FILE"

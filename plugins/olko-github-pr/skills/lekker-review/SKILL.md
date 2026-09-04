@@ -151,10 +151,32 @@ Resolve everything from the local repo - no `gh pr` call, no network:
 
 ```bash
 LOCAL_REPO=$(git -C "$PWD" rev-parse --show-toplevel)
-LOCAL_BRANCH=$(git -C "$LOCAL_REPO" rev-parse --abbrev-ref HEAD)   # or the ref the user named
-REPO_SLUG=$(git -C "$LOCAL_REPO" remote get-url origin \
-  | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')
+# Use the ref the user named when present. Otherwise require an attached branch.
+LOCAL_BRANCH="${USER_PROVIDED_REF:-}"
+if [ -z "$LOCAL_BRANCH" ]; then
+  LOCAL_BRANCH=$(git -C "$LOCAL_REPO" symbolic-ref --short -q HEAD)
+fi
+if [ -z "$LOCAL_BRANCH" ]; then
+  echo "Detached HEAD: name the local ref to review." >&2
+  exit 1
+fi
+
+ORIGIN_URL=$(git -C "$LOCAL_REPO" remote get-url origin 2>/dev/null || true)
+if [ -n "$ORIGIN_URL" ]; then
+  REPO_SLUG=$(printf '%s\n' "$ORIGIN_URL" \
+    | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')
+else
+  LOCAL_REPO_NAME=$(basename "$LOCAL_REPO" \
+    | sed -E 's#[^[:alnum:]_.-]+#-#g; s#^-+|-+$##g')
+  REPO_SLUG="local/${LOCAL_REPO_NAME:-repository}"
+fi
 ```
+
+An explicitly named ref may be reviewed from detached HEAD. Before landing
+fixes, resolve it to a local branch name or stop; never build
+`refs/heads/<LOCAL_BRANCH>` from a commit SHA or another non-branch ref. The
+`local/<directory>` slug is reporting metadata for repositories without an
+`origin`; preserve the origin-derived slug whenever that remote exists.
 
 Then:
 - `BASE_REF`: the branch the PR would target. Honour `--base <ref>` when given.
@@ -685,7 +707,7 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
    agent's opinion. Green -> record `proofFlip: green` in the status table.
 6. Commit one commit per file with an explicit `git add -- <files>`.
 7. Land the commits, ONLY after the user confirms.
-   - `MODE=pr`: `git push origin HEAD:refs/heads/<PR_BRANCH>` with a re-fetch
+   - `MODE=pr`: `git push origin "HEAD:refs/heads/$pr_branch"` with a re-fetch
      sha guard. Never force, never rebase, never push to
      main/master/staging/develop. Verify via `gh pr view --json headRefOid`.
    - `MODE=branch`: nothing is pushed - the fixes move onto the LOCAL branch, so
@@ -695,18 +717,25 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
      # Fast-forward the local branch onto the reviewed-and-fixed worktree tip.
      # --ff-only and the old-value guard together mean this can only ever
      # advance the exact commit the review started from.
-     git -C <repoRoot> update-ref refs/heads/<LOCAL_BRANCH> <worktreeHeadSha> <headSha>
+     git check-ref-format --branch "$local_branch"
+     git -C "$repo_root" update-ref "refs/heads/$local_branch" \
+       "$worktree_head_sha" "$head_sha"
      ```
 
-     If `<LOCAL_BRANCH>` is the branch checked out in `repoRoot`, `update-ref`
+     Treat every repository path, ref, branch, title, and body as untrusted
+     data. Pass each value as a separately shell-quoted argument, never by
+     concatenating it into shell source. Put multiline PR bodies in a file and
+     pass the quoted path with `--body-file`.
+
+     If `$local_branch` is the branch checked out in `$repo_root`, `update-ref`
      would leave the user's working tree looking like it had deleted the fixes.
-     In that case require a clean `git -C <repoRoot> status --porcelain` and use
-     `git -C <repoRoot> merge --ff-only <worktreeHeadSha>` instead. If the tree
+     In that case require a clean `git -C "$repo_root" status --porcelain` and use
+     `git -C "$repo_root" merge --ff-only "$worktree_head_sha"` instead. If the tree
      is dirty, stop, keep the worktree, and print the exact command - never
      stash or discard someone's uncommitted work.
 
-     Verify with `git -C <repoRoot> rev-parse refs/heads/<LOCAL_BRANCH>` and
-     confirm it equals `<worktreeHeadSha>`. Then refresh the review marker for
+     Verify with `git -C "$repo_root" rev-parse "refs/heads/$local_branch"` and
+     confirm it equals `$worktree_head_sha`. Then refresh the review marker for
      the new sha (Step 3).
 8. Print the per-finding status table and append `## 🔧 Fixes applied` to the
    saved review file.
@@ -735,15 +764,15 @@ Ask once, via AskUserQuestion:
 
 Rules for each answer:
 
-- **Yes:** `git push -u origin <LOCAL_BRANCH>`, then create the PR yourself with
-  `gh pr create --repo <REPO_SLUG> --base <BASE_REF> --head <LOCAL_BRANCH>
-  --title "<RECOMMENDED_PREFIX> <summary>" --body "<body>"`. Derive the title
+- **Yes:** push with `git push -u origin "$local_branch"`, then create the PR
+  with `gh pr create --repo "$repo_slug" --base "$base_ref" --head
+  "$local_branch" --title "$pr_title" --body-file "$pr_body_file"`. Derive the title
   from the commit log (the recommended prefix plus a summary of the change) and
   the body from a short summary of what the branch does - do not leave either
   as a placeholder. Report the PR url. The review is already saved locally;
   offer `--post` on the new PR number only if the user asks - findings that fix
   mode already applied must never be posted as review comments.
-- **Push only:** `git push -u origin <LOCAL_BRANCH>` and stop. Say in one line
+- **Push only:** `git push -u origin "$local_branch"` and stop. Say in one line
   that no PR was created.
 - **No:** stop. Print the branch name and the review file path.
 

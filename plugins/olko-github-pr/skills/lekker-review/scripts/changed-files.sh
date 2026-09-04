@@ -16,9 +16,10 @@
 # "merge-base: <sha>" to stderr so a caller can produce a diff from the exact
 # same point this file list was scoped to.
 #
-# Never fails: if no base ref can be resolved (or merge-base fails), prints
-# NOTHING to stdout, "base-ref: unknown" to stderr, and exits 0. Callers
-# should treat empty stdout as "could not scope -- fall back to repo-wide".
+# If automatic base-ref detection finds nothing, prints NOTHING to stdout,
+# "base-ref: unknown" to stderr, and exits 0 so callers can fall back to a
+# repo-wide check. An invalid explicit base or a missing merge base is a caller
+# error and exits nonzero without emitting base-ref/merge-base metadata.
 
 set -uo pipefail
 
@@ -34,8 +35,8 @@ BASE_REF="${LEKKER_BASE_REF:-}"
 if [[ -n "$BASE_REF" ]] && ! git -C "$WORKTREE_PATH" rev-parse --verify --quiet "$BASE_REF" >/dev/null 2>&1; then
     # An override that does not resolve is a caller error, not a reason to
     # silently review against the wrong base.
-    printf 'base-ref: unknown\n' >&2
-    exit 0
+    printf 'ERROR: LEKKER_BASE_REF does not resolve: %s\n' "$BASE_REF" >&2
+    exit 1
 fi
 
 SYM_REF="$(git -C "$WORKTREE_PATH" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null || true)"
@@ -65,8 +66,8 @@ fi
 # ---------------------------------------------------------------------------
 MERGE_BASE="$(git -C "$WORKTREE_PATH" merge-base HEAD "$BASE_REF" 2>/dev/null || true)"
 if [[ -z "$MERGE_BASE" ]]; then
-    printf 'base-ref: unknown\n' >&2
-    exit 0
+    printf 'ERROR: no merge base between HEAD and %s\n' "$BASE_REF" >&2
+    exit 1
 fi
 
 printf 'base-ref: %s\n' "$BASE_REF" >&2
