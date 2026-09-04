@@ -9,18 +9,25 @@ Axes to cover:
   ✅ met / ⚠️ partial / ❌ missing. Scope creep is also worth flagging.
   AC_LIST: read key "acList" from CONTEXT_FILE.
   Return the complete status summary in the structured `acCoverage` field.
-  Decide each AC against the code that RUNS, not against the diff. Use the
-  worktree to follow the AC through its runtime path into files the diff never
-  touched, and specifically:
+  Decide each AC against the code that RUNS, not against the diff. When
+  WORKTREE_PATH is null, mark runtime verification as unavailable: do not inspect
+  worktree files or infer an AC status from runtime evidence you cannot verify.
+  Otherwise, use the worktree to follow the AC through its runtime path into
+  files the diff never touched, and specifically:
   (a) Find what invokes the new code and on what trigger. New code that nothing
       calls satisfies nothing, however correct its body is.
-  (b) For an AC with a timing, cadence or SLA component, name the trigger's real
-      frequency (the cron expression, the poll interval, the webhook) and compare
-      that number against the AC. A reaper on a daily cron cannot meet a two-hour
-      SLA.
+  (b) For an AC with a timing, cadence or SLA component, name the trigger's
+      measurable frequency, such as its cron expression or poll interval, and
+      compare that number against the AC. For a webhook, compare a documented
+      delivery bound against the AC; without one, mark cadence verification as
+      unavailable rather than treating the webhook as a fixed-frequency trigger.
+      A reaper on a daily cron cannot meet a two-hour SLA.
   (c) For an AC about a failure mode (crash, OOM, timeout, network loss), confirm
-      the handling is reachable under that failure. A killed process never reaches
-      a `finally` block, a shutdown hook, or the tail of a long-running function.
+      the handling is reachable under that failure. A process terminated by an
+      uncatchable signal such as SIGKILL cannot reach a `finally` block, shutdown
+      hook, or the tail of a long-running function; SIGTERM may allow graceful
+      handling. Verify the actual failure signal and its handling before concluding
+      that cleanup is unreachable.
   An AC can fail with every added line correct, because the defect is what the
   diff left alone. That is a finding, not an absence of one.
 - Scalability: N+1 queries, missing pagination, unbounded in-memory
