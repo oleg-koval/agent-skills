@@ -58,8 +58,6 @@ const {
   targetLabel: fixTargetLabelArg,
 } = input
 
-// Same as the review workflow: branch mode has no PR number, so the caller
-// names the target instead.
 const targetLabel = fixTargetLabelArg || `${targetLabel}`
 
 if (!repoSlug || (!prNumber && !fixTargetLabelArg) || !worktreePath || !promptDir || !Array.isArray(findings)) {

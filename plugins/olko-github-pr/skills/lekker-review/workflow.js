@@ -366,9 +366,6 @@ const {
   targetLabel: targetLabelArg,
 } = input
 
-// What the agents are told they are reviewing. Pre-push branch mode has no PR
-// number, so callers pass targetLabel (e.g. "branch feat/x") instead; without
-// it the label is the PR reference the skill has always used.
 const targetLabel = targetLabelArg || `${targetLabel}`
 
 if (!repoSlug || (!prNumber && !targetLabelArg) || !depth || !diffFile || !contextFile || !promptDir) {
