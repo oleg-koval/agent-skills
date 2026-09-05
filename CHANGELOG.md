@@ -1,3 +1,10 @@
+## [1.43.1](https://github.com/oleg-koval/agent-skills/compare/v1.43.0...v1.43.1) (2026-09-05)
+
+
+### 📚 Documentation
+
+* make review findings implementation-ready ([#97](https://github.com/oleg-koval/agent-skills/issues/97)) ([4660605](https://github.com/oleg-koval/agent-skills/commit/46606051db79a5dc50a8cfdd8127f3a7411b5a55))
+
 # [1.43.0](https://github.com/oleg-koval/agent-skills/compare/v1.42.3...v1.43.0) (2026-09-05)
 
 
