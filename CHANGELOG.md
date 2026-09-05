@@ -1,3 +1,15 @@
+# [1.43.0](https://github.com/oleg-koval/agent-skills/compare/v1.42.3...v1.43.0) (2026-09-05)
+
+
+### ✨ Features
+
+* **lekker-review:** review a local branch before it is pushed ([#92](https://github.com/oleg-koval/agent-skills/issues/92)) ([6a11348](https://github.com/oleg-koval/agent-skills/commit/6a1134821d258d4720c05a17455c3c872fc2af9b))
+
+
+### 🛠 Builds
+
+* **deps:** bump actions/deploy-pages from 5.0.0 to 5.0.1 ([#96](https://github.com/oleg-koval/agent-skills/issues/96)) ([aae580f](https://github.com/oleg-koval/agent-skills/commit/aae580faa5276a1a5ffec8858eb8264aec7d6205))
+
 ## [1.42.3](https://github.com/oleg-koval/agent-skills/compare/v1.42.2...v1.42.3) (2026-09-05)
 
 
