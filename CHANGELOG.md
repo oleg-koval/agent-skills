@@ -1,3 +1,16 @@
+## [1.42.3](https://github.com/oleg-koval/agent-skills/compare/v1.42.2...v1.42.3) (2026-09-05)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** decide ACs against the code that runs, not the diff ([#93](https://github.com/oleg-koval/agent-skills/issues/93)) ([64f665c](https://github.com/oleg-koval/agent-skills/commit/64f665cb5576b7e34dafd76bb937c645590f8416))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump semantic-release-npm-github-publish ([#94](https://github.com/oleg-koval/agent-skills/issues/94)) ([c46b4c9](https://github.com/oleg-koval/agent-skills/commit/c46b4c9afa1810872f2b07f4e419039bd97c8126))
+* **deps:** bump actions/configure-pages from 5.0.0 to 6.0.0 ([#95](https://github.com/oleg-koval/agent-skills/issues/95)) ([4320001](https://github.com/oleg-koval/agent-skills/commit/43200016f622d72fa5a6464951e275f870549b56))
+
 ## [1.42.2](https://github.com/oleg-koval/agent-skills/compare/v1.42.1...v1.42.2) (2026-09-03)
 
 
