@@ -17,9 +17,16 @@ description: >
   With --fix (or by accepting the post-review offer) it also APPLIES its own
   Critical/Important findings as real code in the worktree, verifies each edit,
   commits them, and pushes to the PR branch only after explicit confirmation.
+  Also reviews a LOCAL BRANCH BEFORE IT IS PUSHED (`/lekker-review branch
+  --fix`): same agents, same fixes, against the merge-base with the branch the
+  PR would target, with no PR and no network round trip. Running it pre-push is
+  how you stop paying bot reviewers like Greptile/CodeRabbit to find what this
+  skill finds for free, so branch mode defaults to --fix and offers to open the
+  PR when it is done.
   Use when the user says "review this PR", "lekker review", "check this PR",
   "do a code review on PR #N", "review and fix this PR", "apply the review
-  fixes", provides a GitHub PR URL, or asks for a pull request review in any
+  fixes", "review my branch", "review before push", "check this before I open
+  the PR", provides a GitHub PR URL, or asks for a pull request review in any
   form.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact
@@ -38,7 +45,7 @@ metadata:
     - multi-agent
     - workflow
     - quality
-argument-hint: "<github-pr-url | repo pr-number | repo pr-title> [scan|medium|deep] [--post] [--fix]"
+argument-hint: "<github-pr-url | repo pr-number | repo pr-title | branch [ref]> [scan|medium|deep] [--post] [--fix] [--base <ref>]"
 ---
 
 # Lekker Review
@@ -47,6 +54,19 @@ FAANG-grade code review. Isolated worktree checkout, full context gathering
 (issue tracker + chat + docs + framework docs + monitoring + CI, whichever
 you have MCP tools configured for), then 5 parallel specialized review
 agents, a finding-verification pass, and one unified markdown output.
+
+Two modes, same review engine:
+
+| Mode       | Target                              | Entry                                  |
+|------------|-------------------------------------|-----------------------------------------|
+| **pr**     | An open GitHub PR                   | a PR url / `repo N` / `repo "title"`   |
+| **branch** | A local branch, before it is pushed | `branch [ref]`, or `--branch`          |
+
+Branch mode exists to move the review left: everything a bot reviewer
+(Greptile, CodeRabbit, or similar) would charge for on the PR is found and
+FIXED locally first, so the PR opens clean and there is little left to bill
+for. It reviews the same diff a PR would show - merge-base against the branch
+the PR would target - and it defaults to `--fix`.
 
 Each finding contains: **file + risk** · **bad code verbatim** · **why it's
 wrong** · **fix with code example** - ready to paste directly into GitHub.
@@ -91,6 +111,24 @@ resolve every `references/...` and script path relative to it.
 
 ## Step 0 - Parse input
 
+### Pick the mode first
+
+`MODE=branch` when ANY of these hold:
+- the argument is the literal word `branch` (optionally followed by a ref), or
+  the flag `--branch [ref]` is present
+- the user asked for a review "before push", "before the PR", "of my branch",
+  "of these commits", or named a local branch that has no open PR
+- no PR reference was given at all and `$PWD` is inside a git repo on a branch
+  that is not the base branch
+
+Otherwise `MODE=pr`.
+
+Never guess between the two. If a PR reference is present, it is `pr` mode
+even in a git repo. If neither a PR reference nor a git repo is available,
+stop and ask - do not review the wrong thing.
+
+### MODE=pr
+
 Accept any of:
 - Full GitHub URL: `https://github.com/owner/repo/pull/123`
 - Repo + number: `my-service 42`
@@ -105,10 +143,65 @@ Derive and carry these variables through every subsequent step:
 - `PR_NUMBER`
 - `PR_BRANCH` (from `gh pr view`)
 - `PR_URL` = `https://github.com/<REPO_SLUG>/pull/<PR_NUMBER>`
+- `TARGET_LABEL` = `PR #<PR_NUMBER>`
 
-**Depth:** explicit keyword `scan`, `medium`, or `deep` wins. If absent, run
-`gh pr view <PR_NUMBER> --repo <REPO_SLUG> --json additions,deletions,changedFiles`
-and apply AUTO-DEPTH:
+### MODE=branch
+
+Resolve everything from the local repo - no `gh pr` call, no network:
+
+```bash
+LOCAL_REPO=$(git -C "$PWD" rev-parse --show-toplevel)
+# Use the ref the user named when present. Otherwise require an attached branch.
+LOCAL_BRANCH="${USER_PROVIDED_REF:-}"
+if [ -z "$LOCAL_BRANCH" ]; then
+  LOCAL_BRANCH=$(git -C "$LOCAL_REPO" symbolic-ref --short -q HEAD)
+fi
+if [ -z "$LOCAL_BRANCH" ]; then
+  echo "Detached HEAD: name the local ref to review." >&2
+  exit 1
+fi
+
+ORIGIN_URL=$(git -C "$LOCAL_REPO" remote get-url origin 2>/dev/null || true)
+if [ -n "$ORIGIN_URL" ]; then
+  REPO_SLUG=$(printf '%s\n' "$ORIGIN_URL" \
+    | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')
+else
+  LOCAL_REPO_NAME=$(basename "$LOCAL_REPO" \
+    | sed -E 's#[^[:alnum:]_.-]+#-#g; s#^-+|-+$##g')
+  REPO_SLUG="local/${LOCAL_REPO_NAME:-repository}"
+fi
+```
+
+An explicitly named ref may be reviewed from detached HEAD. Before landing
+fixes, resolve it to a local branch name or stop; never build
+`refs/heads/<LOCAL_BRANCH>` from a commit SHA or another non-branch ref. The
+`local/<directory>` slug is reporting metadata for repositories without an
+`origin`; preserve the origin-derived slug whenever that remote exists.
+
+Then:
+- `BASE_REF`: the branch the PR would target. Honour `--base <ref>` when given.
+  Otherwise let `scripts/changed-files.sh` detect it (origin's default branch,
+  then whatever your convention falls back to) and report which one it picked.
+  If detection lands on something that contradicts your team's actual
+  convention, say so in the review header rather than reviewing silently
+  against the wrong base.
+- `PR_NUMBER` = null, `PR_URL` = null, `TARGET_LABEL` = `branch <LOCAL_BRANCH>`.
+- The reviewed diff is `merge-base(HEAD, BASE_REF)..HEAD` - committed work only.
+  **Uncommitted and untracked changes are NOT reviewed.** If `git status
+  --porcelain` is non-empty, say so in one line before starting
+  (`⚠️ N uncommitted file(s) are not part of this review`) so nobody assumes
+  coverage that does not exist.
+- If that diff is empty, stop: `nothing to review - <branch> matches <base>`.
+
+**Guard:** never run branch mode on a long-lived integration branch. If
+`LOCAL_BRANCH` is `main`, `master`, `develop`, `staging`, or `production`, stop
+and say so.
+
+**Depth:** explicit keyword `scan`, `medium`, or `deep` wins. If absent, get
+the diff stat - in `pr` mode from
+`gh pr view <PR_NUMBER> --repo <REPO_SLUG> --json additions,deletions,changedFiles`,
+in `branch` mode from `git diff --shortstat <MERGE_BASE> HEAD` plus
+`git diff --name-only <MERGE_BASE> HEAD | wc -l` - and apply AUTO-DEPTH:
 - `scan` if additions+deletions < 150 AND changedFiles <= 5
 - `deep` if additions+deletions > 800 OR changedFiles > 25 OR diff touches
   `migrations/` or `*.sql`
@@ -123,11 +216,26 @@ checkout, so `--fix` forces Track A (worktree setup) to run even when
 depth=scan. If the user did NOT pass `--fix`, leave `FIX_MODE=false` for now -
 Step 4 offers it after the review is printed.
 
+**Branch mode defaults to fix.** In `MODE=branch`, `FIX_MODE=true` and
+`FIX_SCOPE=critical+important` unless the user passed `--no-fix`. That is the
+whole point of reviewing pre-push: findings get applied before the PR exists,
+so a bot reviewer never sees them. Landing those fixes on the local branch
+still needs explicit confirmation (Step 4).
+
+**`--base <ref>` flag (branch mode only):** overrides base-ref detection. Passed
+through to the scripts as `LEKKER_BASE_REF`. Ignored in `pr` mode, where the
+base comes from the PR.
+
+**`--no-fix` flag:** parse and store as `FIX_MODE=false`, and do not offer fixes
+in Step 4. Use it for a read-only pre-push look.
+
 **`--no-artifact` flag:** parse and store as `ARTIFACT=false` (default true).
 Skips Step 3.5 (living review artifact) silently.
 
 **Re-review detection:** run
-`ls ~/code-reviews/*-pr-<PR_NUMBER>-<repo-short-name>.md 2>/dev/null | sort | tail -1`
+`ls ~/code-reviews/*-<TARGET_SLUG>-<repo-short-name>.md 2>/dev/null | sort | tail -1`
+(`TARGET_SLUG` = `pr-<PR_NUMBER>` in pr mode, `branch-<LOCAL_BRANCH sanitized to
+[a-z0-9-]>` in branch mode)
 to find the newest prior review for this PR (repo-short-name = last segment of
 REPO_SLUG; keeps PR numbers from colliding across repos). If found, grep it for
 `\*\*Head:\*\*` and extract the short sha. Set `PREV_SHA=<sha>` and
@@ -158,6 +266,18 @@ For scan: note `⚡ scan - worktree unavailable, static checks skipped` in the
 review header. When `--fix` forced the worktree at scan depth, drop that note
 and say `⚡ scan - worktree created for --fix` instead.
 
+**Branch mode always has a worktree** (fix mode is the default, and there is no
+remote diff to fall back on), so the scan row's "skip worktree" never applies.
+Everything else in the table is unchanged: branch mode is not a shallower
+review, it is the same review earlier. Two rows differ because their inputs do
+not exist yet:
+
+| Step                     | branch mode                                                  |
+|--------------------------|--------------------------------------------------------------|
+| CI checks                | `N/A - not pushed`; local compiler/linter/tests are the only signal |
+| Existing bot reviews     | none by definition - that is the saving                        |
+| `--post`                 | unsupported until a PR exists (Step 4.6 can create one)        |
+
 ---
 
 ## Step 1 - Context + worktree (concurrent)
@@ -169,14 +289,30 @@ Fire both tracks in the same turn.
 Run via Bash with `run_in_background`:
 
 ```bash
+# MODE=pr - checks out origin/<PR_BRANCH>, fetching if needed
 ${CLAUDE_PLUGIN_ROOT}/scripts/setup-worktree.sh \
   <REPO_SLUG> <PR_BRANCH> <scratchpad>/worktree.json [PREV_SHA]
+```
+
+```bash
+# MODE=branch - LOCAL ref only. LEKKER_LOCAL_REPO skips repo discovery, the
+# fetch, and the origin/<branch> checkout entirely, and creates the worktree
+# DETACHED so a branch already checked out in the user's own working copy can
+# still be reviewed. LEKKER_BASE_REF is set only when --base was given.
+LEKKER_LOCAL_REPO=<LOCAL_REPO> [LEKKER_BASE_REF=<BASE_REF>] \
+${CLAUDE_PLUGIN_ROOT}/scripts/setup-worktree.sh \
+  <REPO_SLUG> <LOCAL_BRANCH> <scratchpad>/worktree.json [PREV_SHA]
 ```
 
 On completion, read `worktree.json`. Keys emitted:
 `worktreePath`, `repoRoot`, `headSha`, `headShaShort`, `tscTail`,
 `tscChangedTail`, `tscErrorCount`, `eslintTail`, `eslintScope`, `changedFiles`,
-`baseRef`, `projectRules`, `deltaFile`, `notes`.
+`baseRef`, `mergeBase`, `projectRules`, `deltaFile`, `notes`.
+
+`mergeBase` is the commit the file list was scoped against. Branch mode
+generates its diff from that exact sha (below), so the diff the agents read and
+the files the static checks were scoped to can never disagree. `notes` contains
+`local-branch-mode;` when the local path ran.
 
 Static checks are scoped so you can tell this PR's errors from the repo's
 standing debt - do not try to infer that from the raw tail:
@@ -197,13 +333,42 @@ A failing CI build or test = Critical finding input.
 
 When depth=scan: set `WORKTREE_PATH=null` without launching the script - unless
 `FIX_MODE=true`, in which case run the script anyway (fix mode cannot edit code
-from a diff).
+from a diff). In `MODE=branch` the script always runs, at every depth.
+
+A failing local compiler/linter/test run in branch mode is the direct
+replacement for the failing-CI signal - treat it exactly the same way. Catching
+it here is a CI run the PR never has to burn.
 
 ### Track B - metadata and signals (all calls fired in parallel)
 
 Run ALL of the following in the same message. Full query details are in
 `references/context-gathering.md` - follow it, do not paste it wholesale into
 agent contexts.
+
+**In `MODE=branch`, every `gh pr *` call below is skipped** - there is no PR.
+Wait for Track A's `worktree.json` (you need `mergeBase`), then substitute:
+
+```bash
+# The diff, from the SAME merge-base the file list was scoped to.
+git -C <worktreePath> diff <mergeBase> HEAD > <scratchpad>/pr.diff
+
+# Commit log, for ticket ids and for the PR title the branch would need.
+git -C <worktreePath> log --format='%s%n%b' <mergeBase>..HEAD
+```
+
+- The title/ticket-prefix check in branch mode is a PRE-check, not a
+  violation: scan the commit subjects for your team's ticket pattern, collect
+  the distinct ids, and set `RECOMMENDED_PREFIX`. There is no PR title to be
+  wrong yet, so `PR_TITLE_ISSUE=false` - report the prefix as the title to use,
+  in the Step 4.6 PR offer.
+- Ticket ids come from the commit log and the branch name instead of the PR
+  title/body; the issue-tracker lookup below is otherwise identical.
+- `ciStatus` = `N/A - not pushed`. `existingReviews` = null.
+- Everything else in Track B (issue tracker, chat, docs, framework docs,
+  monitoring, prior-review memory) runs unchanged, keyed off the ticket ids
+  and the branch name.
+
+`MODE=pr` calls:
 
 - `gh pr view <PR_NUMBER> --repo <REPO_SLUG>` with fields: `number`, `title`,
   `body`, `author`, `headRefName`, `baseRefName`, `labels`, `linkedBranches`,
@@ -240,9 +405,15 @@ Write `<scratchpad>/context.json` with keys:
   "ciStatus":        "<passing | failing: <names> | pending | N/A>",
   "existingReviews": "<prior review summaries>",
   "deltaFile":       "<worktree.json deltaFile, or null>",
-  "houseRulesFile":  "${CLAUDE_PLUGIN_ROOT}/references/house-rules.md"
+  "houseRulesFile":  "${CLAUDE_PLUGIN_ROOT}/references/house-rules.md",
+  "reviewTarget":    "<TARGET_LABEL, e.g. 'PR #412' or 'branch feat/offline-orders'>",
+  "prePush":         "<true in MODE=branch, false in MODE=pr>"
 }
 ```
+
+`prePush: true` tells the agents there is no CI verdict and no bot review to
+defer to, and that anything they flag is cheaper to fix now than after the PR
+opens. It does NOT lower the bar: same severities, same no-nitpicking rule.
 
 Agents read keys from this file. Nothing from CONTEXT_FILE is pasted into
 their prompts wholesale - the workflow script delivers it by path.
@@ -257,8 +428,9 @@ Invoke the Workflow tool:
 scriptPath: ${CLAUDE_PLUGIN_ROOT}/workflow.js
 args: {
   repoSlug,
-  prNumber,
-  prUrl,
+  prNumber,          // null in MODE=branch
+  prUrl,             // null in MODE=branch
+  targetLabel,       // TARGET_LABEL - REQUIRED when prNumber is null
   depth,
   diffFile:    "<scratchpad>/pr.diff",
   contextFile: "<scratchpad>/context.json",
@@ -267,6 +439,10 @@ args: {
   prevSha:     <null unless re-review>
 }
 ```
+
+`targetLabel` is what every agent is told it is reviewing. The workflow falls
+back to `PR #<prNumber>` when it is absent, so pr mode may omit it; branch mode
+must pass it, or the workflow throws on its missing-args guard.
 
 Two optional args tune concurrency; omit both unless a run needs it:
 
@@ -398,12 +574,19 @@ dropped.
 requirements:
 
 - Header must include `**Head:** <headShaShort>` (enables future delta mode).
+- **Branch mode header:** title the review `Pre-push review - <LOCAL_BRANCH>`,
+  and include `**Target:** branch <LOCAL_BRANCH> -> <BASE_REF> (not pushed)`,
+  `**Base:** <mergeBase short sha>`, and `**CI:** N/A - not pushed`. State the
+  uncommitted-file warning here if `git status --porcelain` was non-empty.
+  There is no PR link and no bot-review section; do not invent either.
 - When `isDraft=true`: add `**DRAFT PR** - findings recorded for when this
   is ready to merge.` after the header block.
 - When `mergeStateStatus` is not CLEAN: note it (e.g. conflicts, failing
   required checks).
 - When `PR_TITLE_ISSUE=true`: insert the `⛔ CANNOT MERGE` block before the
-  Summary.
+  Summary. In branch mode there is no title yet, so instead print one line -
+  `**PR title to use:** <RECOMMENDED_PREFIX> <summary>` - and carry it into
+  the Step 4.6 offer.
 - When `sentrySignals` is non-empty: include `## 🔥 Production Signals`.
 - When `PREV_SHA` is set: include `## 🔁 Since last review` comparing
   `PREV_REVIEW_FILE` findings against the new head - list each as fixed or
@@ -422,7 +605,9 @@ requirements:
 
 ```bash
 mkdir -p ~/code-reviews
-REVIEW_FILE=~/code-reviews/$(date +%Y-%m-%d)-pr-<PR_NUMBER>-<repo-short-name>.md
+# TARGET_SLUG: "pr-<PR_NUMBER>" in pr mode,
+#              "branch-<LOCAL_BRANCH sanitized to [a-z0-9-]>" in branch mode
+REVIEW_FILE=~/code-reviews/$(date +%Y-%m-%d)-<TARGET_SLUG>-<repo-short-name>.md
 # write the review to $REVIEW_FILE
 ```
 
@@ -433,6 +618,18 @@ Also write the workflow's `findings` array verbatim to
 `<scratchpad>/findings.json` - fix mode reads its selection from there (the
 `proof` objects ride along for the Step 5b proof flip), and it is the receipt
 that what was reported equals what was found.
+
+**Branch mode also drops a review marker**, so a pre-PR gate you build on top
+of this skill can tell a reviewed branch from an unreviewed one:
+
+```bash
+mkdir -p ~/.cache/lekker-review/reviewed
+printf '%s\n' "$REVIEW_FILE" > ~/.cache/lekker-review/reviewed/<headSha>
+```
+
+Write it against the sha that was actually reviewed. When fix mode later adds
+commits, write a marker for the NEW head sha too - a gate keys on the tip
+that is about to be pushed, and a marker for a superseded sha would be a lie.
 
 Then print the full review as the response.
 
@@ -458,8 +655,8 @@ and print one line: `🔗 Living review: <url>`.
 
 ### Trigger
 
-- `FIX_MODE=true` (the user passed `--fix`) -> go straight to
-  `references/fix-mode.md`.
+- `FIX_MODE=true` (the user passed `--fix`, or `MODE=branch` defaulted it on)
+  -> go straight to `references/fix-mode.md`.
 - `FIX_MODE=false` and at least one Critical or Important finding has a `fix`
   field -> ask once, via AskUserQuestion:
 
@@ -474,22 +671,29 @@ and print one line: `🔗 Living review: <url>`.
 - No fixable findings, or the review found nothing -> do not ask. Say
   `nothing to auto-fix` in one line and skip to Step 5.
 - **Unattended run** (cron, `/loop`, background agent): never ask. Run fix mode
-  only when `--fix` was passed explicitly, and stop before pushing.
+  only when `--fix` was passed explicitly, and stop before pushing (branch mode:
+  stop before landing).
 
 ### Procedure
 
 Read `references/fix-mode.md` and follow it. Shape of the run:
 
-1. Preconditions: worktree exists + clean, `origin/<PR_BRANCH>` still at
-   `headSha`, PR open, head repo writable.
+1. Preconditions.
+   - `MODE=pr`: worktree exists + clean, `origin/<PR_BRANCH>` still at
+     `headSha`, PR open, head repo writable.
+   - `MODE=branch`: worktree exists + clean, and `refs/heads/<LOCAL_BRANCH>` in
+     `repoRoot` is still at `headSha`. If the branch moved while the review ran,
+     stop - do not land onto a tip you did not review.
 2. Select eligible findings (Critical/Important with a `fix`, real file,
    non-generated). Never auto-fix Observation, Idiomatic, or a title/process rule.
 3. Invoke the fix workflow:
    ```
    scriptPath: ${CLAUDE_PLUGIN_ROOT}/fix-workflow.js
-   args: { repoSlug, prNumber, worktreePath, diffFile, contextFile, promptDir,
-           findings: [<selected findings verbatim>] }
+   args: { repoSlug, prNumber, targetLabel, worktreePath, diffFile, contextFile,
+           promptDir, findings: [<selected findings verbatim>] }
    ```
+   `targetLabel` is required whenever `prNumber` is null, same as the review
+   workflow.
    One `sonnet` fix agent per file (never two on the same file), then a
    read-only `sonnet` fix-verifier per file reading the actual `git diff`. One
    retry max on a non-`good` verdict.
@@ -502,9 +706,37 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
    group even if the fix-verifier said `good`. An executed test outranks an
    agent's opinion. Green -> record `proofFlip: green` in the status table.
 6. Commit one commit per file with an explicit `git add -- <files>`.
-7. Push ONLY after the user confirms, with `git push origin HEAD:refs/heads/<PR_BRANCH>`
-   and a re-fetch sha guard. Never force, never rebase, never push to
-   main/master/staging/develop. Verify via `gh pr view --json headRefOid`.
+7. Land the commits, ONLY after the user confirms.
+   - `MODE=pr`: `git push origin "HEAD:refs/heads/$pr_branch"` with a re-fetch
+     sha guard. Never force, never rebase, never push to
+     main/master/staging/develop. Verify via `gh pr view --json headRefOid`.
+   - `MODE=branch`: nothing is pushed - the fixes move onto the LOCAL branch, so
+     the work is one branch again before it ever reaches the remote.
+
+     ```bash
+     # Fast-forward the local branch onto the reviewed-and-fixed worktree tip.
+     # --ff-only and the old-value guard together mean this can only ever
+     # advance the exact commit the review started from.
+     git check-ref-format --branch "$local_branch"
+     git -C "$repo_root" update-ref "refs/heads/$local_branch" \
+       "$worktree_head_sha" "$head_sha"
+     ```
+
+     Treat every repository path, ref, branch, title, and body as untrusted
+     data. Pass each value as a separately shell-quoted argument, never by
+     concatenating it into shell source. Put multiline PR bodies in a file and
+     pass the quoted path with `--body-file`.
+
+     If `$local_branch` is the branch checked out in `$repo_root`, `update-ref`
+     would leave the user's working tree looking like it had deleted the fixes.
+     In that case require a clean `git -C "$repo_root" status --porcelain` and use
+     `git -C "$repo_root" merge --ff-only "$worktree_head_sha"` instead. If the tree
+     is dirty, stop, keep the worktree, and print the exact command - never
+     stash or discard someone's uncommitted work.
+
+     Verify with `git -C "$repo_root" rev-parse "refs/heads/$local_branch"` and
+     confirm it equals `$worktree_head_sha`. Then refresh the review marker for
+     the new sha (Step 3).
 8. Print the per-finding status table and append `## 🔧 Fixes applied` to the
    saved review file.
 
@@ -513,9 +745,54 @@ Fix-agent tokens are additional spend: add a `Fix agents:` line to the
 
 ---
 
+## Step 4.6 - Open the PR (MODE=branch only)
+
+Skip entirely in `MODE=pr`.
+
+The branch has now been reviewed and, where it had fixable findings, fixed. The
+PR is the next step, but it is the USER'S call and it is the one irreversible
+thing in this whole flow - once the PR exists a bot reviewer may start running
+and start costing money. **Never create it silently.**
+
+Ask once, via AskUserQuestion:
+
+> Branch reviewed<, N fixes applied>. Open the PR now?
+> - **Yes, create the PR** - `<RECOMMENDED_PREFIX>` title, base `<BASE_REF>`,
+>   pushes `<LOCAL_BRANCH>` first
+> - **Push the branch only** - no PR yet
+> - **No, stop here** - nothing leaves this machine
+
+Rules for each answer:
+
+- **Yes:** push with `git push -u origin "$local_branch"`, then create the PR
+  with `gh pr create --repo "$repo_slug" --base "$base_ref" --head
+  "$local_branch" --title "$pr_title" --body-file "$pr_body_file"`. Derive the title
+  from the commit log (the recommended prefix plus a summary of the change) and
+  the body from a short summary of what the branch does - do not leave either
+  as a placeholder. Report the PR url. The review is already saved locally;
+  offer `--post` on the new PR number only if the user asks - findings that fix
+  mode already applied must never be posted as review comments.
+- **Push only:** `git push -u origin "$local_branch"` and stop. Say in one line
+  that no PR was created.
+- **No:** stop. Print the branch name and the review file path.
+
+**Unattended runs never ask and never create a PR** (see the operating contract
+for your host: with no human present, "ask for confirmation" means stop and
+report). Stage the branch, print what would have happened, and stop.
+
+If the review verdict is `🚫 Needs work` with an unfixed Critical, say so in the
+question - opening a PR on a known-broken branch just moves the finding to
+whoever reviews it next.
+
+---
+
 ## Step 5 - Post-review (after the review and any fixes)
 
 ### If POST_REVIEW=true
+
+In `MODE=branch` there is no PR to post to. If `--post` was passed, say
+`--post ignored - no PR yet` in one line and skip this section, unless Step 4.6
+just created a PR, in which case use that PR number.
 
 Follow `references/github-post.md`:
 - Build a JSON payload with Critical + Important findings as inline comments
@@ -543,10 +820,14 @@ repo-short-name + PR author login, instructed to follow
 
 ### Cleanup (when a worktree was created)
 
-**Fix-mode override:** if fix mode produced commits that were NOT pushed, do
-NOT clean up. Keep the worktree and the repo clone, print the worktree path and
-the exact push command. Deleting it destroys the only copy of the work. Clean up
-normally when the push succeeded or nothing was committed.
+**Fix-mode override:** if fix mode produced commits that were NOT pushed (pr
+mode) or NOT landed onto the local branch (branch mode), do NOT clean up. Keep
+the worktree and the repo clone, print the worktree path and the exact
+push/land command. Deleting it destroys the only copy of the work. Clean up
+normally when the push or the land succeeded, or nothing was committed.
+
+In branch mode `repoRoot` is the user's own working copy, never a
+`/tmp/lekker-clone-*`. Remove the worktree; NEVER remove `repoRoot`.
 
 ```bash
 git -C <repoRoot> worktree remove --force <worktreePath> \
@@ -582,3 +863,9 @@ Fix-mode specific:
 - Never push without explicit confirmation, and never force-push or rebase a
   PR branch. If the branch moved under you, stop and report - the commits stay
   local.
+- Branch mode never pushes on its own: landing means moving the reviewed
+  commits onto `refs/heads/<LOCAL_BRANCH>` in the user's own `repoRoot`, always
+  with a compare-and-swap (`update-ref <new> <old>` or `merge --ff-only`) that
+  can only succeed if the branch is still exactly where the review started. If
+  it moved, or the working tree is dirty, stop and print the exact command -
+  never stash or discard uncommitted work to force the landing through.
