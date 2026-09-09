@@ -1,3 +1,10 @@
+# [1.44.0](https://github.com/oleg-koval/agent-skills/compare/v1.43.1...v1.44.0) (2026-09-09)
+
+
+### ✨ Features
+
+* **lekker-review:** add optional revmux engine to Step 2 ([#98](https://github.com/oleg-koval/agent-skills/issues/98)) ([27f6da9](https://github.com/oleg-koval/agent-skills/commit/27f6da94884d8bfed8ff5ca44c26d59f63a676e9))
+
 ## [1.43.1](https://github.com/oleg-koval/agent-skills/compare/v1.43.0...v1.43.1) (2026-09-05)
 
 
