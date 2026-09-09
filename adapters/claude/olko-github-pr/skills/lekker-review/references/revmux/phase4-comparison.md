@@ -37,6 +37,4 @@ worktree; "merged" means two revmux findings described one mechanism.
 ## Still open
 
 - Same PRs through the default `workflow` engine for a side-by-side (Oleg-driven).
-- Read-only enforcement: revmux default `--tools` includes Bash; prompt-enforced
-  only. `--tools=Read,Grep,Glob,WebFetch,WebSearch` override not yet applied.
 - Adapter: price synth + verify once revmux reports a per-model split.
