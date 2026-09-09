@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-
 export const meta = {
   name: 'lekker-review-core',
   description: 'Parallel specialist PR review with per-finding adversarial verification',
@@ -597,6 +595,7 @@ const budgetAtStart = budget.spent()
   let revmuxPassthrough = null
 
   if (ENGINE === 'revmux') {
+    const { readFileSync } = require('node:fs')
     const adapterOutput = JSON.parse(readFileSync(findingsFile, 'utf8'))
     finalFindings = (adapterOutput.findings || []).map(function(f) {
       return Object.assign({}, f)

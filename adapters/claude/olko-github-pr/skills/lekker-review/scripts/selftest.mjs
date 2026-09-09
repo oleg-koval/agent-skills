@@ -183,5 +183,56 @@ if (!hasRouting) {
   }
 }
 
+console.log('\nrevmux adapter: fixture mapping')
+{
+  const { execFileSync } = await import('node:child_process')
+  const fixturePath = join(SKILL, 'scripts', 'fixtures', 'revmux-report.json')
+  const pricingPath = join(SKILL, 'references', 'pricing.json')
+  const adapterPath = join(SKILL, 'scripts', 'revmux-adapter.mjs')
+  const out = execFileSync('node', [adapterPath, fixturePath, '--pricing', pricingPath], { encoding: 'utf8' })
+  const adapted = JSON.parse(out)
+
+  check('engine tag', adapted.engine, 'revmux')
+  check('critical confirmed kept critical',
+    adapted.findings.some(f => f.title.includes('Race between webhook retry') && f.severity === 'critical'), true)
+  check('major refined -> important, agreedBy from 2 sources',
+    (() => {
+      const f = adapted.findings.find(f => f.title.includes('Discount stacking'))
+      return f && f.severity === 'important' && Array.isArray(f.agreedBy) && f.agreedBy.length === 2
+    })(), true)
+  check('minor + lekker-conventions lens -> idiomatic',
+    adapted.findings.find(f => f.title.includes('naming matrix'))?.severity, 'idiomatic')
+  check('immaterial verdict dropped, not re-promoted',
+    adapted.findings.some(f => f.title.includes('Unused import')), false)
+  check('rejected non-hard-rule dropped',
+    adapted.findings.some(f => f.title.includes('double-count a tip')), false)
+  check('TS-1 rejected but corroborated by quoted code IS re-promoted to critical',
+    (() => {
+      const f = adapted.findings.find(f => f.title.includes('Unsafe cast on inventory adjustment'))
+      return f && f.severity === 'critical' && f.rule === 'TS-1'
+    })(), true)
+  check('TS-1 rejected with no corroborating code stays dropped',
+    adapted.findings.some(f => f.title.includes('Type safety concern in inventory handler')), false)
+  check('pre_existing becomes observation with Pre-existing: prefix',
+    (() => {
+      const f = adapted.findings.find(f => f.title.includes('no retry backoff'))
+      return f && f.severity === 'observation' && f.description.startsWith('Pre-existing:')
+    })(), true)
+  check('open_questions pass through as questions',
+    adapted.questions.length, 1)
+  check('degraded agent surfaced by name',
+    adapted.degraded, ['adversarial'])
+  check('droppedCount counts immaterial + rejected + uncorroborated TS-1 (3)', adapted.droppedCount, 3)
+  check('hardRuleCount counts the one re-promotion', adapted.hardRuleCount, 1)
+  check('totalUsd computed from known pricing', typeof adapted.totalUsd === 'number' && adapted.totalUsd > 0, true)
+  check('no pricingMissing when all models are priced', adapted.pricingMissing, undefined)
+
+  const noPricingOut = execFileSync('node', [adapterPath, fixturePath], { encoding: 'utf8' })
+  const noPricingAdapted = JSON.parse(noPricingOut)
+  check('without a pricing file every model is pricingMissing',
+    noPricingAdapted.pricingMissing?.includes('claude-sonnet-5'), true)
+  check('without a pricing file totalUsd is null', noPricingAdapted.totalUsd, null)
+}
+
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)
