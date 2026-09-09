@@ -47,6 +47,20 @@ for req in TASK RUN DEPTH WORKDIR DIFF_FILE CONTEXT_FILE PROFILE_FILE OUT; do
     fi
 done
 
+for input in DIFF_FILE CONTEXT_FILE PROFILE_FILE; do
+    if [[ ! -r "${!input}" ]]; then
+        printf 'revmux-engine: --%s must be a readable file: %s\n' \
+            "$(printf '%s' "$input" | tr 'A-Z' 'a-z' | tr '_' '-')" "${!input}" >&2
+        exit 2
+    fi
+done
+
+WORKTREE_JSON="$(dirname "$CONTEXT_FILE")/worktree.json"
+if [[ ! -r "$WORKTREE_JSON" ]]; then
+    printf 'revmux-engine: worktree configuration must be readable: %s\n' "$WORKTREE_JSON" >&2
+    exit 2
+fi
+
 case "$DEPTH" in
     medium|deep) ;;
     *)
@@ -78,20 +92,29 @@ mkdir -p "$TASKS_DIR"
 
 NEW_JSON="$(revmux --tasks-dir "$TASKS_DIR" --config-dir "$CONFIG_DIR" new --task "$TASK" --run "$RUN")"
 
-SCOPE_FILE="$(printf '%s' "$NEW_JSON" | jq -r '.scope')"
-GOAL_FILE="$(printf '%s' "$NEW_JSON" | jq -r '.goal')"
-PROFILE_INPUT_FILE="$(printf '%s' "$NEW_JSON" | jq -r '.profile')"
-CONTEXT_DIR="$(printf '%s' "$NEW_JSON" | jq -r '.context')"
+resolve_new_path() {
+    local key="$1"
+    local value
+    if ! value="$(printf '%s' "$NEW_JSON" | jq -er --arg key "$key" \
+        '.[$key] | select(type == "string" and length > 0)')" \
+        || [[ -z "$value" || "$value" == "null" ]]; then
+        printf 'revmux-engine: revmux new returned an invalid %s path\n' "$key" >&2
+        return 2
+    fi
+    printf '%s' "$value"
+}
+
+SCOPE_FILE="$(resolve_new_path scope)"
+GOAL_FILE="$(resolve_new_path goal)"
+PROFILE_INPUT_FILE="$(resolve_new_path profile)"
+CONTEXT_DIR="$(resolve_new_path context)"
 
 mkdir -p "$CONTEXT_DIR"
 
 TARGET_LABEL="$(jq -r '.reviewTarget // "unknown target"' "$CONTEXT_FILE" 2>/dev/null || printf 'unknown target')"
 
 BASE_REF=""
-WORKTREE_JSON="$(dirname "$CONTEXT_FILE")/worktree.json"
-if [[ -f "$WORKTREE_JSON" ]]; then
-    BASE_REF="$(jq -r '.baseRef // .mergeBase // empty' "$WORKTREE_JSON" 2>/dev/null || true)"
-fi
+BASE_REF="$(jq -r '.mergeBase // .baseRef // empty' "$WORKTREE_JSON" 2>/dev/null || true)"
 
 {
     printf '# Scope\n\n'
@@ -113,6 +136,7 @@ fi
 
 cp "$CONTEXT_FILE" "$CONTEXT_DIR/context.json"
 cp "$DIFF_FILE" "$CONTEXT_DIR/pr.diff"
+cp "$WORKTREE_JSON" "$CONTEXT_DIR/worktree.json"
 cp "$PROFILE_FILE" "$PROFILE_INPUT_FILE"
 
 REVMUX_OUT="$OUT"

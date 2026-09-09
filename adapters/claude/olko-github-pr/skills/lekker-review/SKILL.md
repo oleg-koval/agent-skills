@@ -512,7 +512,7 @@ provers on `sonnet`, housekeeping on `haiku`. Only the synthesis in Step 3 runs
 on the session model.
 
 Return value from the workflow:
-`{findings, droppedCount, downgradedCount, hardRuleCount, proveAttemptCount, provenCount, acCoverage, coverageVerdict, mutationSlip, mockSmells, agentCount, outputTokens, turnTokensTotal}`
+`{engine, findings, droppedCount, downgradedCount, hardRuleCount, proveAttemptCount, provenCount, acCoverage, coverageVerdict, mutationSlip, mockSmells, agentCount, outputTokens, turnTokensTotal}`
 `outputTokens` is this workflow's own output spend; `turnTokensTotal` is the
 whole turn's shared pool (main loop included).
 
@@ -525,6 +525,7 @@ round; Prove still runs inside `workflow.js`. Steps:
 
 1. `TASK_SLUG` = `<repo-short-name>-<TARGET_SLUG>`, `RUN` = `01-review`.
 2. Run the engine:
+
    ```bash
    ${CLAUDE_PLUGIN_ROOT}/scripts/revmux-engine.sh \
      --task <TASK_SLUG> --run <RUN> --depth <depth> \
@@ -535,13 +536,17 @@ round; Prove still runs inside `workflow.js`. Steps:
      --config-dir ~/.config/revmux \
      --out <scratchpad>/revmux.json
    ```
+
 3. Adapt the report:
+
    ```bash
    node ${CLAUDE_PLUGIN_ROOT}/scripts/revmux-adapter.mjs \
      <scratchpad>/revmux.json --pricing \
      ${CLAUDE_PLUGIN_ROOT}/references/pricing.json \
+     --context <scratchpad>/context.json \
      > <scratchpad>/findings.json
    ```
+
 4. Invoke Workflow(`workflow.js`) with the same args as the `ENGINE=workflow`
    path above, plus `engine: "revmux"` and
    `findingsFile: "<scratchpad>/findings.json"`. It skips Review/Dedup/
@@ -659,7 +664,8 @@ requirements:
   Real numbers only - no `<N>` placeholders.
   When `ENGINE=revmux`: build the rows from the adapter's `agents` array
   (`name`, `model`, `tokens`, `usd` per row) and report `totalUsd` as the
-  total. State plainly that the USD figures are an API list-price estimate
+  total. Read `pricingMissing`; when it is non-empty, explicitly mark `totalUsd`
+  as incomplete and name the unpriced models. State plainly that the USD figures are an API list-price estimate
   computed from `references/pricing.json`'s placeholder prices
   (`verified: false`) until that file is verified against real invoices.
   Prove-phase tokens still come from the workflow return's `outputTokens`,

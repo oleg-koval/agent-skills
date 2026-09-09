@@ -595,7 +595,6 @@ const budgetAtStart = budget.spent()
   let revmuxPassthrough = null
 
   if (ENGINE === 'revmux') {
-    const { readFileSync } = require('node:fs')
     const adapterOutput = JSON.parse(readFileSync(findingsFile, 'utf8'))
     finalFindings = (adapterOutput.findings || []).map(function(f) {
       return Object.assign({}, f)

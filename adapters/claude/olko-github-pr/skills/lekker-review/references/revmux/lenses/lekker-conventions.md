@@ -6,8 +6,9 @@ description: deviations from Teifi's own codebase conventions — the "strong te
 Review the change for deviations from Teifi's established codebase
 conventions and idioms. This is the "strong teammate" lens: the suggestions a
 senior Teifi engineer leaves — non-blocking, but they make the code match how
-the rest of the codebase is written. You are the ONLY lens allowed to look
-beyond the diff for evidence; other lenses are diff-scoped, you are not.
+the rest of the codebase is written. Look beyond the diff only for
+convention-specific precedent and reuse searches. Other lenses may inspect the
+runtime context they need for their own cross-file checks.
 
 Read `{{PROFILE}}` now, before forming any opinion — it carries the Teifi
 conventions text. Its §1 (naming matrix), §2 (comment policy), §5 (commit
@@ -48,8 +49,7 @@ Axes to cover:
     infers.
   * A GID validated/parsed inline where a shared helper exists (e.g.
     `zNamespacedGid`). Grep the shared libs and the repo before asserting.
-- Reuse (search the worktree AND sibling Teifi repos under
-  /Users/oleg.koval/Work before flagging):
+- Reuse (search the worktree AND sibling Teifi repos before flagging):
   * Inline fetch/client logic that should reuse — or be promoted into — a
     shared client (e.g. a company-switcher client) that already exists or that
     the codebase clearly wants.
@@ -73,24 +73,42 @@ look. So run these enumerations mechanically, whether or not anything looks wron
 1. **Sibling sweep for every file the diff ADDS.** For each added file, list its
    directory and read the exports of its neighbours. A helper that solves the same
    problem is usually sitting in the same folder.
+
    ```bash
-   git -C <workdir> diff --name-status <base>...HEAD | awk '$1=="A"{print $2}'
-   ls <dir of each added file>                       # what already lives beside it
-   grep -rn "^export " <dir>/*.ts <dir>/*.tsx 2>/dev/null | grep -v "<the added file>"
+   REVIEW_CONFIG="{{CONTEXT}}/worktree.json"
+   WORKTREE="$(jq -er '.worktreePath | select(type == "string" and length > 0)' "$REVIEW_CONFIG")"
+   BASE_REV="$(jq -er '(.mergeBase // .baseRef) | select(type == "string" and length > 0)' "$REVIEW_CONFIG")"
+   REPO_ROOT="$(jq -er '.repoRoot | select(type == "string" and length > 0)' "$REVIEW_CONFIG")"
+   SIBLING_ROOT="$(dirname "$REPO_ROOT")"
+
+   git -C "$WORKTREE" diff --name-status "$BASE_REV"...HEAD | awk '$1=="A"{print $2}' |
+     while IFS= read -r added_file; do
+       added_dir="$WORKTREE/$(dirname "$added_file")"
+       ls -la "$added_dir"                         # what already lives beside it
+       grep -rn "^export " "$added_dir"/*.ts "$added_dir"/*.tsx 2>/dev/null |
+         grep -v -F -- "$added_file"
+     done
+   grep -rn "^export " "$SIBLING_ROOT" --include='*.ts' --include='*.tsx' \
+     --exclude-dir=node_modules 2>/dev/null
    ```
+
    A new `foo/bar-thing.ts` next to an existing `foo/thing.ts` is a finding waiting
    to happen. Read the neighbour, do not just note its name.
 
 2. **New-symbol sweep.** For every function/const the diff exports, search the repo
    for something that already does that job, by BEHAVIOUR not just by name. Names
    rarely match; behaviour does.
+
    ```bash
-   grep -rn "export \(function\|const\) " <diff added lines>   # collect new symbols
+   git -C "$WORKTREE" diff --unified=0 "$BASE_REV"...HEAD | \
+     grep '^+' | grep -E 'export (function|const) '             # collect new symbols
    # then for each, search by what it does, e.g. a locale normaliser:
-   grep -rln "toLowerCase()\|normalize\|isoCode\|split('-')" <workdir> --include=*.ts --include=*.tsx
+   grep -rln "toLowerCase()\|normalize\|isoCode\|split('-')" "$WORKTREE" \
+     --include='*.ts' --include='*.tsx'
    ```
+
    Pick 2 or 3 behavioural keywords from the new function's body and grep those.
-   Reviewing the diff alone cannot catch this; you are the only lens that can.
+   Reviewing the diff alone cannot catch this.
 
 3. **State what you swept.** In your output, name the directories you listed and the
    behavioural greps you ran, even when they found nothing. A sweep that is not
@@ -115,11 +133,13 @@ HARD RULES:
   explicitly and give the input.
 
 To find precedents, you may run:
-```
-grep -rn "<symbol or pattern>" <workdir> --include=*.ts --include=*.tsx
-find /Users/oleg.koval/Work \( -name "*.ts" -o -name "*.tsx" \) ! -path "*/node_modules/*" \
+
+```bash
+grep -rn "<symbol or pattern>" "$WORKTREE" --include='*.ts' --include='*.tsx'
+find "$SIBLING_ROOT" \( -name "*.ts" -o -name "*.tsx" \) ! -path "*/node_modules/*" \
   | xargs grep -l "<symbol>" 2>/dev/null | head
 ```
+
 Always include *.tsx. Extension and frontend code lives in .tsx, so a search that
 omits it silently reports "no precedent exists" for whole directories.
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+ROOT="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
 ENGINE="$ROOT/plugins/olko-github-pr/skills/lekker-review/scripts/revmux-engine.sh"
 TEST_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/revmux-engine-test.XXXXXX")"
 trap 'rm -rf "$TEST_ROOT"' EXIT

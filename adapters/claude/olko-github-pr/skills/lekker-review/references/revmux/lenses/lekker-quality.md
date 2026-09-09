@@ -37,9 +37,11 @@ Axes to cover:
   call site but the raw one is still used in a React dependency array, a cache
   key, a log line, an equality check, or a second call site. Two spellings of the
   "same" value then disagree. Enumerate the uses; do not eyeball the hunk.
+
   ```bash
   grep -n "<rawIdentifier>" <file>     # every use, then confirm each is intended
   ```
+
 - Env vars: dead vars, renamed without migration, wrong fallback operator
   (?? vs ||), type mismatch, leaked in logs.
 - TypeScript type safety (TS-1): flag every type cast (`as X`, `<X>expr`)
