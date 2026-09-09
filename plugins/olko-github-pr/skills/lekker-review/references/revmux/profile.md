@@ -13,21 +13,25 @@ and lekker-deep review profiles. It concatenates the two files lekker-review its
 These rules are non-negotiable. Violations are always **Critical** findings regardless of depth or other filters. Apply them when developing a feature or bugfix, not only during review.
 
 ### TS-1 — Type safety (TypeScript only)
+
 - No type casting (`as X`, `<X>expr`) — ask them if they are Harry Potter for casting spells.
 - No `any` — except in test files where types are genuinely hard to express; even there, blatantly omitted types (e.g. `any[]` on a known shaped list) must be flagged.
 - Every finding: quote the cast/`any`, explain the correct type, show the fix.
 
 ### TS-2 — No JavaScript files
+
 - No `.js` files may be added to any Teifi integrations repo.
 - Exception: Liquid themes (Online Store 2.0 Shopify themes) may contain `.js`.
 - If the PR adds a `.js` file to a non-theme repo, flag it as Critical: must be converted to `.ts`.
 
 ### GQL-1 — GraphQL NodesConnection pagination
+
 - Every query that uses a nodes connection (`nodes { ... }`) **must** include `pageInfo { hasNextPage endCursor }` alongside the nodes.
 - All remaining pages **must** be fetched — a single-page fetch with no loop/recursion is a bug.
 - The page size **must** be `250` (Shopify max). If any other value is used, a code comment explaining why is required; if no comment exists, flag it.
 
 ### PR-1 — PR title must be prefixed with Linear ticket(s)
+
 - PR title must start with `[GIC-123]` (or the relevant project prefix) in square brackets.
 - Go through the commit history: if merged PRs or commits reference Linear tickets in square brackets (`[GIC-123]`), all of them must appear comma-separated in the current PR title (e.g. `[GIC-123,GIC-124]`).
 - This is a **blocking** finding: display a prominent `⛔ CANNOT MERGE` warning and recommend the correct title prefix. Confidence score is not affected — this is a process rule, not a code quality signal.
@@ -42,7 +46,7 @@ belongs in *this* repo and not a sibling repo.
 | Repo pattern | Purpose |
 |---|---|
 | `*-live` (e.g. `gic-live`, `evi-live`) | Shopify app: customer account extensions, app blocks, storefront extensions, Polaris admin UI |
-| `*-integrations` (e.g. `gic-integrations`, `evi-integrations`) | Backend ERP sync: cron jobs, orchestrator, BC/Sage/Jitterbit/ROI API clients |
+| `*-integrations` (e.g. `evi-integrations`; see the GIC exception below) | Backend ERP sync: cron jobs, orchestrator, BC/Sage/Jitterbit/ROI API clients |
 | `teifi-digital` / shared libs | Cross-project utilities, shared types |
 
 **Note:** `gic-integrations` has an `extensions/` folder containing legacy/reference extensions (e.g. `link-account-customer`), but **new customer account extensions for GIC should target `gic-live`** per project specs. Always check the Linear/Notion ticket for explicit repo path — don't infer from existing repo contents alone.
@@ -93,6 +97,7 @@ Related: a diff that BOTH adds a column/table AND changes what is read or writte
 be split into expand / migrate / read-switch / contract PRs (`important`, name the split).
 
 ### Stack context to inform the review:
+
 - **Backend:** TypeScript, Node.js, Express, Prisma, pgtyped, PostgreSQL
 - **Frontend:** React, Shopify Polaris, Vite
 - **Shopify:** REST Admin + GraphQL Admin, Webhooks, Shopify Functions, genql
@@ -107,22 +112,24 @@ be split into expand / migrate / read-switch / contract PRs (`important`, name t
 **Per-project repo structure varies — always verify before flagging.**
 
 - For **EVI project**: `evi-integrations` = backend ERP sync only; `evi-live` = Shopify app (extensions, Polaris UI).
-- For **GIC project**: `gic-integrations` IS the full Shopify app — it owns both extensions
-  (`extensions/` folder with 15+ customer account extensions) AND the ERP backend sync.
-  `gic-live` is a separate app for different purposes. Do NOT flag extensions in
-  `gic-integrations` as misplaced.
+- For **GIC project**: `gic-integrations` owns the ERP backend sync and retains
+  legacy/reference Shopify extensions. New GIC customer account extensions belong
+  in `gic-live`; do not treat the legacy `extensions/` folder as placement precedent.
 - For other projects (`rsl-*`, `elmt-*`, etc.): check the repo's `extensions/` folder
   presence before assuming a split — do not assume the `*-integrations` pattern always
   means backend-only.
 
 **Step 1g action**: Before flagging a placement mismatch, run:
+
 ```bash
 gh api "repos/<REPO_SLUG>/git/trees/HEAD" 2>/dev/null | python3 -c "
 import sys,json; t=json.load(sys.stdin).get('tree',[]); print([f['path'] for f in t if f['path']=='extensions'])
 "
 ```
-If `extensions/` exists in the target repo, the placement is likely intentional.
-Only flag if the diff contains extension code and the repo has no `extensions/` folder.
+
+If `extensions/` exists in the target repo, placement may be intentional, but
+that alone is not precedent for new GIC extensions. Flag when the repo has no
+`extensions/` folder, or when a GIC spec targets the new extension to `gic-live`.
 
 ---
 

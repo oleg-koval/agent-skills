@@ -3,6 +3,8 @@
 //
 // Usage: node scripts/revmux-adapter.mjs <revmux.json> [--pricing FILE] [--context FILE] > findings.json
 import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const args = process.argv.slice(2)
 const reportPath = args[0]
@@ -12,19 +14,55 @@ if (!reportPath) {
 }
 function flagValue(name) {
   const i = args.indexOf(name)
-  return i === -1 ? null : args[i + 1]
+  if (i === -1) return null
+  const value = args[i + 1]
+  if (!value || value.startsWith('--')) {
+    console.error(`revmux-adapter: ${name} requires a file path`)
+    process.exit(2)
+  }
+  return value
 }
 const pricingPath = flagValue('--pricing')
 const contextPath = flagValue('--context')
 
-const report = JSON.parse(readFileSync(reportPath, 'utf8'))
-const pricing = pricingPath ? JSON.parse(readFileSync(pricingPath, 'utf8')) : {}
-let contextJson = null
-if (contextPath) {
-  try { contextJson = JSON.parse(readFileSync(contextPath, 'utf8')) } catch { contextJson = null }
+function loadJson(label, path) {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'))
+  } catch (error) {
+    console.error(`revmux-adapter: cannot read or parse ${label} JSON at ${path}: ${error.message}`)
+    process.exit(2)
+  }
 }
 
-const HARD_RULES = ['TS-1', 'TS-2', 'GQL-1', 'PR-1']
+const report = loadJson('report', reportPath)
+const pricing = pricingPath ? loadJson('pricing', pricingPath) : {}
+const contextJson = contextPath ? loadJson('context', contextPath) : null
+
+function configuredHardRules() {
+  const defaultPath = fileURLToPath(new URL('../references/house-rules.md', import.meta.url))
+  const configuredPath = (contextJson && typeof contextJson.houseRulesFile === 'string')
+    ? contextJson.houseRulesFile
+    : defaultPath
+  const houseRulesPath = contextPath && !configuredPath.startsWith('/')
+    ? resolve(dirname(contextPath), configuredPath)
+    : configuredPath
+
+  let text
+  try {
+    text = readFileSync(houseRulesPath, 'utf8')
+  } catch (error) {
+    console.error(`revmux-adapter: cannot read configured house rules at ${houseRulesPath}: ${error.message}`)
+    process.exit(2)
+  }
+
+  const tags = new Set()
+  for (const match of text.matchAll(/^#{2,6}\s+([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)\b/gm)) {
+    if (!match[1].startsWith('EXAMPLE-')) tags.add(match[1])
+  }
+  return tags
+}
+
+const HARD_RULES = configuredHardRules()
 
 function hardRuleCorroborated(finding) {
   const evidence = [finding.badCode, finding.description, finding.title]
@@ -43,20 +81,20 @@ function hardRuleCorroborated(finding) {
     case 'PR-1':
       return /pr\s*(title|description)/i.test(file + '\n' + evidence)
     default:
-      return false
+      return code.trim().length > 0
   }
 }
 
 function isHardRule(finding) {
-  if (typeof finding.rule !== 'string' || HARD_RULES.indexOf(finding.rule) === -1) {
+  if (typeof finding.rule !== 'string' || !HARD_RULES.has(finding.rule)) {
     return false
   }
   return hardRuleCorroborated(finding)
 }
 
 function extractRule(title) {
-  const m = /^\[(TS-1|TS-2|GQL-1|PR-1)\]/.exec(String(title || ''))
-  return m ? m[1] : undefined
+  const m = /^\[([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)\]/.exec(String(title || ''))
+  return m && HARD_RULES.has(m[1]) ? m[1] : undefined
 }
 
 function mapSeverity(f) {
@@ -75,7 +113,7 @@ function extractBadCode(body) {
   const backtick = /`([^`]+)`/.exec(text)
   if (backtick) return backtick[1]
   const dashCode = /--\s*(.+)$/.exec(text.split('\n')[0])
-  return dashCode ? dashCode[1] : text
+  return dashCode ? dashCode[1] : ''
 }
 
 const findings = []
@@ -111,7 +149,7 @@ for (const f of report.findings || []) {
 
   // A hard-rule tag whose own quoted code corroborates it is Critical
   // regardless of revmux's verdict.
-  if (rule && hardRuleCorroborated({ rule, badCode, description: f.body, title: f.title, file: f.file })) {
+  if (isHardRule({ rule, badCode, description: f.body, title: f.title, file: f.file })) {
     hardRuleCount++
     base.severity = 'critical'
     base.verifierReasoning = `hard rule ${rule}: corroborated by quoted code, re-promoted despite revmux verdict "${f.verdict}"`
@@ -121,6 +159,8 @@ for (const f of report.findings || []) {
 
   droppedCount++
 }
+
+const reportFindings = findings.slice()
 
 for (const pe of report.pre_existing || []) {
   findings.push({
@@ -137,6 +177,32 @@ for (const pe of report.pre_existing || []) {
 
 const questions = report.open_questions || []
 
+const implementationFindings = reportFindings.filter(function(f) {
+  return f.dimension.includes('lekker-implementation')
+})
+const testQualityFindings = reportFindings.filter(function(f) {
+  return f.dimension.includes('lekker-test-quality')
+})
+const mutationFindings = testQualityFindings.filter(function(f) {
+  return /mutation|operator flip|off-by-one/i.test(`${f.title}\n${f.description}`)
+})
+const mockFindings = testQualityFindings.filter(function(f) {
+  return /\bmock(?:ing|ed|s)?\b|\bspy(?:ing)?\b|toHaveBeenCalled/i.test(`${f.title}\n${f.description}`)
+})
+
+const acCoverage = implementationFindings.length > 0
+  ? implementationFindings.map(function(f) { return `${f.title}: ${f.description}` }).join('\n')
+  : 'No acceptance-criteria gaps were reported by the revmux implementation lens.'
+const coverageVerdict = testQualityFindings.length > 0
+  ? `${testQualityFindings.length} test-quality finding(s): ${testQualityFindings.map(function(f) { return f.title }).join('; ')}`
+  : 'No test-quality gaps were reported by the revmux test-quality lens.'
+const mutationSlip = mutationFindings.length > 0
+  ? mutationFindings.map(function(f) { return f.description }).join('\n')
+  : 'No mutation-slip gap was reported by the revmux test-quality lens.'
+const mockSmells = mockFindings.map(function(f) {
+  return { file: f.file, line: f.line, description: f.description, fix: f.fix }
+})
+
 const agentsIn = (report.sources && report.sources.agents) || []
 const pricingMissing = []
 let totalUsd = 0
@@ -147,9 +213,11 @@ const agents = agentsIn.map(function(a) {
   let usd = null
   if (priceEntry) {
     const rate = (typeof priceEntry.output === 'number') ? priceEntry.output : priceEntry.blended
-    usd = (a.tokens / 1e6) * rate
-    anyUsdKnown = true
-    totalUsd += usd
+    if (typeof a.tokens === 'number' && Number.isFinite(a.tokens) && typeof rate === 'number' && Number.isFinite(rate)) {
+      usd = (a.tokens / 1e6) * rate
+      anyUsdKnown = true
+      totalUsd += usd
+    }
   } else {
     pricingMissing.push(a.actual_model)
   }
@@ -179,6 +247,10 @@ const output = {
   agents,
   totalTokens,
   totalUsd: anyUsdKnown ? totalUsd : null,
+  acCoverage,
+  coverageVerdict,
+  mutationSlip,
+  mockSmells,
   stats: { durationMs: (report.stats && report.stats.durationMs) || null },
 }
 

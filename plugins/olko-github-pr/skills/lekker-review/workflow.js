@@ -603,12 +603,15 @@ const budgetAtStart = budget.spent()
     droppedCount = adapterOutput.droppedCount || 0
     hardRuleCount = adapterOutput.hardRuleCount || 0
     agentCount = adapterOutput.agentCount || 0
+    implementationResult = adapterOutput
+    testQualityResult = adapterOutput
     revmuxPassthrough = {
       questions:   adapterOutput.questions || [],
       agents:      adapterOutput.agents || [],
       degraded:    adapterOutput.degraded || [],
       totalTokens: adapterOutput.totalTokens,
       totalUsd:    adapterOutput.totalUsd,
+      pricingMissing: adapterOutput.pricingMissing || [],
     }
     log(`revmux engine: loaded ${finalFindings.length} finding(s) from ${findingsFile} (dropped=${droppedCount}, hardRule=${hardRuleCount}); skipping Review/Verify/Critic`)
   } else {
@@ -840,4 +843,4 @@ const budgetAtStart = budget.spent()
     mockSmells:        Array.isArray(testQualityResult.mockSmells) ? testQualityResult.mockSmells : [],
     outputTokens:      budget.spent() - budgetAtStart,
     turnTokensTotal:   budget.spent(),
-  }, revmuxPassthrough ? Object.assign({ engine: ENGINE }, revmuxPassthrough) : {})
+  }, Object.assign({ engine: ENGINE }, revmuxPassthrough || {}))

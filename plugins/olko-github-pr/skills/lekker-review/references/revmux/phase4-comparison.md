@@ -15,6 +15,7 @@ worktree; "merged" means two revmux findings described one mechanism.
 ## Notes per run
 
 ### #544
+
 - revmux under-rated the watermark ordering bug as important; the main loop
   raised it to Critical after tracing `executeSyncStrategy` writing the CUSTOMER
   watermark before the role post-pass.
@@ -25,6 +26,7 @@ worktree; "merged" means two revmux findings described one mechanism.
   covered all four.
 
 ### #537
+
 - Two of four findings were the same mechanism seen from two lenses (bugs,
   adversarial). Synthesis did not merge them; the main loop did.
 - All four confirmed against the worktree. The idiomatic one (comment
@@ -33,6 +35,7 @@ worktree; "merged" means two revmux findings described one mechanism.
   finding could only be anchored on the sync-path signal it replaces.
 
 ## Still open
+
 - Same PRs through the default `workflow` engine for a side-by-side (Oleg-driven).
 - Read-only enforcement: revmux default `--tools` includes Bash; prompt-enforced
   only. `--tools=Read,Grep,Glob,WebFetch,WebSearch` override not yet applied.

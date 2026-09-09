@@ -97,6 +97,62 @@
       "sources": ["quality+impl"],
       "lenses": ["lekker-quality"],
       "verdict": "rejected"
+    },
+    {
+      "id": "f8",
+      "file": "web/services/session.ts",
+      "line": 14,
+      "end_line": 14,
+      "severity": "minor",
+      "confidence": 0.8,
+      "title": "[SEC-7] Session token is logged",
+      "body": "The configured security rule forbids `logger.info(sessionToken)`.",
+      "fix": "Remove the token from the log payload.",
+      "sources": ["quality+impl"],
+      "lenses": ["lekker-quality"],
+      "verdict": "rejected"
+    },
+    {
+      "id": "f9",
+      "file": "web/services/session.ts",
+      "line": 20,
+      "end_line": 20,
+      "severity": "minor",
+      "confidence": 0.3,
+      "title": "[SEC-7] Possible session concern",
+      "body": "The session handling might expose sensitive data in some circumstances.",
+      "fix": "Review the session handling.",
+      "sources": ["quality+impl"],
+      "lenses": ["lekker-quality"],
+      "verdict": "rejected"
+    },
+    {
+      "id": "f10",
+      "file": "web/services/order-sync.test.ts",
+      "line": 55,
+      "end_line": 55,
+      "severity": "major",
+      "confidence": 0.85,
+      "title": "Operator-flip mutation escapes the happy-path assertion",
+      "body": "Changing the retry guard from && to || still passes the only assertion.",
+      "fix": "Add a case that exercises one false operand.",
+      "sources": ["tests"],
+      "lenses": ["lekker-test-quality"],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "f11",
+      "file": "web/services/order-sync.test.ts",
+      "line": 70,
+      "end_line": 70,
+      "severity": "minor",
+      "confidence": 0.8,
+      "title": "Mock assertion freezes the client call shape",
+      "body": "The test asserts toHaveBeenCalledWith instead of the observable result.",
+      "fix": "Assert the returned synchronization state.",
+      "sources": ["tests"],
+      "lenses": ["lekker-test-quality"],
+      "verdict": "confirmed"
     }
   ],
   "pre_existing": [
@@ -115,7 +171,8 @@
     "agents": [
       { "name": "quality+impl", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "medium", "tokens": 42000, "raised": 4, "degraded": false },
       { "name": "simpl+conventions", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "medium", "tokens": 31000, "raised": 2, "degraded": false },
-      { "name": "adversarial", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "high", "tokens": 18000, "raised": 2, "degraded": true }
+      { "name": "adversarial", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "high", "tokens": 18000, "raised": 2, "degraded": true },
+      { "name": "malformed-cost", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "medium", "tokens": "unknown", "raised": 0, "degraded": false }
     ]
   },
   "stats": { "tokens": 91000 }
