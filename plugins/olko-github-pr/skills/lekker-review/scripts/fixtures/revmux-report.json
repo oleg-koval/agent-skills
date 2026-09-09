@@ -1,0 +1,179 @@
+{
+  "findings": [
+    {
+      "id": "f1",
+      "file": "web/services/order-sync.ts",
+      "line": 42,
+      "end_line": 44,
+      "severity": "critical",
+      "confidence": 0.9,
+      "title": "Race between webhook retry and manual sync writes duplicate fulfillment",
+      "body": "Two concurrent writers can both pass the guard and insert a fulfillment row.",
+      "fix": "Take a row lock on the order before the check-then-insert.",
+      "sources": ["quality+impl"],
+      "lenses": ["lekker-quality"],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "f2",
+      "file": "web/services/pricing.ts",
+      "line": 88,
+      "end_line": 90,
+      "severity": "major",
+      "confidence": 0.75,
+      "title": "Discount stacking ignores currency rounding",
+      "body": "Two agents independently flagged the same rounding gap on stacked discounts.",
+      "fix": "Round once at the end, not after each discount.",
+      "sources": ["quality+impl", "simpl+conventions"],
+      "lenses": ["lekker-quality", "lekker-simplification"],
+      "verdict": "refined"
+    },
+    {
+      "id": "f3",
+      "file": "web/services/logger.ts",
+      "line": 12,
+      "end_line": 12,
+      "severity": "minor",
+      "confidence": 0.6,
+      "title": "Log helper name does not follow the naming matrix",
+      "body": "getLogger performs no I/O, per teifi-conventions section 1 it should not be prefixed get.",
+      "fix": "Rename to buildLogger.",
+      "sources": ["simpl+conventions"],
+      "lenses": ["lekker-conventions"],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "f4",
+      "file": "web/services/webhook.ts",
+      "line": 5,
+      "end_line": 5,
+      "severity": "minor",
+      "confidence": 0.4,
+      "title": "Unused import left over from a refactor",
+      "body": "Import of `crypto` is unused after the signature check moved.",
+      "fix": "Remove the unused import.",
+      "sources": ["adversarial"],
+      "lenses": ["adversarial"],
+      "verdict": "immaterial"
+    },
+    {
+      "id": "f5",
+      "file": "web/services/refund.ts",
+      "line": 60,
+      "end_line": 61,
+      "severity": "major",
+      "confidence": 0.5,
+      "title": "Refund total may double-count a tip",
+      "body": "Speculative -- verifier could not reproduce a path where the tip line is summed twice.",
+      "fix": "n/a",
+      "sources": ["adversarial"],
+      "lenses": ["adversarial"],
+      "verdict": "rejected"
+    },
+    {
+      "id": "f6",
+      "file": "web/services/inventory.ts",
+      "line": 21,
+      "end_line": 21,
+      "severity": "minor",
+      "confidence": 0.7,
+      "title": "[TS-1] Unsafe cast on inventory adjustment payload",
+      "body": "const qty = payload as any; -- a bare `as any` cast on external webhook input, no runtime type check follows it.",
+      "fix": "Parse payload with the zod schema and drop the cast.",
+      "sources": ["quality+impl"],
+      "lenses": ["lekker-quality"],
+      "verdict": "rejected"
+    },
+    {
+      "id": "f7",
+      "file": "web/services/inventory.ts",
+      "line": 30,
+      "end_line": 30,
+      "severity": "minor",
+      "confidence": 0.3,
+      "title": "[TS-1] Type safety concern in inventory handler",
+      "body": "This function handles any inventory update and could fail for any malformed input; consider adding validation.",
+      "fix": "Add input validation.",
+      "sources": ["quality+impl"],
+      "lenses": ["lekker-quality"],
+      "verdict": "rejected"
+    },
+    {
+      "id": "f8",
+      "file": "web/services/session.ts",
+      "line": 14,
+      "end_line": 14,
+      "severity": "minor",
+      "confidence": 0.8,
+      "title": "[SEC-7] Session token is logged",
+      "body": "The configured security rule forbids `logger.info(sessionToken)`.",
+      "fix": "Remove the token from the log payload.",
+      "sources": ["quality+impl"],
+      "lenses": ["lekker-quality"],
+      "verdict": "rejected"
+    },
+    {
+      "id": "f9",
+      "file": "web/services/session.ts",
+      "line": 20,
+      "end_line": 20,
+      "severity": "minor",
+      "confidence": 0.3,
+      "title": "[SEC-7] Possible session concern",
+      "body": "The session handling might expose sensitive data in some circumstances.",
+      "fix": "Review the session handling.",
+      "sources": ["quality+impl"],
+      "lenses": ["lekker-quality"],
+      "verdict": "rejected"
+    },
+    {
+      "id": "f10",
+      "file": "web/services/order-sync.test.ts",
+      "line": 55,
+      "end_line": 55,
+      "severity": "major",
+      "confidence": 0.85,
+      "title": "Operator-flip mutation escapes the happy-path assertion",
+      "body": "Changing the retry guard from && to || still passes the only assertion.",
+      "fix": "Add a case that exercises one false operand.",
+      "sources": ["tests"],
+      "lenses": ["lekker-test-quality"],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "f11",
+      "file": "web/services/order-sync.test.ts",
+      "line": 70,
+      "end_line": 70,
+      "severity": "minor",
+      "confidence": 0.8,
+      "title": "Mock assertion freezes the client call shape",
+      "body": "The test asserts toHaveBeenCalledWith instead of the observable result.",
+      "fix": "Assert the returned synchronization state.",
+      "sources": ["tests"],
+      "lenses": ["lekker-test-quality"],
+      "verdict": "confirmed"
+    }
+  ],
+  "pre_existing": [
+    {
+      "file": "web/services/order-sync.ts",
+      "line": 200,
+      "title": "Repo-wide: no retry backoff on the fulfillment API client",
+      "body": "Pre-existing since before this diff; noted for awareness only.",
+      "lenses": ["lekker-implementation"]
+    }
+  ],
+  "open_questions": [
+    "Is the webhook retry expected to be idempotent, or does the client dedupe upstream?"
+  ],
+  "sources": {
+    "agents": [
+      { "name": "quality+impl", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "medium", "tokens": 42000, "raised": 4, "degraded": false },
+      { "name": "simpl+conventions", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "medium", "tokens": 31000, "raised": 2, "degraded": false },
+      { "name": "adversarial", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "high", "tokens": 18000, "raised": 2, "degraded": true },
+      { "name": "malformed-cost", "executor": "claude", "actual_model": "claude-sonnet-5", "effort": "medium", "tokens": "unknown", "raised": 0, "degraded": false }
+    ]
+  },
+  "stats": { "tokens": 91000 }
+}

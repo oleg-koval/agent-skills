@@ -183,5 +183,81 @@ if (!hasRouting) {
   }
 }
 
+console.log('\nrevmux adapter: fixture mapping')
+{
+  const { execFileSync, spawnSync } = await import('node:child_process')
+  const fixturePath = join(SKILL, 'scripts', 'fixtures', 'revmux-report.json')
+  const contextPath = join(SKILL, 'scripts', 'fixtures', 'context.json')
+  const pricingPath = join(SKILL, 'references', 'pricing.json')
+  const adapterPath = join(SKILL, 'scripts', 'revmux-adapter.mjs')
+  const adapterArgs = [adapterPath, fixturePath, '--pricing', pricingPath, '--context', contextPath]
+  const out = execFileSync('node', adapterArgs, { encoding: 'utf8' })
+  const adapted = JSON.parse(out)
+
+  check('engine tag', adapted.engine, 'revmux')
+  check('critical confirmed kept critical',
+    adapted.findings.some(f => f.title.includes('Race between webhook retry') && f.severity === 'critical'), true)
+  check('major refined -> important, agreedBy from 2 sources',
+    (() => {
+      const f = adapted.findings.find(f => f.title.includes('Discount stacking'))
+      return f && f.severity === 'important' && Array.isArray(f.agreedBy) && f.agreedBy.length === 2
+    })(), true)
+  check('minor + lekker-conventions lens -> idiomatic',
+    adapted.findings.find(f => f.title.includes('naming matrix'))?.severity, 'idiomatic')
+  check('immaterial verdict dropped, not re-promoted',
+    adapted.findings.some(f => f.title.includes('Unused import')), false)
+  check('rejected non-hard-rule dropped',
+    adapted.findings.some(f => f.title.includes('double-count a tip')), false)
+  check('TS-1 rejected but corroborated by quoted code IS re-promoted to critical',
+    (() => {
+      const f = adapted.findings.find(f => f.title.includes('Unsafe cast on inventory adjustment'))
+      return f && f.severity === 'critical' && f.rule === 'TS-1'
+    })(), true)
+  check('TS-1 rejected with no corroborating code stays dropped',
+    adapted.findings.some(f => f.title.includes('Type safety concern in inventory handler')), false)
+  check('prose without an extracted snippet leaves badCode empty',
+    adapted.findings.find(f => f.title.includes('no retry backoff'))?.badCode, '')
+  check('configured custom hard rule with quoted code is re-promoted',
+    adapted.findings.find(f => f.title.includes('Session token is logged'))?.severity, 'critical')
+  check('configured custom hard rule without quoted code stays dropped',
+    adapted.findings.some(f => f.title.includes('Possible session concern')), false)
+  check('pre_existing becomes observation with Pre-existing: prefix',
+    (() => {
+      const f = adapted.findings.find(f => f.title.includes('no retry backoff'))
+      return f && f.severity === 'observation' && f.description.startsWith('Pre-existing:')
+    })(), true)
+  check('open_questions pass through as questions',
+    adapted.questions.length, 1)
+  check('degraded agent surfaced by name',
+    adapted.degraded, ['adversarial'])
+  check('droppedCount counts four rejected or immaterial findings', adapted.droppedCount, 4)
+  check('hardRuleCount counts built-in and custom re-promotions', adapted.hardRuleCount, 2)
+  check('totalUsd computed from known pricing', typeof adapted.totalUsd === 'number' && adapted.totalUsd > 0, true)
+  check('malformed token rows do not make totalUsd NaN', Number.isFinite(adapted.totalUsd), true)
+  check('malformed token rows keep their own usd unknown',
+    adapted.agents.find(a => a.name === 'malformed-cost')?.usd, null)
+  check('no pricingMissing when all models are priced', adapted.pricingMissing, undefined)
+  check('test-quality coverage verdict is populated from attributed findings',
+    adapted.coverageVerdict.includes('Operator-flip mutation'), true)
+  check('mutation-slip summary is populated from attributed findings',
+    adapted.mutationSlip.includes('retry guard'), true)
+  check('mock smells are structured from attributed findings', adapted.mockSmells.length, 1)
+
+  const noPricingOut = execFileSync('node', [adapterPath, fixturePath, '--context', contextPath], { encoding: 'utf8' })
+  const noPricingAdapted = JSON.parse(noPricingOut)
+  check('without a pricing file every model is pricingMissing',
+    noPricingAdapted.pricingMissing?.includes('claude-sonnet-5'), true)
+  check('without a pricing file totalUsd is null', noPricingAdapted.totalUsd, null)
+
+  for (const [label, badArgs] of [
+    ['report', [adapterPath, join(SKILL, 'SKILL.md')]],
+    ['pricing', [adapterPath, fixturePath, '--pricing', join(SKILL, 'SKILL.md'), '--context', contextPath]],
+  ]) {
+    const failedRun = spawnSync('node', badArgs, { encoding: 'utf8' })
+    check(`invalid ${label} JSON exits 2`, failedRun.status, 2)
+    check(`invalid ${label} JSON has a clear error`, failedRun.stderr.includes(`${label} JSON`), true)
+  }
+}
+
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)
