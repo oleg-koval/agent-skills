@@ -55,6 +55,10 @@ FAANG-grade code review. Isolated worktree checkout, full context gathering
 you have MCP tools configured for), then 5 parallel specialized review
 agents, a finding-verification pass, and one unified markdown output.
 
+An optional `--engine revmux` flag can replace the Step 2 Workflow-tool pipeline
+with revmux (profiles and lenses under `references/revmux/`); default stays
+`workflow`, and both engines feed the same Step 3 synthesis.
+
 Two modes, same review engine:
 
 | Mode       | Target                              | Entry                                  |
@@ -231,6 +235,12 @@ in Step 4. Use it for a read-only pre-push look.
 
 **`--no-artifact` flag:** parse and store as `ARTIFACT=false` (default true).
 Skips Step 3.5 (living review artifact) silently.
+
+**`--engine revmux|workflow` flag:** parse and store as `ENGINE`, default
+`workflow`. `revmux` is allowed only at depth `medium` or `deep` - revmux's
+scripts reject `scan` (see Depth gate). If depth resolves to `scan` (explicit
+or auto), force `ENGINE=workflow` regardless of the flag and note `engine
+forced to workflow - revmux needs medium/deep` in the review header.
 
 **Re-review detection:** run
 `ls ~/code-reviews/*-<TARGET_SLUG>-<repo-short-name>.md 2>/dev/null | sort | tail -1`
@@ -420,7 +430,9 @@ their prompts wholesale - the workflow script delivers it by path.
 
 ---
 
-## Step 2 - Workflow (review + verify + critic)
+## Step 2 - Review engine (review + verify + critic)
+
+### ENGINE=workflow (default)
 
 Invoke the Workflow tool:
 
@@ -504,6 +516,50 @@ Return value from the workflow:
 whole turn's shared pool (main loop included).
 
 Wait for the workflow to complete before proceeding to Step 3.
+
+### ENGINE=revmux
+
+revmux replaces Review, Dedup, Verify, and Critic with its own multi-agent
+round; Prove still runs inside `workflow.js`. Steps:
+
+1. `TASK_SLUG` = `<repo-short-name>-<TARGET_SLUG>`, `RUN` = `01-review`.
+2. Run the engine:
+   ```bash
+   ${CLAUDE_PLUGIN_ROOT}/scripts/revmux-engine.sh \
+     --task <TASK_SLUG> --run <RUN> --depth <depth> \
+     --workdir <worktreePath> \
+     --diff-file <scratchpad>/pr.diff \
+     --context-file <scratchpad>/context.json \
+     --profile-file ${CLAUDE_PLUGIN_ROOT}/references/revmux/profile.md \
+     --config-dir ~/.config/revmux \
+     --out <scratchpad>/revmux.json
+   ```
+3. Adapt the report:
+   ```bash
+   node ${CLAUDE_PLUGIN_ROOT}/scripts/revmux-adapter.mjs \
+     <scratchpad>/revmux.json --pricing \
+     ${CLAUDE_PLUGIN_ROOT}/references/pricing.json \
+     > <scratchpad>/findings.json
+   ```
+4. Invoke Workflow(`workflow.js`) with the same args as the `ENGINE=workflow`
+   path above, plus `engine: "revmux"` and
+   `findingsFile: "<scratchpad>/findings.json"`. It skips Review/Dedup/
+   Verify/Critic, runs Prove only, and its return adds `engine, questions,
+   agents, degraded, totalTokens, totalUsd` on top of the usual keys.
+5. **Fallback to `ENGINE=workflow` for this run** when either holds: the
+   engine script exits `2` (tool error - also raised for a missing profile
+   file, the codex guard, or an unsupported depth), or every row in the
+   adapter's `agents` array has `degraded: true`. State the fallback in the
+   review header (`**Note:** revmux unavailable - fell back to workflow
+   engine`) and re-run the `ENGINE=workflow` path from the top of Step 2.
+
+**Trust boundary:** always pass `--config-dir ~/.config/revmux` explicitly.
+Without it revmux also reads the reviewed repo's checked-in `.revmux/`, which
+is executed as prompts. `~/.config/revmux` is where
+`scripts/install-revmux-prompts.sh` puts the lekker profiles and lenses; run it
+with `--check` when the engine exits 2 complaining about a missing profile. The task archive lives under the tasks dir
+(`LEKKER_REVMUX_TASKS_DIR`, default `~/code-reviews/revmux-tasks`) and is not
+committed anywhere.
 
 ---
 
@@ -600,6 +656,16 @@ requirements:
   cost. Input tokens are estimated (diff tokens x agent passes + context
   + prompt files). Use the pricing table in `references/output-format.md`.
   Real numbers only - no `<N>` placeholders.
+  When `ENGINE=revmux`: build the rows from the adapter's `agents` array
+  (`name`, `model`, `tokens`, `usd` per row) and report `totalUsd` as the
+  total. State plainly that the USD figures are an API list-price estimate
+  computed from `references/pricing.json`'s placeholder prices
+  (`verified: false`) until that file is verified against real invoices.
+  Prove-phase tokens still come from the workflow return's `outputTokens`,
+  same as the workflow engine. When `questions` (from the adapter) is
+  non-empty, render them under a `## Questions for the author` section. When
+  `degraded` is non-empty, add one banner line in the review header naming
+  the degraded agents, e.g. `⚠️ degraded: implementation, test-quality`.
 
 **Save the review:**
 
@@ -856,6 +922,17 @@ the Agent tool with the same prompt files,
 do verification inline per `references/agents/verifier.md`, and state this
 fallback in the review output under a
 `**Note:** Workflow tool unavailable - ran agents directly` line in the header.
+
+- `ENGINE=revmux` specific: on an exit-2 from `revmux-engine.sh`, or an
+  adapter report where every agent came back `degraded`, fall back to
+  `ENGINE=workflow` for that run (Step 2) rather than retrying revmux - this
+  is a fallback, not a retry loop, so it does not count against the
+  two-identical-failures rule above.
+- Never delete or rename anything under the revmux tasks dir
+  (`LEKKER_REVMUX_TASKS_DIR`, default `~/code-reviews/revmux-tasks`). A
+  duplicate run name (same `TASK_SLUG`/`RUN` pair) is revmux's own hard
+  error, by design - pick the next `NN-...` name (e.g. `03-...`) rather than
+  clearing the old one.
 
 Fix-mode specific:
 - Never claim a fix landed without a `git log` / `git status` receipt from the

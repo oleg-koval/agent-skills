@@ -1,0 +1,9 @@
+{
+  "note": "USD per million tokens, keyed by revmux's actual_model. revmux runs `claude --print` under subscription (Max plan) auth, so nothing here is a real API bill; this is an API-list-price ESTIMATE for the cost block only. Where a model exposes separate input/output prices, usd = tokens/1e6 * output price (output-only, not blended), because revmux reports a single combined `tokens` figure per agent with no input/output split to weight a blend. verified:false entries are not confirmed against a current price sheet (no local claude-api pricing doc found on this machine as of 2026-09-09) and must be checked before this cost block is trusted for a real decision.",
+  "claude-opus-5":   { "input": 15,  "output": 75,  "blended": 45,  "verified": false },
+  "claude-sonnet-5": { "input": 3,   "output": 15,  "blended": 9,   "verified": false },
+  "claude-haiku-4-5-20251001": { "input": 1, "output": 5, "blended": 3, "verified": false },
+  "opus":   { "input": 15, "output": 75, "blended": 45, "verified": false },
+  "sonnet": { "input": 3,  "output": 15, "blended": 9,  "verified": false },
+  "haiku":  { "input": 1,  "output": 5,  "blended": 3,  "verified": false }
+}
