@@ -364,7 +364,13 @@ const {
   reviewBatchPlan,
   maxConcurrent,
   targetLabel: targetLabelArg,
+  engine: engineArg,
+  findingsFile,
 } = input
+
+// 'revmux' skips straight to Prove on pre-computed findings, so Prove's
+// worktree/depth rules aren't duplicated in the adapter.
+const ENGINE = (engineArg === 'revmux') ? 'revmux' : 'workflow'
 
 const targetLabel = targetLabelArg || `PR #${prNumber}`
 
@@ -373,6 +379,9 @@ if (!repoSlug || (!prNumber && !targetLabelArg) || !depth || !diffFile || !conte
     'lekker-review workflow: missing required args (got type ' + typeof args +
     '): ' + JSON.stringify({ repoSlug, prNumber, targetLabel, depth, diffFile, contextFile, promptDir })
   )
+}
+if (ENGINE === 'revmux' && !findingsFile) {
+  throw new Error('lekker-review workflow: engine "revmux" requires findingsFile (adapter output)')
 }
 
 // Concurrency. The review stage is self-limiting: five dimensions means five
@@ -386,7 +395,7 @@ const REVIEW_PLAN = (Array.isArray(reviewBatchPlan) && reviewBatchPlan.length > 
 const FANOUT_PLAN = [Math.max(1, maxConcurrent || 5)]
 const targetMetadata = JSON.stringify({ targetLabel })
 
-log(`args ok: ${targetLabel} in ${repoSlug}, depth=${depth}, reviewPlan=[${REVIEW_PLAN}], fanout=${FANOUT_PLAN[0]}`)
+log(`args ok: ${targetLabel} in ${repoSlug}, depth=${depth}, reviewPlan=[${REVIEW_PLAN}], fanout=${FANOUT_PLAN[0]}, engine=${ENGINE}`)
 
 const budgetAtStart = budget.spent()
 
@@ -580,6 +589,32 @@ const budgetAtStart = budget.spent()
   // contradictory verdicts) on the same issue found by two dimensions.
   // -------------------------------------------------------------------------
 
+  let finalFindings
+  let implementationResult = {}
+  let testQualityResult = {}
+  let revmuxPassthrough = null
+
+  if (ENGINE === 'revmux') {
+    const adapterOutput = JSON.parse(readFileSync(findingsFile, 'utf8'))
+    finalFindings = (adapterOutput.findings || []).map(function(f) {
+      return Object.assign({}, f)
+    })
+    droppedCount = adapterOutput.droppedCount || 0
+    hardRuleCount = adapterOutput.hardRuleCount || 0
+    agentCount = adapterOutput.agentCount || 0
+    implementationResult = adapterOutput
+    testQualityResult = adapterOutput
+    revmuxPassthrough = {
+      questions:   adapterOutput.questions || [],
+      agents:      adapterOutput.agents || [],
+      degraded:    adapterOutput.degraded || [],
+      totalTokens: adapterOutput.totalTokens,
+      totalUsd:    adapterOutput.totalUsd,
+      pricingMissing: adapterOutput.pricingMissing || [],
+    }
+    log(`revmux engine: loaded ${finalFindings.length} finding(s) from ${findingsFile} (dropped=${droppedCount}, hardRule=${hardRuleCount}); skipping Review/Verify/Critic`)
+  } else {
+
   phase('Review')
 
   log(`Review: ${dimensions.length} dimension(s) in batches of [${REVIEW_PLAN}]`)
@@ -589,10 +624,10 @@ const budgetAtStart = budget.spent()
   }), REVIEW_PLAN)
 
   const reviewResults = reviewed.filter(Boolean)
-  const implementationResult = reviewResults.find(function(result) {
+  implementationResult = reviewResults.find(function(result) {
     return result.key === 'implementation'
   }) || {}
-  const testQualityResult = reviewResults.find(function(result) {
+  testQualityResult = reviewResults.find(function(result) {
     return result.key === 'test-quality'
   }) || {}
   const deduped = dedup(reviewResults.flatMap(function(result) {
@@ -613,7 +648,7 @@ const budgetAtStart = budget.spent()
   // Critic (deep only)
   // -------------------------------------------------------------------------
 
-  let finalFindings = verifiedFindings
+  finalFindings = verifiedFindings
 
   if (depth === 'deep') {
     phase('Critic')
@@ -712,6 +747,8 @@ const budgetAtStart = budget.spent()
     }
   }
 
+  } // end ENGINE === 'workflow' branch
+
   // -------------------------------------------------------------------------
   // Prove: for each Critical finding (excluding hard rules, which are policy
   // violations with no runtime failure to demonstrate), attempt to produce an
@@ -791,7 +828,7 @@ const budgetAtStart = budget.spent()
     return clean
   })
 
-  return {
+  return Object.assign({
     findings:          output,
     droppedCount,
     downgradedCount,
@@ -805,4 +842,4 @@ const budgetAtStart = budget.spent()
     mockSmells:        Array.isArray(testQualityResult.mockSmells) ? testQualityResult.mockSmells : [],
     outputTokens:      budget.spent() - budgetAtStart,
     turnTokensTotal:   budget.spent(),
-  }
+  }, Object.assign({ engine: ENGINE }, revmuxPassthrough || {}))
