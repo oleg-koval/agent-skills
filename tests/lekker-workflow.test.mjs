@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 const workflowPath = 'plugins/olko-github-pr/skills/lekker-review/workflow.js'
 const source = readFileSync(workflowPath, 'utf8')
+  .replace("import { readFileSync } from 'node:fs'", '')
   .replace('export const meta =', 'const meta =')
 
 const executeWorkflow = new AsyncFunction(
@@ -14,6 +18,7 @@ const executeWorkflow = new AsyncFunction(
   'log',
   'phase',
   'budget',
+  'readFileSync',
   source,
 )
 
@@ -30,7 +35,7 @@ const baseFinding = {
 /**
  * Runs a test scenario for the lekker-review workflow with mocked agent responses.
  */
-async function runScenario({ depth = 'medium', worktreePath = null, respond }) {
+async function runScenario({ depth = 'medium', worktreePath = null, extraArgs = {}, respond }) {
   const calls = []
   const agent = async (prompt, options) => {
     calls.push(options.label)
@@ -38,7 +43,7 @@ async function runScenario({ depth = 'medium', worktreePath = null, respond }) {
   }
 
   const result = await executeWorkflow(
-    {
+    Object.assign({
       repoSlug: 'example/repo',
       prNumber: 42,
       prUrl: 'https://github.com/example/repo/pull/42',
@@ -47,7 +52,7 @@ async function runScenario({ depth = 'medium', worktreePath = null, respond }) {
       contextFile: '/tmp/context.json',
       worktreePath,
       promptDir: '/tmp/prompts',
-    },
+    }, extraArgs),
     agent,
     async (thunks) => Promise.all(thunks.map(async (thunk) => {
       try {
@@ -59,6 +64,7 @@ async function runScenario({ depth = 'medium', worktreePath = null, respond }) {
     () => {},
     () => {},
     { spent: () => 0 },
+    readFileSync,
   )
 
   return { calls, result }
@@ -350,6 +356,37 @@ test('acceptance and test-quality metadata survive aggregation', async () => {
   assert.equal(result.coverageVerdict, 'Partially tested')
   assert.equal(result.mutationSlip, 'An operator flip would escape.')
   assert.equal(result.mockSmells.length, 1)
+})
+
+test('revmux adapter metadata and engine identity survive workflow aggregation', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'lekker-revmux-workflow-'))
+  try {
+    const skillDir = 'plugins/olko-github-pr/skills/lekker-review'
+    const adapterOutput = execFileSync('node', [
+      join(skillDir, 'scripts/revmux-adapter.mjs'),
+      join(skillDir, 'scripts/fixtures/revmux-report.json'),
+      '--context', join(skillDir, 'scripts/fixtures/context.json'),
+    ], { encoding: 'utf8' })
+    const findingsFile = join(tempDir, 'findings.json')
+    writeFileSync(findingsFile, adapterOutput)
+
+    const { calls, result } = await runScenario({
+      extraArgs: { engine: 'revmux', findingsFile },
+      respond: ({ options }) => {
+        throw new Error(`Unexpected agent call: ${options.label}`)
+      },
+    })
+
+    assert.deepEqual(calls, [])
+    assert.equal(result.engine, 'revmux')
+    assert.match(result.acCoverage, /acceptance-criteria/i)
+    assert.match(result.coverageVerdict, /Operator-flip mutation/)
+    assert.match(result.mutationSlip, /retry guard/)
+    assert.equal(result.mockSmells.length, 1)
+    assert.ok(result.pricingMissing.includes('claude-sonnet-5'))
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true })
+  }
 })
 
 test('reviewer prompts explicitly require structured metadata fields', () => {
