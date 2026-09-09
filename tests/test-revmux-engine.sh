@@ -1,5 +1,5 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 ROOT="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
 ENGINE="$ROOT/plugins/olko-github-pr/skills/lekker-review/scripts/revmux-engine.sh"
@@ -72,8 +72,8 @@ for missing_input in diff context profile; do
     run_engine "$diff_file" "$context_file" "$profile_file" >/dev/null 2>&1
     status=$?
     set -e
-    [[ "$status" -eq 2 ]] || { echo "FAIL: unreadable $missing_input input exited $status" >&2; exit 1; }
-    [[ ! -s "$CALLS" ]] || { echo "FAIL: unreadable $missing_input input consumed a round" >&2; exit 1; }
+    [ "$status" -eq 2 ] || { echo "FAIL: unreadable $missing_input input exited $status" >&2; exit 1; }
+    [ ! -s "$CALLS" ] || { echo "FAIL: unreadable $missing_input input consumed a round" >&2; exit 1; }
 done
 
 for null_key in scope goal profile context; do
@@ -83,8 +83,8 @@ for null_key in scope goal profile context; do
         "$TEST_ROOT/pr.diff" "$TEST_ROOT/context.json" "$TEST_ROOT/profile.md" >/dev/null 2>&1
     status=$?
     set -e
-    [[ "$status" -eq 2 ]] || { echo "FAIL: null $null_key path exited $status" >&2; exit 1; }
-    [[ "$(wc -l < "$CALLS")" -eq 1 ]] || { echo "FAIL: null $null_key path invoked revmux after new" >&2; exit 1; }
+    [ "$status" -eq 2 ] || { echo "FAIL: null $null_key path exited $status" >&2; exit 1; }
+    [ "$(wc -l < "$CALLS")" -eq 1 ] || { echo "FAIL: null $null_key path invoked revmux after new" >&2; exit 1; }
 done
 
 echo "PASS: test-revmux-engine"
