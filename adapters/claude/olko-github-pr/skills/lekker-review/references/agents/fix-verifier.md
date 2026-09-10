@@ -53,10 +53,55 @@ cd <WORKTREE_PATH> && npx tsc --noEmit 2>&1 | tail -40
 Compare against `CONTEXT_FILE` / the review's baseline before blaming the fix:
 pre-existing errors are not the fix agent's fault, newly introduced ones are.
 
+## Step 2a -- The contradiction check (MANDATORY)
+
+Faithfulness is not correctness. A fix agent can apply exactly what the finding
+asked for and still be wrong, because the finding itself contradicted the spec.
+So before any verdict, answer this question in writing:
+
+> **Does this edit contradict any acceptance criterion, or any other code path
+> in this PR implementing the same rule?**
+
+How to answer it:
+
+1. Read the acceptance criteria handed to you (`ACCEPTANCE CRITERIA` in your
+   prompt, or the `acList` field of `CONTEXT_FILE`). Find the AC that governs
+   the behaviour this edit changes.
+2. Grep the worktree for the OTHER place the same rule is enforced -- the
+   server-side counterpart of a client check, the validator behind a UI guard,
+   the shared helper both call. One business rule implemented twice must agree
+   in both, and the client layer must never be STRICTER than the server layer.
+3. Build the two decision tables side by side (input -> allow/block) and compare
+   them row by row, including the missing/undefined/empty input row. That row is
+   where the layers usually diverge.
+
+Return both fields:
+
+- `contradicts` -- `true` if the edit disagrees with an AC or with the other
+  code path, `false` only after you actually compared them.
+- `contradictionQuote` -- the AC text or the `file:line` and code you compared
+  against, quoted. Required either way: it is the evidence that the comparison
+  happened.
+
+`contradicts: true` -> `harmful`. No answer, or `contradicts: false` with no
+quote -> the workflow downgrades your `good` to `incomplete` automatically, so
+answering is not optional.
+
+If neither an acList nor a second implementation of the rule exists, say that in
+`contradictionQuote` (`"no acList in CONTEXT_FILE; rule implemented once, at
+<file:line>"`) -- an explicit absence is an answer, a silence is not.
+
+*This step exists because of a real miss: a fix made a client-side checkout
+banner block records with no status field, while the server-side validator that
+actually enforces the rule explicitly allowed them. The acceptance criterion
+said those records were unaffected. The fix was applied faithfully, the verifier
+said `good`, and the defect shipped to the PR branch.*
+
 ## Step 3 -- Verdict
 
 - `good` -- every applied fix resolves its finding, breaks nothing, stays
-  minimal, introduces no new type errors, violates no hard rule. Skipped
+  minimal, introduces no new type errors, violates no hard rule, and passed the
+  Step 2a contradiction check with a quote. Skipped
   findings do not count against the verdict.
 - `incomplete` -- an applied fix only partly addresses its finding, or leaves an
   obvious loose end (unhandled branch, missing null path). Recoverable by one
@@ -76,7 +121,9 @@ not return `good`.
 {
   "verdict": "good | incomplete | harmful",
   "reasoning": "<two to four sentences citing the actual diff, not the report>",
-  "problems": ["<one line per concrete problem, so a retry can act on it>"]
+  "problems": ["<one line per concrete problem, so a retry can act on it>"],
+  "contradicts": false,
+  "contradictionQuote": "<the AC text, or the file:line and code of the other implementation of the same rule, quoted>"
 }
 ```
 

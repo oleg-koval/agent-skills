@@ -1,10 +1,11 @@
 ---
-description: Teifi medium-depth review — four claude agents, adversarial second pass, claude-only
+description: Teifi medium-depth review — five claude agents incl. cross-layer consistency, adversarial second pass, claude-only
 model: claude/sonnet:medium
 agents:
   - {name: quality+impl,      lenses: [lekker-quality, lekker-implementation],       color: cyan}
   - {name: simpl+conventions, lenses: [lekker-simplification, lekker-conventions],   color: magenta}
   - {name: tests,             lenses: [lekker-test-quality, tests],                  color: green}
+  - {name: consistency,       lenses: [lekker-consistency],                         color: white}
   - {name: adversarial,       lenses: [adversarial], model: claude/sonnet:high,      color: yellow}
 stages: {synthesis: claude/sonnet:medium, verify: claude/sonnet:medium}
 ---

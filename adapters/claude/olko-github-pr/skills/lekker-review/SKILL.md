@@ -613,6 +613,28 @@ verification is an `observation` naming the evidence that is missing. `CI: ✅
 All passing` is not a verification story - it only says the suite that already
 existed still runs.
 
+**Findings that contradict the acceptance criteria are decisions, not tasks.**
+Some findings rest on a scoping decision rather than on the code: an
+implementation-path step from a scoping session, a comment on the ticket, a
+design note quoted in the finding's rationale. Those documents disagree with the
+ACs more often than anyone expects, and the ACs win by default. So before Step 4
+prints a finding whose rationale rests on a scoping decision, compare that
+rationale to `acList`:
+
+- No conflict -> nothing changes.
+- Conflict -> mark the finding **not auto-fixable** (it never reaches fix mode,
+  whatever its severity), and print BOTH quotes in the finding body: the AC
+  verbatim, and the scoping line verbatim, each labelled with its source. State
+  which behaviour each one implies, and stop there. Do not pick a side.
+
+A contradiction between the spec and the plan is the author's call, not the
+reviewer's and never an agent's. Applying one of two contradictory instructions
+silently is how a review introduces the defect it was run to prevent: on one
+real PR the ACs said records with no status field are unaffected, the scoping
+session said block them, the finding quoted the scoping session, and fix mode
+made the client layer stricter than the server layer that actually enforces the
+rule.
+
 **Rationalizations to reject.** If one of these is the reason a finding is about
 to be dropped or softened, keep the finding:
 
@@ -763,10 +785,12 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
    ```
    scriptPath: ${CLAUDE_PLUGIN_ROOT}/fix-workflow.js
    args: { repoSlug, prNumber, targetLabel, worktreePath, diffFile, contextFile,
-           promptDir, findings: [<selected findings verbatim>] }
+           promptDir, findings: [<selected findings verbatim>], acList }
    ```
    `targetLabel` is required whenever `prNumber` is null, same as the review
-   workflow.
+   workflow. `acList` is the acceptance criteria from `context.json`, verbatim:
+   the fix-verifier compares every edit against them and a `good` verdict
+   without that comparison is downgraded automatically.
    One `sonnet` fix agent per file (never two on the same file), then a
    read-only `sonnet` fix-verifier per file reading the actual `git diff`. One
    retry max on a non-`good` verdict.

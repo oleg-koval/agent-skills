@@ -1,10 +1,11 @@
 ---
-description: Teifi deep review — lekker-medium plus revmux's own bugs+impl second opinion, claude-only
+description: Teifi deep review — lekker-medium (incl. cross-layer consistency) plus revmux's own bugs+impl second opinion, claude-only
 model: claude/sonnet:medium
 agents:
   - {name: quality+impl,      lenses: [lekker-quality, lekker-implementation],       color: cyan}
   - {name: simpl+conventions, lenses: [lekker-simplification, lekker-conventions],   color: magenta}
   - {name: tests,             lenses: [lekker-test-quality, tests],                  color: green}
+  - {name: consistency,       lenses: [lekker-consistency],                         color: white}
   - {name: adversarial,       lenses: [adversarial], model: claude/sonnet:high,      color: yellow}
   - {name: bugs+impl,         lenses: [bugs, impl],                                  color: blue}
 stages: {synthesis: claude/opus:medium, verify: claude/sonnet:high}
