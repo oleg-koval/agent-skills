@@ -11,7 +11,7 @@
       "body": "Two concurrent writers can both pass the guard and insert a fulfillment row.",
       "fix": "Take a row lock on the order before the check-then-insert.",
       "sources": ["quality+impl"],
-      "lenses": ["lekker-quality"],
+      "lenses": ["lekker-quality", "lekker-implementation"],
       "verdict": "confirmed"
     },
     {

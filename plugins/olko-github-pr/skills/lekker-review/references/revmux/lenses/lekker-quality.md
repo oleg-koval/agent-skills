@@ -1,5 +1,5 @@
 ---
-description: quality, security and data-integrity issues — Acme's TS-1/TS-2 hard rules included
+description: quality, security and data-integrity issues - Acme's TS-1/TS-2 hard rules included
 ---
 ## Lens: lekker-quality
 
@@ -63,15 +63,15 @@ Axes to cover:
 
 Use hard-rule tags for obligations actually stated in `{{PROFILE}}`.
 
-CI status, Sentry signals, and existing reviews may be present in `{{CONTEXT}}` —
+CI status, Sentry signals, and existing reviews may be present in `{{CONTEXT}}` -
 read what is there before forming an opinion, and skip anything that is absent
 rather than treating its absence as a finding.
 
 Rules:
 - Every finding must trace to a `+` line in the diff.
-- Report file:line — description. No positive observations.
-- Quote the verbatim offending line(s) from the diff — never paraphrased, never
-  reconstructed from memory — and give a concrete drop-in fix, or when the fix
+- Report file:line - description. No positive observations.
+- Quote the verbatim offending line(s) from the diff - never paraphrased, never
+  reconstructed from memory - and give a concrete drop-in fix, or when the fix
   is architectural, a minimal skeleton plus one sentence on what else must change.
-- A finding you cannot quote and cannot fix is a finding you have not proven —
+- A finding you cannot quote and cannot fix is a finding you have not proven -
   drop it instead of reporting it as a minor observation with no evidence.

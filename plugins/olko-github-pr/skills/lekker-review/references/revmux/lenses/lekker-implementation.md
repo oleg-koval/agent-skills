@@ -1,5 +1,5 @@
 ---
-description: correctness, scalability and integration issues — Acme's GQL-1 hard rule included
+description: correctness, scalability and integration issues - Acme's GQL-1 hard rule included
 ---
 ## Lens: lekker-implementation
 
@@ -51,11 +51,11 @@ Rules:
 - Every finding must trace to a `+` line in the diff, with one exception: an
   unmet AC whose defect lives in code the diff did not touch. Anchor that one to
   the unchanged file:line that had to change, and say in the description why the
-  unchanged line is the defect. That line may be an unchanged one — do not drop
+  unchanged line is the defect. That line may be an unchanged one - do not drop
   an unmet AC for lack of a quotable added line.
-- Report file:line — description. No positive observations.
-- Quote the verbatim offending line(s) — never paraphrased, never reconstructed
-  from memory — and give a concrete drop-in fix, or when the fix is
+- Report file:line - description. No positive observations.
+- Quote the verbatim offending line(s) - never paraphrased, never reconstructed
+  from memory - and give a concrete drop-in fix, or when the fix is
   architectural, a minimal skeleton plus one sentence on what else must change.
-- A finding you cannot quote and cannot fix is a finding you have not proven —
+- A finding you cannot quote and cannot fix is a finding you have not proven -
   drop it instead.
