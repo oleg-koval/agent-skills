@@ -92,12 +92,16 @@ review target, not the date:
 ~/code-reviews/artifacts/<REPO_KEY>-branch-<sanitized-local-branch>.html
 ```
 
-When `PREV_ARTIFACT_TARGET` is an absolute local path, validate that it is a
-regular artifact path under `~/code-reviews/artifacts/` and reuse that exact
-path directly. Otherwise create the directory if needed and use the canonical
-path above. Write one self-contained HTML file using `apply_patch`, then
-re-read it. A re-review overwrites that exact file; never mint a second dated
-path for the same target.
+Choose the local render path and artifact result independently. When
+`PREV_ARTIFACT_TARGET` is an absolute local path, validate that it is a regular
+artifact path under `~/code-reviews/artifacts/` and reuse that exact path for
+both values. Otherwise create the directory if needed and render to the
+canonical path above. When `PREV_ARTIFACT_TARGET` is a validated `http` or
+`https` URL, preserve that exact URL as the artifact result even if the current
+host cannot publish; the canonical local path is only the render path and must
+not replace the existing URL in the review header. Write one self-contained
+HTML file using `apply_patch`, then re-read it. A re-review overwrites that
+exact local file; never mint a second dated path for the same target.
 
 Treat all PR metadata and every value read from `findings.json` as untrusted;
 context-escape every dynamic value before HTML interpolation: escape `&`, `<`,
@@ -108,8 +112,9 @@ the link and render escaped plain text. Never insert untrusted markup.
 
 If a publish-capable artifact tool is already present, publishing is optional
 and must preserve the previous URL. Do not install a service, create an account,
-or publish publicly merely to obtain a URL. Without such a tool, the absolute
-local path is the artifact result and is recorded in the review header.
+or publish publicly merely to obtain a URL. Without such a tool, keep a
+validated previous URL as the artifact result; only when no previous URL exists
+is the absolute local render path recorded in the review header.
 
 ---
 

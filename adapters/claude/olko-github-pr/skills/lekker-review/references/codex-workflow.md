@@ -215,15 +215,26 @@ commit, landing/push confirmation, and cleanup. Replace only its Workflow call:
 4. A non-good verdict gets at most one `followup_task` retry to the same fixer,
    followed by one fresh verifier pass. No second retry.
 5. Mark a group committable only when its verifier says `good` and at least one
-   finding was applied. Treat `filesTouched` as untrusted data before reverting
-   any other group: accept only non-empty, well-formed repository-relative
+   finding was applied. Treat both assigned ownership and `filesTouched` as
+   untrusted path data: accept only non-empty, well-formed repository-relative
    paths with no absolute prefix, drive prefix, backslash, NUL/control byte, or
-   `.`/`..` traversal component. Lexically normalize each candidate, require an
-   exact match in the assigned group's file ownership, and discard duplicates.
-   Pass only those validated scoped paths to `git checkout --`, prefixing each
-   with `:(literal)` so Git cannot reinterpret it as pathspec syntax. Ignore
-   and report every rejected or out-of-group path. Never use broad cleanup.
-6. Continue with fix-mode Steps 5 through 9, including fresh static/tests,
+   `.`/`..` traversal component. Lexically normalize each candidate, require
+   every `filesTouched` claim to exactly match the assigned group's validated
+   ownership, and discard duplicates.
+6. For every non-committable group, discover the real post-fix changes instead
+   of using `filesTouched` as the cleanup inventory. Collect NUL-delimited
+   tracked paths from `git diff --name-only -z` and
+   `git diff --cached --name-only -z`, and untracked paths from
+   `git ls-files --others --exclude-standard -z`. Apply the same path validation
+   to every discovered path, then intersect it with that failed group's exact
+   validated ownership. Restore only the resulting tracked paths from `HEAD`
+   with `git restore --source=HEAD --staged --worktree --`, prefixing every path
+   with `:(literal)` so Git cannot reinterpret it as pathspec syntax. Explicitly
+   remove each resulting untracked file beneath `WORKTREE_PATH` with `rm -f --`
+   and a separately quoted validated path. Re-run discovery after cleanup.
+   Ignore and report every rejected or out-of-group path; never use broad
+   checkout, restore, or clean commands.
+7. Continue with fix-mode Steps 5 through 9, including fresh static/tests,
    proof flips, explicit staging, per-group commits, push/landing confirmation,
    cost accounting, and cleanup override.
 

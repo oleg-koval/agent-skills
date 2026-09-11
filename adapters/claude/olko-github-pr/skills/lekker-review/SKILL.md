@@ -834,8 +834,10 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
    verdict without verified comparison evidence is downgraded automatically.
    In Codex, run the Fix mode section of `references/codex-workflow.md` with
    the same inputs, including `acList`, and result schema.
-   One `sonnet` fix agent per file (never two on the same file), then a
-   read-only `sonnet` fix-verifier per file reading the actual `git diff`. One
+   Agent selection is host-specific. Claude uses one `sonnet` fix agent per
+   file (never two on the same file), then a read-only `sonnet` fix-verifier per
+   file. Codex uses one `worker` fixer per file, then a read-only `default`
+   verifier per file. Every verifier reads the actual `git diff`; allow one
    retry max on a non-`good` verdict.
 4. Revert every group the verifier did not pass.
 5. Run `scripts/verify-fixes.sh <WORKTREE_PATH> <scratchpad>/fix-verify.json tests`
