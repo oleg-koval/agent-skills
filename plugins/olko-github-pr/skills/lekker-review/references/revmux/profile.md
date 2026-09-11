@@ -96,6 +96,24 @@ keys must be confirmed against Reflag, so say a flag is needed without naming on
 Related: a diff that BOTH adds a column/table AND changes what is read or written must
 be split into expand / migrate / read-switch / contract PRs (`important`, name the split).
 
+### CONS-1 — One rule, two implementations, must agree
+
+When a change enforces the same business rule in two places that can both run
+for the same input — a client-side guard and the server-side validator behind
+it, a UI filter and its query, a webhook handler and the cron that backfills the
+same state — the two must make the same decision for every input class.
+
+Build both decision tables and compare them row by row, including the
+missing/undefined input, the not-applicable actor, the flag-off case and the
+error path. The server-side, unbypassable layer is authoritative; the advisory
+layer must match it. A client layer that is STRICTER than the server is a bug,
+not extra safety: it blocks work the system allows.
+
+Severity: critical when the divergence blocks a legitimate action or admits one
+that should be blocked; major when the authoritative layer is still right and
+only the message is wrong. Detail and the reporting format live in the
+`lekker-consistency` lens.
+
 ### Stack context to inform the review:
 
 - **Backend:** TypeScript, Node.js, Express, Prisma, pgtyped, PostgreSQL
