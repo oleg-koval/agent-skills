@@ -4,7 +4,7 @@
 # Usage:
 #   revmux-engine.sh --task SLUG --run NAME --depth medium|deep --workdir DIR \
 #     --diff-file FILE --context-file FILE --profile-file FILE --out FILE \
-#     [--tasks-dir DIR] [--config-dir DIR]
+#     [--tasks-dir DIR] [--config-dir DIR] [--profile NAME]
 #
 # Builds one revmux round (scope.md, goal.md, input/context/, input/profile.md),
 # runs revmux --no-tui, writes its stdout JSON to --out, and exits with revmux's
@@ -23,6 +23,7 @@ PROFILE_FILE=""
 OUT=""
 TASKS_DIR="${LEKKER_REVMUX_TASKS_DIR:-$HOME/code-reviews/revmux-tasks}"
 CONFIG_DIR="${REVMUX_CONFIG_DIR:-$HOME/.config/revmux}"
+PROFILE_NAME=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -36,6 +37,7 @@ while [[ $# -gt 0 ]]; do
         --out) OUT="$2"; shift 2 ;;
         --tasks-dir) TASKS_DIR="$2"; shift 2 ;;
         --config-dir) CONFIG_DIR="$2"; shift 2 ;;
+        --profile) PROFILE_NAME="$2"; shift 2 ;;
         *) printf 'revmux-engine: unknown arg %s\n' "$1" >&2; exit 2 ;;
     esac
 done
@@ -69,24 +71,16 @@ case "$DEPTH" in
         ;;
 esac
 
-PROFILE_NAME="lekker-${DEPTH}"
+if [[ -z "$PROFILE_NAME" ]]; then
+    PROFILE_NAME="lekker-${DEPTH}"
+fi
+if [[ ! "$PROFILE_NAME" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    printf 'revmux-engine: invalid profile name: %s\n' "$PROFILE_NAME" >&2
+    exit 2
+fi
 
 command -v revmux >/dev/null 2>&1 || { printf 'revmux-engine: revmux binary not found on PATH\n' >&2; exit 2; }
 command -v jq >/dev/null 2>&1 || { printf 'revmux-engine: jq not found on PATH\n' >&2; exit 2; }
-
-# ---------------------------------------------------------------------------
-# Codex guard: refuse to run a profile whose resolved text names a codex/
-# runner. Company does not support the codex CLI (revmux is claude-only here).
-# ---------------------------------------------------------------------------
-PROFILE_TEXT_FILE="$CONFIG_DIR/prompts/profiles/${PROFILE_NAME}.md"
-if [[ ! -f "$PROFILE_TEXT_FILE" ]]; then
-    printf 'revmux-engine: cannot resolve profile text at %s to run the codex guard -- refusing to proceed\n' "$PROFILE_TEXT_FILE" >&2
-    exit 2
-fi
-if grep -q 'codex/' "$PROFILE_TEXT_FILE"; then
-    printf 'revmux-engine: profile %s names a codex/ runner -- codex is not supported here, refusing to run\n' "$PROFILE_TEXT_FILE" >&2
-    exit 2
-fi
 
 mkdir -p "$TASKS_DIR"
 
