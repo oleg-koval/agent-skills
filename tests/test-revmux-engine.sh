@@ -47,14 +47,19 @@ EOF
 chmod +x "$FAKE_BIN/revmux"
 
 run_engine() {
+    profile_name="${4:-}"
+    set -- \
+        --task fixture --run 01-review --depth medium --workdir "$ROOT" \
+        --diff-file "$1" --context-file "$2" --profile-file "$3" \
+        --out "$TEST_ROOT/out.json" --tasks-dir "$TASKS_DIR" --config-dir "$CONFIG_DIR"
+    if [ -n "$profile_name" ]; then
+        set -- "$@" --profile "$profile_name"
+    fi
     PATH="$FAKE_BIN:$PATH" \
     REVMUX_TEST_CALLS="$CALLS" \
     REVMUX_TEST_ROUND="$ROUND_DIR" \
     REVMUX_NULL_KEY="${REVMUX_NULL_KEY:-}" \
-    "$ENGINE" \
-        --task fixture --run 01-review --depth medium --workdir "$ROOT" \
-        --diff-file "$1" --context-file "$2" --profile-file "$3" \
-        --out "$TEST_ROOT/out.json" --tasks-dir "$TASKS_DIR" --config-dir "$CONFIG_DIR"
+    "$ENGINE" "$@"
 }
 
 for missing_input in diff context profile; do
@@ -86,5 +91,26 @@ for null_key in scope goal profile context; do
     [ "$status" -eq 2 ] || { echo "FAIL: null $null_key path exited $status" >&2; exit 1; }
     [ "$(wc -l < "$CALLS")" -eq 1 ] || { echo "FAIL: null $null_key path invoked revmux after new" >&2; exit 1; }
 done
+
+# Runner support belongs to revmux. The lekker wrapper must not reject Codex
+# profiles before revmux has a chance to execute them.
+printf 'model: codex/gpt-5\n' > "$CONFIG_DIR/prompts/profiles/lekker-medium.md"
+unset REVMUX_NULL_KEY
+: > "$CALLS"
+set +e
+run_engine "$TEST_ROOT/pr.diff" "$TEST_ROOT/context.json" "$TEST_ROOT/profile.md" \
+    lekker-medium-codex \
+    >"$TEST_ROOT/codex-profile.stdout" 2>"$TEST_ROOT/codex-profile.stderr"
+status=$?
+set -e
+[ "$status" -eq 0 ] || {
+    echo "FAIL: codex profile run exited $status" >&2
+    cat "$TEST_ROOT/codex-profile.stderr" >&2
+    exit 1
+}
+[ "$(wc -l < "$CALLS")" -eq 2 ] || {
+    echo "FAIL: codex profile did not reach revmux new + run" >&2
+    exit 1
+}
 
 echo "PASS: test-revmux-engine"

@@ -4,10 +4,12 @@ Execute this procedure AFTER the review file has been saved to `~/code-reviews/`
 as part of the MAIN loop (not a reviewer/verifier agent). Skip the entire
 procedure silently when `--no-artifact` was passed.
 
-This publishes the review as a claude.ai Artifact page whose URL stays STABLE
-across re-reviews of the same PR -- the author watches findings flip from open
-to fixed, commit after commit, at one link. Rendering is delegated to a single
-background subagent so no session-model (Fable) tokens are spent writing HTML.
+Claude Code publishes the review as a claude.ai Artifact page. OpenAI Codex
+uses an already-available publish-capable artifact tool when one exists;
+otherwise it writes a stable local HTML artifact under
+`~/code-reviews/artifacts/`. The URL or stable local HTML path stays identical
+across re-reviews of the same target, so findings can flip from open to fixed
+without creating a new artifact identity.
 
 ---
 
@@ -31,7 +33,9 @@ All of the following are already in hand after Step 3 of SKILL.md:
 
 ---
 
-## Step 2 -- Launch the renderer subagent (background)
+## Step 2 -- Render for the current host
+
+### Claude Code
 
 Launch exactly ONE `general-purpose` agent, `model: sonnet`, in the
 background. Do not block printing the review on it (see Hard rules).
@@ -63,6 +67,30 @@ Return ONLY the resulting artifact URL as your final text. No other output.
 --- PAGE SPECIFICATION ---
 <paste Step 3 verbatim here>
 ```
+
+### OpenAI Codex
+
+Use one native collaboration agent when a slot is available; otherwise the
+coordinator renders the file after the review is saved. The renderer is a
+bounded file-production task, not a review task. It reads only `findings.json`
+and the saved review, follows the Step 3 page specification, and must not read
+fresh secrets or context from the scratchpad.
+
+Set the stable path from the review target, not the date:
+
+```text
+~/code-reviews/artifacts/<repo-short>-pr-<PR_NUMBER>.html
+~/code-reviews/artifacts/<repo-short>-branch-<sanitized-local-branch>.html
+```
+
+Create the directory if needed. Write one self-contained HTML file using
+`apply_patch`, then re-read it. A re-review overwrites that exact file; never
+mint a second dated path for the same target.
+
+If a publish-capable artifact tool is already present, publishing is optional
+and must preserve the previous URL. Do not install a service, create an account,
+or publish publicly merely to obtain a URL. Without such a tool, the absolute
+local path is the artifact result and is recorded in the review header.
 
 ---
 
@@ -113,17 +141,17 @@ Hard requirements for the HTML page:
 
 ---
 
-## Step 4 -- Record the URL (fresh post-condition)
+## Step 4 -- Record the artifact target (fresh post-condition)
 
-When the subagent returns:
+When the renderer completes:
 
-**On success (URL returned):**
-1. Append or refresh a `**Artifact:** <url>` line in the saved review file's
+**On success (URL or stable local HTML path returned):**
+1. Append or refresh a `**Artifact:** <target>` line in the saved review file's
    header block. Idempotent: replace an existing `**Artifact:**` line if
    present, never duplicate it.
 2. Re-read the review file to confirm the line landed -- this is the receipt
    (per VERIFICATION.md: a write is not done until re-read from source).
-3. Print one line to the user: `🔗 Living review: <url>`
+3. Print one line to the user: `🔗 Living review: <target>`
 
 **On failure (no URL, or the agent errored):**
 - Say so in one line to the user.
@@ -134,13 +162,15 @@ When the subagent returns:
 
 ## Hard rules
 
-- The renderer subagent runs in the BACKGROUND -- never block printing or
-  delivering the review on its completion.
-- Same PR → same URL, always. Pass `PREV_ARTIFACT_URL` whenever one exists. A
-  fresh URL minted for a PR that already has one is a bug -- treat it as such
-  if you spot it in the receipt.
-- The artifact is private by default; sharing it is the user's decision, not
-  the skill's.
+- Never delay printing the saved Markdown review for artifact rendering.
+  Claude runs the renderer in the background. Codex may finish the stable local
+  file after printing the review, but must not claim an artifact target until
+  the file has been re-read successfully.
+- Same target means the same URL or stable local HTML path, always. Pass
+  `PREV_ARTIFACT_URL` whenever one exists. A new identity for a target that
+  already has one is a bug.
+- Published artifacts are private by default. A local artifact stays local;
+  sharing either form is the user's decision, not the skill's.
 - Never include secrets or tokens from context. The page contains only what
   the saved review file already contains -- nothing pulled fresh from
   scratchpad context that isn't already in the review.

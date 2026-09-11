@@ -245,6 +245,7 @@
             "quality"
           ],
           "adapters": [
+            "codex",
             "claude"
           ]
         }

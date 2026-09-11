@@ -61,16 +61,22 @@ Not auto-fixable: <N> (<reasons>)
 
 ## Step 3 -- Run the fix workflow
 
+In OpenAI Codex, run the Fix mode section of `codex-workflow.md` with native
+collaboration tools, then continue at Step 4 below. Do not execute
+`fix-workflow.js` directly: it requires Claude's injected Workflow globals.
+
+In Claude Code, invoke Workflow as follows:
+
 ```
 Workflow tool:
-scriptPath: ${CLAUDE_PLUGIN_ROOT}/fix-workflow.js
+scriptPath: ${SKILL_ROOT}/fix-workflow.js
 args: {
   repoSlug,
   prNumber,
   worktreePath: "<WORKTREE_PATH>",
   diffFile:     "<scratchpad>/pr.diff",
   contextFile:  "<scratchpad>/context.json",
-  promptDir:    "${CLAUDE_PLUGIN_ROOT}/references/agents",
+  promptDir:    "${SKILL_ROOT}/references/agents",
   findings:     [ <the selected finding objects, verbatim> ]
 }
 ```
@@ -87,10 +93,10 @@ one `groups` entry per file with `results[]`, `filesTouched[]`, `verdict`,
 (already excluding the review workflow that ran before it); `turnTokensTotal` is
 the whole turn's pool. Report the former on the `Fix agents:` cost line.
 
-If the Workflow tool is unavailable: fall back to launching one Agent per file
-group on `sonnet` with `references/agents/fixer.md`, then one Agent per group
-with `references/agents/fix-verifier.md`. Same rules, same verdict handling.
-State the fallback in the report.
+If Claude's Workflow tool is unavailable, fall back to one Agent per file group
+with `references/agents/fixer.md`, then one read-only Agent per group with
+`references/agents/fix-verifier.md`. Same rules, same verdict handling. State
+the fallback in the report.
 
 ---
 
@@ -120,7 +126,7 @@ simply stays a review comment for the author. Report it as such.
 ## Step 5 -- Verify the fixed tree (fresh post-condition)
 
 ```bash
-~/.claude/skills/lekker-review/scripts/verify-fixes.sh \
+<SKILL_ROOT>/scripts/verify-fixes.sh \
   <WORKTREE_PATH> <scratchpad>/fix-verify.json tests
 ```
 
@@ -205,8 +211,11 @@ Body: one `- ` line per applied finding, using the fixer's `summary`, then:
 ```
 Applied from lekker-review: <REVIEW_FILE>
 
-Co-Authored-By: Claude Code <noreply@anthropic.com>
+Co-Authored-By: <current host attribution>
 ```
+
+Use `Claude Code <noreply@anthropic.com>` on Claude Code and
+`OpenAI Codex <noreply@openai.com>` on Codex.
 
 If two groups declared the same file, commit them together as one commit and
 say so in the report.

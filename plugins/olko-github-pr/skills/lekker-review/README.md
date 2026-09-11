@@ -31,9 +31,11 @@ This skill spends most of its budget trying to disprove itself.
 
 ## Requirements
 
-Claude Code only. The review pipeline needs the Workflow tool for multi-agent
-orchestration and the Artifact tool for the living review page. `git` and an
-authenticated `gh` are required.
+Claude Code or OpenAI Codex, plus `git` and an authenticated `gh`. Claude uses
+Workflow/Agent and can publish the living page with Artifact. Codex uses native
+collaboration agents and keeps the same review/verify/critic/prove/fix gates; if
+no publish-capable artifact tool is available, it updates a stable local HTML
+artifact under `~/code-reviews/artifacts/`.
 
 ## Setup
 

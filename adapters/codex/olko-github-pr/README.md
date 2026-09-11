@@ -14,3 +14,4 @@ Use the canonical skills directly:
 - `plugins/olko-github-pr/skills/geminiloop/SKILL.md`
 - `plugins/olko-github-pr/skills/ci-fix-loop/SKILL.md`
 - `plugins/olko-github-pr/skills/dependabot-triage/SKILL.md`
+- `plugins/olko-github-pr/skills/lekker-review/SKILL.md`
