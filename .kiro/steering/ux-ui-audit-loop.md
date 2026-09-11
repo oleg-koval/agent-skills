@@ -161,10 +161,37 @@ Otherwise stop at the round limit or blocker and report the remaining ledger hon
 
 - Follow an existing repository convention when one exists.
 - Otherwise store artifacts under an OS temporary directory named `ux-ui-audit-loop-<run-id>` and report the absolute path.
+- Generate a readable Markdown report at `<artifact-directory>/ux-ui-audit-report.md` before the final response. The report is mandatory even when no fix is made.
 - Redact or omit secrets and sensitive personal data before persisting screenshots, DOM or accessibility data, console output, request details, or reports. Never retain credentials, tokens, or browser storage.
 - Use deterministic names such as `round-01-before-mobile-form-error.png`.
 - Do not add large screenshots to git, modify `.gitignore`, or delete user artifacts unless requested.
 - Retain enough evidence to compare the first baseline with the final state.
+
+The report must be human-readable without inspecting tool logs. For every scoped state and viewport, include:
+
+- a before screenshot link and the matching after screenshot link; use relative Markdown image links when the report and screenshots share an artifact directory
+- the exact route, viewport, and state setup
+- a short before/after comparison describing what changed, what stayed unchanged, and any remaining issue
+- finding IDs with severity and status, including `not-reproduced`, `accepted`, or `blocked` explanations
+- verification commands and browser evidence with pass/fail/not-run status
+
+Use this minimum comparison shape:
+
+```markdown
+## Before / After
+
+| State | Viewport | Before | After | What changed |
+|---|---:|---|---|---|
+| Initial render | 390x844 | [before](round-01-before-mobile.png) | [after](round-01-after-mobile.png) | Mobile toolbar no longer clips labels; content width remains unchanged. |
+
+### Initial render — 390x844
+
+| Before | After |
+|---|---|
+| ![Before](round-01-before-mobile.png) | ![After](round-01-after-mobile.png) |
+```
+
+If a screenshot cannot be captured, mark that pair `NOT_CAPTURED` with the exact blocker; never imply a visual comparison was completed.
 
 ## Final Report
 
@@ -190,6 +217,9 @@ VERIFICATION
 
 ARTIFACTS
 <absolute artifact directory>
+
+REPORT
+<absolute path to ux-ui-audit-report.md>
 ```
 
 Use `CLEAN` only when the successful stop conditions are met. Separate browser evidence, automated tests, deployment state, and human design acceptance. Recommend one smallest next action for every blocker or remainder.
