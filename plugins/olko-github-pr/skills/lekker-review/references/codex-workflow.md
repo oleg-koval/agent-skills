@@ -67,7 +67,8 @@ Select dimensions exactly as the Claude workflow does:
 For each dimension, spawn a `default` read-only agent with the following
 bounded task:
 
-1. Read its exact prompt under `references/agents/<dimension>.md`.
+1. Read its exact prompt under
+   `<SKILL_ROOT>/references/agents/<dimension>.md`.
 2. Read `DIFF_FILE` and `CONTEXT_FILE` by path. Read the worktree only when one
    exists. Never paste the whole diff into the task message.
 3. Review only the target diff. Do not edit files, run git writes, post to
@@ -109,8 +110,8 @@ Idiomatic findings bypass this stage.
 Spawn one read-only verifier task per finding, in batches that respect the
 current collaboration limit. Each verifier must:
 
-1. Read `references/agents/verifier.md`, the finding JSON, `DIFF_FILE`,
-   `CONTEXT_FILE`, and the worktree when available.
+1. Read `<SKILL_ROOT>/references/agents/verifier.md`, the finding JSON,
+   `DIFF_FILE`, `CONTEXT_FILE`, and the worktree when available.
 2. For a non-empty `rule`, read the `houseRulesFile` path from context and use
    the rule-specific diff-anchor/applicability checks.
 3. Otherwise run all five adversarial runtime challenges from the prompt.
@@ -132,8 +133,9 @@ Count each non-empty rule sent to verification in `hardRuleCount`.
 ## Critic stage (deep only)
 
 After verification, spawn one read-only completeness critic following
-`references/agents/completeness-critic.md`. Give it the authoritative diff and
-a compact list of existing finding locations/titles. It returns angles only.
+`<SKILL_ROOT>/references/agents/completeness-critic.md`. Give it the
+authoritative diff and a compact list of existing finding locations/titles. It
+returns angles only.
 
 Re-examine each angle with a read-only agent, then send every promoted Critical
 or Important candidate through the same Verify stage. Deduplicate promoted
@@ -144,9 +146,9 @@ may not bypass verification.
 
 For at most five verified, non-rule Critical findings, spawn one `worker`
 prover at a time or in non-overlapping batches. Each prover owns only its
-temporary proof-test path and follows `references/agents/prover.md`. Tell the
-worker it is not alone in the worktree and must not revert or modify another
-agent's files.
+temporary proof-test path and follows
+`<SKILL_ROOT>/references/agents/prover.md`. Tell the worker it is not alone in
+the worktree and must not revert or modify another agent's files.
 
 The prover gets one attempt, must return the worktree exactly as found, and
 writes a JSON proof object matching `workflow.js`. Accept only coherent tuples:
@@ -203,17 +205,24 @@ commit, landing/push confirmation, and cleanup. Replace only its Workflow call:
    before spawning; overlapping groups must be combined.
 2. Spawn one `worker` fixer per disjoint group. Assign exact file ownership and
    state that other agents share the worktree; it must preserve their changes.
-   The fixer reads `references/agents/fixer.md`, edits only its owned files via
-   `apply_patch`, performs no git writes, and writes the same `FIX_RESULT_SCHEMA`
-   JSON used by `fix-workflow.js`.
+   The fixer reads `<SKILL_ROOT>/references/agents/fixer.md`, edits only its
+   owned files via `apply_patch`, performs no git writes, and writes the same
+   `FIX_RESULT_SCHEMA` JSON used by `fix-workflow.js`.
 3. Wait for all fixers. Then spawn one `default` read-only verifier per group
-   following `references/agents/fix-verifier.md`. It inspects the real diff and
-   writes `good`, `incomplete`, or `harmful` plus reasoning/problems.
+   following `<SKILL_ROOT>/references/agents/fix-verifier.md`. It inspects the
+   real diff and writes `good`, `incomplete`, or `harmful` plus
+   reasoning/problems.
 4. A non-good verdict gets at most one `followup_task` retry to the same fixer,
    followed by one fresh verifier pass. No second retry.
 5. Mark a group committable only when its verifier says `good` and at least one
-   finding was applied. Revert every other group using the exact scoped paths
-   from `filesTouched`; never use broad cleanup.
+   finding was applied. Treat `filesTouched` as untrusted data before reverting
+   any other group: accept only non-empty, well-formed repository-relative
+   paths with no absolute prefix, drive prefix, backslash, NUL/control byte, or
+   `.`/`..` traversal component. Lexically normalize each candidate, require an
+   exact match in the assigned group's file ownership, and discard duplicates.
+   Pass only those validated scoped paths to `git checkout --`, prefixing each
+   with `:(literal)` so Git cannot reinterpret it as pathspec syntax. Ignore
+   and report every rejected or out-of-group path. Never use broad cleanup.
 6. Continue with fix-mode Steps 5 through 9, including fresh static/tests,
    proof flips, explicit staging, per-group commits, push/landing confirmation,
    cost accounting, and cleanup override.

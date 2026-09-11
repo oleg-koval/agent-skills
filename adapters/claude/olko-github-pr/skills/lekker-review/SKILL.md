@@ -274,8 +274,9 @@ REPO_SLUG; keeps PR numbers from colliding across repos). If found, grep it for
 `\*\*Head:\*\*` and extract the short sha. Set `PREV_SHA=<sha>` and
 `PREV_REVIEW_FILE=<path>`. If no Head line exists in the file (older format),
 treat as a full review and leave PREV_SHA unset. Also grep the same file for
-`\*\*Artifact:\*\*` and set `PREV_ARTIFACT_URL=<url>` (null when absent) - Step
-3.5 republishes to the SAME url so the artifact stays a living page for this PR.
+`\*\*Artifact:\*\*` and set `PREV_ARTIFACT_TARGET=<target>` (null when absent)
+- Step 3.5 reuses that exact URL or local path so the artifact stays a living
+page for this PR.
 
 ---
 

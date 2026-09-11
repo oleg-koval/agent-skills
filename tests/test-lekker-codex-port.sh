@@ -26,16 +26,25 @@ const skill = catalog.plugins
 
 assert.ok(skill, 'lekker-review must exist in the catalog')
 assert.ok(skill.adapters.includes('codex'), 'lekker-review must target Codex')
+assert.match(skill.description, /Claude Code and OpenAI Codex/)
+assert.doesNotMatch(skill.description, /5 parallel specialist review agents/)
 EOF
 
 test -f "$CODEX_WORKFLOW"
 grep -q 'spawn_agent' "$CODEX_WORKFLOW"
 grep -q 'wait_agent' "$CODEX_WORKFLOW"
 grep -q 'Review -> Dedup -> Verify -> Critic -> Prove' "$CODEX_WORKFLOW"
+grep -q '<SKILL_ROOT>/references/agents/<dimension>.md' "$CODEX_WORKFLOW"
+grep -q 'repository-relative' "$CODEX_WORKFLOW"
+grep -q 'assigned group' "$CODEX_WORKFLOW"
 grep -q 'Codex native collaboration' "$SKILL"
 grep -q 'OpenAI Codex' "$SKILL"
 grep -q 'allowed-tools:.*spawn_agent.*wait_agent' "$SKILL"
 grep -q 'stable local HTML' "$ARTIFACT"
+grep -q 'base64url' "$ARTIFACT"
+grep -q 'context-escape' "$ARTIFACT"
+grep -q 'http.*https' "$ARTIFACT"
+grep -q 'PREV_ARTIFACT_TARGET' "$ARTIFACT"
 grep -q 'model: codex/' "$CODEX_PROFILE"
 grep -q -- '--profile <REVMUX_PROFILE>' "$SKILL"
 grep -q 'skills/lekker-review/SKILL.md' "$CODEX_ADAPTER"
@@ -51,6 +60,7 @@ fi
 
 REVMUX_CONFIG_DIR="$TEST_ROOT/revmux" bash "$INSTALLER" >/dev/null
 test -f "$TEST_ROOT/revmux/prompts/profiles/lekker-medium-codex.md"
+test -f "$TEST_ROOT/revmux/prompts/profiles/lekker-deep-codex.md"
 REVMUX_CONFIG_DIR="$TEST_ROOT/revmux" bash "$INSTALLER" --check >/dev/null
 
 echo 'PASS: test-lekker-codex-port'

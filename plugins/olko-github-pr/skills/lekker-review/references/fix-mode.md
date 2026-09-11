@@ -94,9 +94,9 @@ one `groups` entry per file with `results[]`, `filesTouched[]`, `verdict`,
 the whole turn's pool. Report the former on the `Fix agents:` cost line.
 
 If Claude's Workflow tool is unavailable, fall back to one Agent per file group
-with `references/agents/fixer.md`, then one read-only Agent per group with
-`references/agents/fix-verifier.md`. Same rules, same verdict handling. State
-the fallback in the report.
+with `<SKILL_ROOT>/references/agents/fixer.md`, then one read-only Agent per
+group with `<SKILL_ROOT>/references/agents/fix-verifier.md`. Same rules, same
+verdict handling. State the fallback in the report.
 
 ---
 

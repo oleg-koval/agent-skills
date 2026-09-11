@@ -25,9 +25,10 @@ All of the following are already in hand after Step 3 of SKILL.md:
 - PR metadata: `REPO_SLUG`, `PR_NUMBER`, `PR_URL`, title, author, `headRefName`
   → `baseRefName`, head sha, depth, verdict, `isDraft`, `mergeStateStatus`, CI
   status.
-- `PREV_ARTIFACT_URL` -- `null` on first review; on re-review, extracted from
-  the prior review file's `**Artifact:** <url>` header line (SKILL.md Step 0
-  handles the extraction).
+- `PREV_ARTIFACT_TARGET` -- `null` on first review; on re-review, extracted
+  from the prior review file's `**Artifact:** <target>` header line (SKILL.md
+  Step 0 handles the extraction). A target is either an `http`/`https` URL or
+  an absolute local artifact path.
 - Since-last-review data when in re-review mode (fixed vs. still-open lists).
 - The `--no-artifact` flag -- when set, skip this whole procedure silently.
 
@@ -58,9 +59,9 @@ Artifact tool using:
   - title: "Review: <repo-short> #<PR_NUMBER>"
   - description: <one sentence, e.g. "Living code review for PR #<N> --
     findings update as commits land">
-  - url: <PREV_ARTIFACT_URL>   (include ONLY when non-null, so the SAME
-    artifact updates in place instead of minting a new URL; omit the `url`
-    parameter entirely on first publish)
+  - url: <PREV_ARTIFACT_TARGET>   (include ONLY when the target is a validated
+    http or https URL, so the SAME published artifact updates in place; omit
+    the `url` parameter for null or local-path targets)
 
 Return ONLY the resulting artifact URL as your final text. No other output.
 
@@ -76,16 +77,34 @@ bounded file-production task, not a review task. It reads only `findings.json`
 and the saved review, follows the Step 3 page specification, and must not read
 fresh secrets or context from the scratchpad.
 
-Set the stable path from the review target, not the date:
+Encode the complete repository identity before constructing a stable path:
 
 ```text
-~/code-reviews/artifacts/<repo-short>-pr-<PR_NUMBER>.html
-~/code-reviews/artifacts/<repo-short>-branch-<sanitized-local-branch>.html
+REPO_KEY = base64url(UTF-8(REPO_SLUG)), with trailing `=` padding removed
 ```
 
-Create the directory if needed. Write one self-contained HTML file using
-`apply_patch`, then re-read it. A re-review overwrites that exact file; never
-mint a second dated path for the same target.
+This encoding is filesystem-safe and injective: repositories with the same
+short name but different owners cannot collide. Set the stable path from the
+review target, not the date:
+
+```text
+~/code-reviews/artifacts/<REPO_KEY>-pr-<PR_NUMBER>.html
+~/code-reviews/artifacts/<REPO_KEY>-branch-<sanitized-local-branch>.html
+```
+
+When `PREV_ARTIFACT_TARGET` is an absolute local path, validate that it is a
+regular artifact path under `~/code-reviews/artifacts/` and reuse that exact
+path directly. Otherwise create the directory if needed and use the canonical
+path above. Write one self-contained HTML file using `apply_patch`, then
+re-read it. A re-review overwrites that exact file; never mint a second dated
+path for the same target.
+
+Treat all PR metadata and every value read from `findings.json` as untrusted;
+context-escape every dynamic value before HTML interpolation: escape `&`, `<`,
+and `>` in HTML text and `<pre>` content, and additionally escape both quote
+characters in attribute values. Parse every dynamic link target and permit it
+in an `href` only when its scheme is exactly `http` or `https`; otherwise omit
+the link and render escaped plain text. Never insert untrusted markup.
 
 If a publish-capable artifact tool is already present, publishing is optional
 and must preserve the previous URL. Do not install a service, create an account,
@@ -166,9 +185,11 @@ When the renderer completes:
   Claude runs the renderer in the background. Codex may finish the stable local
   file after printing the review, but must not claim an artifact target until
   the file has been re-read successfully.
-- Same target means the same URL or stable local HTML path, always. Pass
-  `PREV_ARTIFACT_URL` whenever one exists. A new identity for a target that
-  already has one is a bug.
+- Same target means the same URL or stable local HTML path, always. Carry
+  `PREV_ARTIFACT_TARGET` whenever one exists. Pass it as `url` only when it is
+  a validated `http` or `https` URL; when it is a validated local path, reuse
+  that path directly. A new identity for a target that already has one is a
+  bug.
 - Published artifacts are private by default. A local artifact stays local;
   sharing either form is the user's decision, not the skill's.
 - Never include secrets or tokens from context. The page contains only what
