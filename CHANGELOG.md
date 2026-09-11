@@ -1,3 +1,10 @@
+# [1.45.0](https://github.com/oleg-koval/agent-skills/compare/v1.44.0...v1.45.0) (2026-09-11)
+
+
+### ✨ Features
+
+* **lekker-review:** catch fixes that contradict the acceptance criteria ([#100](https://github.com/oleg-koval/agent-skills/issues/100)) ([a5dc8b4](https://github.com/oleg-koval/agent-skills/commit/a5dc8b4c7d7a5a9552c8004a28bccdc93081a48a))
+
 # [1.44.0](https://github.com/oleg-koval/agent-skills/compare/v1.43.1...v1.44.0) (2026-09-09)
 
 
