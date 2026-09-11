@@ -1,3 +1,10 @@
+# [1.46.0](https://github.com/oleg-koval/agent-skills/compare/v1.45.1...v1.46.0) (2026-09-11)
+
+
+### ✨ Features
+
+* **lekker-review:** add native Codex support ([#101](https://github.com/oleg-koval/agent-skills/issues/101)) ([2784cda](https://github.com/oleg-koval/agent-skills/commit/2784cdafe55cd2026fe4e9c9e04c14ff7707f975))
+
 ## [1.45.1](https://github.com/oleg-koval/agent-skills/compare/v1.45.0...v1.45.1) (2026-09-11)
 
 
