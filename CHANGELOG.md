@@ -1,3 +1,10 @@
+# [1.47.0](https://github.com/oleg-koval/agent-skills/compare/v1.46.0...v1.47.0) (2026-09-11)
+
+
+### ✨ Features
+
+* **product:** add evidence-backed UX/UI audit loop ([#103](https://github.com/oleg-koval/agent-skills/issues/103)) ([5582dfd](https://github.com/oleg-koval/agent-skills/commit/5582dfd9d7e614173a2278331d5a147e6240219a))
+
 # [1.46.0](https://github.com/oleg-koval/agent-skills/compare/v1.45.1...v1.46.0) (2026-09-11)
 
 
