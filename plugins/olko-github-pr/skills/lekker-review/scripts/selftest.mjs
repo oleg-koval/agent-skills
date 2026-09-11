@@ -7,7 +7,7 @@
 // workflow run costing ~7 agents and 70+ seconds. This runs the same logic in
 // milliseconds with no agents at all. Run it after ANY edit to workflow.js:
 //
-//   node ~/.claude/skills/lekker-review/scripts/selftest.mjs
+//   node <SKILL_ROOT>/scripts/selftest.mjs
 //
 // It lifts the real functions out of workflow.js by source extraction rather
 // than importing, because workflow.js is written for the Workflow harness (top

@@ -47,14 +47,19 @@ EOF
 chmod +x "$FAKE_BIN/revmux"
 
 run_engine() {
+    profile_name="${4:-}"
+    set -- \
+        --task fixture --run 01-review --depth medium --workdir "$ROOT" \
+        --diff-file "$1" --context-file "$2" --profile-file "$3" \
+        --out "$TEST_ROOT/out.json" --tasks-dir "$TASKS_DIR" --config-dir "$CONFIG_DIR"
+    if [ -n "$profile_name" ]; then
+        set -- "$@" --profile "$profile_name"
+    fi
     PATH="$FAKE_BIN:$PATH" \
     REVMUX_TEST_CALLS="$CALLS" \
     REVMUX_TEST_ROUND="$ROUND_DIR" \
     REVMUX_NULL_KEY="${REVMUX_NULL_KEY:-}" \
-    "$ENGINE" \
-        --task fixture --run 01-review --depth medium --workdir "$ROOT" \
-        --diff-file "$1" --context-file "$2" --profile-file "$3" \
-        --out "$TEST_ROOT/out.json" --tasks-dir "$TASKS_DIR" --config-dir "$CONFIG_DIR"
+    "$ENGINE" "$@"
 }
 
 for missing_input in diff context profile; do
@@ -87,19 +92,32 @@ for null_key in scope goal profile context; do
     [ "$(wc -l < "$CALLS")" -eq 1 ] || { echo "FAIL: null $null_key path invoked revmux after new" >&2; exit 1; }
 done
 
+# Runner support belongs to revmux. The lekker wrapper must not reject Codex
+# profiles before revmux has a chance to execute them, and every run remains
+# restricted to the read-only review tool allowlist.
+printf 'model: codex/gpt-5\n' > "$CONFIG_DIR/prompts/profiles/lekker-medium.md"
+unset REVMUX_NULL_KEY
 : > "$CALLS"
-REVMUX_NULL_KEY='' run_engine \
-    "$TEST_ROOT/pr.diff" "$TEST_ROOT/context.json" "$TEST_ROOT/profile.md" >/dev/null
-
-[ "$(wc -l < "$CALLS")" -eq 2 ] || { echo "FAIL: successful round did not invoke revmux twice" >&2; exit 1; }
+set +e
+run_engine "$TEST_ROOT/pr.diff" "$TEST_ROOT/context.json" "$TEST_ROOT/profile.md" \
+    lekker-medium-codex \
+    >"$TEST_ROOT/codex-profile.stdout" 2>"$TEST_ROOT/codex-profile.stderr"
+status=$?
+set -e
+[ "$status" -eq 0 ] || {
+    echo "FAIL: codex profile run exited $status" >&2
+    cat "$TEST_ROOT/codex-profile.stderr" >&2
+    exit 1
+}
+[ "$(wc -l < "$CALLS")" -eq 2 ] || { echo "FAIL: codex profile did not reach revmux new + run" >&2; exit 1; }
 grep -q '^# Scope' "$ROUND_DIR/input/scope.md" || { echo "FAIL: successful round did not populate scope" >&2; exit 1; }
 grep -q '^# Goal' "$ROUND_DIR/input/goal.md" || { echo "FAIL: successful round did not populate goal" >&2; exit 1; }
 cmp -s "$TEST_ROOT/context.json" "$ROUND_DIR/input/context/context.json" || { echo "FAIL: context file was not copied into the round" >&2; exit 1; }
 cmp -s "$TEST_ROOT/pr.diff" "$ROUND_DIR/input/context/pr.diff" || { echo "FAIL: diff file was not copied into the round" >&2; exit 1; }
 cmp -s "$TEST_ROOT/worktree.json" "$ROUND_DIR/input/context/worktree.json" || { echo "FAIL: worktree file was not copied into the round" >&2; exit 1; }
 cmp -s "$TEST_ROOT/profile.md" "$ROUND_DIR/input/profile.md" || { echo "FAIL: profile file was not copied into the round" >&2; exit 1; }
-tail -n 1 "$CALLS" | grep -q -- '--task fixture --run 01-review --profile lekker-medium .*--tools=Read,Grep,Glob,WebFetch,WebSearch --no-tui$' || {
-    echo "FAIL: final revmux invocation did not use the medium profile and read-only tool allowlist" >&2
+tail -n 1 "$CALLS" | grep -q -- '--task fixture --run 01-review --profile lekker-medium-codex .*--tools=Read,Grep,Glob,WebFetch,WebSearch --no-tui$' || {
+    echo "FAIL: final revmux invocation did not use the codex profile and read-only tool allowlist" >&2
     exit 1
 }
 

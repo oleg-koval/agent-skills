@@ -17,11 +17,6 @@ if [ "${1:-}" = "--check" ]; then
   CHECK_MODE=1
 fi
 
-if grep -rln 'codex' "$SRC_LENSES" "$SRC_PROFILES" >/dev/null 2>&1; then
-  echo "refusing to install: codex reference found under references/revmux/" >&2
-  exit 1
-fi
-
 FAIL=0
 
 sync_one() {
