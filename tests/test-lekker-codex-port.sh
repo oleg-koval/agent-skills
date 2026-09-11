@@ -49,8 +49,8 @@ if grep -q 'refusing to install: codex reference' "$INSTALLER"; then
   exit 1
 fi
 
-REVMUX_CONFIG_DIR="$TEST_ROOT/revmux" sh "$INSTALLER" >/dev/null
+REVMUX_CONFIG_DIR="$TEST_ROOT/revmux" bash "$INSTALLER" >/dev/null
 test -f "$TEST_ROOT/revmux/prompts/profiles/lekker-medium-codex.md"
-REVMUX_CONFIG_DIR="$TEST_ROOT/revmux" sh "$INSTALLER" --check >/dev/null
+REVMUX_CONFIG_DIR="$TEST_ROOT/revmux" bash "$INSTALLER" --check >/dev/null
 
 echo 'PASS: test-lekker-codex-port'
