@@ -1,3 +1,15 @@
+## [1.45.1](https://github.com/oleg-koval/agent-skills/compare/v1.45.0...v1.45.1) (2026-09-11)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** enforce read-only revmux tool access ([#99](https://github.com/oleg-koval/agent-skills/issues/99)) ([c8bb7b5](https://github.com/oleg-koval/agent-skills/commit/c8bb7b5d4a633919e45a164864d843f5741a5ade))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump js-yaml ([#102](https://github.com/oleg-koval/agent-skills/issues/102)) ([578fed2](https://github.com/oleg-koval/agent-skills/commit/578fed2e9f90316dfd510857f6ba24c7830ab6ad))
+
 # [1.45.0](https://github.com/oleg-koval/agent-skills/compare/v1.44.0...v1.45.0) (2026-09-11)
 
 
