@@ -137,6 +137,7 @@ REVMUX_OUT="$OUT"
 set +e
 revmux --task "$TASK" --run "$RUN" --profile "$PROFILE_NAME" \
     --workdir "$WORKDIR" --tasks-dir "$TASKS_DIR" --config-dir "$CONFIG_DIR" \
+    --tools=Read,Grep,Glob,WebFetch,WebSearch \
     --no-tui > "$REVMUX_OUT"
 CODE=$?
 set -e

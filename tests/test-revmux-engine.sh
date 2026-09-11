@@ -22,7 +22,7 @@ printf 'profile\n' > "$TEST_ROOT/profile.md"
 cat > "$FAKE_BIN/revmux" <<'EOF'
 #!/bin/bash
 set -euo pipefail
-printf 'call\n' >> "$REVMUX_TEST_CALLS"
+printf '%s\n' "$*" >> "$REVMUX_TEST_CALLS"
 for arg in "$@"; do
     if [[ "$arg" == "new" ]]; then
         scope="$REVMUX_TEST_ROUND/input/scope.md"
@@ -93,7 +93,8 @@ for null_key in scope goal profile context; do
 done
 
 # Runner support belongs to revmux. The lekker wrapper must not reject Codex
-# profiles before revmux has a chance to execute them.
+# profiles before revmux has a chance to execute them, and every run remains
+# restricted to the read-only review tool allowlist.
 printf 'model: codex/gpt-5\n' > "$CONFIG_DIR/prompts/profiles/lekker-medium.md"
 unset REVMUX_NULL_KEY
 : > "$CALLS"
@@ -108,8 +109,15 @@ set -e
     cat "$TEST_ROOT/codex-profile.stderr" >&2
     exit 1
 }
-[ "$(wc -l < "$CALLS")" -eq 2 ] || {
-    echo "FAIL: codex profile did not reach revmux new + run" >&2
+[ "$(wc -l < "$CALLS")" -eq 2 ] || { echo "FAIL: codex profile did not reach revmux new + run" >&2; exit 1; }
+grep -q '^# Scope' "$ROUND_DIR/input/scope.md" || { echo "FAIL: successful round did not populate scope" >&2; exit 1; }
+grep -q '^# Goal' "$ROUND_DIR/input/goal.md" || { echo "FAIL: successful round did not populate goal" >&2; exit 1; }
+cmp -s "$TEST_ROOT/context.json" "$ROUND_DIR/input/context/context.json" || { echo "FAIL: context file was not copied into the round" >&2; exit 1; }
+cmp -s "$TEST_ROOT/pr.diff" "$ROUND_DIR/input/context/pr.diff" || { echo "FAIL: diff file was not copied into the round" >&2; exit 1; }
+cmp -s "$TEST_ROOT/worktree.json" "$ROUND_DIR/input/context/worktree.json" || { echo "FAIL: worktree file was not copied into the round" >&2; exit 1; }
+cmp -s "$TEST_ROOT/profile.md" "$ROUND_DIR/input/profile.md" || { echo "FAIL: profile file was not copied into the round" >&2; exit 1; }
+tail -n 1 "$CALLS" | grep -q -- '--task fixture --run 01-review --profile lekker-medium-codex .*--tools=Read,Grep,Glob,WebFetch,WebSearch --no-tui$' || {
+    echo "FAIL: final revmux invocation did not use the codex profile and read-only tool allowlist" >&2
     exit 1
 }
 

@@ -12,29 +12,29 @@ and lekker-deep review profiles. It concatenates the two files lekker-review its
 
 These rules are non-negotiable. Violations are always **Critical** findings regardless of depth or other filters. Apply them when developing a feature or bugfix, not only during review.
 
-### TS-1 — Type safety (TypeScript only)
+### TS-1 - Type safety (TypeScript only)
 
-- No type casting (`as X`, `<X>expr`) — ask them if they are Harry Potter for casting spells.
-- No `any` — except in test files where types are genuinely hard to express; even there, blatantly omitted types (e.g. `any[]` on a known shaped list) must be flagged.
+- No type casting (`as X`, `<X>expr`) - ask them if they are Harry Potter for casting spells.
+- No `any` - except in test files where types are genuinely hard to express; even there, blatantly omitted types (e.g. `any[]` on a known shaped list) must be flagged.
 - Every finding: quote the cast/`any`, explain the correct type, show the fix.
 
-### TS-2 — No JavaScript files
+### TS-2 - No JavaScript files
 
 - No `.js` files may be added to any Teifi integrations repo.
 - Exception: Liquid themes (Online Store 2.0 Shopify themes) may contain `.js`.
 - If the PR adds a `.js` file to a non-theme repo, flag it as Critical: must be converted to `.ts`.
 
-### GQL-1 — GraphQL NodesConnection pagination
+### GQL-1 - GraphQL NodesConnection pagination
 
 - Every query that uses a nodes connection (`nodes { ... }`) **must** include `pageInfo { hasNextPage endCursor }` alongside the nodes.
-- All remaining pages **must** be fetched — a single-page fetch with no loop/recursion is a bug.
+- All remaining pages **must** be fetched - a single-page fetch with no loop/recursion is a bug.
 - The page size **must** be `250` (Shopify max). If any other value is used, a code comment explaining why is required; if no comment exists, flag it.
 
-### PR-1 — PR title must be prefixed with Linear ticket(s)
+### PR-1 - PR title must be prefixed with Linear ticket(s)
 
 - PR title must start with `[GIC-123]` (or the relevant project prefix) in square brackets.
 - Go through the commit history: if merged PRs or commits reference Linear tickets in square brackets (`[GIC-123]`), all of them must appear comma-separated in the current PR title (e.g. `[GIC-123,GIC-124]`).
-- This is a **blocking** finding: display a prominent `⛔ CANNOT MERGE` warning and recommend the correct title prefix. Confidence score is not affected — this is a process rule, not a code quality signal.
+- This is a **blocking** finding: display a prominent `⛔ CANNOT MERGE` warning and recommend the correct title prefix. Confidence score is not affected - this is a process rule, not a code quality signal.
 
 ### 1g. Repo placement check (Teifi multi-repo projects only)
 
@@ -49,7 +49,7 @@ belongs in *this* repo and not a sibling repo.
 | `*-integrations` (e.g. `evi-integrations`; see the GIC exception below) | Backend ERP sync: cron jobs, orchestrator, BC/Sage/Jitterbit/ROI API clients |
 | `teifi-digital` / shared libs | Cross-project utilities, shared types |
 
-**Note:** `gic-integrations` has an `extensions/` folder containing legacy/reference extensions (e.g. `link-account-customer`), but **new customer account extensions for GIC should target `gic-live`** per project specs. Always check the Linear/Notion ticket for explicit repo path — don't infer from existing repo contents alone.
+**Note:** `gic-integrations` has an `extensions/` folder containing legacy/reference extensions (e.g. `link-account-customer`), but **new customer account extensions for GIC should target `gic-live`** per project specs. Always check the Linear/Notion ticket for explicit repo path - don't infer from existing repo contents alone.
 
 **Action:** If the diff adds a new Shopify extension and the PR targets `*-integrations`, check the Linear/Notion spec for the explicit target directory. If the spec names `*-live`, flag it as a **Critical** placement error (`## 🏠 Wrong Repo`).
 
@@ -64,12 +64,12 @@ Include: spec quote with correct path, which repo to target, and the risk (wrong
 | TS-1 | No type casts (`as X`), no `any` | Critical; test files lenient on genuine unknowns only |
 | TS-2 | No `.js` files in integrations repos | Critical; Liquid themes exempt |
 | GQL-1 | nodes connections need `pageInfo`, all pages fetched, size=250 | Critical if pageInfo/pagination missing; Important if size≠250 without comment |
-| PR-1 | PR title must start with `[TICKET-NNN]`; include all commit-referenced tickets | Blocking — ⛔ CANNOT MERGE warning |
+| PR-1 | PR title must start with `[TICKET-NNN]`; include all commit-referenced tickets | Blocking - ⛔ CANNOT MERGE warning |
 | FLAG-1 | Reflag repos only: risky change should ship behind a feature flag | Non-blocking; `important` at most, usually `observation`. Never a `rule:` tag |
 
-These apply equally when you are writing a feature or bugfix — not only in review.
+These apply equally when you are writing a feature or bugfix - not only in review.
 
-### FLAG-1 — Ship behind a feature flag (Reflag repos only)
+### FLAG-1 - Ship behind a feature flag (Reflag repos only)
 
 Applies ONLY where a `package.json` (any depth, excluding `node_modules`) depends on
 `@reflag/node-sdk` or `@teifi-digital/reflag-client`. Elsewhere there is no flag client,
@@ -90,7 +90,7 @@ Yes → ship it. No → flag it.
 
 Deliberately NOT blocking, unlike TS-1/GQL-1/PR-1: whether something needs a flag is a
 rollout judgement, not a correctness violation, and a blocking comment on every
-borderline diff trains people to ignore the signal. Never invent a concrete flag key —
+borderline diff trains people to ignore the signal. Never invent a concrete flag key -
 keys must be confirmed against Reflag, so say a flag is needed without naming one.
 
 Related: a diff that BOTH adds a column/table AND changes what is read or written must
@@ -121,20 +121,20 @@ only the message is wrong. Detail and the reporting format live in the
 - **Shopify:** REST Admin + GraphQL Admin, Webhooks, Shopify Functions, genql
 - **External APIs:** Business Central (OAuth2, rate-limited), Salesforce GraphQL, ROI
 - **Infra:** Docker Compose locally; environment-var–driven cron syncs via `orchestrator.ts`
-- **Type gen pipeline:** pgtyped (SQL→TS), genql (GraphQL→TS), json2ts (schemas→TS) —
+- **Type gen pipeline:** pgtyped (SQL→TS), genql (GraphQL→TS), json2ts (schemas→TS) -
   check that generated files are regenerated when their sources change
 - **MCPs available:** Linear, Slack, Notion, Shopify Dev docs, Harvest, Sentry
 
 ### Repo taxonomy (for Step 1g placement check)
 
-**Per-project repo structure varies — always verify before flagging.**
+**Per-project repo structure varies - always verify before flagging.**
 
 - For **EVI project**: `evi-integrations` = backend ERP sync only; `evi-live` = Shopify app (extensions, Polaris UI).
 - For **GIC project**: `gic-integrations` owns the ERP backend sync and retains
   legacy/reference Shopify extensions. New GIC customer account extensions belong
   in `gic-live`; do not treat the legacy `extensions/` folder as placement precedent.
 - For other projects (`rsl-*`, `elmt-*`, etc.): check the repo's `extensions/` folder
-  presence before assuming a split — do not assume the `*-integrations` pattern always
+  presence before assuming a split - do not assume the `*-integrations` pattern always
   means backend-only.
 
 **Step 1g action**: Before flagging a placement mismatch, run:
@@ -154,7 +154,7 @@ that alone is not precedent for new GIC extensions. Flag when the repo has no
 # Teifi soft conventions (styling, naming, comments, tests, hygiene)
 
 Companion to `teifi-rules.md`. Those are the four HARD rules (TS-1, TS-2,
-GQL-1, PR-1) — always Critical. This file is the house style the Teifi
+GQL-1, PR-1) - always Critical. This file is the house style the Teifi
 plugin skills enforce during development (`teifi-dev:code-review`,
 `rename-pass`, `comment-stripper`, `unit-test-best-practices`). A review that
 misses them lets the same nits come back from the human reviewer.
@@ -168,7 +168,7 @@ inflate a style deviation into Critical.
 ## 1. Naming matrix (source: `teifi-dev` rename-pass agent)
 
 Flag a name the diff INTRODUCES that breaks a row. Renaming is cheap in the
-diff, expensive later — but a rename is still a cost, so leave conforming
+diff, expensive later - but a rename is still a cost, so leave conforming
 names alone.
 
 ### Values
@@ -184,7 +184,7 @@ names alone.
 | count | `Count` suffix | `lineCount` |
 | casing | camelCase values · PascalCase types/components · `CONSTANT_CASE` constants | |
 
-### Verbs — one per job, chosen by cost + purity
+### Verbs - one per job, chosen by cost + purity
 
 `get` cheap/sync · `fetch` async I/O · `create` new persisted entity ·
 `build` assembles in memory (pure) · `derive` pure value from existing state ·
@@ -195,14 +195,14 @@ idempotently makes state hold.
 A `getX` that does network I/O is a finding (`fetchX`). A `createX` that
 mutates an existing row is a finding (`updateX`).
 
-### Effect affixes — put the surprise in the name
+### Effect affixes - put the surprise in the name
 
 `…OrThrow` · `…OrDefault` · `upsert` · `…ForUpdate` (row lock) ·
 `…SkipLocked` · `try…` (returns result, doesn't throw) · `with…`
 (acquire→run→release) · `…Sync` · `…Cached` · `unsafe…`.
 
 A function that takes a row lock, throws on miss, or returns a cached value
-without saying so in its name is a finding — that surprise is exactly what the
+without saying so in its name is a finding - that surprise is exactly what the
 next caller will miss.
 
 ### React & types
@@ -219,7 +219,7 @@ next caller will miss.
 `line`, `item`, `node`, `record`, `entry`, `group`, `row`, `value`, `key` are
 findings when the surrounding domain has two or more qualified variants in
 scope (arrival line vs receipt line; source node vs target node). Qualify with
-the domain role — variables, params, fields, type aliases, **type params**
+the domain role - variables, params, fields, type aliases, **type params**
 (`TLine` → `TReceiptLine`), and the functions built on the noun.
 
 ### NEVER flag a rename at a boundary
@@ -228,7 +228,7 @@ DB table/column names (and any `Row`/`Dto` mirroring them), GraphQL / oRPC /
 OpenAPI contract fields, enum string values, route strings, wire/JSON keys.
 Something outside the diff reads them. The app-layer alias may be renamed
 (`createdAt @map("created_at")`); the boundary name may not. A "rename this
-column" finding is a false positive — say the boundary name is bad and leave
+column" finding is a false positive - say the boundary name is bad and leave
 it to a human if it matters.
 
 ---
@@ -238,25 +238,25 @@ it to a human if it matters.
 **Default: a comment should not exist.** It earns its place only by saying
 something the code *cannot*, and then in as few words as possible. Flag each
 offending comment the diff ADDED as its own `idiomatic` finding with the
-deletion as the `fix` — never a vague "too many comments". Pre-existing
+deletion as the `fix` - never a vague "too many comments". Pre-existing
 comments are out of scope.
 
 Flag a comment that:
 
 - restates the next line (`// increment counter` over `counter += 1`);
 - narrates a step or captions a block ("first we fetch, then we map…");
-- **narrates a whole function or type** — JSDoc restating a well-named
+- **narrates a whole function or type** - JSDoc restating a well-named
   signature, its params, or its return shape. A doc comment earns its place
   only for a non-obvious *contract*;
 - explains obvious syntax or a well-known API;
 - repeats a rationale stated elsewhere in the diff (keep ONE canonical place);
-- is changelog/AI noise — ticket IDs (`EVI-123`), person names, multi-paragraph
+- is changelog/AI noise - ticket IDs (`EVI-123`), person names, multi-paragraph
   "why we chose X" essays. A single `@see EVI-123` JSDoc tag is fine;
-- **references what the reader cannot see** — a removed line or a prior
+- **references what the reader cannot see** - a removed line or a prior
   approach ("no longer using the old Y"). Source shows what the code *is*;
-- **documents invisible coupling** — "ordered this way because some other code
+- **documents invisible coupling** - "ordered this way because some other code
   does X". The fix is clearer structure, not a comment enshrining it;
-- **says what a name or type could say** — then the code should carry it (this
+- **says what a name or type could say** - then the code should carry it (this
   is a naming finding per §1, not a comment to keep).
 
 KEEP (do not flag): an external-system quirk, an ordering/concurrency
@@ -269,7 +269,7 @@ gotcha, is noise. Code is type-checked; prose is not.
 
 ---
 
-## 3. Hygiene & debug artifacts — severity is fixed, do not soften
+## 3. Hygiene & debug artifacts - severity is fixed, do not soften
 
 Scan `+` lines only (added by this diff; pre-existing occurrences are out of
 scope).
@@ -278,7 +278,7 @@ scope).
 |---|---|
 | `console.log(` / `console.debug(` added to non-CLI production code | important |
 | `debugger;` | critical |
-| `.only` on a test (`it.only`, `describe.only`, `fit(`, `fdescribe(`) — silently skips the rest of the suite | critical |
+| `.only` on a test (`it.only`, `describe.only`, `fit(`, `fdescribe(`) - silently skips the rest of the suite | critical |
 | new `TODO:` / `FIXME:` / `HACK:` / `XXX:` with no ticket reference | idiomatic |
 | commented-out code block > 3 lines | idiomatic |
 | hardcoded URL / endpoint that belongs in an env var | important |
@@ -286,7 +286,7 @@ scope).
 | unreachable code after `return`/`throw` | important |
 
 `console.error`/`console.warn` on a real error path is not a finding unless the
-repo has a logger idiom — then cite it.
+repo has a logger idiom - then cite it.
 
 ---
 
@@ -305,13 +305,13 @@ does. Each is an `idiomatic` finding with the corrected code as the `fix`.
 - **`afterEach(cleanup)`** in every RTL test file.
 - **`new QueryClient({ defaultOptions: { queries: { retry: false } } })`** in
   every hook/component test wrapper. Missing `retry: false` silently hangs the
-  test on a failing query — flag it as `important`, not idiomatic.
+  test on a failing query - flag it as `important`, not idiomatic.
 - **Query priority:** `getByRole` → `getByLabelText` → `getByText` →
   `getByTestId` (last resort only). A `getByTestId` where a role query works is
   a finding.
 - **Mock paths are RELATIVE, never the `@lib/common` alias.** The alias
   resolves only from `web/`; inside `common/` it is silently ignored and the
-  mock has no effect — the test then passes against the real module. Flag any
+  mock has no effect - the test then passes against the real module. Flag any
   `vi.mock('@lib/common/…')` inside `common/` as `important`.
 - **Mock at the module boundary,** not `vi.spyOn(mod, '_internal')`.
 - **Zod schemas:** test via `safeParse` and assert `result.success`, not
@@ -322,28 +322,28 @@ does. Each is an `idiomatic` finding with the corrected code as the `fix`.
   (`expect(matrix).toHaveLength(N * M * K)`). A hand-picked subset of a
   combinatorial space is a coverage-gap finding.
 - **Comment the non-obvious scenario:** a test capturing a past bug explains
-  *why* (this is a sanctioned comment — never flag it under §2).
+  *why* (this is a sanctioned comment - never flag it under §2).
 
 ---
 
 ## 5. Commit & PR hygiene
 
-Beyond PR-1 (hard rule). All `idiomatic` — a squash fixes them and they never
+Beyond PR-1 (hard rule). All `idiomatic` - a squash fixes them and they never
 block.
 
 - Conventional commits: `<type>(<scope>): <description>` with type in
   `feat|fix|refactor|test|docs|chore|style|perf|build|ci`; description
   lowercase, imperative, no trailing period.
-- Vague subjects (`fix`, `update`, `wip`, `changes`, `stuff`) — flag, recommend
+- Vague subjects (`fix`, `update`, `wip`, `changes`, `stuff`) - flag, recommend
   a rewrite.
-- Many WIP commits — recommend a squash before merge, in one line, once.
+- Many WIP commits - recommend a squash before merge, in one line, once.
 - Never mention Claude Code / the assistant in commit or PR text; a
   `Co-Authored-By: Claude` trailer or "Generated with Claude Code" footer in
   the commit log is a finding.
 
 ---
 
-## 6. Generated code — check the source, not the artifact
+## 6. Generated code - check the source, not the artifact
 
 The Teifi type-gen pipeline means several files must move together. When a
 source changes and its generated artifact does not (or vice-versa), that is an
@@ -356,10 +356,10 @@ source changes and its generated artifact does not (or vice-versa), that is an
 | `schemas/*.json` | `schemas/generated/` (json2ts) |
 | `prisma/schema.prisma` | a migration in `prisma/migrations/` + Prisma client |
 
-Never review the *content* of a generated file as if it were hand-written — no
+Never review the *content* of a generated file as if it were hand-written - no
 naming, comment, or complexity findings inside `generated/`. Review the source.
 
 Related hard convention (project CLAUDE.md): Shopify Admin API calls go through
-the genql client (`gql.<file>.<query>.run(graphql, vars)`) — a hand-rolled
+the genql client (`gql.<file>.<query>.run(graphql, vars)`) - a hand-rolled
 `fetch` to `/admin/api/…/graphql.json` is an `important` finding even for a
 one-off probe.

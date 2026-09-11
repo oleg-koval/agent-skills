@@ -1,18 +1,18 @@
 ---
-description: whether tests actually catch bugs — mutation-slip analysis, mock smell, Teifi test conventions
+description: whether tests actually catch bugs - mutation-slip analysis, mock smell, Teifi test conventions
 ---
 ## Lens: lekker-test-quality
 
 Review the change with a strict focus on test quality. This is NOT about
-coverage numbers — it is about whether the tests actually catch bugs.
+coverage numbers - it is about whether the tests actually catch bugs.
 
-Step 1 — Inventory the tests. Read the diff at `{{SCOPE}}`. List every test
+Step 1 - Inventory the tests. Read the diff at `{{SCOPE}}`. List every test
 file/spec added or modified. If no test files are in the diff, note that and
 continue to axis (f) below.
 
-Step 2 — For each changed test file, read the full file from `{{WORKDIR}}`.
+Step 2 - For each changed test file, read the full file from `{{WORKDIR}}`.
 
-Step 3 — Evaluate each of these axes:
+Step 3 - Evaluate each of these axes:
 
 a) Meaningful assertions vs. smoke tests
    - Does the test verify a specific outcome, or just that no exception was
@@ -60,7 +60,7 @@ e) Test isolation and reliability
      (a beforeEach that does not clean up)?
    - Are there tests that depend on execution order or global singletons?
    - Could a test make a real network/DB call in CI (flaky)? The fix is a
-     simple injected fake at the boundary, not blanket module mocking — see
+     simple injected fake at the boundary, not blanket module mocking - see
      axis (g).
    - Are async tests properly awaited? (floating promises, missing `await` on
      `expect().resolves`, unhandled rejections)
@@ -75,12 +75,12 @@ f) Test-to-code ratio signal
    ```
    Report whether existing coverage closes the gap or not.
 
-g) Mock smell — test the behavior, not the way it's built
-   (House standard: Notion "To mock or not to mock" —
+g) Mock smell - test the behavior, not the way it's built
+   (House standard: Notion "To mock or not to mock" -
    https://app.notion.com/p/teifi/To-mock-or-not-to-mock-36ff8ed0f7db80f09495d174e3b86cd6)
    Flag tests coupled to *how* the code is built rather than *what* it does for
    the user. For each smell, do NOT just criticize: give the concrete no-mock
-   refactor. The default fix is almost always the same shape — pull the logic
+   refactor. The default fix is almost always the same shape - pull the logic
    into a pure function (functional core) and test that directly, leaving a thin
    shell covered by a few real integration tests.
 
@@ -96,7 +96,7 @@ g) Mock smell — test the behavior, not the way it's built
        fetch-and-wire once with a real integration test. For streaming/paging
        code specifically: a shared `collect()`/reassembly helper should be a
        pure function of `AsyncGenerator<T[]> → Promise<T[]>` (or similar) fed a
-       plain fake generator in its own test — never a mocked client — and any
+       plain fake generator in its own test - never a mocked client - and any
        call-site logic that combines multiple streams (parallel joins, chunked
        batching) should be its own pure function tested the same way.
    - Spying on calls / asserting call shape: `toHaveBeenCalledWith`,
@@ -110,7 +110,7 @@ g) Mock smell — test the behavior, not the way it's built
      attributes, then asserting on them): the assertions are about the mock, and
      break on a component swap or prop rename that changes nothing a user sees.
      → Pull the logic (pagination, display state) into a pure function over
-       plain values — e.g. `paginate(items, page, pageSize)` — and assert the
+       plain values - e.g. `paginate(items, page, pageSize)` - and assert the
        value it returns.
    - Mocking a query hook (`useQuery` / a `use-X` hook) to hand a component
      canned data: re-tests React Query's own plumbing and couples to the hook's
@@ -135,7 +135,7 @@ h) Teifi test conventions
    Read `{{PROFILE}}` and apply its §4 (test conventions) to every test file in
    the diff: `__tests__/` placement beside the source, `.test.ts` vs
    `.test.tsx`, English-sentence test names, `describe` nesting <= 2,
-   `afterEach(cleanup)`, `retry: false` on the test QueryClient (major — its
+   `afterEach(cleanup)`, `retry: false` on the test QueryClient (major - its
    absence hangs the suite on a failing query), the getByRole → getByLabelText
    → getByText → getByTestId priority, module-boundary mocking, `safeParse` for
    Zod schemas, and the typed `it.each` matrix with AC tags plus the
@@ -145,17 +145,17 @@ h) Teifi test conventions
    test passes against the real module. Quote the line, give the relative path
    as the fix.
    A comment explaining WHY a test exists (a captured past bug, a subtle
-   contract) is sanctioned — never flag it as over-commenting.
+   contract) is sanctioned - never flag it as over-commenting.
 
 Report each per-line issue as:
-`test-file:line — <concise description of the gap or weakness>`
+`test-file:line - <concise description of the gap or weakness>`
 
 For every mock-smell finding from axis (g), append the no-mock fix on the next
 line as `→ Fix: <pure-function / simple-fake refactor in one line>`. A
 criticism without a fix is incomplete.
 
 Report the mutation-slip analysis as a single paragraph under a
-"**Mutation-slip risk:**" heading — not as line items.
+"**Mutation-slip risk:**" heading - not as line items.
 
 Rules:
 - Every per-line finding must trace to test code in the diff, OR to business
@@ -163,10 +163,10 @@ Rules:
 - Report problems only. No praise for tests that meet the bar.
 - If no test files are changed AND no existing tests cover the new code paths,
   report: "No test coverage for new code paths."
-- Quote the verbatim offending line(s) — never paraphrased, never reconstructed
+- Quote the verbatim offending line(s) - never paraphrased, never reconstructed
   from memory. When the finding IS the absence of a test, there is no test line
   to quote: quote the untested production line(s) from the diff instead, and
   give the test that should exist as the fix. Never drop a "no coverage"
-  finding just because nothing bad is written down — absence is the finding.
+  finding just because nothing bad is written down - absence is the finding.
 - A finding you cannot quote and cannot fix (outside the no-coverage case
-  above) is a finding you have not proven — drop it instead.
+  above) is a finding you have not proven - drop it instead.

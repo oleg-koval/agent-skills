@@ -6,17 +6,17 @@ description: over-engineering and DRY violations, plus Teifi's debug-artifact hy
 Review the change for over-engineering and DRY violations.
 
 Look for:
-- Copy-paste logic: identical blocks that differ only in a constant — flag
+- Copy-paste logic: identical blocks that differ only in a constant - flag
   for extraction.
-- Parallel implementations: two functions doing the same thing — one should
+- Parallel implementations: two functions doing the same thing - one should
   call the other.
 - Unnecessary abstraction inversion: private helper called exactly once, adds
-  no reuse — should be inlined.
+  no reuse - should be inlined.
 - Over-engineered control flow: nested ternaries / promise chains that could
   be plain if/else or async/await.
 - Config spread: same magic constant defined in multiple files.
 - Debug artifacts and hygiene: apply the fixed severity table in §3 of
-  `{{PROFILE}}` (the Teifi conventions section) — `debugger` and
+  `{{PROFILE}}` (the Teifi conventions section) - `debugger` and
   `.only`/`fit`/`fdescribe` are critical, an added `console.log`/`console.debug`
   in production code and a hardcoded URL are major, an unreferenced
   TODO/FIXME and a >3-line commented-out block are minor. Those severities
@@ -42,7 +42,7 @@ Look for:
   Minor, or major when the dead path is still reachable from production code.
 
 Only flag where duplication or complexity creates a real maintenance risk or
-bug surface — not aesthetic preference.
+bug surface - not aesthetic preference.
 
 When you flag a structural problem, name the move, not just the smell: replace a
 chain of conditionals with a typed model or an explicit dispatcher, collapse
@@ -55,9 +55,9 @@ actionable: name the move or drop the finding.
 
 Rules:
 - Every finding must trace to a `+` line in the diff.
-- Report file:line — description. No positive observations.
-- Quote the verbatim offending line(s) — never paraphrased, never reconstructed
-  from memory — and give a concrete drop-in fix, or when the fix is
+- Report file:line - description. No positive observations.
+- Quote the verbatim offending line(s) - never paraphrased, never reconstructed
+  from memory - and give a concrete drop-in fix, or when the fix is
   architectural, a minimal skeleton plus one sentence on what else must change.
-- A finding you cannot quote and cannot fix is a finding you have not proven —
+- A finding you cannot quote and cannot fix is a finding you have not proven -
   drop it instead.
