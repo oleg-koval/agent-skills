@@ -1,5 +1,5 @@
 ---
-description: quality, security and data-integrity issues — Teifi's TS-1/TS-2 hard rules included
+description: quality, security and data-integrity issues - Teifi's TS-1/TS-2 hard rules included
 ---
 ## Lens: lekker-quality
 
@@ -50,7 +50,7 @@ Axes to cover:
   cast, explain the correct type, show the fix. Ask if they're Harry Potter.
   Title the finding `[TS-1] ...`.
 - No JavaScript files (TS-2): if the diff adds any `.js` file to a non-Liquid
-  theme repo, flag as critical — must be `.ts`. Title the finding `[TS-2] ...`.
+  theme repo, flag as critical - must be `.ts`. Title the finding `[TS-2] ...`.
 - Dependency changes. Skip this axis entirely unless the diff touches
   `package.json`, a lockfile, or a vendored dependency. Where it applies:
   (a) A version bump is a behaviour change nobody in this PR wrote. If neither
@@ -73,15 +73,15 @@ TS-1 and TS-2 are Teifi hard rules: their text is defined in full in `{{PROFILE}
 title start with the bracketed tag, e.g. `[TS-1] ...` or `[TS-2] ...`, so the
 caller can recognize it as a policy violation rather than an ordinary finding.
 
-CI status, Sentry signals, and existing reviews may be present in `{{CONTEXT}}` —
+CI status, Sentry signals, and existing reviews may be present in `{{CONTEXT}}` -
 read what is there before forming an opinion, and skip anything that is absent
 rather than treating its absence as a finding.
 
 Rules:
 - Every finding must trace to a `+` line in the diff.
-- Report file:line — description. No positive observations.
-- Quote the verbatim offending line(s) from the diff — never paraphrased, never
-  reconstructed from memory — and give a concrete drop-in fix, or when the fix
+- Report file:line - description. No positive observations.
+- Quote the verbatim offending line(s) from the diff - never paraphrased, never
+  reconstructed from memory - and give a concrete drop-in fix, or when the fix
   is architectural, a minimal skeleton plus one sentence on what else must change.
-- A finding you cannot quote and cannot fix is a finding you have not proven —
+- A finding you cannot quote and cannot fix is a finding you have not proven -
   drop it instead of reporting it as a minor observation with no evidence.

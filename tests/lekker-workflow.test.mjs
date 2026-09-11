@@ -379,7 +379,7 @@ test('revmux adapter metadata and engine identity survive workflow aggregation',
 
     assert.deepEqual(calls, [])
     assert.equal(result.engine, 'revmux')
-    assert.match(result.acCoverage, /acceptance-criteria/i)
+    assert.match(result.acCoverage, /Race between webhook retry and manual sync writes duplicate fulfillment/)
     assert.match(result.coverageVerdict, /Operator-flip mutation/)
     assert.match(result.mutationSlip, /retry guard/)
     assert.equal(result.mockSmells.length, 1)
