@@ -1,5 +1,5 @@
 ---
-description: cross-layer consistency — one business rule implemented twice must agree, row by row
+description: cross-layer consistency: one business rule implemented twice must agree, row by row
 ---
 ## Lens: lekker-consistency
 
@@ -10,7 +10,7 @@ This is the defect class that survives every other lens. Each implementation is
 correct read on its own, each has its own tests, and the bug only exists in the
 gap between them. Nobody reads them side by side, so nobody sees it.
 
-### Step 1 — find the rules implemented more than once
+### Step 1: find the rules implemented more than once
 
 A rule is duplicated when the same decision (allow/block, show/hide, include/
 exclude, retry/fail) is made in two code paths that can both run for the same
@@ -24,10 +24,10 @@ input. The usual shapes:
 - a permission checked in a route guard and again in the service.
 
 Search the worktree (`{{WORKDIR}}`), not only the diff. The second
-implementation is very often a file this change never touched — that is exactly
+implementation is very often a file this change never touched; that is exactly
 how the two drift apart.
 
-### Step 2 — print the two decision tables side by side
+### Step 2: print the two decision tables side by side
 
 For every duplicated rule, build the table before judging anything. One row per
 input class, one column per implementation, cell = the decision that
@@ -51,14 +51,14 @@ Rows that must always appear, because they are where layers actually diverge:
 Put the real table in the finding. A reader who cannot see both columns cannot
 check your claim, and the table is the whole evidence.
 
-### Step 3 — judge the divergence
+### Step 3: judge the divergence
 
 Any row where the two columns differ is a finding. Severity:
 
-- **critical** — the strict layer is the one that can be bypassed, or the
+- **critical**: the strict layer is the one that can be bypassed, or the
   divergence blocks a legitimate action (a user who should be able to check out
   cannot) or admits one that should be blocked.
-- **major** — the layers disagree but the authoritative layer is still correct,
+- **major**: the layers disagree but the authoritative layer is still correct,
   so the visible effect is a confusing or wrong message rather than a wrong
   outcome.
 
@@ -73,4 +73,4 @@ Also compare both tables against the acceptance criteria in `{{CONTEXT}}`. When
 an AC governs the same decision and one layer disagrees with it, quote the AC
 verbatim in the finding. When the AC and a scoping decision in `{{CONTEXT}}`
 disagree with each other, report that as its own finding, quote both, and do not
-pick a side — that contradiction is the author's call to make.
+pick a side; that contradiction is the author's call to make.
