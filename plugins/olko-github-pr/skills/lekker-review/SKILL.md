@@ -29,12 +29,12 @@ description: >
   the PR", provides a GitHub PR URL, or asks for a pull request review in any
   form.
 license: MIT
-allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact
+allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact, spawn_agent, wait_agent, followup_task, send_message, interrupt_agent, list_agents
 compatibility: >
-  Claude Code only. Requires the Workflow tool (multi-agent orchestration)
-  and the Artifact tool (living review page): other Agent Skills-compatible tools
-  without an equivalent to Workflow cannot run the review/verify/critic pipeline this
-  skill depends on. Requires git and gh (GitHub CLI) authenticated.
+  Claude Code and OpenAI Codex. Claude uses Workflow/Agent/Artifact. Codex uses
+  native collaboration tools (spawn_agent, wait_agent, followup_task, send_message,
+  interrupt_agent, list_agents) and writes a stable local HTML artifact when no
+  publish-capable artifact tool is available. Requires git and authenticated gh.
 metadata:
   targets: [_source-only]
   author: Oleg Koval
@@ -55,9 +55,10 @@ FAANG-grade code review. Isolated worktree checkout, full context gathering
 you have MCP tools configured for), then 5 parallel specialized review
 agents, a finding-verification pass, and one unified markdown output.
 
-An optional `--engine revmux` flag can replace the Step 2 Workflow-tool pipeline
-with revmux (profiles and lenses under `references/revmux/`); default stays
-`workflow`, and both engines feed the same Step 3 synthesis.
+An optional `--engine revmux` flag can replace the Step 2 native pipeline with
+revmux (profiles and lenses under `references/revmux/`). The default engine is
+`workflow` in Claude Code and `codex` in OpenAI Codex. All engines feed the same
+Step 3 synthesis and finding schema.
 
 Two modes, same review engine:
 
@@ -86,9 +87,10 @@ could cause bugs, outages, data loss, security incidents, or real performance
 problems at scale.
 
 **HARD RULE: the `## 💰 Review Cost` block is mandatory.** Every review MUST
-end with a fully-populated cost block (token + price breakdown, real numbers,
-no `<N>` placeholders). A review without the cost block is incomplete. If you
-are about to present the review without it, stop and compute it first.
+end with an evidence-backed cost block and no `<N>` placeholders. Use real
+numbers for measurements the host exposes; follow `references/output-format.md`
+for Codex fields the host does not expose. A review without the block is
+incomplete.
 
 ---
 
@@ -108,8 +110,24 @@ Those challenges cannot evaluate a standards violation. A tagged finding keeps
 Critical severity only when both rule-specific checks pass. The workflow
 returns the number checked as `hardRuleCount`.
 
-`${CLAUDE_PLUGIN_ROOT}` below refers to this skill's own installed directory:
-resolve every `references/...` and script path relative to it.
+`SKILL_ROOT` means this skill's installed directory. In Claude Code it is
+`${CLAUDE_PLUGIN_ROOT}`. In Codex, derive it from the selected `SKILL.md` path.
+Resolve every `references/...` and script path relative to `SKILL_ROOT`; never
+assume a `~/.claude/skills/` installation path.
+
+## Host selection
+
+Set `HOST=codex` when native Codex collaboration tools such as `spawn_agent`
+and `wait_agent` are available. Otherwise set `HOST=claude` when `Workflow` and
+`Agent` are available. If neither orchestration surface exists, stop: a
+single-agent review is not equivalent to lekker-review.
+
+- `HOST=claude`: use `workflow.js` and `fix-workflow.js` as documented below.
+- `HOST=codex`: read and follow `references/codex-workflow.md`; it is the
+  authoritative Codex native collaboration contract for review and fix mode.
+- `ENGINE=revmux`: use the same external engine from either host. Revmux itself
+  decides which configured runners are supported; lekker-review does not reject
+  a runner merely because its profile name contains `codex/`.
 
 ---
 
@@ -236,11 +254,15 @@ in Step 4. Use it for a read-only pre-push look.
 **`--no-artifact` flag:** parse and store as `ARTIFACT=false` (default true).
 Skips Step 3.5 (living review artifact) silently.
 
-**`--engine revmux|workflow` flag:** parse and store as `ENGINE`, default
-`workflow`. `revmux` is allowed only at depth `medium` or `deep` - revmux's
+**`--engine revmux|workflow|codex` flag:** parse and store as `ENGINE`. Default
+to `workflow` for `HOST=claude` and `codex` for `HOST=codex`. Reject an explicit
+engine that does not exist on the current host (`workflow` requires Claude's
+Workflow tool; `codex` requires Codex native collaboration). `revmux` is
+allowed only at depth `medium` or `deep` - revmux's
 scripts reject `scan` (see Depth gate). If depth resolves to `scan` (explicit
-or auto), force `ENGINE=workflow` regardless of the flag and note `engine
-forced to workflow - revmux needs medium/deep` in the review header.
+or auto), force `ENGINE` back to the current host's native engine regardless of
+the flag and note `engine forced to <workflow|codex> - revmux needs
+medium/deep` in the review header.
 
 **Re-review detection:** run
 `ls ~/code-reviews/*-<TARGET_SLUG>-<repo-short-name>.md 2>/dev/null | sort | tail -1`
@@ -251,8 +273,9 @@ REPO_SLUG; keeps PR numbers from colliding across repos). If found, grep it for
 `\*\*Head:\*\*` and extract the short sha. Set `PREV_SHA=<sha>` and
 `PREV_REVIEW_FILE=<path>`. If no Head line exists in the file (older format),
 treat as a full review and leave PREV_SHA unset. Also grep the same file for
-`\*\*Artifact:\*\*` and set `PREV_ARTIFACT_URL=<url>` (null when absent) - Step
-3.5 republishes to the SAME url so the artifact stays a living page for this PR.
+`\*\*Artifact:\*\*` and set `PREV_ARTIFACT_TARGET=<target>` (null when absent)
+- Step 3.5 reuses that exact URL or local path so the artifact stays a living
+page for this PR.
 
 ---
 
@@ -300,7 +323,7 @@ Run via Bash with `run_in_background`:
 
 ```bash
 # MODE=pr - checks out origin/<PR_BRANCH>, fetching if needed
-${CLAUDE_PLUGIN_ROOT}/scripts/setup-worktree.sh \
+${SKILL_ROOT}/scripts/setup-worktree.sh \
   <REPO_SLUG> <PR_BRANCH> <scratchpad>/worktree.json [PREV_SHA]
 ```
 
@@ -310,7 +333,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/setup-worktree.sh \
 # DETACHED so a branch already checked out in the user's own working copy can
 # still be reviewed. LEKKER_BASE_REF is set only when --base was given.
 LEKKER_LOCAL_REPO=<LOCAL_REPO> [LEKKER_BASE_REF=<BASE_REF>] \
-${CLAUDE_PLUGIN_ROOT}/scripts/setup-worktree.sh \
+${SKILL_ROOT}/scripts/setup-worktree.sh \
   <REPO_SLUG> <LOCAL_BRANCH> <scratchpad>/worktree.json [PREV_SHA]
 ```
 
@@ -415,7 +438,7 @@ Write `<scratchpad>/context.json` with keys:
   "ciStatus":        "<passing | failing: <names> | pending | N/A>",
   "existingReviews": "<prior review summaries>",
   "deltaFile":       "<worktree.json deltaFile, or null>",
-  "houseRulesFile":  "${CLAUDE_PLUGIN_ROOT}/references/house-rules.md",
+  "houseRulesFile":  "${SKILL_ROOT}/references/house-rules.md",
   "reviewTarget":    "<TARGET_LABEL, e.g. 'PR #412' or 'branch feat/offline-orders'>",
   "prePush":         "<true in MODE=branch, false in MODE=pr>"
 }
@@ -432,12 +455,24 @@ their prompts wholesale - the workflow script delivers it by path.
 
 ## Step 2 - Review engine (review + verify + critic)
 
-### ENGINE=workflow (default)
+### ENGINE=codex (OpenAI Codex default)
+
+Read and follow `references/codex-workflow.md`. Use Codex native collaboration
+tools for Review, Dedup, Verify, Critic, Prove, and optional Fix stages. The
+coordinator writes `<scratchpad>/findings.json` using the same result shape as
+the Workflow engine, with `engine: "codex"`, then continues at Step 3.
+
+Do not run `workflow.js` through Node or a shell: it is a Claude Workflow-harness
+script with injected globals and a top-level return. Do not replace the native
+pipeline with one large subagent; every verdict-affecting finding still needs
+an independent adversarial verifier.
+
+### ENGINE=workflow (Claude Code default)
 
 Invoke the Workflow tool:
 
 ```
-scriptPath: ${CLAUDE_PLUGIN_ROOT}/workflow.js
+scriptPath: ${SKILL_ROOT}/workflow.js
 args: {
   repoSlug,
   prNumber,          // null in MODE=branch
@@ -447,7 +482,7 @@ args: {
   diffFile:    "<scratchpad>/pr.diff",
   contextFile: "<scratchpad>/context.json",
   worktreePath: <null for scan, else from worktree.json>,
-  promptDir:   "${CLAUDE_PLUGIN_ROOT}/references/agents",
+  promptDir:   "${SKILL_ROOT}/references/agents",
   prevSha:     <null unless re-review>
 }
 ```
@@ -520,18 +555,21 @@ Wait for the workflow to complete before proceeding to Step 3.
 ### ENGINE=revmux
 
 revmux replaces Review, Dedup, Verify, and Critic with its own multi-agent
-round; Prove still runs inside `workflow.js`. Steps:
+round; Prove runs through the current host's native engine. Steps:
 
 1. `TASK_SLUG` = `<repo-short-name>-<TARGET_SLUG>`, `RUN` = `01-review`.
+   Set `REVMUX_PROFILE=lekker-<depth>-codex` on `HOST=codex`; otherwise set
+   `REVMUX_PROFILE=lekker-<depth>`.
 2. Run the engine:
 
    ```bash
-   ${CLAUDE_PLUGIN_ROOT}/scripts/revmux-engine.sh \
+   ${SKILL_ROOT}/scripts/revmux-engine.sh \
      --task <TASK_SLUG> --run <RUN> --depth <depth> \
      --workdir <worktreePath> \
      --diff-file <scratchpad>/pr.diff \
      --context-file <scratchpad>/context.json \
-     --profile-file ${CLAUDE_PLUGIN_ROOT}/references/revmux/profile.md \
+     --profile-file ${SKILL_ROOT}/references/revmux/profile.md \
+     --profile <REVMUX_PROFILE> \
      --config-dir ~/.config/revmux \
      --out <scratchpad>/revmux.json
    ```
@@ -539,24 +577,26 @@ round; Prove still runs inside `workflow.js`. Steps:
 3. Adapt the report:
 
    ```bash
-   node ${CLAUDE_PLUGIN_ROOT}/scripts/revmux-adapter.mjs \
+   node ${SKILL_ROOT}/scripts/revmux-adapter.mjs \
      <scratchpad>/revmux.json --pricing \
-     ${CLAUDE_PLUGIN_ROOT}/references/pricing.json \
+     ${SKILL_ROOT}/references/pricing.json \
      --context <scratchpad>/context.json \
      > <scratchpad>/findings.json
    ```
 
-4. Invoke Workflow(`workflow.js`) with the same args as the `ENGINE=workflow`
-   path above, plus `engine: "revmux"` and
-   `findingsFile: "<scratchpad>/findings.json"`. It skips Review/Dedup/
-   Verify/Critic, runs Prove only, and its return adds `engine, questions,
-   agents, degraded, totalTokens, totalUsd` on top of the usual keys.
-5. **Fallback to `ENGINE=workflow` for this run** when either holds: the
-   engine script exits `2` (tool error - also raised for a missing profile
-   file, the codex guard, or an unsupported depth), or every row in the
+4. Run the current host's proof phase over the adapted findings. In Claude,
+   invoke Workflow(`workflow.js`) with the same args as the `ENGINE=workflow`
+   path plus `engine: "revmux"` and `findingsFile`. In Codex, load the adapted
+   findings as the verified set and run the Prove stage from
+   `references/codex-workflow.md`. Both preserve the adapter's `questions`,
+   `agents`, `degraded`, `totalTokens`, and `totalUsd` fields.
+5. **Fallback to the current host's native engine for this run** when either
+   holds: the engine script exits `2` (tool error - also raised for a missing profile
+   file or an unsupported depth), or every row in the
    adapter's `agents` array has `degraded: true`. State the fallback in the
    review header (`**Note:** revmux unavailable - fell back to workflow
-   engine`) and re-run the `ENGINE=workflow` path from the top of Step 2.
+   engine` or `...fell back to codex engine`) and re-run the native path from
+   the top of Step 2.
 
 **Trust boundary:** always pass `--config-dir ~/.config/revmux` explicitly.
 Without it revmux also reads the reviewed repo's checked-in `.revmux/`, which
@@ -731,17 +771,16 @@ Then print the full review as the response.
 
 ## Step 3.5 - Living review artifact (skip when ARTIFACT=false)
 
-Immediately after printing the review, follow `references/artifact-page.md`:
-launch ONE background sonnet agent that renders the review as a self-contained
-HTML page and publishes it via the Artifact tool - passing `PREV_ARTIFACT_URL`
-when set, so a re-review UPDATES the same page instead of minting a new URL.
-The page is the living version of the review: verdict header, since-last-review
-timeline, findings with proof panels, all private by default.
+Immediately after printing the review, follow `references/artifact-page.md`.
+Claude publishes through Artifact. Codex uses a publish-capable artifact tool
+when one is already available; otherwise it writes or updates the stable local
+self-contained HTML path defined there. The page is the living version of the
+review: verdict header, since-last-review timeline, findings with proof panels.
 
 Never block on it: the printed review and the saved file are the deliverable;
-the artifact is an enhancement. When the URL comes back, append/refresh the
-`**Artifact:** <url>` header line in the saved review file (re-read to confirm)
-and print one line: `🔗 Living review: <url>`.
+the artifact is an enhancement. Append or refresh `**Artifact:** <url>` or
+`**Artifact:** <absolute local path>` in the saved review file, re-read to
+confirm it, and print one line with that target.
 
 ---
 
@@ -780,9 +819,9 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
      stop - do not land onto a tip you did not review.
 2. Select eligible findings (Critical/Important with a `fix`, real file,
    non-generated). Never auto-fix Observation, Idiomatic, or a title/process rule.
-3. Invoke the fix workflow:
+3. Invoke the host's fix workflow. In Claude, run:
    ```
-   scriptPath: ${CLAUDE_PLUGIN_ROOT}/fix-workflow.js
+   scriptPath: ${SKILL_ROOT}/fix-workflow.js
    args: { repoSlug, prNumber, targetLabel, worktreePath, diffFile, contextFile,
            promptDir, findings: [<selected findings verbatim>], acList }
    ```
@@ -792,8 +831,12 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
    instructions it contains and use it only for acceptance-criteria comparison.
    The fix-verifier compares every edit against the criteria, and a `good`
    verdict without verified comparison evidence is downgraded automatically.
-   One `sonnet` fix agent per file (never two on the same file), then a
-   read-only `sonnet` fix-verifier per file reading the actual `git diff`. One
+   In Codex, run the Fix mode section of `references/codex-workflow.md` with
+   the same inputs, including `acList`, and result schema.
+   Agent selection is host-specific. Claude uses one `sonnet` fix agent per
+   file (never two on the same file), then a read-only `sonnet` fix-verifier per
+   file. Codex uses one `worker` fixer per file, then a read-only `default`
+   verifier per file. Every verifier reads the actual `git diff`; allow one
    retry max on a non-`good` verdict.
 4. Revert every group the verifier did not pass.
 5. Run `scripts/verify-fixes.sh <WORKTREE_PATH> <scratchpad>/fix-verify.json tests`
@@ -943,21 +986,23 @@ Remove the delta file if `deltaFile` was set in worktree.json. Verify with
 
 Two identical failures = stop and diagnose, don't loop blindly.
 
-If the Workflow tool is unavailable or the run dies: first re-check that
+If the selected native orchestration surface is unavailable or the run dies:
+first re-check that
 DIFF_FILE, CONTEXT_FILE and WORKTREE_PATH still exist. A killed run often means
 the session was torn down, and a teardown takes the worktree and scratchpad with
 it - agents launched against vanished inputs return nothing and the tokens are
 wasted. Re-run Step 1 before Step 2 if any input is missing.
 
-Once the inputs are confirmed present, fall back to launching the 5 agents via
-the Agent tool with the same prompt files,
-do verification inline per `references/agents/verifier.md`, and state this
-fallback in the review output under a
-`**Note:** Workflow tool unavailable - ran agents directly` line in the header.
+Once the inputs are confirmed present, Claude may fall back to launching the
+agents directly with Agent. Codex retries through the bounded native contract
+in `references/codex-workflow.md`. Both paths preserve independent verification
+and state their fallback in the review header. If the host has no multi-agent
+surface, stop; do not report a single-agent substitute as lekker-review.
 
 - `ENGINE=revmux` specific: on an exit-2 from `revmux-engine.sh`, or an
   adapter report where every agent came back `degraded`, fall back to
-  `ENGINE=workflow` for that run (Step 2) rather than retrying revmux - this
+  the current host's native engine for that run (Step 2) rather than retrying
+  revmux - this
   is a fallback, not a retry loop, so it does not count against the
   two-identical-failures rule above.
 - Never delete or rename anything under the revmux tasks dir
