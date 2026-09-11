@@ -1,3 +1,10 @@
+## [1.47.1](https://github.com/oleg-koval/agent-skills/compare/v1.47.0...v1.47.1) (2026-09-11)
+
+
+### 📚 Documentation
+
+* **product:** require readable UX audit reports ([#104](https://github.com/oleg-koval/agent-skills/issues/104)) ([6e20def](https://github.com/oleg-koval/agent-skills/commit/6e20deffb9e4d2e4337f39cb53cfb6dfd232705f))
+
 # [1.47.0](https://github.com/oleg-koval/agent-skills/compare/v1.46.0...v1.47.0) (2026-09-11)
 
 
