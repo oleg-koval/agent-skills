@@ -447,7 +447,7 @@
     },
     {
       "name": "olko-product",
-      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.",
+      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.",
       "skills": [
         {
           "name": "product-builder",
@@ -484,6 +484,30 @@
             "planning",
             "startup",
             "oneshot"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "ux-ui-audit-loop",
+          "lookupName": "olko:ux-ui-audit-loop",
+          "path": "plugins/olko-product/skills/ux-ui-audit-loop",
+          "description": "Audit and improve a web UI in a browser through evidence-backed capture, severity triage, minimal code fixes, and before/after verification across responsive and interaction states. Use when the user says \"audit this UI\", \"fix the UX\", \"review this page visually\", \"make this page polished\", or asks for an autonomous screenshot-and-fix loop.",
+          "tags": [
+            "ux",
+            "ui",
+            "accessibility",
+            "browser-testing",
+            "visual-regression",
+            "responsive-design",
+            "frontend"
           ],
           "adapters": [
             "codex",

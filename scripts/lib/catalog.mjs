@@ -19,8 +19,8 @@ export const PLUGIN_ASSIGNMENT = {
              'changelog-generator', 'store-listing-copy'],
   },
   'olko-product': {
-    description: 'Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.',
-    skills: ['product-builder', 'mvp-oneshot', 'starter-rules', 'viral-launch'],
+    description: 'Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.',
+    skills: ['product-builder', 'mvp-oneshot', 'ux-ui-audit-loop', 'starter-rules', 'viral-launch'],
   },
   'olko-skill-meta': {
     description: 'Author and maintain agent skills and the AI toolchain itself.',
