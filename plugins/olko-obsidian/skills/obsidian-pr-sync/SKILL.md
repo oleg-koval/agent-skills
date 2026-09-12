@@ -2,11 +2,13 @@
 name: obsidian-pr-sync
 description: >
   Fetch open GitHub PRs where the user is an assignee or review-requested reviewer,
-  then write or refresh a "## PRs to review" section in today's Obsidian daily note.
+  today's Google Calendar events, and auto-create People stubs for new meeting attendees.
+  Then write or refresh a "## PRs to review" section in today's Obsidian daily note.
   Use this skill whenever the user asks to sync PRs to Obsidian, update their daily note
-  with GitHub reviews, check what PRs need attention, or run a morning PR sync routine.
-  Also suitable for scheduled/automated runs: fully idempotent (re-running replaces
-  the section, never appends).
+  with GitHub reviews or calendar, check what needs attention, run a morning sync routine,
+  or create people notes from calendar meetings. Also suitable for scheduled/automated runs:
+  fully idempotent (re-running replaces the section, never appends; people stubs are only
+  created once).
 license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires the GitHub CLI (`gh`) authenticated and a daily note vault.
@@ -18,6 +20,7 @@ metadata:
     - obsidian
     - daily-note
     - pull-requests
+    - people
     - productivity
     - morning-routine
 ---
@@ -26,7 +29,8 @@ metadata:
 
 Fetch all open PRs where the user is assigned or requested as reviewer, filter out
 noise (bots, drafts, self-authored), and write a clean grouped section into today's
-daily note.
+daily note. The calendar pass also creates idempotent People stubs for attendees who
+do not already have a matching note.
 
 ## Configuration
 
@@ -124,6 +128,79 @@ then append the section. If the file exists:
 
 This ensures re-running the skill produces the same result, not a growing list.
 
+## Part C — People stubs for new meeting attendees
+
+Run this after the calendar fetch in Step 1. No additional calendar API calls are needed.
+
+### Step C1 — Collect attendees
+
+Collect attendees across all fetched events:
+
+- Skip `oleg.koval@teifi.com` (self).
+- Skip attendees whose `responseStatus` is `declined`.
+- Skip attendees with no `displayName` and no `email`.
+- Deduplicate by email across all events.
+- Use the display name, falling back to the part before `@` in the email.
+
+Keep the events each attendee appears in so every meeting can be written to the stub.
+
+### Step C2 — Check for existing People notes
+
+People notes live under `Lead/People/`, including `Peers/`, `Reports/`, and
+`Stakeholders/`. Check all existing Markdown filenames:
+
+```bash
+find /Users/oleg.koval/obsidian/cloud-opus/Lead/People -name "*.md" | \
+  xargs -I{} basename {} .md
+```
+
+Match case-insensitively by display-name words or filename containment. For example,
+an existing `Tim.md` matches an attendee named `Tim Horton`. Create a stub only when
+no match exists.
+
+### Step C3 — Create the stub
+
+Create each new attendee at:
+
+```text
+/Users/oleg.koval/obsidian/cloud-opus/Lead/People/<DisplayName>.md
+```
+
+Use this template, replacing the placeholders and adding one meeting line per event:
+
+```markdown
+---
+type: person
+role: ""
+team: ""
+last-1-1:
+next-1-1:
+---
+
+# <DisplayName>
+
+## Context
+
+- Email: <email>
+
+## Strengths
+
+## Growth areas
+
+## Recent 1:1s
+
+## Running notes
+
+## Meetings
+
+- [[Lead/Daily/<TODAY>]] — <Event title>
+
+<!-- Classify: teifi.com email → Peers or Reports · external email → Stakeholders -->
+```
+
+Do not add `## Code Review Signals`; that section is for direct reports only.
+Stubs are idempotent: existing matching notes are skipped and never overwritten.
+
 ## Invocation patterns
 
 **Manual (user-triggered):**
@@ -147,6 +224,7 @@ Synced N PRs to Lead/Daily/YYYY-MM-DD.md
   Work (<ORG_PREFIX>): X PRs
   Personal: Y PRs
   Skipped: Z bots/drafts
+  People: N new stubs created (or "all known")
 ```
 
 If any `gh` call fails (e.g. auth expired), surface the error clearly rather than
