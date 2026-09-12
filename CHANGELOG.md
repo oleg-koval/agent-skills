@@ -1,3 +1,10 @@
+# [1.48.0](https://github.com/oleg-koval/agent-skills/compare/v1.47.1...v1.48.0) (2026-09-12)
+
+
+### ✨ Features
+
+* consolidate missing remote skill updates ([#105](https://github.com/oleg-koval/agent-skills/issues/105)) ([a3f45de](https://github.com/oleg-koval/agent-skills/commit/a3f45ded5914874abc7ce0b6abf9feab3576f489))
+
 ## [1.47.1](https://github.com/oleg-koval/agent-skills/compare/v1.47.0...v1.47.1) (2026-09-11)
 
 
