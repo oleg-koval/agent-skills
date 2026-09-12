@@ -15,13 +15,16 @@ do not already have a matching note.
 ## Configuration
 
 Before running, confirm:
-- `VAULT_DAILY`: absolute path to the daily notes folder (e.g. `/Users/you/obsidian/vault/Lead/Daily`)
+- `vault_path`: absolute path to the Obsidian vault, from the plugin configuration
+- `VAULT_DAILY`: derive as `${vault_path}/Lead/Daily`
+- `VAULT_PEOPLE`: derive as `${vault_path}/Lead/People`
+- `SELF_EMAIL`: the user's calendar email address, used to exclude the user from attendee processing
 - `GH_USERNAME`: GitHub login to exclude self-authored PRs (e.g. `oleg-koval`)
 - `ORG_PREFIX`: org name to group as "Work" (e.g. `Teifi-Digital`); everything else goes to "Personal"
 
 If not specified by the user, infer from context (git config, existing vault files).
 
-## Step 1: Fetch PRs
+## Step 1: Fetch PRs and calendar events
 
 Run two `gh` queries and merge results, deduplicating by URL:
 
@@ -36,6 +39,10 @@ gh search prs --assignee=@me --state=open \
 ```
 
 Merge both lists, deduplicate by `url`. The union is what needs attention.
+
+Fetch today's calendar events once with the available calendar integration. Retain each
+event's stable ID, title, and attendees (`displayName`, `email`, and `responseStatus`) as
+`CALENDAR_EVENTS`, and pass that same collection to Part C. Do not fetch the events again.
 
 ## Step 2: Filter
 
@@ -108,43 +115,56 @@ then append the section. If the file exists:
 
 This ensures re-running the skill produces the same result, not a growing list.
 
-## Part C — People stubs for new meeting attendees
+## Part C: People stubs for new meeting attendees
 
-Run this after the calendar fetch in Step 1. No additional calendar API calls are needed.
+Run this with `CALENDAR_EVENTS` from Step 1. No additional calendar API calls are needed.
 
 ### Step C1 — Collect attendees
 
 Collect attendees across all fetched events:
 
-- Skip `oleg.koval@teifi.com` (self).
+- Normalize `SELF_EMAIL` by trimming whitespace and lowercasing it.
+- For each attendee, normalize `email` the same way. Use the normalized email as the
+  persistent attendee identity. If an attendee has no email, a collection layer may use
+  `event:<event-id>:attendee:<index>` as a transient collision-safe key, but skip that
+  attendee before deduplication, note lookup, or stub creation.
+- Skip attendees whose normalized email equals normalized `SELF_EMAIL` (self).
 - Skip attendees whose `responseStatus` is `declined`.
-- Skip attendees with no `displayName` and no `email`.
-- Deduplicate by email across all events.
-- Use the display name, falling back to the part before `@` in the email.
+- Deduplicate by normalized email across all events.
+- Normalize the display name by trimming it and collapsing repeated whitespace. If it is
+  empty, fall back to the part before `@` in the normalized email.
 
 Keep the events each attendee appears in so every meeting can be written to the stub.
 
 ### Step C2 — Check for existing People notes
 
 People notes live under `Lead/People/`, including `Peers/`, `Reports/`, and
-`Stakeholders/`. Check all existing Markdown filenames:
+`Stakeholders/`. Discover existing Markdown notes from the configured directory:
 
 ```bash
-find /Users/oleg.koval/obsidian/cloud-opus/Lead/People -name "*.md" | \
-  xargs -I{} basename {} .md
+find "$VAULT_PEOPLE" -type f -name "*.md"
 ```
 
-Match case-insensitively by display-name words or filename containment. For example,
-an existing `Tim.md` matches an attendee named `Tim Horton`. Create a stub only when
-no match exists.
+Do not match by filename containment. Treat a note as existing only when its title (the
+first H1) exactly matches the attendee's normalized display name after case-folding and
+whitespace normalization, and its recorded email exactly matches the normalized attendee
+email. Create a stub when no note satisfies both checks.
 
 ### Step C3 — Create the stub
 
 Create each new attendee at:
 
 ```text
-/Users/oleg.koval/obsidian/cloud-opus/Lead/People/<DisplayName>.md
+${VAULT_PEOPLE}/<SafeDisplayName>--<IdentityHash>.md
 ```
+
+Derive `IdentityHash` from the normalized email so attendees with the same display name
+cannot collide. Before constructing the path, sanitize the display name to a filename-safe
+basename: remove control characters, normalize whitespace, and replace reserved filename
+characters with `-`. Reject the original display name if it contains `/`, `\\`, or `..`,
+and reject an empty or dot-only sanitized basename. Resolve `VAULT_PEOPLE` and the candidate
+path, then create the file only if the candidate's resolved parent is exactly the resolved
+`VAULT_PEOPLE` directory. Never overwrite an existing path.
 
 Use this template, replacing the placeholders and adding one meeting line per event:
 
@@ -173,7 +193,7 @@ next-1-1:
 
 ## Meetings
 
-- [[Lead/Daily/<TODAY>]] — <Event title>
+- [[Lead/Daily/<TODAY>]] - <Event title>
 
 <!-- Classify: teifi.com email → Peers or Reports · external email → Stakeholders -->
 ```
