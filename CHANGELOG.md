@@ -1,3 +1,10 @@
+# [1.49.0](https://github.com/oleg-koval/agent-skills/compare/v1.48.0...v1.49.0) (2026-09-15)
+
+
+### ✨ Features
+
+* **self-critique:** convert critique outcomes into durable rules ([#106](https://github.com/oleg-koval/agent-skills/issues/106)) ([47aafac](https://github.com/oleg-koval/agent-skills/commit/47aafac35e0c2b1c835f6b2da63ff9ff208c913d))
+
 # [1.48.0](https://github.com/oleg-koval/agent-skills/compare/v1.47.1...v1.48.0) (2026-09-12)
 
 
