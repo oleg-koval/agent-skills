@@ -113,6 +113,10 @@ incident on one afternoon is not standing policy. Let the evidence decide where 
 - **How to apply**, naming the moment the rule fires ("before drafting outbound text", "before
   describing a batch"), not just the principle.
 
+Before writing to shared persistence, redact the incident evidence, including when using
+`context-repo` or `shared-knowledge-artifact`, while still including the incident and its dated
+receipt. This redaction requirement does not apply to local agent memory or repository-rule writes.
+
 **Dedupe before writing.** Read the store first. If a rule of the same shape exists, sharpen it and
 add this incident as further evidence rather than creating a second entry. Link related rules
 instead of restating them.
