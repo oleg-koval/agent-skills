@@ -1,6 +1,6 @@
 ---
 name: self-critique
-description: Adversarially critique your own last substantial answer before the user has to. Spawn a critic agent that verifies every claim against live sources, checks similar and related issues, finds patterns, and addresses comments directly to you. Loop (revise, re-score) until satisfied, then report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score. Use when the user asks you to criticize, challenge, stress-test, or red-team your own answer, or accepts a "critical-thinking review" offer.
+description: Adversarially critique your own last substantial answer before the user has to. Spawn a critic agent that verifies every claim against live sources, checks similar and related issues, finds patterns, and addresses comments directly to you. Loop (revise, re-score) until satisfied, report where you were wrong, iterations-to-satisfy, the numeric improvement and a final score, then convert what the critic caught into a durable rule so the next session does not repeat it. Use when the user asks you to criticize, challenge, stress-test, or red-team your own answer, or accepts a "critical-thinking review" offer.
 license: MIT
 compatibility: Codex, Claude Code, Cursor, and other Agent Skills compatible tools.
 metadata:
@@ -24,10 +24,13 @@ Run an adversarial review of **your own previous answer** and report the result 
 A confident answer is not a verified one. This skill turns your last substantial reply into the
 subject of a hostile review: a separate critic agent tries to refute it against live sources, hunts
 for the related issue or pattern you missed, and scores it. You then revise and re-score until the
-score stops moving, and report the outcome honestly, including where you were wrong.
+score stops moving, report the outcome honestly, including where you were wrong, and convert what
+the critic caught into a rule that survives the session.
 
-The point is to surface error before the user does, and to make "is this actually right?" a measured
-quantity instead of a vibe.
+The point is to surface error before the user does, to make "is this actually right?" a measured
+quantity instead of a vibe, and to make the same mistake cost less the second time than it did the
+first. A critique that ends at a score has bought one corrected answer. A critique that ends at a
+durable rule has bought every answer after it.
 
 ## When to Use
 
@@ -44,11 +47,19 @@ answers.
 1. **Snapshot the target.** Capture your last substantial answer verbatim, plus the concrete claims
    it makes and the source each claim rests on. This is `v1`.
 
+   Write the claim list before you re-read the answer's prose, and put a real receipt against each
+   claim: a quoted field, a `file:line` whose body you actually opened, a command and its output.
+   A claim you cannot receipt at snapshot time is already a finding - mark it `unverified` yourself
+   rather than waiting for the critic to find it. Grep output, a file name, a path, an endpoint
+   string, or the behaviour of a sibling module are not receipts for what code does; they prove
+   those things exist, not what they do.
+
 2. **Spawn the critic.** Launch one independent agent with live-source access (issue tracker, code
    host, error monitor, the repo). Use the prompt template below. The critic must return: `score`
    (0-100), `verdict` (AGREE / AGREE-WITH-CAVEATS / DISAGREE), `where_wrong` (list), `missed`
    (related issues or patterns you failed to surface), `unverifiable` (claims it could not confirm),
-   and `fixes` (ranked, actionable).
+   `fixes` (ranked, actionable), and `shapes` (the reusable class of reasoning behind each
+   `where_wrong` item, which Step 5 turns into the rule).
 
 3. **Decide and loop.** Stop if `score >= 90` OR no actionable `fixes` remain. Otherwise revise the
    answer using the fixes to produce `v2`, then re-spawn the critic to score `v2`. Repeat.
@@ -63,6 +74,60 @@ answers.
      If only one round ran, state `no revision needed`.
    - **Final score** - the critic's last score and verdict.
    - **Unverifiable** - anything you should not present as fact.
+   - **Declined fixes** - any ranked fix you chose not to take, and the reason. Silently dropping a
+     fix looks identical to missing it.
+
+5. **Convert the outcome into a durable rule.** See below. Skipping this step is what makes the
+   same critique necessary again next week.
+
+## Step 5: turn the critique into something that outlives the session
+
+A score is a measurement, not an improvement. The improvement is the rule you write down, in a
+place a future session actually reads, before you move on.
+
+**Not every finding earns a rule.** Write one only when the finding passes both gates:
+
+- **Recurrence** - the same *shape* of mistake could plausibly happen again on a different task.
+- **Cost** - it would have reached the user, cost real rework, or damaged their credibility with
+  someone else.
+
+A one-off factual slip, a typo, or a finding fully explained by this task's specifics fails both.
+Writing a rule for it pollutes the store, and a littered store is worse than a thin one, because
+the next session stops reading it.
+
+**Write the shape, not the incident.** The incident is the evidence; the shape is the rule. Ask
+what class of reasoning produced the error, then name that class:
+
+| Incident | Shape worth keeping |
+| --- | --- |
+| Called an endpoint a read because the path was a noun and a sibling module imported | A conclusion drawn from evidence that does not cover the claim |
+| Priced an open design question as "small" in the same sentence that asked which design was wanted | Never attach a size to an answer you are simultaneously asking for |
+| Described a batch from the one member that was checked | Check the risk-deciding field on every member before describing the set |
+
+**Route it to the narrowest store the host has**, in this order, and only one of them:
+
+1. The user's or project's agent memory, when the rule is about how to work with this user or this
+   project.
+2. The repository's own `CLAUDE.md` / `AGENTS.md`, when the rule is true only inside that codebase.
+3. A shared, cross-session store, when the rule holds across projects. Use `context-repo` to resolve
+   it, or `shared-knowledge-artifact` when several agents need to read the same ledger.
+
+Broadening a rule's scope so it qualifies for a wider store is the failure mode to avoid: one
+incident on one afternoon is not standing policy. Let the evidence decide where it lands.
+
+**Each rule carries three things.** Without all three the next session cannot act on it:
+
+- **The rule**, stated as the shape, in the imperative.
+- **Why**, with the incident and its receipt, dated. A rule with no cost attached gets argued away.
+- **How to apply**, naming the moment the rule fires ("before drafting outbound text", "before
+  describing a batch"), not just the principle.
+
+**Dedupe before writing.** Read the store first. If a rule of the same shape exists, sharpen it and
+add this incident as further evidence rather than creating a second entry. Link related rules
+instead of restating them.
+
+**Then close the loop.** State in your report where the rule was written and what it says, so the
+user can veto it. A rule the user has not seen is a rule they cannot correct.
 
 ## Critic prompt template
 
@@ -101,6 +166,9 @@ the default stance is that the answer is wrong until a live source proves otherw
 > - `missed`: related issues or patterns the author failed to surface, with IDs
 > - `unverifiable`: claims that need a source you do not have
 > - `fixes`: ranked, actionable - what to change to raise the score
+> - `shapes`: for each item in `where_wrong`, the class of reasoning that produced it, stated so it
+>   would apply to a different task ("a conclusion drawn from evidence that does not cover the
+>   claim"), not the incident itself. Say `one-off` when the error has no reusable shape.
 
 ## Optional: auto-offer via a Claude Code Stop hook
 
@@ -147,3 +215,12 @@ message.
 - Diversity beats redundancy: if a claim can fail in more than one way, give the critic distinct
   lenses (correctness, completeness, does-it-reproduce) instead of repeating the same check.
 - The critic verifies against live sources; it does not rewrite the answer. You revise; it re-scores.
+- Re-score by messaging the same critic rather than spawning a fresh one, and hand it the receipts
+  for whatever it could not verify in the earlier round, so round two spends its budget on the
+  claims still standing instead of re-deriving the ones already settled.
+- A critic finding you disagree with is worth one challenge. Put the reasoning to it and let it rule;
+  if it concedes, that is a real answer for the report, and the reasoning is what the user needs to
+  see either way.
+- The honest test of Step 5 is not that a rule was written, it is that the next task of the same
+  class does not need this skill to catch the same thing. If it does, the rule named the incident
+  instead of the shape - rewrite it, do not add another.
