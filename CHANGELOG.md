@@ -1,3 +1,16 @@
+## [1.49.1](https://github.com/oleg-koval/agent-skills/compare/v1.49.0...v1.49.1) (2026-09-26)
+
+
+### 📚 Documentation
+
+* feature Factory as a standalone project ([93b3717](https://github.com/oleg-koval/agent-skills/commit/93b3717e770571360a02bd21dba09e3fd44317fb))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump [@semantic-release](https://github.com/semantic-release)/github from 12.0.9 to 12.0.10 ([#107](https://github.com/oleg-koval/agent-skills/issues/107)) ([51dd668](https://github.com/oleg-koval/agent-skills/commit/51dd66856088cb95ada53385dc4b5f10970ffa09))
+* **deps-dev:** bump [@semantic-release](https://github.com/semantic-release)/npm from 13.1.5 to 13.2.0 ([#108](https://github.com/oleg-koval/agent-skills/issues/108)) ([ef7ec58](https://github.com/oleg-koval/agent-skills/commit/ef7ec5871dd922d87d0f8ce5a7f8209fa79ebfb2))
+
 # [1.49.0](https://github.com/oleg-koval/agent-skills/compare/v1.48.0...v1.49.0) (2026-09-15)
 
 
