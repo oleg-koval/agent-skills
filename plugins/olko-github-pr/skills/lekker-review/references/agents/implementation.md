@@ -9,6 +9,27 @@ Axes to cover:
   ✅ met / ⚠️ partial / ❌ missing. Scope creep is also worth flagging.
   AC_LIST: read key "acList" from CONTEXT_FILE.
   Return the complete status summary in the structured `acCoverage` field.
+  Decide each AC against the code that RUNS, not against the diff. When
+  WORKTREE_PATH is null, mark runtime verification as unavailable: do not inspect
+  worktree files or infer an AC status from runtime evidence you cannot verify.
+  Otherwise, use the worktree to follow the AC through its runtime path into
+  files the diff never touched, and specifically:
+  (a) Find what invokes the new code and on what trigger. New code that nothing
+      calls satisfies nothing, however correct its body is.
+  (b) For an AC with a timing, cadence or SLA component, name the trigger's
+      measurable frequency, such as its cron expression or poll interval, and
+      compare that number against the AC. For a webhook, compare a documented
+      delivery bound against the AC; without one, mark cadence verification as
+      unavailable rather than treating the webhook as a fixed-frequency trigger.
+      A reaper on a daily cron cannot meet a two-hour SLA.
+  (c) For an AC about a failure mode (crash, OOM, timeout, network loss), confirm
+      the handling is reachable under that failure. A process terminated by an
+      uncatchable signal such as SIGKILL cannot reach a `finally` block, shutdown
+      hook, or the tail of a long-running function; SIGTERM may allow graceful
+      handling. Verify the actual failure signal and its handling before concluding
+      that cleanup is unreachable.
+  An AC can fail with every added line correct, because the defect is what the
+  diff left alone. That is a finding, not an absence of one.
 - Scalability: N+1 queries, missing pagination, unbounded in-memory
   collections, missing rate-limit handling, cron jobs without overlap guard,
   missing DB indexes for new query patterns.
@@ -37,7 +58,10 @@ Diff: read the full unified PR diff from the file DIFF_FILE (absolute path given
 Worktree: WORKTREE_PATH is given in your task message (null in scan mode, diff only).
 
 Rules:
-- Every finding must trace to a + line in the diff.
+- Every finding must trace to a + line in the diff, with one exception: an unmet
+  AC whose defect lives in code the diff did not touch. Anchor that one to the
+  unchanged file:line that had to change, and say in the description why the
+  unchanged line is the defect.
 - Report file:line: description. No positive observations.
 - `badCode` is REQUIRED: the verbatim offending line(s) copied from the diff:
   never paraphrased, never reconstructed from memory.
@@ -49,6 +73,7 @@ Rules:
   on a `critical`/`important` finding: a finding you cannot quote and cannot
   fix is a finding you have not proven, so drop it instead.
 - Exception for a missing/partial AC: the defect is what is absent, so quote
-  the closest incomplete added line(s) in `badCode` (the handler that stops
-  short, the branch never written) and put what must be added in `fix`. Do not
-  drop an unmet AC for lack of a quotable line.
+  the closest incomplete line(s) in `badCode` (the handler that stops short, the
+  branch never written, the caller on the wrong trigger) and put what must be
+  added in `fix`. That line may be an unchanged one. Do not drop an unmet AC for
+  lack of a quotable added line.

@@ -19,6 +19,8 @@ const out = join(root, "_site");
 
 const SITE_URL = "https://skills.olegkoval.com";
 const PORTFOLIO = "https://www.olegkoval.com";
+const FACTORY_URL = "https://factory.olegkoval.com/";
+const FACTORY_CASE_STUDY_URL = `${FACTORY_URL}case-studies/development-hydration-warning/`;
 const REPO = "https://github.com/oleg-koval/agent-skills";
 const CNAME = "skills.olegkoval.com";
 const GA_MEASUREMENT_ID = "G-NV8Q2H8YV0";
@@ -287,6 +289,7 @@ ${installSection(packages[0].lookupName)}
     <p>Every workflow has one canonical skill package. Tool-specific adapters are generated from it, so the marketplace, source files, and this site stay aligned.</p>
   </div>
   <a class="quiet-link" href="${PORTFOLIO}" data-analytics-event="portfolio_visit" data-analytics-location="about">More open-source work and writing at olegkoval.com <span aria-hidden="true">↗</span></a>
+  <p>For proof-oriented coding-agent delivery, explore <a href="${FACTORY_URL}">Factory</a>, Oleg's separate MIT-licensed skill for Claude Code and Codex. <a href="${FACTORY_CASE_STUDY_URL}">Inspect a full documented run</a>.</p>
 </section>`;
 
   return layout({

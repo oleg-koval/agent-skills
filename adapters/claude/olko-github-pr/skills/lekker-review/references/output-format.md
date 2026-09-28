@@ -24,6 +24,7 @@ Output the review as a markdown response (not via printf). No ANSI escapes.
 **Proofs:** <M proven / N attempted> *(include only when N > 0)*
 **CI:** <✅ All passing | ⚠️ N failing: check-name | ⏳ Pending | N/A>
 **Depth:** <⚡ scan | 🔍 medium | 🔬 deep>
+**Engine:** <workflow | codex | revmux>
 
 ---
 
@@ -234,6 +235,16 @@ Per-MTok pricing (input/output), verified 2026-07-07 from the claude-api referen
 - claude-haiku-4-5: $1 / $5
 
 Reviewer agents, verifiers, provers, and the critic all run on sonnet; triage and housekeeping on haiku. Only the main loop (context gathering + this synthesis) runs on the session model: use the session model's actual ID for that tier.
+
+For the Codex engine, use the model and usage metadata actually exposed by the
+native collaboration surface. Never relabel Codex agents as Claude tiers and
+never estimate an API price from a model nickname. Keep all numeric counts that
+are known (`agentCount`, diff size, verifier/prover counts). When Codex does not
+expose token or price usage, write `N/A (host did not expose usage)` for those
+individual fields and `Cost: N/A`; this is an evidence state, not a placeholder.
+The hard rule against `<N>` placeholders still applies. When usage is exposed,
+report the real values and use an official or operator-configured pricing source,
+naming its date in the block.
 
 ---
 

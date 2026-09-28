@@ -1,3 +1,116 @@
+## [1.49.1](https://github.com/oleg-koval/agent-skills/compare/v1.49.0...v1.49.1) (2026-09-26)
+
+
+### 📚 Documentation
+
+* feature Factory as a standalone project ([93b3717](https://github.com/oleg-koval/agent-skills/commit/93b3717e770571360a02bd21dba09e3fd44317fb))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump [@semantic-release](https://github.com/semantic-release)/github from 12.0.9 to 12.0.10 ([#107](https://github.com/oleg-koval/agent-skills/issues/107)) ([51dd668](https://github.com/oleg-koval/agent-skills/commit/51dd66856088cb95ada53385dc4b5f10970ffa09))
+* **deps-dev:** bump [@semantic-release](https://github.com/semantic-release)/npm from 13.1.5 to 13.2.0 ([#108](https://github.com/oleg-koval/agent-skills/issues/108)) ([ef7ec58](https://github.com/oleg-koval/agent-skills/commit/ef7ec5871dd922d87d0f8ce5a7f8209fa79ebfb2))
+
+# [1.49.0](https://github.com/oleg-koval/agent-skills/compare/v1.48.0...v1.49.0) (2026-09-15)
+
+
+### ✨ Features
+
+* **self-critique:** convert critique outcomes into durable rules ([#106](https://github.com/oleg-koval/agent-skills/issues/106)) ([47aafac](https://github.com/oleg-koval/agent-skills/commit/47aafac35e0c2b1c835f6b2da63ff9ff208c913d))
+
+# [1.48.0](https://github.com/oleg-koval/agent-skills/compare/v1.47.1...v1.48.0) (2026-09-12)
+
+
+### ✨ Features
+
+* consolidate missing remote skill updates ([#105](https://github.com/oleg-koval/agent-skills/issues/105)) ([a3f45de](https://github.com/oleg-koval/agent-skills/commit/a3f45ded5914874abc7ce0b6abf9feab3576f489))
+
+## [1.47.1](https://github.com/oleg-koval/agent-skills/compare/v1.47.0...v1.47.1) (2026-09-11)
+
+
+### 📚 Documentation
+
+* **product:** require readable UX audit reports ([#104](https://github.com/oleg-koval/agent-skills/issues/104)) ([6e20def](https://github.com/oleg-koval/agent-skills/commit/6e20deffb9e4d2e4337f39cb53cfb6dfd232705f))
+
+# [1.47.0](https://github.com/oleg-koval/agent-skills/compare/v1.46.0...v1.47.0) (2026-09-11)
+
+
+### ✨ Features
+
+* **product:** add evidence-backed UX/UI audit loop ([#103](https://github.com/oleg-koval/agent-skills/issues/103)) ([5582dfd](https://github.com/oleg-koval/agent-skills/commit/5582dfd9d7e614173a2278331d5a147e6240219a))
+
+# [1.46.0](https://github.com/oleg-koval/agent-skills/compare/v1.45.1...v1.46.0) (2026-09-11)
+
+
+### ✨ Features
+
+* **lekker-review:** add native Codex support ([#101](https://github.com/oleg-koval/agent-skills/issues/101)) ([2784cda](https://github.com/oleg-koval/agent-skills/commit/2784cdafe55cd2026fe4e9c9e04c14ff7707f975))
+
+## [1.45.1](https://github.com/oleg-koval/agent-skills/compare/v1.45.0...v1.45.1) (2026-09-11)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** enforce read-only revmux tool access ([#99](https://github.com/oleg-koval/agent-skills/issues/99)) ([c8bb7b5](https://github.com/oleg-koval/agent-skills/commit/c8bb7b5d4a633919e45a164864d843f5741a5ade))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump js-yaml ([#102](https://github.com/oleg-koval/agent-skills/issues/102)) ([578fed2](https://github.com/oleg-koval/agent-skills/commit/578fed2e9f90316dfd510857f6ba24c7830ab6ad))
+
+# [1.45.0](https://github.com/oleg-koval/agent-skills/compare/v1.44.0...v1.45.0) (2026-09-11)
+
+
+### ✨ Features
+
+* **lekker-review:** catch fixes that contradict the acceptance criteria ([#100](https://github.com/oleg-koval/agent-skills/issues/100)) ([a5dc8b4](https://github.com/oleg-koval/agent-skills/commit/a5dc8b4c7d7a5a9552c8004a28bccdc93081a48a))
+
+# [1.44.0](https://github.com/oleg-koval/agent-skills/compare/v1.43.1...v1.44.0) (2026-09-09)
+
+
+### ✨ Features
+
+* **lekker-review:** add optional revmux engine to Step 2 ([#98](https://github.com/oleg-koval/agent-skills/issues/98)) ([27f6da9](https://github.com/oleg-koval/agent-skills/commit/27f6da94884d8bfed8ff5ca44c26d59f63a676e9))
+
+## [1.43.1](https://github.com/oleg-koval/agent-skills/compare/v1.43.0...v1.43.1) (2026-09-05)
+
+
+### 📚 Documentation
+
+* make review findings implementation-ready ([#97](https://github.com/oleg-koval/agent-skills/issues/97)) ([4660605](https://github.com/oleg-koval/agent-skills/commit/46606051db79a5dc50a8cfdd8127f3a7411b5a55))
+
+# [1.43.0](https://github.com/oleg-koval/agent-skills/compare/v1.42.3...v1.43.0) (2026-09-05)
+
+
+### ✨ Features
+
+* **lekker-review:** review a local branch before it is pushed ([#92](https://github.com/oleg-koval/agent-skills/issues/92)) ([6a11348](https://github.com/oleg-koval/agent-skills/commit/6a1134821d258d4720c05a17455c3c872fc2af9b))
+
+
+### 🛠 Builds
+
+* **deps:** bump actions/deploy-pages from 5.0.0 to 5.0.1 ([#96](https://github.com/oleg-koval/agent-skills/issues/96)) ([aae580f](https://github.com/oleg-koval/agent-skills/commit/aae580faa5276a1a5ffec8858eb8264aec7d6205))
+
+## [1.42.3](https://github.com/oleg-koval/agent-skills/compare/v1.42.2...v1.42.3) (2026-09-05)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** decide ACs against the code that runs, not the diff ([#93](https://github.com/oleg-koval/agent-skills/issues/93)) ([64f665c](https://github.com/oleg-koval/agent-skills/commit/64f665cb5576b7e34dafd76bb937c645590f8416))
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump semantic-release-npm-github-publish ([#94](https://github.com/oleg-koval/agent-skills/issues/94)) ([c46b4c9](https://github.com/oleg-koval/agent-skills/commit/c46b4c9afa1810872f2b07f4e419039bd97c8126))
+* **deps:** bump actions/configure-pages from 5.0.0 to 6.0.0 ([#95](https://github.com/oleg-koval/agent-skills/issues/95)) ([4320001](https://github.com/oleg-koval/agent-skills/commit/43200016f622d72fa5a6464951e275f870549b56))
+
+## [1.42.2](https://github.com/oleg-koval/agent-skills/compare/v1.42.1...v1.42.2) (2026-09-03)
+
+
+### 🐛 Bug Fixes
+
+* give every skill description an explicit Use-when trigger ([#91](https://github.com/oleg-koval/agent-skills/issues/91)) ([188b1ce](https://github.com/oleg-koval/agent-skills/commit/188b1ce35c08f8fd6d4e41fca16deaf622abb002))
+
 ## [1.42.1](https://github.com/oleg-koval/agent-skills/compare/v1.42.0...v1.42.1) (2026-09-02)
 
 
