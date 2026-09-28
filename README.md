@@ -115,7 +115,8 @@ cd agent-skills
 ./scripts/install-codex-symlinks.sh
 ```
 
-Then mention a lookup name in a new Codex session:
+Then mention a lookup name in a new Codex session. The Codexloop skill is available directly as
+`$codexloop` (or by name in a prompt):
 
 ```text
 Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
