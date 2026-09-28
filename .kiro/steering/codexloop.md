@@ -62,6 +62,12 @@ Switch to the PR branch if not already on it. Capture `OWNER`/`REPO` (`gh repo v
 
 ## 2. The loop (max 5 iterations)
 
+At the end of every invocation, post exactly one top-level PR conversation comment summarizing
+the result, including iterations, comments fixed, comments rebutted, and anything remaining. This
+is required even when the loop times out or reaches its iteration cap; report that state honestly.
+End the comment with: **Useful? React with 👍 / 👎.** Do not post a separate summary comment for
+each iteration.
+
 Keep an explicit iteration counter and stop at 5: the cap is a real bound to enforce, not a
 figure of speech. Each pass through A–G is one iteration; on hitting the cap, go straight to the
 report and list what is still unresolved rather than starting a sixth.
@@ -183,6 +189,10 @@ gh pr view <PR> --json headRefOid -q .headRefOid   # must match
 
 If they differ, stop: the fix is not on the PR, so nothing may be resolved yet.
 
+Every fixed Codex thread must be replied to and resolved after this push is verified. A fix is not
+complete while its thread remains unresolved. If no code changed, rebutted threads can be replied
+to and resolved without a push.
+
 ### F. Reply to and resolve every addressed thread
 
 Only now, with the fixes pushed, reply and resolve. Fetch unresolved threads, **following
@@ -219,7 +229,10 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "THREA
 ```
 
 Resolve a thread only for comments authored by `$BOT` that you have fixed or rebutted: never
-blanket-resolve, and never resolve a human reviewer's thread.
+blanket-resolve, and never resolve a human reviewer's thread. For each fixed comment, verify the
+push first, reply with the change made, then resolve the thread and verify `isResolved: true`.
+For each rebutted comment, reply with the evidence and verify resolution. Do not report a comment
+as fixed or rebutted until its thread is confirmed resolved.
 
 Threads you are **rebutting** need no push, so they may be replied to and resolved regardless of
 whether step D changed code.

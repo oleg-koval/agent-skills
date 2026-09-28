@@ -144,7 +144,7 @@
         },
         {
           "name": "codexloop",
-          "lookupName": "olko:codexloop",
+          "lookupName": "codexloop",
           "path": "plugins/olko-github-pr/skills/codexloop",
           "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments, verifying every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
           "tags": [
