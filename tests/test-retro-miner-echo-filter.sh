@@ -31,6 +31,8 @@ const texts = [
   'Stop hook feedback: phase not closed',
   '[SYSTEM NOTIFICATION] task finished',
   'Your response above was cut off. Continue.',
+  '(Re-invocation of /loop with the same prompt)',
+  '[3 prior /loop wakeups collapsed]',
   '<system-reminder>ctx</system-reminder>',
   'looks good, ship it',
 ];
@@ -42,6 +44,6 @@ node "$MINER" --since 2026-09-15 --until 2026-09-30 --root "$TMP/projects" --out
 
 # shellcheck disable=SC2016  # the ${...} are a JS template literal, not shell expansions
 got="$(node -e 'const r=require(process.argv[1]);console.log(`${r.humanTurnsOrganic} ${r.humanTurnsEchoesExcluded} ${r.echoFilterVersion}`)' "$TMP/mine.json")"
-[ "$got" = "2 6 3" ] || fail "expected 'organic=2 echoes=6 version=3', got '$got'"
+[ "$got" = "2 8 3" ] || fail "expected 'organic=2 echoes=8 version=3', got '$got'"
 
 echo "ok: retro miner echo filter"
