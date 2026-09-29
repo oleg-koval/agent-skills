@@ -46,7 +46,6 @@ function walk(dir, out = []) {
 }
 
 // A user-role text record that is really harness output, not something a person typed.
-// A user-role text record that is really harness output, not something a person typed.
 // Each alternative below was found by a run that mis-counted. The first pass caught the
 // obvious wrappers and still let 26% through: skill body dumps, image attachments,
 // already-loaded stubs and permission-grant echoes all sit in human-turn position.
@@ -62,6 +61,15 @@ const HARNESS = new RegExp('^(' + [
   '\\[Image #\\d+\\]',                    // bare attachment
   '\\[Image: source:',
   '\\[Pasted text',
+  // v3: the 2026-09-29 run found v2 still let 66% through, almost all of it these five.
+  'Another Claude session sent a message', // subagent / cross-session hand-back
+  '<agent-message',
+  'This session is being continued from a previous conversation', // compaction resume
+  'Stop hook feedback:',
+  '\\[SYSTEM NOTIFICATION',
+  'Your response above was cut off',
+  '\\(Re-invocation of /',
+  '\\[\\d+ prior /loop wakeup',
 ].join('|') + ')');
 
 const textOf = (msg) => {
@@ -261,7 +269,7 @@ if (problems.length) {
   console.error('INCONSISTENT REPORT, refusing to write:\n  ' + problems.join('\n  '));
   process.exit(3);
 }
-report.echoFilterVersion = 2;
+report.echoFilterVersion = 3;
 
 fs.writeFileSync(OUT, JSON.stringify(report, null, 1));
 fs.writeFileSync(OUT.replace(/\.json$/, '') + '-turns.json', JSON.stringify(S.humanTurns, null, 1));
