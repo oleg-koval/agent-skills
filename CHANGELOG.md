@@ -1,3 +1,15 @@
+## [1.49.2](https://github.com/oleg-koval/agent-skills/compare/v1.49.1...v1.49.2) (2026-09-29)
+
+
+### 🐛 Bug Fixes
+
+* extend retro miner echo filter to inter-agent and compaction wrappers ([#112](https://github.com/oleg-koval/agent-skills/issues/112)) ([3ebe20c](https://github.com/oleg-koval/agent-skills/commit/3ebe20c0c08e3a03c5626fd639caf99eb04e7e6b))
+
+
+### 🛠 Builds
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 1 update ([#111](https://github.com/oleg-koval/agent-skills/issues/111)) ([24d607a](https://github.com/oleg-koval/agent-skills/commit/24d607a845530dd6f311c7023d410e3b1f3c6969))
+
 ## [1.49.1](https://github.com/oleg-koval/agent-skills/compare/v1.49.0...v1.49.1) (2026-09-26)
 
 
