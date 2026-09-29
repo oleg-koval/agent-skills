@@ -40,6 +40,7 @@ EOF
 node "$MINER" --since 2026-09-15 --until 2026-09-30 --root "$TMP/projects" --out "$TMP/mine.json" >/dev/null 2>&1 \
   || fail "miner exited non-zero"
 
+# shellcheck disable=SC2016  # the ${...} are a JS template literal, not shell expansions
 got="$(node -e 'const r=require(process.argv[1]);console.log(`${r.humanTurnsOrganic} ${r.humanTurnsEchoesExcluded} ${r.echoFilterVersion}`)' "$TMP/mine.json")"
 [ "$got" = "2 6 3" ] || fail "expected 'organic=2 echoes=6 version=3', got '$got'"
 
