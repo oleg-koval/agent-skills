@@ -240,6 +240,45 @@ test('a passing proof automatically downgrades a Critical finding', async () => 
   assert.equal(result.findings[0].verificationStatus, 'counter-evidence')
 })
 
+test('an Important finding with a composed boundary receives proof', async () => {
+  const boundaryFinding = {
+    ...baseFinding,
+    severity: 'important',
+    boundary: {
+      entryPoint: 'gateway ingress',
+      consumer: 'durable session store',
+      realizationPoint: 'turn runtime',
+      transitions: ['success', 'fallback'],
+    },
+  }
+  const { calls, result } = await runScenario({
+    worktreePath: '/tmp/fake-worktree',
+    respond: ({ options }) => {
+      if (options.label === 'review:quality') return { findings: [boundaryFinding] }
+      if (options.label.startsWith('review:')) return { findings: [] }
+      if (options.label.startsWith('verify:')) {
+        return { verdict: 'confirmed', reasoning: 'The boundary contract is reachable.' }
+      }
+      if (options.label.startsWith('prove:')) {
+        return {
+          attempted: true,
+          proven: true,
+          outcome: 'proven',
+          reason: 'The composed probe reproduces the mismatch.',
+          testCode: 'test("reproduces", () => {})',
+          testCommand: 'npm test -- reproduces',
+          redOutput: 'Expected durable identity, received physical identity.',
+        }
+      }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  assert.equal(calls.filter((label) => label.startsWith('prove:')).length, 1)
+  assert.equal(result.findings[0].verificationStatus, 'proven')
+  assert.equal(result.provenCount, 1)
+})
+
 test('contradictory proof tuples cannot change a finding verdict', async () => {
   for (const proof of [
     {
@@ -440,6 +479,10 @@ test('dimension schemas enforce structured metadata contracts', async () => {
   assert.equal(
     schemas.get('review:quality').properties.findings.items.properties.rule.type,
     'string',
+  )
+  assert.equal(
+    schemas.get('review:quality').properties.findings.items.properties.boundary.type,
+    'object',
   )
 })
 

@@ -37,7 +37,32 @@ Axes to cover:
   sort/dedup on large arrays that could be done at DB level.
 - Integration Contracts: Shopify API misuse, BC API assumptions, webhook
   idempotency, external API pagination not handled.
-- GraphQL pagination (GQL-1): for every GraphQL query in the diff that uses a
+
+Boundary contract and lifecycle map (required for every Critical/Important
+finding involving routing, persistence, caching, fallback, proxying, or an
+external integration):
+- `entryPoint`: identify the real production trigger that reaches the changed
+  code (HTTP route, webhook, CLI command, queue consumer, gateway ingress, etc.).
+- `decisionPoint`: identify where the behavior is selected or transformed.
+- `realizationPoint`: identify where the selected behavior becomes runtime state.
+- `consumer`: identify the downstream consumer that actually relies on the
+  contract, not merely the helper that constructs it.
+- `stateOwner`: identify the durable/session/cache owner when state crosses a
+  turn, request, retry, or process boundary.
+- `identityDimensions`: list every identity that must remain distinct, such as
+  logical session key, physical session id, provider alias, resolved provider,
+  model, and API mode.
+- `transitions`: list the relevant success, `None`, exception, retry, fallback,
+  session-rotation, cache-reuse, and proxy/alternate-transport transitions.
+- `evidenceClass`: label the strongest evidence actually checked: `source`,
+  `isolated-test`, `repository-test`, `composed-test`, `production-probe`, or
+  `hosted-ci`. Never call an isolated harness a production-path proof.
+
+Do not report a stateful/integration finding without this boundary object. If
+the production entry point or downstream consumer cannot be identified, mark
+the claim as unverified rather than inferring behavior from a helper alone.
+
+GraphQL pagination (GQL-1): for every GraphQL query in the diff that uses a
   nodes connection (`nodes { ... }`):
   (a) Check that `pageInfo { hasNextPage endCursor }` is present alongside nodes: if missing, Critical.
   (b) Check that all pages are fetched (a loop or recursion using endCursor): a single-page fetch is a bug, Critical.

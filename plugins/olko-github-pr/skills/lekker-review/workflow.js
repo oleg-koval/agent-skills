@@ -8,6 +8,20 @@ export const meta = {
 // Schemas
 // ---------------------------------------------------------------------------
 
+const BOUNDARY_SCHEMA = {
+  type: 'object',
+  properties: {
+    entryPoint:         { type: 'string' },
+    decisionPoint:       { type: 'string' },
+    realizationPoint:   { type: 'string' },
+    consumer:           { type: 'string' },
+    stateOwner:         { type: 'string' },
+    evidenceClass:      { type: 'string' },
+    identityDimensions: { type: 'array', items: { type: 'string' } },
+    transitions:        { type: 'array', items: { type: 'string' } },
+  },
+}
+
 const FINDINGS_ARRAY_SCHEMA = {
   type: 'array',
   items: {
@@ -23,6 +37,7 @@ const FINDINGS_ARRAY_SCHEMA = {
       fix:         { type: 'string' },
       precedent:   { type: 'string' },
       rule:        { type: 'string', minLength: 1, pattern: '\\S' },
+      boundary:    BOUNDARY_SCHEMA,
     },
   },
 }
@@ -265,6 +280,31 @@ function shouldVerify(finding) {
   // affect the verdict must be checked. Hard rules take the verifier's
   // rule-specific anchor/applicability path instead of its runtime challenges.
   return finding.severity === 'critical' || finding.severity === 'important'
+}
+
+function hasBoundaryProofSurface(finding) {
+  const boundary = finding && finding.boundary
+  if (!boundary || typeof boundary !== 'object') {
+    return false
+  }
+  const hasText = function(value) {
+    return typeof value === 'string' && value.trim().length > 0
+  }
+  const hasList = function(value) {
+    return Array.isArray(value) && value.length > 0
+  }
+  return hasText(boundary.entryPoint)
+    && hasText(boundary.consumer)
+    && (
+      hasText(boundary.realizationPoint)
+      || hasText(boundary.stateOwner)
+      || hasList(boundary.transitions)
+    )
+}
+
+function shouldProve(finding) {
+  return finding.severity === 'critical'
+    || (finding.severity === 'important' && hasBoundaryProofSurface(finding))
 }
 
 function normalizeProof(result) {
@@ -750,8 +790,9 @@ const budgetAtStart = budget.spent()
   } // end ENGINE === 'workflow' branch
 
   // -------------------------------------------------------------------------
-  // Prove: for each Critical finding (excluding hard rules, which are policy
-  // violations with no runtime failure to demonstrate), attempt to produce an
+  // Prove: for each Critical finding and each Important finding with a
+  // composed boundary map (excluding hard rules, which are policy violations
+  // with no runtime failure to demonstrate), attempt to produce an
   // executable failing test in the worktree. Only runs with a worktree and
   // outside scan depth, and is capped so a pathological finding count can't
   // blow the budget.
@@ -770,7 +811,7 @@ const budgetAtStart = budget.spent()
 
   if (worktreePath && depth !== 'scan') {
     const proveCandidates = finalFindings.filter(function(f) {
-      return f.severity === 'critical' && !isHardRule(f)
+      return shouldProve(f) && !isHardRule(f)
     })
 
     if (proveCandidates.length > 0) {
@@ -779,7 +820,7 @@ const budgetAtStart = budget.spent()
       const capped = proveCandidates.slice(0, 5)
       const skipped = proveCandidates.length - capped.length
       if (skipped > 0) {
-        log(`Prove: capping at 5 provers, skipping ${skipped} additional critical finding(s)`)
+        log(`Prove: capping at 5 provers, skipping ${skipped} additional finding(s)`)
       }
 
       await batched(capped.map(function(finding) {

@@ -123,6 +123,30 @@ convention finding with no verifiable precedent does not ship.
 
 ---
 
+## Before Step 5 -- Boundary contract and evidence check
+
+For any Critical/Important finding involving routing, persistence, caching,
+fallback, proxying, quoted input, or an external integration, read the
+finding's `boundary` object. It should identify the real production entry
+point, decision point, runtime realization point, downstream consumer, state
+owner, and relevant identity dimensions/transitions.
+
+Reconstruct the path in `WORKTREE_PATH` from entry point to consumer. A copied
+helper test or a mock that never reaches the consumer is only isolated
+evidence. Do not confirm a verdict-affecting finding as production-path proof
+unless the claimed failure reaches the stateful consumer or the review clearly
+labels the evidence as isolated.
+
+If the finding is stateful/integration-heavy and has no usable entry point or
+consumer, downgrade it to Important at best; drop it when the missing boundary
+is the crux of the claim. Record the strongest evidence class actually checked
+(`source`, `isolated-test`, `repository-test`, `composed-test`,
+`production-probe`, or `hosted-ci`) in the reasoning.
+
+Build a small transition matrix for the affected contract. At minimum check
+success, `None`, exception, retry/fallback, state rotation, cache reuse or
+eviction, and proxy/alternate transport whenever those transitions exist.
+
 ## Step 5 -- Fix validation
 
 Before confirming the finding, identify the callers and consumers of the changed
