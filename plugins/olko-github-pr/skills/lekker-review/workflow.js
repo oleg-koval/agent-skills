@@ -282,6 +282,11 @@ function shouldVerify(finding) {
   return finding.severity === 'critical' || finding.severity === 'important'
 }
 
+/**
+ * Does the finding carry enough of a composed boundary map to attempt a
+ * proof? Requires an entry point and a consumer, plus at least one of a
+ * realization point, state owner, or recorded transition.
+ */
 function hasBoundaryProofSurface(finding) {
   const boundary = finding && finding.boundary
   if (!boundary || typeof boundary !== 'object') {
@@ -302,6 +307,11 @@ function hasBoundaryProofSurface(finding) {
     )
 }
 
+/**
+ * Does this finding qualify for the Prove stage? Every Critical finding
+ * qualifies; an Important finding only qualifies when it has a composed
+ * boundary map to prove against.
+ */
 function shouldProve(finding) {
   return finding.severity === 'critical'
     || (finding.severity === 'important' && hasBoundaryProofSurface(finding))

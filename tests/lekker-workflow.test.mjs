@@ -240,6 +240,11 @@ test('a passing proof automatically downgrades a Critical finding', async () => 
   assert.equal(result.findings[0].verificationStatus, 'counter-evidence')
 })
 
+/**
+ * An Important finding with a composed boundary map should route through
+ * Prove the same way a Critical finding does, and a successful proof should
+ * mark the finding as proven rather than merely verified.
+ */
 test('an Important finding with a composed boundary receives proof', async () => {
   const boundaryFinding = {
     ...baseFinding,
@@ -444,6 +449,11 @@ test('reviewer prompts explicitly require structured metadata fields', () => {
   assert.match(testQualityPrompt, /mockSmells/)
 })
 
+/**
+ * Each review dimension's schema should require the structured fields its
+ * downstream consumers depend on, including the quality dimension's boundary
+ * object used by the Prove stage.
+ */
 test('dimension schemas enforce structured metadata contracts', async () => {
   const schemas = new Map()
   await runScenario({
