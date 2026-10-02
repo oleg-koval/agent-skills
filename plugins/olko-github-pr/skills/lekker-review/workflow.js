@@ -8,11 +8,30 @@ export const meta = {
 // Schemas
 // ---------------------------------------------------------------------------
 
+const BOUNDARY_SCHEMA = {
+  type: 'object',
+  required: ['entryPoint', 'consumer'],
+  properties: {
+    entryPoint:         { type: 'string', minLength: 1, pattern: '\\S' },
+    decisionPoint:       { type: 'string' },
+    realizationPoint:   { type: 'string' },
+    consumer:           { type: 'string', minLength: 1, pattern: '\\S' },
+    stateOwner:         { type: 'string' },
+    evidenceClass:      { type: 'string' },
+    identityDimensions: { type: 'array', items: { type: 'string' } },
+    transitions:        { type: 'array', items: { type: 'string' } },
+  },
+}
+
 const FINDINGS_ARRAY_SCHEMA = {
   type: 'array',
   items: {
     type: 'object',
     required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
+    anyOf: [
+      { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
+      { required: ['boundary'] },
+    ],
     properties: {
       file:        { type: 'string' },
       line:        { type: 'integer' },
@@ -23,6 +42,7 @@ const FINDINGS_ARRAY_SCHEMA = {
       fix:         { type: 'string' },
       precedent:   { type: 'string' },
       rule:        { type: 'string', minLength: 1, pattern: '\\S' },
+      boundary:    BOUNDARY_SCHEMA,
     },
   },
 }
@@ -265,6 +285,41 @@ function shouldVerify(finding) {
   // affect the verdict must be checked. Hard rules take the verifier's
   // rule-specific anchor/applicability path instead of its runtime challenges.
   return finding.severity === 'critical' || finding.severity === 'important'
+}
+
+/**
+ * Does the finding carry enough of a composed boundary map to attempt a
+ * proof? Requires an entry point and a consumer, plus at least one of a
+ * realization point, state owner, or recorded transition.
+ */
+function hasBoundaryProofSurface(finding) {
+  const boundary = finding && finding.boundary
+  if (!boundary || typeof boundary !== 'object') {
+    return false
+  }
+  const hasText = function(value) {
+    return typeof value === 'string' && value.trim().length > 0
+  }
+  const hasList = function(value) {
+    return Array.isArray(value) && value.length > 0
+  }
+  return hasText(boundary.entryPoint)
+    && hasText(boundary.consumer)
+    && (
+      hasText(boundary.realizationPoint)
+      || hasText(boundary.stateOwner)
+      || hasList(boundary.transitions)
+    )
+}
+
+/**
+ * Does this finding qualify for the Prove stage? Every Critical finding
+ * qualifies; an Important finding only qualifies when it has a composed
+ * boundary map to prove against.
+ */
+function shouldProve(finding) {
+  return finding.severity === 'critical'
+    || (finding.severity === 'important' && hasBoundaryProofSurface(finding))
 }
 
 function normalizeProof(result) {
@@ -520,7 +575,29 @@ const budgetAtStart = budget.spent()
   // rule-specific checks and skip only its runtime-oriented challenges.
   // -------------------------------------------------------------------------
 
+  // A model verdict cannot replace the required production boundary map.
+  function enforceBoundary(finding) {
+    if (!shouldVerify(finding)) return finding
+    const boundary = finding.boundary
+    const hasText = function(value) {
+      return typeof value === 'string' && value.trim().length > 0
+    }
+    if (boundary && typeof boundary === 'object' && !Array.isArray(boundary)
+        && hasText(boundary.entryPoint) && hasText(boundary.consumer)) {
+      return finding
+    }
+    downgradedCount++
+    const unverified = Object.assign({}, finding, {
+      severity: 'observation',
+      verificationStatus: 'unverified',
+      verifierReasoning: 'Missing boundary object or identified production entry point/downstream consumer; downgraded to non-blocking',
+    })
+    delete unverified.proof
+    return unverified
+  }
+
   async function verifyAll(findings) {
+    findings = findings.map(enforceBoundary)
     const inScope = findings.filter(function(f) {
       return shouldVerify(f)
     })
@@ -704,7 +781,8 @@ const budgetAtStart = budget.spent()
           }
 
           // Verify the new finding through the same verifier path
-          const newFinding = Object.assign({}, reResult.findings[0])
+          const newFinding = enforceBoundary(Object.assign({}, reResult.findings[0]))
+          if (newFinding.verificationStatus === 'unverified') return [newFinding]
           newFinding._dimension = `critic:${angle.axis}`
 
           agentCount++
@@ -749,9 +827,13 @@ const budgetAtStart = budget.spent()
 
   } // end ENGINE === 'workflow' branch
 
+  // Recheck after critic dedup and imported results, before proof promotion.
+  finalFindings = finalFindings.map(enforceBoundary)
+
   // -------------------------------------------------------------------------
-  // Prove: for each Critical finding (excluding hard rules, which are policy
-  // violations with no runtime failure to demonstrate), attempt to produce an
+  // Prove: for each Critical finding and each Important finding with a
+  // composed boundary map (excluding hard rules, which are policy violations
+  // with no runtime failure to demonstrate), attempt to produce an
   // executable failing test in the worktree. Only runs with a worktree and
   // outside scan depth, and is capped so a pathological finding count can't
   // blow the budget.
@@ -770,7 +852,7 @@ const budgetAtStart = budget.spent()
 
   if (worktreePath && depth !== 'scan') {
     const proveCandidates = finalFindings.filter(function(f) {
-      return f.severity === 'critical' && !isHardRule(f)
+      return shouldProve(f) && !isHardRule(f)
     })
 
     if (proveCandidates.length > 0) {
@@ -779,7 +861,7 @@ const budgetAtStart = budget.spent()
       const capped = proveCandidates.slice(0, 5)
       const skipped = proveCandidates.length - capped.length
       if (skipped > 0) {
-        log(`Prove: capping at 5 provers, skipping ${skipped} additional critical finding(s)`)
+        log(`Prove: capping at 5 provers, skipping ${skipped} additional finding(s)`)
       }
 
       await batched(capped.map(function(finding) {

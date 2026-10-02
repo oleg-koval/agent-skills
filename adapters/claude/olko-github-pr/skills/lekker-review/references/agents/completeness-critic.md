@@ -14,6 +14,18 @@ were declared "no findings" too quickly. For each angle:
 Be concrete: cite diff lines, not vibes. If you genuinely cannot find a missed
 angle, return "No gaps found."
 
+Always consider these maintainer-grade gaps before returning no gaps:
+- the real production entry point and downstream consumer were not exercised;
+- the selected value was not traced through runtime realization, persistence,
+  cleanup, cache reuse, or fallback;
+- logical identity was conflated with physical/runtime identity;
+- a state-transition matrix is missing for `None`, exceptions, retries,
+  rotation, proxying, or alternate transport;
+- the fix was checked only against the original symptom, not for a new defect
+  introduced at the changed ordering or lifecycle boundary;
+- the evidence is an isolated harness or local test but the review claims
+  composed behavior or hosted-CI acceptance.
+
 Agent findings:
 <AGENT_FINDINGS_SUMMARY>
 
