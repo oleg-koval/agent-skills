@@ -1,3 +1,10 @@
+# [1.50.0](https://github.com/oleg-koval/agent-skills/compare/v1.49.2...v1.50.0) (2026-10-02)
+
+
+### ✨ Features
+
+* **lekker-review:** verify stateful boundaries ([#113](https://github.com/oleg-koval/agent-skills/issues/113)) ([569cb30](https://github.com/oleg-koval/agent-skills/commit/569cb3082806b18e3607ccfeb3335b9d156ff38f))
+
 ## [1.49.2](https://github.com/oleg-koval/agent-skills/compare/v1.49.1...v1.49.2) (2026-09-29)
 
 
