@@ -86,6 +86,31 @@ No nitpicking. Critical and Important findings are reserved for things that
 could cause bugs, outages, data loss, security incidents, or real performance
 problems at scale.
 
+**Boundary-first review rule:** for stateful or integration-heavy changes,
+review the complete behavioral chain rather than the changed helper alone:
+
+```text
+production entry point
+→ decision point
+→ runtime realization
+→ downstream consumer
+→ persistence/cache/cleanup owner
+```
+
+Require the review to distinguish logical identity from physical/runtime
+identity, and to test the relevant transition matrix: success, `null`, `undefined`,
+exception, retry, fallback, rotation, cache reuse/eviction, proxy parity, and
+quoted/history input where applicable. A copied helper test is isolated
+evidence, not proof that the production boundary works.
+
+Every verdict-affecting finding should carry a boundary map and an evidence
+class. The report must distinguish source inspection, isolated tests,
+repository tests, composed production-entry probes, production probes, and
+hosted CI. Never upgrade one evidence class into another in the wording.
+
+After a fix, re-run the original proof *and* audit the newly changed lifecycle
+boundary for regressions. A green reproduction is necessary, not sufficient.
+
 **HARD RULE: the `## 💰 Review Cost` block is mandatory.** Every review MUST
 end with an evidence-backed cost block and no `<N>` placeholders. Use real
 numbers for measurements the host exposes; follow `references/output-format.md`
@@ -289,7 +314,7 @@ page for this PR.
 | Review agents               | 2 triage (haiku)      | 5 specialists (sonnet) | 5 specialists (sonnet)  |
 | Per-finding verification    | Criticals + Importants | Criticals + Importants | Criticals + Importants |
 | Completeness critic         | skip                  | skip                | included                   |
-| Proof-of-bug (failing test per Critical) | skip     | included (max 5)    | included (max 5)           |
+| Proof-of-bug (failing test per Critical or composed-boundary Important) | skip     | included (max 5)    | included (max 5)           |
 | Living review artifact      | included              | included            | included                   |
 | Housekeeping (optional memory/notes writeback) | skip | included            | included                   |
 | `--post`                    | supported             | supported           | supported                  |

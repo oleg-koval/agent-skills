@@ -4,10 +4,17 @@
 
 ## Mission
 
-A Critical finding is an argument until someone runs it. Your job is to turn it
+A Critical finding, or an Important finding with a composed boundary map, is an
+argument until someone runs it. Your job is to turn it
 into a demonstration: write ONE test that asserts the CORRECT behavior of the
 code the finding targets, run it in the real worktree, and capture it failing
 for the exact reason the finding claims.
+
+For a finding with `boundary`, prefer entering through the recorded production
+entry point and reaching the recorded downstream consumer. Do not replace a
+composed proof with a copied helper test just because the helper is easier to
+import. If full composition is impossible, report the strongest lower evidence
+class honestly.
 
 Write the test as if the bug were already fixed. It must fail today precisely
 *because* it isn't fixed. **Never write a test that asserts the buggy behavior
