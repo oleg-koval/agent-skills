@@ -210,6 +210,29 @@ check after any revert triggered here before moving on.
 
 ---
 
+## Step 5c -- Fix delta audit
+
+After the original proof flips red → green, audit the *new* boundary created by
+the fix. Do not assume that making the original assertion pass makes the
+lifecycle safe.
+
+For each fixed Critical/Important finding involving state, routing, ordering,
+proxying, persistence, caching, fallback, or quoted input:
+
+1. Re-read the entire changed path from the production entry point to the
+   downstream consumer.
+2. Re-run the relevant transition matrix: success, `None`, exception, retry,
+   fallback, rotation, cache reuse/eviction, and alternate transport where
+   applicable.
+3. Check that logical identity, runtime identity, provider/API identity, and
+   durable identity are still distinct where the contract requires it.
+4. Add a focused regression probe when the fix moved work across an ordering or
+   lifecycle boundary. The probe must enter through the real path when feasible.
+
+If the audit finds a new failure, revert the whole group and mark it
+`failed: fix-delta-regression`. A green original proof is not sufficient to
+commit a fix that breaks a neighboring transition.
+
 ## Step 6 -- Commit (local only)
 
 One commit per file group, in group order. Stage explicitly -- never `git add -A`,
