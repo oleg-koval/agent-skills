@@ -98,7 +98,7 @@ production entry point
 ```
 
 Require the review to distinguish logical identity from physical/runtime
-identity, and to test the relevant transition matrix: success, `None`,
+identity, and to test the relevant transition matrix: success, `null`, `undefined`,
 exception, retry, fallback, rotation, cache reuse/eviction, proxy parity, and
 quoted/history input where applicable. A copied helper test is isolated
 evidence, not proof that the production boundary works.

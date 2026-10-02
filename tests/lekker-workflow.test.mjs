@@ -30,6 +30,7 @@ const baseFinding = {
   description: 'Normal execution fails.',
   badCode: 'return broken()',
   fix: 'return working()',
+  boundary: { entryPoint: 'HTTP route', consumer: 'response handler' },
 }
 
 /**
@@ -69,6 +70,75 @@ async function runScenario({ depth = 'medium', worktreePath = null, extraArgs = 
 
   return { calls, result }
 }
+
+test('missing or incomplete boundaries cannot affect the verdict or receive proof', async () => {
+  for (const depth of ['scan', 'medium']) {
+    for (const severity of ['critical', 'important']) {
+      for (const boundary of [undefined, null, [], 'HTTP route', {},
+        { entryPoint: 'HTTP route' }, { consumer: 'session store' },
+        { entryPoint: '  ', consumer: 'session store' },
+        { entryPoint: 'HTTP route', consumer: 42 }]) {
+        const { calls, result } = await runScenario({
+          depth,
+          worktreePath: '/tmp/fake-worktree',
+          respond: ({ options }) => {
+            if (options.label === (depth === 'scan' ? 'review:triage-quality' : 'review:quality')) {
+              return { findings: [{ ...baseFinding, severity, boundary }] }
+            }
+            if (options.label.startsWith('review:')) return { findings: [] }
+            throw new Error(`Unexpected agent call: ${options.label}`)
+          },
+        })
+        assert.equal(result.findings[0].severity, 'observation')
+        assert.equal(result.findings[0].verificationStatus, 'unverified')
+        assert.equal(result.downgradedCount, 1)
+        assert.ok(!calls.some((label) => /^(verify|prove):/.test(label)))
+      }
+    }
+  }
+})
+
+test('critic findings without a downstream consumer remain unverified', async () => {
+  const { calls, result } = await runScenario({
+    depth: 'deep',
+    worktreePath: '/tmp/fake-worktree',
+    respond: ({ options }) => {
+      if (options.label.startsWith('review:')) return { findings: [] }
+      if (options.label === 'critic') {
+        return { angles: [{ axis: 'persistence', file: baseFinding.file, line: 10, reason: 'Recheck.' }] }
+      }
+      if (options.label.startsWith('critic-reexamine:')) {
+        return { findings: [{ ...baseFinding, boundary: { entryPoint: 'HTTP route' } }] }
+      }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+  assert.equal(result.findings[0].verificationStatus, 'unverified')
+  assert.equal(result.findings[0].severity, 'observation')
+  assert.ok(!calls.some((label) => /^(critic-verify|prove):/.test(label)))
+})
+
+test('imported confirmation or proof cannot bypass the boundary requirement', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lekker-boundary-'))
+  try {
+    const findingsFile = join(dir, 'findings.json')
+    writeFileSync(findingsFile, JSON.stringify({ findings: [{
+      ...baseFinding, boundary: undefined, verificationStatus: 'proven',
+      proof: { attempted: true, proven: true, outcome: 'proven' },
+    }] }))
+    const { calls, result } = await runScenario({
+      worktreePath: '/tmp/fake-worktree',
+      extraArgs: { engine: 'revmux', findingsFile },
+      respond: ({ options }) => { throw new Error(`Unexpected agent call: ${options.label}`) },
+    })
+    assert.deepEqual(calls, [])
+    assert.equal(result.findings[0].verificationStatus, 'unverified')
+    assert.equal(result.findings[0].severity, 'observation')
+    assert.equal(result.findings[0].proof, undefined)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
 
 test('verifier failure cannot leave verdict-affecting findings', async () => {
   const critical = { ...baseFinding }
@@ -490,10 +560,21 @@ test('dimension schemas enforce structured metadata contracts', async () => {
     schemas.get('review:quality').properties.findings.items.properties.rule.type,
     'string',
   )
-  assert.equal(
-    schemas.get('review:quality').properties.findings.items.properties.boundary.type,
-    'object',
-  )
+  const findingSchema = schemas.get('review:quality').properties.findings.items
+  const boundary = findingSchema.properties.boundary
+  assert.equal(boundary.type, 'object')
+  for (const key of ['entryPoint', 'consumer', 'realizationPoint', 'stateOwner', 'transitions']) {
+    assert.ok(Object.hasOwn(boundary.properties, key), `boundary is missing ${key}`)
+  }
+  assert.deepEqual(boundary.required, ['entryPoint', 'consumer'])
+  for (const key of boundary.required) {
+    assert.equal(boundary.properties[key].minLength, 1)
+    assert.equal(boundary.properties[key].pattern, '\\S')
+  }
+  assert.deepEqual(findingSchema.anyOf, [
+    { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
+    { required: ['boundary'] },
+  ])
 })
 
 test('artifact contract renders passed-proof counter-evidence', () => {

@@ -10,11 +10,12 @@ export const meta = {
 
 const BOUNDARY_SCHEMA = {
   type: 'object',
+  required: ['entryPoint', 'consumer'],
   properties: {
-    entryPoint:         { type: 'string' },
+    entryPoint:         { type: 'string', minLength: 1, pattern: '\\S' },
     decisionPoint:       { type: 'string' },
     realizationPoint:   { type: 'string' },
-    consumer:           { type: 'string' },
+    consumer:           { type: 'string', minLength: 1, pattern: '\\S' },
     stateOwner:         { type: 'string' },
     evidenceClass:      { type: 'string' },
     identityDimensions: { type: 'array', items: { type: 'string' } },
@@ -27,6 +28,10 @@ const FINDINGS_ARRAY_SCHEMA = {
   items: {
     type: 'object',
     required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
+    anyOf: [
+      { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
+      { required: ['boundary'] },
+    ],
     properties: {
       file:        { type: 'string' },
       line:        { type: 'integer' },
@@ -570,7 +575,29 @@ const budgetAtStart = budget.spent()
   // rule-specific checks and skip only its runtime-oriented challenges.
   // -------------------------------------------------------------------------
 
+  // A model verdict cannot replace the required production boundary map.
+  function enforceBoundary(finding) {
+    if (!shouldVerify(finding)) return finding
+    const boundary = finding.boundary
+    const hasText = function(value) {
+      return typeof value === 'string' && value.trim().length > 0
+    }
+    if (boundary && typeof boundary === 'object' && !Array.isArray(boundary)
+        && hasText(boundary.entryPoint) && hasText(boundary.consumer)) {
+      return finding
+    }
+    downgradedCount++
+    const unverified = Object.assign({}, finding, {
+      severity: 'observation',
+      verificationStatus: 'unverified',
+      verifierReasoning: 'Missing boundary object or identified production entry point/downstream consumer; downgraded to non-blocking',
+    })
+    delete unverified.proof
+    return unverified
+  }
+
   async function verifyAll(findings) {
+    findings = findings.map(enforceBoundary)
     const inScope = findings.filter(function(f) {
       return shouldVerify(f)
     })
@@ -754,7 +781,8 @@ const budgetAtStart = budget.spent()
           }
 
           // Verify the new finding through the same verifier path
-          const newFinding = Object.assign({}, reResult.findings[0])
+          const newFinding = enforceBoundary(Object.assign({}, reResult.findings[0]))
+          if (newFinding.verificationStatus === 'unverified') return [newFinding]
           newFinding._dimension = `critic:${angle.axis}`
 
           agentCount++
@@ -798,6 +826,9 @@ const budgetAtStart = budget.spent()
   }
 
   } // end ENGINE === 'workflow' branch
+
+  // Recheck after critic dedup and imported results, before proof promotion.
+  finalFindings = finalFindings.map(enforceBoundary)
 
   // -------------------------------------------------------------------------
   // Prove: for each Critical finding and each Important finding with a

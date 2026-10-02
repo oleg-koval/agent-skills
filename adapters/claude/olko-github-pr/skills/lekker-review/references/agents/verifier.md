@@ -123,7 +123,7 @@ convention finding with no verifiable precedent does not ship.
 
 ---
 
-## Before Step 5 -- Boundary contract and evidence check
+## Step 4b -- Boundary contract and evidence check
 
 For any Critical/Important finding involving routing, persistence, caching,
 fallback, proxying, quoted input, or an external integration, read the
@@ -137,14 +137,15 @@ evidence. Do not confirm a verdict-affecting finding as production-path proof
 unless the claimed failure reaches the stateful consumer or the review clearly
 labels the evidence as isolated.
 
-If the finding is stateful/integration-heavy and has no usable entry point or
-consumer, downgrade it to Important at best; drop it when the missing boundary
-is the crux of the claim. Record the strongest evidence class actually checked
+If the finding has no boundary object or no usable production entry point or
+consumer, keep it unverified and non-blocking; drop it when the missing boundary
+is the crux of the claim. The workflow enforces this as an unverified observation
+even if a verifier confirms it. Record the strongest evidence class actually checked
 (`source`, `isolated-test`, `repository-test`, `composed-test`,
 `production-probe`, or `hosted-ci`) in the reasoning.
 
 Build a small transition matrix for the affected contract. At minimum check
-success, `None`, exception, retry/fallback, state rotation, cache reuse or
+success, `null`, `undefined`, exception, retry/fallback, state rotation, cache reuse or
 eviction, and proxy/alternate transport whenever those transitions exist.
 
 ## Step 5 -- Fix validation

@@ -52,7 +52,7 @@ external integration):
 - `identityDimensions`: list every identity that must remain distinct, such as
   logical session key, physical session id, provider alias, resolved provider,
   model, and API mode.
-- `transitions`: list the relevant success, `None`, exception, retry, fallback,
+- `transitions`: list the relevant success, `null`, `undefined`, exception, retry, fallback,
   session-rotation, cache-reuse, and proxy/alternate-transport transitions.
 - `evidenceClass`: label the strongest evidence actually checked: `source`,
   `isolated-test`, `repository-test`, `composed-test`, `production-probe`, or
