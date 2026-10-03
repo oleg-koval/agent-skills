@@ -11,6 +11,7 @@ Use the canonical skills directly:
 - `plugins/olko-github-pr/skills/qodoloop/SKILL.md`
 - `plugins/olko-github-pr/skills/coderabbitloop/SKILL.md`
 - `plugins/olko-github-pr/skills/codexloop/SKILL.md`
+- `plugins/olko-github-pr/skills/copilotloop/SKILL.md`
 - `plugins/olko-github-pr/skills/geminiloop/SKILL.md`
 - `plugins/olko-github-pr/skills/ci-fix-loop/SKILL.md`
 - `plugins/olko-github-pr/skills/dependabot-triage/SKILL.md`

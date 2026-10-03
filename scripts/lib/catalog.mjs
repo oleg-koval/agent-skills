@@ -6,7 +6,7 @@ export const PLUGIN_ASSIGNMENT = {
   'olko-github-pr': {
     description: 'Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.',
     skills: ['pr-finalize', 'pr-finalize-complete', 'pr-to-green', 'pr-description-writer',
-             'qodoloop', 'coderabbitloop', 'codexloop', 'geminiloop', 'ci-fix-loop',
+             'qodoloop', 'coderabbitloop', 'codexloop', 'copilotloop', 'geminiloop', 'ci-fix-loop',
              'dependabot-triage', 'lekker-review'],
   },
   'olko-git-tools': {

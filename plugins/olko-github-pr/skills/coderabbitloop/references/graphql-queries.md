@@ -6,6 +6,15 @@ against CodeRabbit's own documentation (`docs.coderabbit.ai/reference/review-com
 plus a real `<!-- ... summarize by coderabbit.ai -->` comment observed live:
 not guessed.
 
+**The bot's login string is spelled differently in REST vs GraphQL.** REST
+(`.user.login` on `pulls/.../comments`) returns `coderabbitai[bot]`. GraphQL
+(`author.login` on `reviewThreads`) returns `coderabbitai`, no `[bot]` suffix
+(confirmed live against PR #114's own threads). Using the REST spelling in a
+GraphQL filter silently matches nothing, which reads as "no findings" instead
+of "wrong filter": exactly the kind of bug that has no crash and no error to
+notice. Use `[bot]` only in REST-based jq filters (`.user.login`); use the
+bare name everywhere you're filtering a GraphQL `author.login`.
+
 ## Fetch unresolved CodeRabbit threads (paginated)
 
 ```graphql
@@ -18,7 +27,7 @@ query($cursor: String) {
           id
           isResolved
           comments(first: 1) {
-            nodes { body path line author { login } }
+            nodes { databaseId body path line author { login } }
           }
         }
       }
@@ -27,12 +36,13 @@ query($cursor: String) {
 }
 ```
 
-Filter client-side to `coderabbitai[bot]` and `isResolved == false`:
+Filter client-side to GraphQL's `coderabbitai` (bare name, see the note above)
+and `isResolved == false`:
 
 ```bash
 gh api graphql -f query='...' --jq \
   '.data.repository.pullRequest.reviewThreads.nodes[]
-   | select(.comments.nodes[0].author.login == "coderabbitai[bot]")
+   | select(.comments.nodes[0].author.login == "coderabbitai")
    | select(.isResolved == false)'
 ```
 
@@ -53,13 +63,17 @@ description text above it: not every low-confidence nit gets one.
 
 ```bash
 gh api graphql -f query='
-mutation {
-  addPullRequestReviewThreadReply(input: {
-    pullRequestReviewThreadId: "THREAD_ID"
-    body: "REPLY_TEXT"
-  }) { comment { id } }
-}'
+  mutation($threadId: ID!, $body: String!) {
+    addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: $threadId, body: $body}) {
+      comment { id }
+    }
+  }' -f threadId="$THREAD_ID" -f body="$REPLY_TEXT"
 ```
+
+Pass the thread id and reply text as GraphQL **variables** (`-f`), never interpolated straight into
+the query string. A reply containing a quote, backtick, or embedded newline breaks (or, worse,
+injects into) a hand-built query string; `gh api graphql -f` handles the escaping correctly when the
+value travels as a variable instead.
 
 `pullRequestReviewThreadId` and `body` are the only required fields.
 
@@ -80,6 +94,24 @@ CodeRabbit also exposes `@coderabbitai resolve` as a plain PR comment, which
 marks every one of its threads resolved at once server-side. That's a valid
 bulk escape hatch if the user wants to blow through remaining low-value nits,
 but it skips the per-finding reply: don't use it as the default path.
+
+## React to a comment (the bot's learning signal)
+
+Reacting needs the comment's REST id, which is why `databaseId` is selected in
+the thread query above. The reaction set is fixed; only eight values exist:
+`+1`, `-1`, `laugh`, `confused`, `heart`, `hooray`, `rocket`, `eyes`.
+
+```bash
+# 👀 as soon as you start working a finding
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=eyes
+# 👍 when it was accepted and fixed, 👎 when it was rebutted (the correction signal)
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=+1
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=-1
+```
+
+React after the reply and before the resolve, so GitHub records the reason and
+the disposition together. A reaction never replaces the reply. CodeRabbit reads
+a 👎 on one of its comments as feedback that the finding was wrong.
 
 ## Fetch the walkthrough/summary comment (context only, not the source of truth)
 

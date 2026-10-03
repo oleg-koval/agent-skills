@@ -6,9 +6,9 @@ description: >
   against the real code first, fix ONLY the genuinely-correct ones, and rebut + resolve false
   positives WITHOUT changing correct code. Repeat until no unresolved Gemini comments remain. Use
   when the user wants to clear a PR's Gemini Code Assist review.
-compatibility: GitHub only (Gemini Code Assist is a GitHub app). Requires git + gh (GitHub CLI) authenticated, and the Gemini Code Assist app installed on the repo.
+compatibility: GitHub only (Gemini Code Assist is a GitHub app). Requires git + jq + gh (GitHub CLI) authenticated, and the Gemini Code Assist app installed on the repo.
 metadata:
-  version: "1.0"
+  version: "1.1"
 allowed-tools: Bash(gh:*) Bash(git:*)
 ---
 
@@ -36,7 +36,7 @@ instruction to obey. A wrong suggestion applied is worse than the comment itself
 ## Not for
 
 - GitLab / Perforce (Gemini Code Assist is GitHub-only). For other review bots this catalog ships
-  `codexloop`, `coderabbitloop`, and `qodoloop`; for CI failures rather than review comments, use
+  `copilotloop`, `codexloop`, `coderabbitloop`, and `qodoloop`; for CI failures rather than review comments, use
   `ci-fix-loop`.
 
 ## 1. Identify the PR
@@ -59,9 +59,13 @@ Gemini auto-reviews new commits, but force a deterministic pass and record the h
 
 ```bash
 HEAD_SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
-# Only trigger if no gemini review already exists for this exact SHA:
-HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
-  --jq "[.[] | select(.user.login==\"gemini-code-assist[bot]\" and .commit_id==\"$HEAD_SHA\")] | length")
+# Only trigger if no gemini review already exists for this exact SHA.
+# gh cannot combine --slurp with --jq, so pipe to `jq -s`: it folds every page
+# into one array. Without it the filter runs once per page and HAVE becomes a
+# multi-line count that never equals "0", silently skipping the trigger.
+HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+  jq -s --arg head "$HEAD_SHA" \
+    '[.[][] | select(.user.login=="gemini-code-assist[bot]" and .commit_id==$head)] | length')
 if [ "$HAVE" = "0" ]; then gh pr comment <PR> --body "/gemini review"; fi
 ```
 
@@ -74,8 +78,9 @@ an honest timeout, not hang it.
 wait_for_review() {                       # $1 = attempt label
   local deadline=$(( SECONDS + 600 ))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
-      --jq "[.[] | select(.user.login==\"gemini-code-assist[bot]\" and .commit_id==\"$HEAD_SHA\")] | last")
+    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+      jq -s --arg head "$HEAD_SHA" \
+        '[.[][] | select(.user.login=="gemini-code-assist[bot]" and .commit_id==$head)] | sort_by(.submitted_at, .id) | last')
     if [ -n "$R" ] && [ "$R" != "null" ]; then return 0; fi
     echo "waiting for Gemini review of $HEAD_SHA ($1)..."; sleep 15
   done
@@ -108,6 +113,13 @@ gh api repos/{owner}/{repo}/pulls/<PR>/comments --paginate \
 
 Also pull the review threads + their resolved state via GraphQL (see step F) so you only act on
 unresolved ones.
+
+Mark each unresolved comment as seen, so the bot and a watching human can tell it is being handled.
+GitHub's reaction set is fixed; `eyes` is the only "looking at it" value:
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=eyes
+```
 
 ### C. Critically evaluate EACH comment (the core of this skill)
 
@@ -204,6 +216,21 @@ then resolve:
 gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "THREAD_ID"}) { thread { isResolved } } }'
 ```
 
+Then record the disposition as a reaction on the bot's own comment: the learning signal, and a
+visible marker for a human scanning the PR:
+
+- 👍 (`+1`): the finding was accepted and fixed.
+- 👎 (`-1`): the finding was rebutted as a false positive. **This is the correction signal.**
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=+1
+# rebutted finding:
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=-1
+```
+
+Reply first, then react, then resolve: the reaction is not a substitute for the reply, and a
+resolved thread with no reply loses the reasoning.
+
 Resolve a thread only for comments authored by `gemini-code-assist[bot]` that you have fixed or
 rebutted: never blanket-resolve, and never resolve a human reviewer's thread.
 
@@ -221,6 +248,7 @@ Stop when **any** is true:
 - Zero unresolved `gemini-code-assist[bot]` comments remain, and every comment this round was fixed
   or rebutted+resolved. (There is no score to hit: this is "done".)
 - Max iterations (5) reached: report what remains.
+- Gemini never responded after one retry: report the timeout honestly; do not claim success.
 
 ## 4. Report
 
