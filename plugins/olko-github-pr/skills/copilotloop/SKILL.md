@@ -6,7 +6,7 @@ description: >
   ones, and rebut + resolve false positives WITHOUT changing correct code. Repeat until no
   unresolved Copilot comments remain. Use when the user says "satisfy Copilot", "clear the Copilot
   review", "fix Copilot comments", "Copilot loop", or wants to iterate on Copilot PR feedback.
-compatibility: GitHub only (Copilot code review is a GitHub feature). Requires git + gh (GitHub CLI) authenticated, Copilot code review enabled, and permission to request reviewers on the repository.
+compatibility: GitHub only (Copilot code review is a GitHub feature). Requires git + jq + gh (GitHub CLI) authenticated, Copilot code review enabled, and permission to request reviewers on the repository.
 metadata:
   version: "1.0"
 allowed-tools: Bash(gh:*) Bash(git:*)
@@ -22,12 +22,14 @@ suggestion applied is worse than the comment itself.
 
 - **No check-run, no score.** Copilot posts an overview comment and a PR review with inline review
   comments. Detection is by polling the reviews endpoint and paginated review threads. "Satisfied"
-  means zero unresolved Copilot threads after each finding is fixed or rebutted.
+  means zero unresolved Copilot threads and zero unaddressed body findings after each finding is
+  fixed or rebutted with a recorded reply.
 - **Request through the reviewers API.** Copilot does not use a reliable slash-command trigger.
   Request `copilot-pull-request-reviewer[bot]` through the pull request reviewers endpoint. A
   repository may also be configured to review new pushes automatically.
 - **Copilot may repeat comments.** A re-review can repeat comments that were resolved or downvoted,
-  so match findings to the current head and avoid reopening work without a current unresolved thread.
+  so match findings to the current head and prior replies before reopening work, including body
+  findings that have no inline thread.
 - **Copilot is concise and can reason from the diff alone.** Its characteristic failure is
   confidently asserting a bug based only on the changed hunk, without the surrounding file or the
   call sites. That makes "read the whole file before believing it" the single highest-value check.
@@ -74,8 +76,9 @@ report and list what is still unresolved rather than starting a sixth.
 ```bash
 HEAD_SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
 # Only trigger if no Copilot review exists for this exact SHA:
-HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
-  --jq "[.[] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | length")
+HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+  jq -s --arg bot "$BOT" --arg head "$HEAD_SHA" \
+    '[.[][] | select(.user.login==$bot and .commit_id==$head)] | length')
 if [ "$HAVE" = "0" ]; then
   gh api --method POST repos/{owner}/{repo}/pulls/<PR>/requested_reviewers \
     -f 'reviewers[]=copilot-pull-request-reviewer[bot]'
@@ -92,8 +95,9 @@ an honest timeout, not hang it.
 wait_for_review() {                       # $1 = attempt label
   local deadline=$(( SECONDS + 600 ))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
-      --jq "[.[] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | last")
+    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+      jq -s --arg bot "$BOT" --arg head "$HEAD_SHA" \
+        '[.[][] | select(.user.login==$bot and .commit_id==$head)] | sort_by(.submitted_at, .id) | last')
     if [ -n "$R" ] && [ "$R" != "null" ]; then return 0; fi
     echo "waiting for Copilot review of $HEAD_SHA ($1)..."; sleep 15
   done
@@ -116,8 +120,12 @@ retry in the final summary; two silent timeouts are the failure mode this guard 
 
 ### B. Fetch the findings
 
-- **Summary**: the Copilot overview comment and review `.body`: read the overall take and approval
-  assessment, but treat the inline threads as the actionable source of truth.
+- **Summary**: read the Copilot overview comment and review `.body`, including all matching reviews
+  for the current head. Extract and classify actionable claims even when they have no inline thread;
+  an approval assessment or lack of inline comments does not make those findings complete.
+  Track each body finding across iterations by source review/comment ID and item, with its
+  classification, fix commit or evidence-based rebuttal, PR-level reply URL, and completion status.
+  Link duplicates to the same finding so they are counted once; retain pending findings after a push.
 - **Unresolved inline comments** on the current head:
 
 ```bash
@@ -128,17 +136,19 @@ gh api repos/{owner}/{repo}/pulls/<PR>/comments --paginate \
 Also pull the review threads + their resolved state via GraphQL (see step F) so you only act on
 unresolved ones.
 
-### C. Critically evaluate EACH comment (the core of this skill)
+### C. Critically evaluate EACH finding (the core of this skill)
 
-For every comment, **verify the claim against the actual code and repo conventions before touching
-anything.** Read the whole file, not just the diff hunk Copilot saw, plus the types and the call
-sites. Then classify:
+For every inline or body finding, **verify the claim against the actual code and repo conventions
+before touching anything.** Read the whole file, not just the diff hunk Copilot saw, plus the types
+and the call sites. Then classify:
 
 1. **CORRECT + actionable**: the finding is real and the fix improves the code. → fix it (step D).
 2. **FALSE POSITIVE / technically wrong**: the claim doesn't hold. → do **NOT** change code; write a
-   specific, evidence-based reply (cite the exact code/line/behavior that disproves it), then resolve.
+   specific, evidence-based reply (cite the exact code/line/behavior that disproves it), then resolve
+   its thread or record completion for a body finding (step F).
 3. **Valid but out-of-scope / stylistic nit** that conflicts with repo convention or the PR's intent
-   → briefly decline with a reason, then resolve. Do not expand the PR's scope to satisfy a nit.
+   → briefly decline with evidence of that convention or scope, then resolve its thread or record
+   completion for a body finding (step F). Do not expand the PR's scope to satisfy a nit.
 
 **Hard rules:**
 - **Never modify correct code just to silence Copilot.** Prefer a reasoned rebuttal.
@@ -190,7 +200,7 @@ gh pr view <PR> --json headRefOid -q .headRefOid   # must match
 
 If they differ, stop: the fix is not on the PR, so nothing may be resolved yet.
 
-### F. Reply to and resolve every addressed thread
+### F. Reply to every addressed finding and resolve its inline threads
 
 Only now, with the fixes pushed, reply and resolve. Fetch unresolved threads, **following
 pagination**: a PR with more than 100 threads will otherwise look clean while unresolved findings
@@ -231,18 +241,29 @@ blanket-resolve, and never resolve a human reviewer's thread.
 Threads you are **rebutting** need no push, so they may be replied to and resolved regardless of
 whether step D changed code.
 
+For each body finding, post a PR-level reply (for example, using
+`gh pr comment <PR> --body-file <reply-file>`) identifying the source review/comment and item.
+Record the pushed fix commit and validation, or an evidence-based rebuttal, including the reason
+for declining an out-of-scope finding. Record the reply URL in the tracking entry before marking
+it complete. One reply may cover multiple explicitly identified findings. Fixed body findings
+require the same successful push check as fixed threads; rebuttals need no push. If a finding also
+has an inline thread, that thread still requires a reply and resolution.
+
 ### G. Re-review
 
 Pushing re-triggers Copilot when automatic review of new pushes is on; otherwise request Copilot again
 through the reviewers endpoint. Go back to **A**
 with the new head SHA. If step D changed nothing (all comments were rebutted), skip the push,
-ensure all threads are resolved, and exit.
+ensure all Copilot threads are resolved and all tracked body findings have recorded PR-level
+replies and are complete, then exit.
 
 ## 3. Exit conditions
 
 Stop when **any** is true:
-- Zero unresolved `$BOT` comments remain, and every comment this round was fixed or
-  rebutted+resolved. (There is no score to hit: this is "done".)
+- Zero unresolved `$BOT` threads and zero pending body findings remain across iterations. Every
+  finding was fixed or rebutted with evidence, every inline thread was replied to and resolved,
+  and every body finding has a recorded PR-level reply. (There is no score to hit:
+  this is "done".)
 - Max iterations (5) reached: report what remains.
 - Copilot never responded after one retry: report the timeout honestly; do not claim success.
 
@@ -253,10 +274,10 @@ Copilotloop complete.
   PR:                 #<n>
   Bot login:          <resolved $BOT>
   Iterations:         N
-  Comments fixed:     N   (genuinely-correct findings)
-  Comments rebutted:  N   (false positives / nits, resolved with rationale)
-  Remaining:          0
+  Findings fixed:     N   (inline + body findings, deduplicated)
+  Findings rebutted:  N   (inline + body findings, with recorded evidence-based replies)
+  Remaining:          0   (unresolved inline + pending body findings, deduplicated)
 ```
 
-If it stopped at max iterations, list the remaining threads with your current assessment
-(fix-pending vs disputed) so a human can arbitrate.
+If it stopped at max iterations, list the remaining threads and body findings with your current
+assessment (fix-pending vs disputed) so a human can arbitrate.
