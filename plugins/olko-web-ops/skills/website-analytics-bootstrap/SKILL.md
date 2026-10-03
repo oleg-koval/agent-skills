@@ -1,6 +1,12 @@
 ---
 name: website-analytics-bootstrap
-description: Set up a website's first SEO analytics loop end-to-end: persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only technical audits, and Telegram alerts on a local host or NAS.
+description: >
+  Stand up a website's first SEO analytics loop end to end: persistent SerpBear rank tracking,
+  Google Search Console, seeded keywords, read-only technical audits and Telegram alerts on a local
+  host or NAS. Use when the user says "set up rank tracking", "this site has no analytics", "track
+  my keywords", "bootstrap SEO monitoring", or wants to know how a site performs in search when no
+  tracking exists yet. For diagnosing an existing indexing problem use
+  search-console-indexing-audit.
 license: MIT
 allowed-tools: Bash, Read, Write, Edit
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires network access, a reachable deployment host, and owner-provided Search Console and alert credentials.

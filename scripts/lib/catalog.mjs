@@ -19,17 +19,17 @@ export const PLUGIN_ASSIGNMENT = {
              'changelog-generator', 'store-listing-copy'],
   },
   'olko-product': {
-    description: 'Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.',
-    skills: ['product-builder', 'mvp-oneshot', 'starter-rules', 'viral-launch'],
+    description: 'Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.',
+    skills: ['product-builder', 'mvp-oneshot', 'ux-ui-audit-loop', 'starter-rules', 'viral-launch'],
   },
   'olko-skill-meta': {
     description: 'Author and maintain agent skills and the AI toolchain itself.',
-    skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'ai-tools-setup',
+    skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'veto-routing', 'ai-tools-setup',
              'relay', 'shared-knowledge-artifact'],
   },
   'olko-reflection': {
     description: 'Look back and improve: self-critique, retrospectives, performance review, rapid learning.',
-    skills: ['self-critique', 'review-past-performance', 'retro-analysis', 'crash-course', 'wrap-up'],
+    skills: ['self-critique', 'review-past-performance', 'retro-analysis', 'agent-ops-retro', 'crash-course', 'wrap-up'],
   },
   'olko-obsidian': {
     description: 'Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine.',
@@ -54,6 +54,9 @@ export const PLUGIN_ASSIGNMENT = {
   },
 }
 
+/**
+ * Loads and parses the skills catalog from the specified JSON file.
+ */
 export function loadCatalog(catalogPath = 'catalog/skills.json') {
   const raw = JSON.parse(readFileSync(catalogPath, 'utf8'))
   const plugins = raw.plugins || []

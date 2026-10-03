@@ -7,8 +7,11 @@ import { join } from 'node:path'
 
 const SKIP_DIRS = new Set(['node_modules', '.git'])
 
-// Returns {ok:true, fields} | {ok:false, reason} | {ok:true, fields:null} when
-// the file legitimately has no frontmatter.
+/**
+ * Parses YAML frontmatter from markdown content.
+ * Returns {ok:true, fields} | {ok:false, reason} | {ok:true, fields:null} when
+ * the file legitimately has no frontmatter.
+ */
 export function parseFrontmatter(content) {
   if (!content.startsWith('---')) return { ok: true, fields: null }
 
@@ -43,6 +46,9 @@ export function parseFrontmatter(content) {
   return { ok: true, fields }
 }
 
+/**
+ * Recursively walks a directory tree to find all markdown files.
+ */
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
@@ -55,6 +61,9 @@ function walk(dir, out = []) {
   return out
 }
 
+/**
+ * Runs self-tests to verify frontmatter parsing logic.
+ */
 function runTests() {
   const cases = [
     ['no frontmatter', '# Title\n', true],

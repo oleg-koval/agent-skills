@@ -144,7 +144,7 @@
         },
         {
           "name": "codexloop",
-          "lookupName": "olko:codexloop",
+          "lookupName": "codexloop",
           "path": "plugins/olko-github-pr/skills/codexloop",
           "description": "Iteratively drives a GitHub PR to zero unresolved OpenAI Codex review comments, verifying every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
           "tags": [
@@ -258,7 +258,7 @@
           "name": "lekker-review",
           "lookupName": "olko:lekker-review",
           "path": "plugins/olko-github-pr/skills/lekker-review",
-          "description": "FAANG-quality PR code review: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, 5 parallel specialist review agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
+          "description": "FAANG-quality PR code review for Claude Code and OpenAI Codex: isolated worktree checkout, context gathering from your issue tracker/chat/docs/CI/monitoring, depth-selected specialist reviewers with host-bounded parallelism, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings.",
           "tags": [
             "code-review",
             "pull-request",
@@ -268,6 +268,7 @@
             "quality"
           ],
           "adapters": [
+            "codex",
             "claude"
           ]
         }
@@ -469,7 +470,7 @@
     },
     {
       "name": "olko-product",
-      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans.",
+      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.",
       "skills": [
         {
           "name": "product-builder",
@@ -506,6 +507,30 @@
             "planning",
             "startup",
             "oneshot"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "ux-ui-audit-loop",
+          "lookupName": "olko:ux-ui-audit-loop",
+          "path": "plugins/olko-product/skills/ux-ui-audit-loop",
+          "description": "Audit and improve a web UI in a browser through evidence-backed capture, severity triage, minimal code fixes, and before/after verification across responsive and interaction states. Use when the user says \"audit this UI\", \"fix the UX\", \"review this page visually\", \"make this page polished\", or asks for an autonomous screenshot-and-fix loop.",
+          "tags": [
+            "ux",
+            "ui",
+            "accessibility",
+            "browser-testing",
+            "visual-regression",
+            "responsive-design",
+            "frontend"
           ],
           "adapters": [
             "codex",
@@ -655,6 +680,29 @@
           ]
         },
         {
+          "name": "veto-routing",
+          "lookupName": "olko:veto-routing",
+          "path": "plugins/olko-skill-meta/skills/veto-routing",
+          "description": "Use Veto to route or execute AI tasks across configured providers with explicit privacy, cost, transport, and output boundaries.",
+          "tags": [
+            "veto",
+            "model-routing",
+            "multi-provider",
+            "cli",
+            "cost-control",
+            "agents"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
           "name": "ai-tools-setup",
           "lookupName": "olko:ai-tools-setup",
           "path": "plugins/olko-skill-meta/skills/ai-tools-setup",
@@ -772,6 +820,30 @@
             "code-quality",
             "trends",
             "planning"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok"
+          ]
+        },
+        {
+          "name": "agent-ops-retro",
+          "lookupName": "olko:agent-ops-retro",
+          "path": "plugins/olko-reflection/skills/agent-ops-retro",
+          "description": "Retrospective on how the agents themselves are being operated, from local transcripts plus the reports other jobs already produce: what the human keeps repeating, what the guardrails caught, and where delivery leaked, with unactioned findings carried forward.",
+          "tags": [
+            "retrospective",
+            "agent-operations",
+            "telemetry",
+            "skills",
+            "knowledge-ledger",
+            "delegation",
+            "cost"
           ],
           "adapters": [
             "codex",

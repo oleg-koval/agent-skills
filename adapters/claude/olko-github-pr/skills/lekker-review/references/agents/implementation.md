@@ -8,6 +8,28 @@ Axes to cover:
 - Business Logic / AC coverage: for each AC in the list below, mark
   ✅ met / ⚠️ partial / ❌ missing. Scope creep is also worth flagging.
   AC_LIST: read key "acList" from CONTEXT_FILE.
+  Return the complete status summary in the structured `acCoverage` field.
+  Decide each AC against the code that RUNS, not against the diff. When
+  WORKTREE_PATH is null, mark runtime verification as unavailable: do not inspect
+  worktree files or infer an AC status from runtime evidence you cannot verify.
+  Otherwise, use the worktree to follow the AC through its runtime path into
+  files the diff never touched, and specifically:
+  (a) Find what invokes the new code and on what trigger. New code that nothing
+      calls satisfies nothing, however correct its body is.
+  (b) For an AC with a timing, cadence or SLA component, name the trigger's
+      measurable frequency, such as its cron expression or poll interval, and
+      compare that number against the AC. For a webhook, compare a documented
+      delivery bound against the AC; without one, mark cadence verification as
+      unavailable rather than treating the webhook as a fixed-frequency trigger.
+      A reaper on a daily cron cannot meet a two-hour SLA.
+  (c) For an AC about a failure mode (crash, OOM, timeout, network loss), confirm
+      the handling is reachable under that failure. A process terminated by an
+      uncatchable signal such as SIGKILL cannot reach a `finally` block, shutdown
+      hook, or the tail of a long-running function; SIGTERM may allow graceful
+      handling. Verify the actual failure signal and its handling before concluding
+      that cleanup is unreachable.
+  An AC can fail with every added line correct, because the defect is what the
+  diff left alone. That is a finding, not an absence of one.
 - Scalability: N+1 queries, missing pagination, unbounded in-memory
   collections, missing rate-limit handling, cron jobs without overlap guard,
   missing DB indexes for new query patterns.
@@ -15,7 +37,32 @@ Axes to cover:
   sort/dedup on large arrays that could be done at DB level.
 - Integration Contracts: Shopify API misuse, BC API assumptions, webhook
   idempotency, external API pagination not handled.
-- GraphQL pagination (GQL-1): for every GraphQL query in the diff that uses a
+
+Boundary contract and lifecycle map (required for every Critical/Important
+finding involving routing, persistence, caching, fallback, proxying, or an
+external integration):
+- `entryPoint`: identify the real production trigger that reaches the changed
+  code (HTTP route, webhook, CLI command, queue consumer, gateway ingress, etc.).
+- `decisionPoint`: identify where the behavior is selected or transformed.
+- `realizationPoint`: identify where the selected behavior becomes runtime state.
+- `consumer`: identify the downstream consumer that actually relies on the
+  contract, not merely the helper that constructs it.
+- `stateOwner`: identify the durable/session/cache owner when state crosses a
+  turn, request, retry, or process boundary.
+- `identityDimensions`: list every identity that must remain distinct, such as
+  logical session key, physical session id, provider alias, resolved provider,
+  model, and API mode.
+- `transitions`: list the relevant success, `null`, `undefined`, exception, retry, fallback,
+  session-rotation, cache-reuse, and proxy/alternate-transport transitions.
+- `evidenceClass`: label the strongest evidence actually checked: `source`,
+  `isolated-test`, `repository-test`, `composed-test`, `production-probe`, or
+  `hosted-ci`. Never call an isolated harness a production-path proof.
+
+Do not report a stateful/integration finding without this boundary object. If
+the production entry point or downstream consumer cannot be identified, mark
+the claim as unverified rather than inferring behavior from a helper alone.
+
+GraphQL pagination (GQL-1): for every GraphQL query in the diff that uses a
   nodes connection (`nodes { ... }`):
   (a) Check that `pageInfo { hasNextPage endCursor }` is present alongside nodes: if missing, Critical.
   (b) Check that all pages are fetched (a loop or recursion using endCursor): a single-page fetch is a bug, Critical.
@@ -23,7 +70,7 @@ Axes to cover:
   Set `rule: "GQL-1"` on any Critical finding raised under this axis.
 
 Setting rule tags the finding as a house hard rule: it keeps its Critical
-severity and skips adversarial verification. Only set it for a genuine GQL-1
+severity only after rule-specific validation and skips runtime challenges. Only set it for a genuine GQL-1
 violation: never to shield an ordinary finding from verification.
 
 CI_STATUS: read key "ciStatus" from the JSON file CONTEXT_FILE.
@@ -36,7 +83,10 @@ Diff: read the full unified PR diff from the file DIFF_FILE (absolute path given
 Worktree: WORKTREE_PATH is given in your task message (null in scan mode, diff only).
 
 Rules:
-- Every finding must trace to a + line in the diff.
+- Every finding must trace to a + line in the diff, with one exception: an unmet
+  AC whose defect lives in code the diff did not touch. Anchor that one to the
+  unchanged file:line that had to change, and say in the description why the
+  unchanged line is the defect.
 - Report file:line: description. No positive observations.
 - `badCode` is REQUIRED: the verbatim offending line(s) copied from the diff:
   never paraphrased, never reconstructed from memory.
@@ -48,6 +98,7 @@ Rules:
   on a `critical`/`important` finding: a finding you cannot quote and cannot
   fix is a finding you have not proven, so drop it instead.
 - Exception for a missing/partial AC: the defect is what is absent, so quote
-  the closest incomplete added line(s) in `badCode` (the handler that stops
-  short, the branch never written) and put what must be added in `fix`. Do not
-  drop an unmet AC for lack of a quotable line.
+  the closest incomplete line(s) in `badCode` (the handler that stops short, the
+  branch never written, the caller on the wrong trigger) and put what must be
+  added in `fix`. That line may be an unchanged one. Do not drop an unmet AC for
+  lack of a quotable added line.

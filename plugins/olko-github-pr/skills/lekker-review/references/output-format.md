@@ -24,6 +24,7 @@ Output the review as a markdown response (not via printf). No ANSI escapes.
 **Proofs:** <M proven / N attempted> *(include only when N > 0)*
 **CI:** <✅ All passing | ⚠️ N failing: check-name | ⏳ Pending | N/A>
 **Depth:** <⚡ scan | 🔍 medium | 🔬 deep>
+**Engine:** <workflow | codex | revmux>
 
 ---
 
@@ -217,7 +218,7 @@ if empty.)*
 Depth:            <⚡ scan | 🔍 medium | 🔬 deep>
 Diff size:        ~<N> lines (~<N> tokens)
 Agents run:       <N total>: <breakdown, e.g. "5 reviewers (sonnet) + 6 verifiers (sonnet) + 2 provers (sonnet) + 1 critic (sonnet)">
-Verify skipped:   <N> hard-rule finding(s) exempt from adversarial verification (omit the line when 0)
+Rule checks:      <N> hard-rule finding(s) validated with rule-specific checks (omit the line when 0)
 Context sources:  <the subset of issue-tracker / chat / docs / framework-docs / monitoring / CI / prior-review-memory actually used>
 
 Output tokens:    <N>   ← ACTUAL workflow spend, from the workflow's outputTokens return value
@@ -234,6 +235,16 @@ Per-MTok pricing (input/output), verified 2026-07-07 from the claude-api referen
 - claude-haiku-4-5: $1 / $5
 
 Reviewer agents, verifiers, provers, and the critic all run on sonnet; triage and housekeeping on haiku. Only the main loop (context gathering + this synthesis) runs on the session model: use the session model's actual ID for that tier.
+
+For the Codex engine, use the model and usage metadata actually exposed by the
+native collaboration surface. Never relabel Codex agents as Claude tiers and
+never estimate an API price from a model nickname. Keep all numeric counts that
+are known (`agentCount`, diff size, verifier/prover counts). When Codex does not
+expose token or price usage, write `N/A (host did not expose usage)` for those
+individual fields and `Cost: N/A`; this is an evidence state, not a placeholder.
+The hard rule against `<N>` placeholders still applies. When usage is exposed,
+report the real values and use an official or operator-configured pricing source,
+naming its date in the block.
 
 ---
 
@@ -253,10 +264,7 @@ Reviewer agents, verifiers, provers, and the critic all run on sonnet; triage an
   self-contained but silently breaks callers.
 - Blank line between findings. No double blank lines.
 - No trailing whitespace, no HTML tags, no ANSI escapes.
-- **Proof counter-evidence rule**: when `proof.attempted` is true but `proven`
-  is false because the code behaved correctly for the tested input, the
-  synthesis MUST treat that as counter-evidence: either downgrade the finding
-  or state in the finding body why the proof attempt doesn't exonerate it
-  (e.g. the tested input wasn't the one that actually breaks). A finding whose
-  proof came back green cannot silently stay Critical. When `attempted` is
-  false, say nothing: untestable is not evidence either way.
+- **Proof counter-evidence rule**: when `proof.outcome` is `passed`, the
+  workflow has already downgraded the finding from Critical to Important.
+  Explain the passing proof in the finding body. When `attempted` is false,
+  say nothing: untestable is not evidence either way.

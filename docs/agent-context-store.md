@@ -229,6 +229,52 @@ into it:
   where they do not conflict with this contract. It cannot override lease acquisition,
   validation, append-only writes, secret handling, or the private-repository requirement.
 
+## Reading the store
+
+Everything above is the write side, and it is enforced: a lease, a validator, and CI
+that runs the validator again on push. The read side had none of that. For a while the
+only instruction to read the ledger was one sentence in `AGENTS.md`, which is a rule an
+agent has to remember rather than a mechanism. It did not hold. Two notes written on
+2026-08-25 described failures that both recurred by 2026-08-31: one about stating the
+denominator behind a percentage, one about cache reads dominating a long-session bill.
+Recording a lesson and delivering it are different jobs.
+
+The store therefore ships a reader, `recipes/tools/ledger-index`, built on the shape
+that already works for per-user memory: a cheap index is always in context, and the
+body is fetched on demand. The index is titles only, roughly 1.9k tokens for 84 notes,
+grouped by scope with traps first. The ledger itself is around 50KB and does not belong
+in every session.
+
+```text
+ledger-index                          the index, grouped by scope
+ledger-index --show n41               one note in full, body and Why
+ledger-index --kind trap --scope shell
+ledger-index --count
+```
+
+It resolves the ledger through the same pointer `context-repo` writes, so a machine
+that has resolved the store once needs no further configuration. An explicitly named
+`--ledger` or `LEDGER_PATH` that does not exist is an error rather than a fallback:
+silently reading a different ledger than the one you asked for is the failure this
+whole document exists to prevent.
+
+Hosts wire it in their own way and neither owns the format. A Claude `SessionStart`
+hook injects the index once per session; a Codex prompt shells out to the same binary.
+The reference hook is `recipes/hooks/ledger-index.sh`, which prints nothing and exits 0
+when the store is absent, so it can never fail a session.
+
+The index states its own horizon. It reads from disk and never fetches, because a
+session start is the wrong place for a network call, so the header carries the commit,
+its age in days, and a plain statement that a newer commit may exist upstream. Past
+three days it prints the `pull --rebase` command for that clone. Age of `HEAD` conflates
+a quiet repository with a checkout that is behind, and only a fetch separates them, so
+the limit is stated rather than implied.
+
+One consequence is worth making explicit. The fixed clone path is not a convention, it
+is the point: a second working copy of the store is the copy nothing keeps current, and
+it will be the one an index or an `AGENTS.md` symlink ends up reading. Resolve through
+the pointer and keep one checkout.
+
 ## What is never committed
 
 Raw session content, tokens, private prompts, and customer data never go into the

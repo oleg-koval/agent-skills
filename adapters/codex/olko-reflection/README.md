@@ -7,5 +7,6 @@ Use the canonical skills directly:
 - `plugins/olko-reflection/skills/self-critique/SKILL.md`
 - `plugins/olko-reflection/skills/review-past-performance/SKILL.md`
 - `plugins/olko-reflection/skills/retro-analysis/SKILL.md`
+- `plugins/olko-reflection/skills/agent-ops-retro/SKILL.md`
 - `plugins/olko-reflection/skills/crash-course/SKILL.md`
 - `plugins/olko-reflection/skills/wrap-up/SKILL.md`

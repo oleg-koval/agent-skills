@@ -11,6 +11,9 @@ import { readFileSync } from 'node:fs';
 const THRESHOLD = 1500;
 const OFFER_MARKER = /critical-thinking review/i; // the offer line must contain this; doubles as a loop guard
 
+/**
+ * Exits the hook cleanly when conditions for offering a critique are not met.
+ */
 function bail() { process.exit(0); } // any uncertainty => do nothing, never block the user
 
 let raw = '';

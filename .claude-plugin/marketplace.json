@@ -25,7 +25,7 @@
     {
       "name": "olko-product",
       "source": "./plugins/olko-product",
-      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, launch plans."
+      "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans."
     },
     {
       "name": "olko-skill-meta",

@@ -1,6 +1,11 @@
 ---
 name: changelog-generator
-description: Automatically creates user-facing changelogs from git commits by analyzing commit history, categorizing changes, and transforming technical commits into clear, customer-friendly release notes. Turns hours of manual changelog writing into minutes of automated generation.
+description: >
+  Turn git commit history into a user-facing changelog: read the commits since the last release,
+  categorise them, and rewrite technical messages as release notes a customer can actually read.
+  Use when the user asks for "a changelog", "release notes", "what changed since the last release",
+  "write the CHANGELOG entry", or is preparing a release and needs the notes written. For setting
+  up the release pipeline itself use semantic-release-beta.
 license: MIT
 allowed-tools: Bash, Read, Write
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires git history access in the target repository.

@@ -128,8 +128,26 @@ g) Mock smell: test the behavior, not the way it's built
    (time, randomness, injected network failure), or a dependency that genuinely
    cannot run in the test environment. The tell for a good mock: the behavior
    under test only exists because the boundary did something (e.g. a retry
-   banner that appears only when the fetch rejects). Even then, prefer an
-   injected simple fake over a module-level spy, and assert what the user sees.
+ banner that appears only when the fetch rejects). Even then, prefer an
+ injected simple fake over a module-level spy, and assert what the user sees.
+
+ h) Composed boundary and transition coverage
+ For every stateful or integration-heavy change, do not stop at testing the
+ helper. Trace the real entry point through the decision point, runtime
+ realization, downstream consumer, and persistence/cleanup owner. Require a
+ test or explicit evidence for the relevant transition matrix:
+ - success, `None`, exception, and disabled-feature paths;
+ - retry and fallback behavior;
+ - session/request rotation and cache reuse or eviction;
+ - proxy or alternate transport parity;
+ - quoted/history input versus newly authored input;
+ - provider/model/API-mode identity when routing is involved.
+
+ A test that only asserts a helper return value is `isolated-test` evidence,
+ not `composed-test` evidence. Flag a Critical/Important finding when the
+ changed contract is consumed through a different path than the test covers,
+ or when the test can pass while the stateful consumer still receives the
+ wrong identity or ordering.
 
 Report each per-line issue as:
   `test-file:line, <concise description of the gap or weakness>`
@@ -140,6 +158,13 @@ criticism without a fix is incomplete.
 
 Report the mutation-slip analysis as a single paragraph under a
 "**Mutation-slip risk:**" heading, not as line items.
+
+Return the review summary through these structured fields in addition to
+`findings`:
+- `coverageVerdict`: one concise overall coverage verdict.
+- `mutationSlip`: the mutation-slip risk paragraph.
+- `mockSmells`: every mock-smell issue as `{file, line, description, fix}`.
+  Return an empty array when there are no mock smells.
 
 EXISTING_REVIEWS: read key "existingReviews" from CONTEXT_FILE (awareness only, skip findings already raised)
 
