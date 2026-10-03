@@ -18,6 +18,7 @@ Available reusable prompt files:
 - qodoloop: .github/prompts/qodoloop.prompt.md
 - coderabbitloop: .github/prompts/coderabbitloop.prompt.md
 - codexloop: .github/prompts/codexloop.prompt.md
+- copilotloop: .github/prompts/copilotloop.prompt.md
 - geminiloop: .github/prompts/geminiloop.prompt.md
 - ci-fix-loop: .github/prompts/ci-fix-loop.prompt.md
 - dependabot-triage: .github/prompts/dependabot-triage.prompt.md

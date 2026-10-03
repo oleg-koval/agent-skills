@@ -78,6 +78,14 @@ Run the paginated GraphQL query in `references/graphql-queries.md` (`unresolvedQ
 
 Build the working set: all `recommended` threads, plus `optional` ones too if `--include-optional`.
 
+Mark each thread as seen with an 👀 reaction on its first comment (`databaseId` from the query), so
+the bot and a watching human can tell it is being worked. GitHub's reaction set is fixed; `eyes` is
+the only "looking at it" value:
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=eyes
+```
+
 #### C. Check exit conditions
 
 Stop if the working set is empty, or max iterations reached.
@@ -113,6 +121,16 @@ This is the "answer to the comments" half of the job, not optional cleanup, and 
   ```
   Pass the thread id and reply text as GraphQL **variables** (`-f threadId=... -f body=...`), never interpolated into the query string itself: a reply containing a quote, backtick, or newline breaks (or worse, injects into) a hand-built query. Then resolve with `resolveReviewThread` (see references file).
 - **Blocked** findings: reply explaining exactly why (false positive / needs a human call), but **do not resolve**: leave the thread open. A blocked finding that gets silently resolved is a false "done".
+
+Then record each disposition as a reaction on the thread's first comment: the learning signal, and
+a visible marker for a human scanning the PR. 👍 (`+1`) for a fixed finding, 👎 (`-1`) for a
+blocked/rebutted one. Reply first, react, then resolve: a reaction never replaces the reply.
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=+1
+# blocked/rebutted finding:
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=-1
+```
 
 Go back to step A.
 

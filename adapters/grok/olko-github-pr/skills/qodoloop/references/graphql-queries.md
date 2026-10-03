@@ -26,7 +26,7 @@ query($cursor: String) {
           id
           isResolved
           comments(first: 1) {
-            nodes { body path line author { login } }
+            nodes { databaseId body path line author { login } }
           }
         }
       }
@@ -60,7 +60,7 @@ while :; do
               nodes {
                 id
                 isResolved
-                comments(first: 1) { nodes { body path line author { login } } }
+                comments(first: 1) { nodes { databaseId body path line author { login } } }
               }
             }
           }
@@ -125,6 +125,23 @@ Only resolve a thread whose fix is already pushed and confirmed durable on
 the branch (SKILL.md §2E-F): resolving first and pushing second means a
 failed push leaves GitHub showing the finding as handled when it isn't. Never
 resolve a blocked/skipped finding at all; reply to it and leave it open.
+
+## React to a comment (the bot's learning signal)
+
+Reacting needs the comment's REST id, which is why `databaseId` is selected in
+the thread query above. The reaction set is fixed; only eight values exist:
+`+1`, `-1`, `laugh`, `confused`, `heart`, `hooray`, `rocket`, `eyes`.
+
+```bash
+# 👀 as soon as you start working a finding
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=eyes
+# 👍 when it was accepted and fixed, 👎 when it was rebutted (the correction signal)
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=+1
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=-1
+```
+
+React after the reply and before the resolve, so GitHub records the reason and
+the disposition together. A reaction never replaces the reply.
 
 ## Fetch the rollup issue comment (context only, not the source of truth)
 
