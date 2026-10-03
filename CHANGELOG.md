@@ -1,3 +1,10 @@
+# [1.51.0](https://github.com/oleg-koval/agent-skills/compare/v1.50.0...v1.51.0) (2026-10-03)
+
+
+### ✨ Features
+
+* **olko-github-pr:** add copilotloop and harden every review loop ([#114](https://github.com/oleg-koval/agent-skills/issues/114)) ([89a323c](https://github.com/oleg-koval/agent-skills/commit/89a323c29c4e69b9a4d16c8cdc3026b60d5da0ab))
+
 # [1.50.0](https://github.com/oleg-koval/agent-skills/compare/v1.49.2...v1.50.0) (2026-10-02)
 
 
