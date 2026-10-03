@@ -53,11 +53,12 @@ Gemini auto-reviews new commits, but force a deterministic pass and record the h
 ```bash
 HEAD_SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
 # Only trigger if no gemini review already exists for this exact SHA.
-# --slurp folds every page into one array before the filter: without it gh runs
-# the jq once per page, so HAVE becomes a multi-line count that never equals "0"
-# and an unreviewed head silently skips the trigger.
-HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate --slurp \
-  --jq "[.[][] | select(.user.login==\"gemini-code-assist[bot]\" and .commit_id==\"$HEAD_SHA\")] | length")
+# gh cannot combine --slurp with --jq, so pipe to `jq -s`: it folds every page
+# into one array. Without it the filter runs once per page and HAVE becomes a
+# multi-line count that never equals "0", silently skipping the trigger.
+HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+  jq -s --arg head "$HEAD_SHA" \
+    '[.[][] | select(.user.login=="gemini-code-assist[bot]" and .commit_id==$head)] | length')
 if [ "$HAVE" = "0" ]; then gh pr comment <PR> --body "/gemini review"; fi
 ```
 
@@ -70,8 +71,9 @@ an honest timeout, not hang it.
 wait_for_review() {                       # $1 = attempt label
   local deadline=$(( SECONDS + 600 ))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate --slurp \
-      --jq "[.[][] | select(.user.login==\"gemini-code-assist[bot]\" and .commit_id==\"$HEAD_SHA\")] | last")
+    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+      jq -s --arg head "$HEAD_SHA" \
+        '[.[][] | select(.user.login=="gemini-code-assist[bot]" and .commit_id==$head)] | sort_by(.submitted_at, .id) | last')
     if [ -n "$R" ] && [ "$R" != "null" ]; then return 0; fi
     echo "waiting for Gemini review of $HEAD_SHA ($1)..."; sleep 15
   done

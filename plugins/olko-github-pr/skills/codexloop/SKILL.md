@@ -6,7 +6,7 @@ description: >
   ones, and rebut + resolve false positives WITHOUT changing correct code. Repeat until no
   unresolved Codex comments remain. Use when the user says "satisfy codex", "clear the codex
   review", "fix codex comments", "codex loop", or wants to iterate on Codex PR review feedback.
-compatibility: GitHub only (Codex code review is a GitHub app). Requires git + gh (GitHub CLI) authenticated, and the Codex / ChatGPT connector app installed on the repo with code review enabled.
+compatibility: GitHub only (Codex code review is a GitHub app). Requires git + jq + gh (GitHub CLI) authenticated, and the Codex / ChatGPT connector app installed on the repo with code review enabled.
 metadata:
   version: "1.2"
 allowed-tools: Bash(gh:*) Bash(git:*)
@@ -84,11 +84,12 @@ report and list what is still unresolved rather than starting a sixth.
 ```bash
 HEAD_SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
 # Only trigger if no Codex review already exists for this exact SHA.
-# --slurp folds every page into one array before the filter: without it gh runs
-# the jq once per page, so HAVE becomes a multi-line count that never equals "0"
-# and an unreviewed head silently skips the trigger.
-HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate --slurp \
-  --jq "[.[][] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | length")
+# gh cannot combine --slurp with --jq, so pipe to `jq -s`: it folds every page
+# into one array. Without it the filter runs once per page and HAVE becomes a
+# multi-line count that never equals "0", silently skipping the trigger.
+HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+  jq -s --arg bot "$BOT" --arg head "$HEAD_SHA" \
+    '[.[][] | select(.user.login==$bot and .commit_id==$head)] | length')
 if [ "$HAVE" = "0" ]; then gh pr comment <PR> --body "@codex review"; fi
 ```
 
@@ -102,8 +103,9 @@ an honest timeout, not hang it.
 wait_for_review() {                       # $1 = attempt label
   local deadline=$(( SECONDS + 600 ))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate --slurp \
-      --jq "[.[][] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | last")
+    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
+      jq -s --arg bot "$BOT" --arg head "$HEAD_SHA" \
+        '[.[][] | select(.user.login==$bot and .commit_id==$head)] | sort_by(.submitted_at, .id) | last')
     if [ -n "$R" ] && [ "$R" != "null" ]; then return 0; fi
     echo "waiting for Codex review of $HEAD_SHA ($1)..."; sleep 15
   done
