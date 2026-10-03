@@ -166,6 +166,29 @@
           ]
         },
         {
+          "name": "copilotloop",
+          "lookupName": "olko:copilotloop",
+          "path": "plugins/olko-github-pr/skills/copilotloop",
+          "description": "Iteratively drives a GitHub PR to zero unresolved GitHub Copilot review comments, verifying every finding against the real code first, fixes only the correct ones, and rebuts false positives without changing correct code.",
+          "tags": [
+            "code-review",
+            "copilot",
+            "github",
+            "pull-requests",
+            "automation",
+            "agents"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro"
+          ]
+        },
+        {
           "name": "geminiloop",
           "lookupName": "olko:geminiloop",
           "path": "plugins/olko-github-pr/skills/geminiloop",
