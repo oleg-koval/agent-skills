@@ -9,7 +9,7 @@ description: >
   CodeRabbit" / "resolve CodeRabbit comments".
 compatibility: Requires git and gh (GitHub CLI) authenticated, with the CodeRabbit GitHub App installed on the repo.
 metadata:
-  version: "1.0"
+  version: "1.1"
 allowed-tools: Bash(gh:*) Bash(git:*)
 ---
 
@@ -45,13 +45,30 @@ CodeRabbit has slash commands (official, `docs.coderabbit.ai/reference/review-co
 gh pr view --json number,headRefName,headRefOid -q '{number, branch: .headRefName, sha: .headRefOid}'
 ```
 
-Check out the branch if not already on it.
+Check out the branch if not already on it, **then require a clean working tree**
+(`git status --porcelain` empty) before touching anything:
+
+```bash
+[ -z "$(git status --porcelain)" ] || { echo "working tree not clean, refusing to start: would risk committing unrelated changes"; exit 1; }
+```
+
+This is the precondition step E's scoped `git add <file>` depends on: staging only the files a fix
+touched is safe *because* the tree started clean. Skip it and a file with pre-existing local edits
+gets those edits swept into the fix commit right along with it.
 
 ### 2. Loop (max 5 iterations)
 
-#### A. Push and wait
+Keep an explicit iteration counter and stop at 5: the cap is a real bound to enforce, not a figure
+of speech. Each pass through A–F is one iteration; on hitting the cap, go straight to the report.
+
+#### A. Wait for a review of the current head
+
+On **iteration 1**, if there is nothing to push yet (you haven't fixed anything in this loop), don't
+wait for a brand-new review: use whatever CodeRabbit has already posted as your starting point and
+go straight to step B. Otherwise:
 
 ```bash
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 git push
 ```
 
@@ -61,11 +78,27 @@ If this repo doesn't auto-review on push, nudge it:
 gh pr comment <PR_NUMBER> --body "@coderabbitai review"
 ```
 
-Poll (every ~10s, timeout ~5min) for CodeRabbit's next formal review to land: a new entry in `gh api repos/{owner}/{repo}/pulls/<PR_NUMBER>/reviews` from `coderabbitai[bot]` created after this push. If you instead see a rate-limit comment ("review limit"), **stop the loop now** and go to Report with `blocked: rate-limited`.
+Poll (every ~10s, timeout ~5min) for CodeRabbit's next formal review to land: a new entry in
+`gh api --paginate repos/{owner}/{repo}/pulls/<PR_NUMBER>/reviews` from `coderabbitai[bot]`
+(REST spelling carries the `[bot]` suffix) created after `$SINCE`. Follow pagination so a review
+that lands on page two is not missed. If you instead see a rate-limit comment ("review limit"),
+**stop the loop now** and go to Report with `blocked: rate-limited`. If no review arrives within
+the timeout after one retry, stop and report the timeout honestly; do not claim success.
 
 #### B. Fetch unresolved findings
 
-Run the `unresolvedQodoThreads`-shaped query in `references/graphql-queries.md` (filter `author.login == "coderabbitai[bot]"` instead of Qodo's login). For each unresolved thread, parse the finding text and the **Prompt for AI Agents** block (heading text is `🤖 Prompt for AI Agents`, not `Agent Prompt`: match case/emoji-insensitively).
+Run the `unresolvedQodoThreads`-shaped query in `references/graphql-queries.md` (filter `author.login`
+on GraphQL's bare `coderabbitai`, **not** REST's `coderabbitai[bot]`: see the reference's login-spelling
+note, and follow `pageInfo.hasNextPage`/`endCursor` until exhausted). For each unresolved thread,
+parse the finding text, its `databaseId`, and the **Prompt for AI Agents** block (heading text is
+`🤖 Prompt for AI Agents`, not `Agent Prompt`: match case/emoji-insensitively).
+
+Mark each thread as seen with an 👀 reaction on its first comment (`databaseId` from the query), so
+the bot and a watching human can tell it is being worked:
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=eyes
+```
 
 #### C. Check exit conditions
 
@@ -73,25 +106,67 @@ Stop if there are zero unresolved CodeRabbit threads, or max iterations reached.
 
 #### D. Fix each finding
 
-For each thread, in order: read the Prompt for AI Agents block in full: it names the issue and the fix. Apply it, staying inside its stated scope. If the suggestion is wrong, unsafe, or needs a product decision, don't force it: note that in step E instead.
+For each thread, in order: read the Prompt for AI Agents block in full: it names the issue and the fix. Apply it, staying inside its stated scope. If the suggestion is wrong, unsafe, or needs a product decision, don't force it: note that in step F instead. Track two lists as you go: **fixed** (thread id + the exact files you touched) and **skipped** (thread id + why). Do not resolve anything yet.
 
-#### E. Answer and resolve
+#### E. Commit and push FIRST, before resolving anything
 
-**Reply to the thread first, then resolve it**, the "answer to the comments" half of the job:
+Order matters. A resolved thread is a claim that the fix is on the branch, so the push has to succeed
+before the claim is made: otherwise a failed commit or push leaves the PR unfixed with the finding
+marked resolved, and nobody looks at it again.
 
-```bash
-gh api graphql -f query='mutation { addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: "<THREAD_ID>", body: "<REPLY>"}) { comment { id } } }'
-```
-
-Reply body: one or two sentences, what you changed and why, or exactly why you didn't fix it. Then resolve (`resolveReviewThread`). A finding you deliberately skip still gets a reply and gets resolved.
-
-#### F. Commit and push
+If step D changed code:
 
 ```bash
-git add -A
+# Stage ONLY the files your fixes touched: never `git add -A`, which sweeps up
+# unrelated work and untracked secrets sitting in the worktree.
+git status --short                     # look before you stage
+git add <path> [<path>...]             # the files named in the findings you fixed
 git commit -m "address CodeRabbit review feedback (coderabbitloop iteration N)"
 git push
 ```
+
+Confirm the push actually landed before continuing:
+
+```bash
+git rev-parse HEAD
+gh pr view <PR_NUMBER> --json headRefOid -q .headRefOid   # must match
+```
+
+If they differ, stop: the fix is not on the PR, so nothing may be resolved yet.
+
+#### F. Reply to each finding, react, then resolve
+
+Only now, with the fixes pushed, reply and resolve. **Reply to the thread first, then react, then
+resolve it**, the "answer to the comments" half of the job:
+
+```bash
+gh api graphql -f query='
+  mutation($threadId: ID!, $body: String!) {
+    addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: $threadId, body: $body}) {
+      comment { id }
+    }
+  }' -f threadId="$THREAD_ID" -f body="$REPLY_TEXT"
+```
+
+Pass the thread id and reply text as GraphQL **variables** (`-f threadId=... -f body=...`), never
+interpolated into the query string: a reply containing a quote, backtick, or newline breaks (or
+injects into) a hand-built query.
+
+Reply body: one or two sentences, what you changed and why, or exactly why you didn't fix it. A
+finding you deliberately skip still gets a reply and gets resolved.
+
+Then record the disposition as a reaction on the thread's first comment: the learning signal, and a
+visible marker for a human scanning the PR. 👍 (`+1`) for fixed, 👎 (`-1`) for skipped/rebutted.
+CodeRabbit reads a 👎 as feedback that the finding was wrong.
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=+1
+# skipped/rebutted finding:
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions -f content=-1
+```
+
+Then resolve (`resolveReviewThread`). Reply first, react, then resolve: a reaction never replaces
+the reply, and a resolved thread with no reply loses the reasoning.
 
 Go back to step A.
 
@@ -103,7 +178,7 @@ Go back to step A.
 | Findings resolved  | N     |
 | Findings skipped   | N (with reasons) |
 | Remaining          | N (if any) |
-| Blocked            | rate-limited / max-iterations / none |
+| Blocked            | rate-limited / timeout / max-iterations / none |
 
 ```
 Coderabbitloop complete.
@@ -114,4 +189,4 @@ Coderabbitloop complete.
 
 ## References
 
-- `references/graphql-queries.md`: shared with `qodoloop`: the exact `reviewThreads` query and the `resolveReviewThread` / `addPullRequestReviewThreadReply` mutations. Swap the author-login filter to `coderabbitai[bot]` and the prompt-heading match to `Prompt for AI Agents`.
+- `references/graphql-queries.md`: shared with `qodoloop`: the exact `reviewThreads` query (including the `databaseId` the reaction step needs) and the `resolveReviewThread` / `addPullRequestReviewThreadReply` mutations. Filter `author.login` on GraphQL's bare `coderabbitai` (never `coderabbitai[bot]`) and match the prompt heading `Prompt for AI Agents`.

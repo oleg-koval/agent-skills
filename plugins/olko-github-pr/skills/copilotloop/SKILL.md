@@ -8,7 +8,7 @@ description: >
   review", "fix Copilot comments", "Copilot loop", or wants to iterate on Copilot PR feedback.
 compatibility: GitHub only (Copilot code review is a GitHub feature). Requires git + jq + gh (GitHub CLI) authenticated, Copilot code review enabled, and permission to request reviewers on the repository.
 metadata:
-  version: "1.0"
+  version: "1.1"
 allowed-tools: Bash(gh:*) Bash(git:*)
 ---
 
@@ -136,6 +136,16 @@ gh api repos/{owner}/{repo}/pulls/<PR>/comments --paginate \
 Also pull the review threads + their resolved state via GraphQL (see step F) so you only act on
 unresolved ones.
 
+Mark each unresolved inline comment as seen, so the bot and a watching human can tell it is being
+handled. GitHub's reaction set is fixed; `eyes` is the only "looking at it" value:
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=eyes
+```
+
+Body findings (no inline thread) have no comment to react to; track them in step B's register and
+give each a PR-level reply in step F instead.
+
 ### C. Critically evaluate EACH finding (the core of this skill)
 
 For every inline or body finding, **verify the claim against the actual code and repo conventions
@@ -234,6 +244,21 @@ then resolve:
 ```bash
 gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "THREAD_ID"}) { thread { isResolved } } }'
 ```
+
+Then record the disposition of each inline finding as a reaction on Copilot's own comment: the
+learning signal, and a visible marker for a human scanning the PR:
+
+- 👍 (`+1`): the finding was accepted and fixed.
+- 👎 (`-1`): the finding was rebutted as a false positive. **This is the correction signal.**
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=+1
+# rebutted finding:
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=-1
+```
+
+Reply first, then react, then resolve: the reaction is not a substitute for the reply, and a
+resolved thread with no reply loses the reasoning.
 
 Resolve a thread only for comments authored by `$BOT` that you have fixed or rebutted: never
 blanket-resolve, and never resolve a human reviewer's thread.

@@ -29,7 +29,7 @@ suggestion applied is worse than the comment itself.
 ## Not for
 
 - GitLab / Perforce (Codex code review is a GitHub app). For other review bots this catalog ships
-  `geminiloop`, `coderabbitloop`, and `qodoloop`; for CI failures rather than review comments, use
+  `copilotloop`, `geminiloop`, `coderabbitloop`, and `qodoloop`; for CI failures rather than review comments, use
   `ci-fix-loop`.
 
 ## 0. Resolve the Codex bot login (do this first, do not hardcode)
@@ -76,9 +76,12 @@ report and list what is still unresolved rather than starting a sixth.
 
 ```bash
 HEAD_SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
-# Only trigger if no Codex review already exists for this exact SHA:
-HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
-  --jq "[.[] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | length")
+# Only trigger if no Codex review already exists for this exact SHA.
+# --slurp folds every page into one array before the filter: without it gh runs
+# the jq once per page, so HAVE becomes a multi-line count that never equals "0"
+# and an unreviewed head silently skips the trigger.
+HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate --slurp \
+  --jq "[.[][] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | length")
 if [ "$HAVE" = "0" ]; then gh pr comment <PR> --body "@codex review"; fi
 ```
 
@@ -92,8 +95,8 @@ an honest timeout, not hang it.
 wait_for_review() {                       # $1 = attempt label
   local deadline=$(( SECONDS + 600 ))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate \
-      --jq "[.[] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | last")
+    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate --slurp \
+      --jq "[.[][] | select(.user.login==\"$BOT\" and .commit_id==\"$HEAD_SHA\")] | last")
     if [ -n "$R" ] && [ "$R" != "null" ]; then return 0; fi
     echo "waiting for Codex review of $HEAD_SHA ($1)..."; sleep 15
   done
@@ -126,6 +129,13 @@ gh api repos/{owner}/{repo}/pulls/<PR>/comments --paginate \
 
 Also pull the review threads + their resolved state via GraphQL (see step F) so you only act on
 unresolved ones.
+
+Mark each unresolved comment as seen, so the bot and a watching human can tell it is being handled.
+GitHub's reaction set is fixed; `eyes` is the only "looking at it" value:
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=eyes
+```
 
 ### C. Critically evaluate EACH comment (the core of this skill)
 
@@ -227,6 +237,21 @@ then resolve:
 ```bash
 gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "THREAD_ID"}) { thread { isResolved } } }'
 ```
+
+Then record the disposition as a reaction on the bot's own comment: the learning signal, and a
+visible marker for a human scanning the PR:
+
+- 👍 (`+1`): the finding was accepted and fixed.
+- 👎 (`-1`): the finding was rebutted as a false positive. **This is the correction signal.**
+
+```bash
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=+1
+# rebutted finding:
+gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions -f content=-1
+```
+
+Reply first, then react, then resolve: the reaction is not a substitute for the reply, and a
+resolved thread with no reply loses the reasoning.
 
 Resolve a thread only for comments authored by `$BOT` that you have fixed or rebutted: never
 blanket-resolve, and never resolve a human reviewer's thread. For each fixed comment, verify the
