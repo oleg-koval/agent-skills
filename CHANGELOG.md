@@ -1,3 +1,11 @@
+## [1.51.1](https://github.com/oleg-koval/agent-skills/compare/v1.51.0...v1.51.1) (2026-10-12)
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump handlebars ([#116](https://github.com/oleg-koval/agent-skills/issues/116)) ([2c07891](https://github.com/oleg-koval/agent-skills/commit/2c07891e9eab81a9ee95b4e8f5d68e94e9f68c40))
+* **deps:** bump actions/setup-node from 7.0.0 to 7.1.0 ([#115](https://github.com/oleg-koval/agent-skills/issues/115)) ([c8534e7](https://github.com/oleg-koval/agent-skills/commit/c8534e747a9c2bcfbbc74b7aae9a36938b0611f9))
+
 # [1.51.0](https://github.com/oleg-koval/agent-skills/compare/v1.50.0...v1.51.0) (2026-10-03)
 
 
