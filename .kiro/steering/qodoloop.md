@@ -23,9 +23,30 @@ Qodo runs as `qodo-code-review[bot]` and posts **two independent things** per re
 
 **Use the inline threads as the source of truth.** They carry `isResolved` state natively (fetch via GraphQL, see `references/graphql-queries.md`), so "done" is answerable directly instead of re-parsing the rollup's HTML on every iteration. Each thread's body contains a `<details><summary>Agent Prompt</summary>` (or `**Agent Prompt**`) section with a ready-made fix spec, and a severity badge image whose `alt` text is `Remediation recommended` or `Informational` (recommended ↔ "Review recommended", informational ↔ "Optional").
 
-Qodo has **no check run to poll**: there is nothing in `gh pr checks` to wait on. Completion means a new `qodo-code-review[bot]` comment/review appears after your push; poll comments, not checks.
+Qodo has **no check run to poll**: there is nothing in `gh pr checks` to wait on. Completion means a new `qodo-code-review[bot]` comment/review appears after your push; `scripts/pr-review-state.sh` detects it.
 
 **Rate limit is a real terminal state, not a bug.** A completed-looking comment reading "Qodo reviews are paused" / "you've reached your PR review limit" means Qodo will not review again this cycle: stop and report it, don't loop waiting for something that isn't coming.
+
+## Review state comes from the PR, not from memory
+
+`scripts/pr-review-state.sh` reads the PR and prints one JSON object: the current head, whether
+Qodo has acted on that head (a review of it, or any comment after it was pushed), and every
+unresolved review thread with its author. Every "is there work / are we done" decision in this
+loop comes from its exit code, never from what you remember resolving. The script lives in this
+skill's directory, `SKILL_ROOT`: the directory holding this `SKILL.md` (Claude Code prints it as the
+skill's base directory when the skill loads; in Codex, derive it from the selected `SKILL.md` path).
+
+| Exit | `verdict`  | Meaning                                                             | Do                                   |
+|------|------------|---------------------------------------------------------------------|--------------------------------------|
+| 0    | `clean`    | Qodo acted on the current head and no bot thread is unresolved    | exit check: done                     |
+| 10   | `findings` | unresolved threads from Qodo **or any other review bot**          | run an iteration                     |
+| 20   | `pending`  | Qodo has not acted on the current head yet                        | trigger if needed, then wait         |
+| 30   | `limited`  | a rate-limit or paused notice from Qodo after the current head    | stop, report `blocked: rate-limited` |
+
+Resolving the last thread does not make a PR clean: Qodo has not reviewed your push yet. Earlier
+versions of this loop exited at exactly that moment, while the next round of comments was still on
+its way. Human threads are listed in `.unresolved` (`is_bot: false`) and counted in `.counts.humans`;
+they never block `clean`, and this loop never resolves them.
 
 ## Instructions
 
@@ -51,32 +72,47 @@ narrower.
 
 ### 2. Loop (max 5 iterations)
 
-#### A. Wait for a review of the current head
+#### A. Read the PR state; wait for Qodo's review of the current head
 
-On **iteration 1**, if there is nothing to push yet (you haven't fixed anything in this loop), don't wait for a brand-new review: use whatever Qodo has already posted as your starting point and go straight to step B. Otherwise:
-
-```bash
-SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-git push
-```
-
-Poll (every ~10s, timeout ~5min), fetching **every page** of comments, not just the first:
+One read answers both "is there work?" and "has Qodo seen my last push?". `SINCE` is the
+timestamp you took right before your last push (step E); leave it empty on iteration 1. Right
+after a push, add `--wait 600` straight away: the wait ends only once the bot has acted on the new
+head, so threads left open on purpose cannot make the push look reviewed.
 
 ```bash
-gh api --paginate "repos/{owner}/{repo}/issues/<PR_NUMBER>/comments?per_page=100" | jq -s '
-  add | map(select(.user.login == "qodo-code-review[bot]")) | sort_by(.created_at)'
+"$SKILL_ROOT/scripts/pr-review-state.sh" --repo OWNER/REPO --pr <PR> --bot qodo-code-review --since "$SINCE"
 ```
 
-From the comments created **after `$SINCE`** (ignore anything older: that's leftover from a prior push, not this one):
-- Any of them contains "review limit" or "paused" → **stop the loop now**, go to Report with `blocked: rate-limited`.
-- The latest one starts with `<h3>Code Review by Qodo</h3>` → proceed to step B.
-- Otherwise (nothing yet, or only "Qodo is busy working") → sleep 10s and poll again, up to the 5-minute timeout.
+- Exit `10` (`findings`): go to B. On iteration 1 this is whatever Qodo (or another bot)
+  already posted.
+- Exit `20` (`pending`): Qodo reviews new pushes on its own, so there is nothing to post. Then wait with the same command plus `--wait 600`. Run the
+  wait in the background where the host allows it (Claude Code: Bash `run_in_background`; you are
+  re-invoked when it exits) so ten minutes of polling never sits in the conversation. Still `20`
+  after the wait: say so out loud, check the PR for a Qodo notice explaining the silence, and wait once more. Still `20` after that: stop and
+  report the timeout honestly; never claim success.
+- Exit `0` (`clean`): go to the exit check. A `--wait` call returns `clean` only after a settle
+  re-read 60 seconds later, so a comment landing right behind the review is still caught. A bare
+  read (no `--wait`) that says `clean` is good enough only when you have not pushed since Qodo's
+  last review.
+- Exit `30` (`limited`): stop now and report `blocked: rate-limited`; nothing more is coming.
+- Exit `1`: the read itself failed (often a transient GitHub 502). Retry once; if it fails again,
+  stop and report it. An unknown state is not a clean one.
 
 #### B. Fetch unresolved findings
 
-Run the paginated GraphQL query in `references/graphql-queries.md` (`unresolvedQodoThreads`): **follow `pageInfo.hasNextPage`/`endCursor` until it's exhausted**; a PR with more than 100 Qodo threads silently loses every finding past the first page otherwise. For each unresolved thread from `qodo-code-review[bot]`: parse the finding title, severity (recommended/optional), file/line, and the **Agent Prompt** block.
+The working set is every unresolved thread in the state JSON with `is_bot: true`: Qodo's
+own (`is_target: true`) **and any other review bot's** (Greptile, for example). A
+fix for one bot often draws a comment from another, and leaving those open is how a "finished" loop
+leaves a PR that is not clean. Never act on a human's thread (`is_bot: false`); list it in the report.
+
+Qodo's threads are `.unresolved[] | select(.is_target)` in step A's state JSON (the script already follows pagination). For each, read the full comment (`gh api repos/{owner}/{repo}/pulls/comments/<comment_id>`) and parse the finding title, severity (recommended/optional), file/line, and the **Agent Prompt** block.
 
 Build the working set: all `recommended` threads, plus `optional` ones too if `--include-optional`.
+
+Threads from other bots come from the state JSON (`.unresolved[] | select(.is_bot and (.is_target | not))`).
+They carry no ready-made fix prompt: read the full comment
+(`gh api repos/{owner}/{repo}/pulls/comments/<comment_id>`), verify its claim against the real
+code, and handle it like any Qodo finding: fix it, or reply with the evidence for not fixing it.
 
 Mark each thread as seen with an 👀 reaction on its first comment (`databaseId` from the query), so
 the bot and a watching human can tell it is being worked. GitHub's reaction set is fixed; `eyes` is
@@ -88,7 +124,15 @@ gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions
 
 #### C. Check exit conditions
 
-Stop if the working set is empty, or max iterations reached.
+Stop when step A's read exited `0` (`clean`) after your last push (a `--wait` read, which settles),
+or exited `30` (`limited`), or the iteration cap is reached. An empty working set on its own is not
+done: with no review of the current head yet, it only means Qodo has not answered your push.
+
+Two kinds of thread stay open by design, so for Qodo `findings` can still mean done: a finding you
+**blocked** (replied, deliberately left unresolved) and, without `--include-optional`, an
+**Optional** finding outside the working set. Stop as done when Qodo has acted on the current head
+(`.bots[0].acted_on_head` is `true` in a `--wait` read) and every open bot thread is one of those
+two. Never re-work a thread already in your blocked ledger.
 
 #### D. Fix each finding
 
@@ -101,6 +145,7 @@ If **fixed** is empty, skip straight to F (nothing to commit). Otherwise, stage 
 ```bash
 git add <files touched by this iteration's fixes>
 git commit -m "address Qodo review feedback (qodoloop iteration N)"
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # step A reads bot activity after this
 git push
 ```
 
@@ -134,6 +179,18 @@ gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions
 
 Go back to step A.
 
+### Keep the context small; resume instead of restarting
+
+- Carry only three things between iterations: the iteration counter, the latest state JSON, and a
+  ledger of each thread you handled (fixed with its commit, rebutted, or blocked). Re-read files
+  fresh each iteration; do not re-paste earlier rounds' comment bodies.
+- All loop state lives on the PR, so the loop is resumable. If the session has grown long or slow,
+  or a bot commented after the loop ended, run this skill again in a fresh session: step A picks up
+  from the PR as it is now. Starting fresh is cheaper than dragging a long session through more
+  rounds.
+- After reporting done, if the host can schedule a follow-up (Claude Code: `/loop` or a scheduled
+  wakeup), offer one re-check about 20 minutes later for bots that comment late.
+
 ### 3. Report
 
 | Field              | Value |
@@ -142,7 +199,8 @@ Go back to step A.
 | Findings resolved  | N     |
 | Findings blocked   | N (with reasons, left unresolved) |
 | Remaining          | N (if any) |
-| Blocked            | rate-limited / human-intervention / max-iterations / none |
+| Human threads      | N (open, listed; never resolved by this loop) |
+| Blocked            | rate-limited / timeout / human-intervention / max-iterations / none |
 
 ```text
 Qodoloop complete.
@@ -154,4 +212,4 @@ Qodoloop complete.
 
 ## References
 
-- `references/graphql-queries.md`: the exact `unresolvedQodoThreads` query and the `resolveReviewThread` / `addPullRequestReviewThreadReply` mutations, with field notes.
+- `references/graphql-queries.md`: the `resolveReviewThread` / `addPullRequestReviewThreadReply` mutations, with field notes. Its `unresolvedQodoThreads` query is superseded by `scripts/pr-review-state.sh` for finding threads.
