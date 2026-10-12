@@ -1,3 +1,11 @@
+## [1.51.2](https://github.com/oleg-koval/agent-skills/compare/v1.51.1...v1.51.2) (2026-10-12)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** drop counts opener and local path from posted review body ([#118](https://github.com/oleg-koval/agent-skills/issues/118)) ([52d6fc9](https://github.com/oleg-koval/agent-skills/commit/52d6fc9cc783b2c42e5a058583636ad1ab54cfe1))
+* review loops finish only after the bot reviews the latest push ([#119](https://github.com/oleg-koval/agent-skills/issues/119)) ([eb52f98](https://github.com/oleg-koval/agent-skills/commit/eb52f984a9396447fbe4e86054c39d38d1cfc040))
+
 ## [1.51.1](https://github.com/oleg-koval/agent-skills/compare/v1.51.0...v1.51.1) (2026-10-12)
 
 
