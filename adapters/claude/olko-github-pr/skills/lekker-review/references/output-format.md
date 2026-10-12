@@ -228,7 +228,11 @@ Input tokens:     ~<N>  ← estimated: diff tokens × agent passes + context fil
 Cost: ~$<X.XX>  (output actual, input estimated; blended across model tiers below)
 ```
 
-Per-MTok pricing (input/output), verified 2026-07-07 from the claude-api reference; re-check there if models changed:
+Per-MTok pricing (input/output), verified 2026-07-07 from the claude-api reference; re-check there if models changed. The Claude 5.5 rows and fable-5-1 are not yet on that sheet: they reuse the predecessor-tier rates and must be re-checked:
+- claude-fable-5-1: $10 / $50 (unverified, as claude-fable-5)
+- claude-opus-5-5: $15 / $75 (unverified; copied from the opus-5 rate in pricing.json, not checked)
+- claude-sonnet-5-5: $3 / $15 (unverified)
+- claude-haiku-5-5: $1 / $5 (unverified)
 - claude-fable-5: $10 / $50
 - claude-opus-4-8: $5 / $25
 - claude-sonnet-4-6 / claude-sonnet-5: $3 / $15
