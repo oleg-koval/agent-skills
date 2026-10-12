@@ -14,7 +14,7 @@ suggestion applied is worse than the comment itself.
 
 - **No check-run, no score.** Copilot posts an overview comment and a PR review with inline review
   comments. Detection is by polling the reviews endpoint and paginated review threads. "Satisfied"
-  means zero unresolved Copilot threads and zero unaddressed body findings after each finding is
+  means Copilot has reviewed the latest push, no bot thread is unresolved, and no body finding is unaddressed after each finding is
   fixed or rebutted with a recorded reply.
 - **Request through the reviewers API.** Copilot does not use a reliable slash-command trigger.
   Request `copilot-pull-request-reviewer[bot]` through the pull request reviewers endpoint. A
@@ -46,8 +46,29 @@ review; if GitHub uses a different login for the installation, use the exact Cop
 returned by the probe rather than guessing.
 
 **Finding nothing here is NOT a stop condition.** On a PR Copilot has never reviewed there is no bot
-login to find yet. Fall through to step 2A, request the reviewer, and re-run this probe once a
+login to find yet. Fall through to step A, request the reviewer, and re-run this probe once a
 review lands. Only conclude Copilot is unavailable after the bounded wait expires with no review.
+
+## Review state comes from the PR, not from memory
+
+`scripts/pr-review-state.sh` reads the PR and prints one JSON object: the current head, whether
+Copilot has acted on that head (a review of it, or any comment after it was pushed), and every
+unresolved review thread with its author. Every "is there work / are we done" decision in this
+loop comes from its exit code, never from what you remember resolving. The script lives in this
+skill's directory, `SKILL_ROOT`: the directory holding this `SKILL.md` (Claude Code prints it as the
+skill's base directory when the skill loads; in Codex, derive it from the selected `SKILL.md` path).
+
+| Exit | `verdict`  | Meaning                                                             | Do                                   |
+|------|------------|---------------------------------------------------------------------|--------------------------------------|
+| 0    | `clean`    | Copilot acted on the current head and no bot thread is unresolved    | exit check: done                     |
+| 10   | `findings` | unresolved threads from Copilot **or any other review bot**          | run an iteration                     |
+| 20   | `pending`  | Copilot has not acted on the current head yet                        | trigger if needed, then wait         |
+| 30   | `limited`  | a rate-limit or paused notice from Copilot after the current head    | stop, report `blocked: rate-limited` |
+
+Resolving the last thread does not make a PR clean: Copilot has not reviewed your push yet. Earlier
+versions of this loop exited at exactly that moment, while the next round of comments was still on
+its way. Human threads are listed in `.unresolved` (`is_bot: false`) and counted in `.counts.humans`;
+they never block `clean`, and this loop never resolves them.
 
 ## 1. Identify the PR
 
@@ -63,54 +84,39 @@ Keep an explicit iteration counter and stop at 5: the cap is a real bound to enf
 figure of speech. Each pass through A–G is one iteration; on hitting the cap, go straight to the
 report and list what is still unresolved rather than starting a sixth.
 
-### A. Ensure a fresh Copilot review on the current head
+### A. Read the PR state; wait for Copilot's review of the current head
+
+One read answers both "is there work?" and "has Copilot seen my last push?". `SINCE` is the
+timestamp you took right before your last push (step E); leave it empty on iteration 1. Right
+after a push, add `--wait 600` straight away: the wait ends only once the bot has acted on the new
+head, so threads left open on purpose cannot make the push look reviewed.
 
 ```bash
-HEAD_SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
-# Only trigger if no Copilot review exists for this exact SHA:
-HAVE=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
-  jq -s --arg bot "$BOT" --arg head "$HEAD_SHA" \
-    '[.[][] | select(.user.login==$bot and .commit_id==$head)] | length')
-if [ "$HAVE" = "0" ]; then
-  gh api --method POST repos/{owner}/{repo}/pulls/<PR>/requested_reviewers \
-    -f 'reviewers[]=copilot-pull-request-reviewer[bot]'
-fi
+"$SKILL_ROOT/scripts/pr-review-state.sh" --repo OWNER/REPO --pr <PR> --bot copilot-pull-request-reviewer --since "$SINCE"
 ```
 
-Poll for the review of THIS head to land. No check-run exists, so poll the reviews endpoint, and
-poll it on a **deadline**, never `while true`: a review that never arrives must end the skill with
-an honest timeout, not hang it.
-
-```bash
-# 10-minute deadline, one retry, then give up. DEADLINE/RETRIES are the
-# enforcement of the bounds this skill claims: do not drop them.
-wait_for_review() {                       # $1 = attempt label
-  local deadline=$(( SECONDS + 600 ))
-  while [ "$SECONDS" -lt "$deadline" ]; do
-    R=$(gh api repos/{owner}/{repo}/pulls/<PR>/reviews --paginate |
-      jq -s --arg bot "$BOT" --arg head "$HEAD_SHA" \
-        '[.[][] | select(.user.login==$bot and .commit_id==$head)] | sort_by(.submitted_at, .id) | last')
-    if [ -n "$R" ] && [ "$R" != "null" ]; then return 0; fi
-    echo "waiting for Copilot review of $HEAD_SHA ($1)..."; sleep 15
-  done
-  return 1
-}
-
-if ! wait_for_review "first wait"; then
-  echo "no Copilot review after 10m, retrying once"     # say the retry out loud
-  gh api --method POST repos/{owner}/{repo}/pulls/<PR>/requested_reviewers \
-    -f 'reviewers[]=copilot-pull-request-reviewer[bot]'
-  if ! wait_for_review "after retry"; then
-    echo "Copilot did not review $HEAD_SHA after a retry; stopping and reporting."
-    exit 1                                # honest timeout, never a success claim
-  fi
-fi
-```
-
-Copilot usually reviews quickly, but large diffs can take longer; the deadline is bounded. Report the
-retry in the final summary; two silent timeouts are the failure mode this guard exists to prevent.
+- Exit `10` (`findings`): go to B. On iteration 1 this is whatever Copilot (or another bot)
+  already posted.
+- Exit `20` (`pending`): request it through the reviewers endpoint (`gh api --method POST repos/{owner}/{repo}/pulls/<PR>/requested_reviewers -f 'reviewers[]=copilot-pull-request-reviewer[bot]'`). Then wait with the same command plus `--wait 600`. Run the
+  wait in the background where the host allows it (Claude Code: Bash `run_in_background`; you are
+  re-invoked when it exits) so ten minutes of polling never sits in the conversation. Still `20`
+  after the wait: say so out loud, request the reviewer once more, and wait once more. Still `20` after that: stop and
+  report the timeout honestly; never claim success.
+- Exit `0` (`clean`): go to the exit check. A `--wait` call returns `clean` only after a settle
+  re-read 60 seconds later, so a comment landing right behind the review is still caught. A bare
+  read (no `--wait`) that says `clean` is good enough only when you have not pushed since Copilot's
+  last review.
+- Exit `30` (`limited`): stop now and report `blocked: rate-limited`; nothing more is coming.
+- Exit `1`: the read itself failed (often a transient GitHub 502). Retry once; if it fails again,
+  stop and report it. An unknown state is not a clean one.
 
 ### B. Fetch the findings
+
+The working set is every unresolved thread in the state JSON with `is_bot: true`: Copilot's
+own (`is_target: true`) **and any other review bot's** (Greptile, for example). A
+fix for one bot often draws a comment from another, and leaving those open is how a "finished" loop
+leaves a PR that is not clean. Treat another bot's thread with exactly the same verify-first rules
+below. Never act on a human's thread (`is_bot: false`); list it in the report.
 
 - **Summary**: read the Copilot overview comment and review `.body`, including all matching reviews
   for the current head. Extract and classify actionable claims even when they have no inline thread;
@@ -118,15 +124,13 @@ retry in the final summary; two silent timeouts are the failure mode this guard 
   Track each body finding across iterations by source review/comment ID and item, with its
   classification, fix commit or evidence-based rebuttal, PR-level reply URL, and completion status.
   Link duplicates to the same finding so they are counted once; retain pending findings after a push.
-- **Unresolved inline comments** on the current head:
+- **Unresolved inline comments**: `.unresolved[] | select(.is_bot)` in step A's state JSON lists
+  each thread's `thread_id`, `comment_id`, `path`, `line` and a short excerpt, across every page of
+  threads. Read the full comment before judging it:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/<PR>/comments --paginate \
-  --jq ".[] | select(.user.login==\"$BOT\") | {id, path, line, body}"
+gh api repos/{owner}/{repo}/pulls/comments/<COMMENT_ID> --jq '{user: .user.login, path, line, body}'
 ```
-
-Also pull the review threads + their resolved state via GraphQL (see step F) so you only act on
-unresolved ones.
 
 Mark each unresolved inline comment as seen, so the bot and a watching human can tell it is being
 handled. GitHub's reaction set is fixed; `eyes` is the only "looking at it" value:
@@ -189,6 +193,7 @@ If step D changed code:
 git status --short                     # look before you stage
 git add <path> [<path>...]             # the files named in the findings you fixed
 git commit -m "address Copilot review feedback (copilotloop iteration N)"
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # step A reads bot activity after this
 git push
 ```
 
@@ -204,31 +209,8 @@ If they differ, stop: the fix is not on the PR, so nothing may be resolved yet.
 
 ### F. Reply to every addressed finding and resolve its inline threads
 
-Only now, with the fixes pushed, reply and resolve. Fetch unresolved threads, **following
-pagination**: a PR with more than 100 threads will otherwise look clean while unresolved findings
-sit on page two:
-
-```bash
-# Loop until hasNextPage is false, passing endCursor back in as $cursor.
-CURSOR=null
-while : ; do
-  PAGE=$(gh api graphql -F cursor="$CURSOR" -f query='
-  query($cursor: String) {
-    repository(owner: "OWNER", name: "REPO") {
-      pullRequest(number: PR_NUMBER) {
-        reviewThreads(first: 100, after: $cursor) {
-          pageInfo { hasNextPage endCursor }
-          nodes { id isResolved comments(first: 1) { nodes { databaseId author { login } path body } } }
-        }
-      }
-    }
-  }')
-  echo "$PAGE"          # collect nodes from every page before deciding the PR is clean
-  PI='.data.repository.pullRequest.reviewThreads.pageInfo'
-  [ "$(echo "$PAGE" | jq -r "$PI.hasNextPage")" = "true" ] || break
-  CURSOR=$(echo "$PAGE" | jq -r "$PI.endCursor")
-done
-```
+Only now, with the fixes pushed, reply and resolve. Take thread and comment ids from step A's state
+JSON (`.unresolved[]`): the script already follows pagination, so do not hand-roll a threads query.
 
 Reply on a thread's comment via `gh api repos/{owner}/{repo}/pulls/<PR>/comments -f body="..." -F in_reply_to=<comment_id>`,
 then resolve:
@@ -252,7 +234,8 @@ gh api --method POST repos/{owner}/{repo}/pulls/comments/<COMMENT_ID>/reactions 
 Reply first, then react, then resolve: the reaction is not a substitute for the reply, and a
 resolved thread with no reply loses the reasoning.
 
-Resolve a thread only for comments authored by `$BOT` that you have fixed or rebutted: never
+Resolve a thread only for a bot comment in your working set (this bot's or another
+review bot's) that you have fixed or rebutted: never
 blanket-resolve, and never resolve a human reviewer's thread.
 
 Threads you are **rebutting** need no push, so they may be replied to and resolved regardless of
@@ -266,23 +249,34 @@ it complete. One reply may cover multiple explicitly identified findings. Fixed 
 require the same successful push check as fixed threads; rebuttals need no push. If a finding also
 has an inline thread, that thread still requires a reply and resolution.
 
-### G. Re-review
+### G. Back to A
 
-Pushing re-triggers Copilot when automatic review of new pushes is on; otherwise request Copilot again
-through the reviewers endpoint. Go back to **A**
-with the new head SHA. If step D changed nothing (all comments were rebutted), skip the push,
-ensure all Copilot threads are resolved and all tracked body findings have recorded PR-level
-replies and are complete, then exit.
+Go back to **A**. After a push, A waits for Copilot's review of the new head (pushing re-triggers
+it when auto-review is on; otherwise A triggers it). If this iteration changed no code (every finding
+rebutted), there is no new head to wait for: A's fresh read says `clean` or shows what is still open.
 
 ## 3. Exit conditions
 
+Decide from a fresh state read, never from what you remember resolving.
+
 Stop when **any** is true:
-- Zero unresolved `$BOT` threads and zero pending body findings remain across iterations. Every
-  finding was fixed or rebutted with evidence, every inline thread was replied to and resolved,
-  and every body finding has a recorded PR-level reply. (There is no score to hit:
-  this is "done".)
-- Max iterations (5) reached: report what remains.
-- Copilot never responded after one retry: report the timeout honestly; do not claim success.
+- **Done**: the latest `pr-review-state.sh --wait 600` call, made after your last push, exited `0`
+  (`clean`); with no push since the bot's last review, a bare read that exits `0` is enough, and the body-finding register from step B has no pending entries. Open human threads do not block this; list them in the report.
+- **Max iterations (5)** reached: report what remains.
+- **Timeout**: still `pending` after the retry in step A. Report it honestly; do not claim success.
+- **Rate limited**: exit `30`. Report `blocked: rate-limited`.
+
+## Keep the context small; resume instead of restarting
+
+- Carry only three things between iterations: the iteration counter, the latest state JSON, and a
+  ledger of each thread you handled (fixed with its commit, rebutted, or blocked). Re-read files
+  fresh each iteration; do not re-paste earlier rounds' comment bodies.
+- All loop state lives on the PR, so the loop is resumable. If the session has grown long or slow,
+  or a bot commented after the loop ended, run this skill again in a fresh session: step A picks up
+  from the PR as it is now. Starting fresh is cheaper than dragging a long session through more
+  rounds.
+- After reporting done, if the host can schedule a follow-up (Claude Code: `/loop` or a scheduled
+  wakeup), offer one re-check about 20 minutes later for bots that comment late.
 
 ## 4. Report
 
@@ -293,7 +287,9 @@ Copilotloop complete.
   Iterations:         N
   Findings fixed:     N   (inline + body findings, deduplicated)
   Findings rebutted:  N   (inline + body findings, with recorded evidence-based replies)
-  Remaining:          0   (unresolved inline + pending body findings, deduplicated)
+  Remaining:          N   (unresolved inline + pending body findings, deduplicated)
+  Human threads:      N   (open, listed below; this loop never resolves them)
+  Final state:        clean | timeout | rate-limited | iteration cap
 ```
 
 If it stopped at max iterations, list the remaining threads and body findings with your current

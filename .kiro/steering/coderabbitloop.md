@@ -29,6 +29,27 @@ CodeRabbit has slash commands (official, `docs.coderabbit.ai/reference/review-co
 
 **Rate limit is a real terminal state, not a bug.** A comment reading "you've reached your PR review limit" (confirmed live wording) means CodeRabbit will not review again this cycle: stop and report it, don't loop waiting for something that isn't coming.
 
+## Review state comes from the PR, not from memory
+
+`scripts/pr-review-state.sh` reads the PR and prints one JSON object: the current head, whether
+CodeRabbit has acted on that head (a review of it, or any comment after it was pushed), and every
+unresolved review thread with its author. Every "is there work / are we done" decision in this
+loop comes from its exit code, never from what you remember resolving. The script lives in this
+skill's directory, `SKILL_ROOT`: the directory holding this `SKILL.md` (Claude Code prints it as the
+skill's base directory when the skill loads; in Codex, derive it from the selected `SKILL.md` path).
+
+| Exit | `verdict`  | Meaning                                                             | Do                                   |
+|------|------------|---------------------------------------------------------------------|--------------------------------------|
+| 0    | `clean`    | CodeRabbit acted on the current head and no bot thread is unresolved    | exit check: done                     |
+| 10   | `findings` | unresolved threads from CodeRabbit **or any other review bot**          | run an iteration                     |
+| 20   | `pending`  | CodeRabbit has not acted on the current head yet                        | trigger if needed, then wait         |
+| 30   | `limited`  | a rate-limit or paused notice from CodeRabbit after the current head    | stop, report `blocked: rate-limited` |
+
+Resolving the last thread does not make a PR clean: CodeRabbit has not reviewed your push yet. Earlier
+versions of this loop exited at exactly that moment, while the next round of comments was still on
+its way. Human threads are listed in `.unresolved` (`is_bot: false`) and counted in `.counts.humans`;
+they never block `clean`, and this loop never resolves them.
+
 ## Instructions
 
 ### 1. Identify the PR
@@ -53,37 +74,49 @@ gets those edits swept into the fix commit right along with it.
 Keep an explicit iteration counter and stop at 5: the cap is a real bound to enforce, not a figure
 of speech. Each pass through A–F is one iteration; on hitting the cap, go straight to the report.
 
-#### A. Wait for a review of the current head
+#### A. Read the PR state; wait for CodeRabbit's review of the current head
 
-On **iteration 1**, if there is nothing to push yet (you haven't fixed anything in this loop), don't
-wait for a brand-new review: use whatever CodeRabbit has already posted as your starting point and
-go straight to step B. Otherwise:
-
-```bash
-SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-git push
-```
-
-If this repo doesn't auto-review on push, nudge it:
+One read answers both "is there work?" and "has CodeRabbit seen my last push?". `SINCE` is the
+timestamp you took right before your last push (step E); leave it empty on iteration 1. Right
+after a push, add `--wait 600` straight away: the wait ends only once the bot has acted on the new
+head, so threads left open on purpose cannot make the push look reviewed.
 
 ```bash
-gh pr comment <PR_NUMBER> --body "@coderabbitai review"
+"$SKILL_ROOT/scripts/pr-review-state.sh" --repo OWNER/REPO --pr <PR> --bot coderabbitai --since "$SINCE"
 ```
 
-Poll (every ~10s, timeout ~5min) for CodeRabbit's next formal review to land: a new entry in
-`gh api --paginate repos/{owner}/{repo}/pulls/<PR_NUMBER>/reviews` from `coderabbitai[bot]`
-(REST spelling carries the `[bot]` suffix) created after `$SINCE`. Follow pagination so a review
-that lands on page two is not missed. If you instead see a rate-limit comment ("review limit"),
-**stop the loop now** and go to Report with `blocked: rate-limited`. If no review arrives within
-the timeout after one retry, stop and report the timeout honestly; do not claim success.
+- Exit `10` (`findings`): go to B. On iteration 1 this is whatever CodeRabbit (or another bot)
+  already posted.
+- Exit `20` (`pending`): post `@coderabbitai review` if this repo does not review pushes automatically (`gh pr comment <PR_NUMBER> --body "@coderabbitai review"`). Then wait with the same command plus `--wait 600`. Run the
+  wait in the background where the host allows it (Claude Code: Bash `run_in_background`; you are
+  re-invoked when it exits) so ten minutes of polling never sits in the conversation. Still `20`
+  after the wait: say so out loud, post `@coderabbitai review` once more, and wait once more. Still `20` after that: stop and
+  report the timeout honestly; never claim success.
+- Exit `0` (`clean`): go to the exit check. A `--wait` call returns `clean` only after a settle
+  re-read 60 seconds later, so a comment landing right behind the review is still caught. A bare
+  read (no `--wait`) that says `clean` is good enough only when you have not pushed since CodeRabbit's
+  last review.
+- Exit `30` (`limited`): stop now and report `blocked: rate-limited`; nothing more is coming.
+- Exit `1`: the read itself failed (often a transient GitHub 502). Retry once; if it fails again,
+  stop and report it. An unknown state is not a clean one.
 
 #### B. Fetch unresolved findings
 
-Run the `unresolvedQodoThreads`-shaped query in `references/graphql-queries.md` (filter `author.login`
-on GraphQL's bare `coderabbitai`, **not** REST's `coderabbitai[bot]`: see the reference's login-spelling
-note, and follow `pageInfo.hasNextPage`/`endCursor` until exhausted). For each unresolved thread,
-parse the finding text, its `databaseId`, and the **Prompt for AI Agents** block (heading text is
+The working set is every unresolved thread in the state JSON with `is_bot: true`: CodeRabbit's
+own (`is_target: true`) **and any other review bot's** (Greptile, for example). A
+fix for one bot often draws a comment from another, and leaving those open is how a "finished" loop
+leaves a PR that is not clean. Never act on a human's thread (`is_bot: false`); list it in the report.
+
+CodeRabbit's threads are `.unresolved[] | select(.is_target)` in step A's state JSON (the script
+already follows pagination). For each, read the full comment
+(`gh api repos/{owner}/{repo}/pulls/comments/<comment_id>`) and parse the finding text and the
+**Prompt for AI Agents** block (heading text is
 `🤖 Prompt for AI Agents`, not `Agent Prompt`: match case/emoji-insensitively).
+
+Threads from other bots come from the state JSON (`.unresolved[] | select(.is_bot and (.is_target | not))`).
+They carry no ready-made fix prompt: read the full comment
+(`gh api repos/{owner}/{repo}/pulls/comments/<comment_id>`), verify its claim against the real
+code, and handle it like any CodeRabbit finding: fix it, or reply with the evidence for not fixing it.
 
 Mark each thread as seen with an 👀 reaction on its first comment (`databaseId` from the query), so
 the bot and a watching human can tell it is being worked:
@@ -94,7 +127,9 @@ gh api --method POST repos/{owner}/{repo}/pulls/comments/<DATABASE_ID>/reactions
 
 #### C. Check exit conditions
 
-Stop if there are zero unresolved CodeRabbit threads, or max iterations reached.
+Stop when step A's read exited `0` (`clean`) after your last push (a `--wait` read, which settles),
+or exited `30` (`limited`), or the iteration cap is reached. An empty working set on its own is not
+done: with no review of the current head yet, it only means CodeRabbit has not answered your push.
 
 #### D. Fix each finding
 
@@ -114,6 +149,7 @@ If step D changed code:
 git status --short                     # look before you stage
 git add <path> [<path>...]             # the files named in the findings you fixed
 git commit -m "address CodeRabbit review feedback (coderabbitloop iteration N)"
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # step A reads bot activity after this
 git push
 ```
 
@@ -162,6 +198,18 @@ the reply, and a resolved thread with no reply loses the reasoning.
 
 Go back to step A.
 
+### Keep the context small; resume instead of restarting
+
+- Carry only three things between iterations: the iteration counter, the latest state JSON, and a
+  ledger of each thread you handled (fixed with its commit, rebutted, or blocked). Re-read files
+  fresh each iteration; do not re-paste earlier rounds' comment bodies.
+- All loop state lives on the PR, so the loop is resumable. If the session has grown long or slow,
+  or a bot commented after the loop ended, run this skill again in a fresh session: step A picks up
+  from the PR as it is now. Starting fresh is cheaper than dragging a long session through more
+  rounds.
+- After reporting done, if the host can schedule a follow-up (Claude Code: `/loop` or a scheduled
+  wakeup), offer one re-check about 20 minutes later for bots that comment late.
+
 ### 3. Report
 
 | Field              | Value |
@@ -170,6 +218,7 @@ Go back to step A.
 | Findings resolved  | N     |
 | Findings skipped   | N (with reasons) |
 | Remaining          | N (if any) |
+| Human threads      | N (open, listed; never resolved by this loop) |
 | Blocked            | rate-limited / timeout / max-iterations / none |
 
 ```
