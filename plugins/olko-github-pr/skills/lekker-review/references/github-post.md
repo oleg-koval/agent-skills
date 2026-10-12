@@ -84,13 +84,14 @@ Rules:
   FYI comments ("behaviour change, intentional", "note that…", "just flagging").
   If there's nothing to do, there's no comment: put context like that in the
   review body or the saved review file, never as an inline PR comment.
-- The review-level `body` field must contain, in this order: the finding counts
-  ("0 Critical / 5 Important / 6 Observations / 1 Idiomatic"), one or two
+- The review-level `body` field must contain, in this order: one or two
   sentences of risk framing, then **a numbered list of the asks: one line each,
   imperative, matching the inline comments in order**. That list is what the
   author reads first and works from; it must be scannable in ten seconds. Then
   any Production Signals, then a short flat list of Observations marked "no
-  action required", then the saved review file path.
+  action required". Do NOT open the body with a finding-count line and do NOT
+  end it with the saved review file path: a local `~/code-reviews/` path means
+  nothing to the author, and the counts duplicate the asks list.
 
   Keep the body itself under ~2,500 characters. If it is longer, the asks are
   buried: cut prose, never cut the numbered asks.
