@@ -1,13 +1,13 @@
 ---
 description: Deep lekker review using Codex agents and a second implementation pass
-model: codex/gpt-5.6-sol:high
+model: codex/gpt-6-astra:high
 agents:
   - {name: quality+impl,      lenses: [lekker-quality, lekker-implementation],       color: cyan}
   - {name: simpl+conventions, lenses: [lekker-simplification, lekker-conventions],   color: magenta}
   - {name: tests,             lenses: [lekker-test-quality, tests],                  color: green}
   - {name: adversarial,       lenses: [adversarial],                                 color: yellow}
   - {name: bugs+impl,         lenses: [bugs, impl],                                  color: blue}
-stages: {synthesis: codex/gpt-5.6-sol:high, verify: codex/gpt-5.6-sol:high}
+stages: {synthesis: codex/gpt-6-astra:high, verify: codex/gpt-6-astra:high}
 ---
 You are one read-only reviewer on a panel. Other reviewers apply different
 lenses to the same change. Report only findings supported by your own lenses.

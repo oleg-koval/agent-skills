@@ -228,6 +228,13 @@ while : ; do
     }
   }')
   echo "$PAGE"          # collect nodes from every page before deciding the PR is clean
+  # GitHub GraphQL returns transient 502/504s (no .data). An empty page reads as
+  # "no next page", so retry it a bounded number of times instead of treating it as clean.
+  if ! echo "$PAGE" | jq -e '.data' >/dev/null 2>&1; then
+    RETRIES=$(( ${RETRIES:-0} + 1 ))
+    [ "$RETRIES" -le 3 ] || { echo "GraphQL still failing after 3 retries; threads unknown, not clean"; exit 1; }
+    sleep 5; continue
+  fi
   PI='.data.repository.pullRequest.reviewThreads.pageInfo'
   [ "$(echo "$PAGE" | jq -r "$PI.hasNextPage")" = "true" ] || break
   CURSOR=$(echo "$PAGE" | jq -r "$PI.endCursor")
