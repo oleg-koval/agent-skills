@@ -18,5 +18,6 @@ jobs:
       - uses: oleg-koval/pr-automerge-github-action@v1
         with:
           github-token: ${{ github.token }}
+          bot-logins: dependabot[bot],snyk-bot,renovate[bot],oleg-koval
           maintainer-handles: oleg-koval
           merge-method: squash
