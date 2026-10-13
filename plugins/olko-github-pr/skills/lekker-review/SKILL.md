@@ -494,10 +494,16 @@ an independent adversarial verifier.
 
 ### ENGINE=workflow (Claude Code default)
 
+First copy the script into the scratchpad. The Workflow tool rejects a
+`scriptPath` outside the working directory or added dirs ("scriptPath must be a
+script path this tool returned, or a file you can already read"), and the skill
+dir is usually neither: `cp ${SKILL_ROOT}/workflow.js <scratchpad>/workflow.js`.
+If it still rejects the path, pass the script inline via `script` instead.
+
 Invoke the Workflow tool:
 
 ```
-scriptPath: ${SKILL_ROOT}/workflow.js
+scriptPath: <scratchpad>/workflow.js
 args: {
   repoSlug,
   prNumber,          // null in MODE=branch
@@ -844,9 +850,11 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
      stop - do not land onto a tip you did not review.
 2. Select eligible findings (Critical/Important with a `fix`, real file,
    non-generated). Never auto-fix Observation, Idiomatic, or a title/process rule.
-3. Invoke the host's fix workflow. In Claude, run:
+3. Invoke the host's fix workflow. In Claude, copy `fix-workflow.js` to the
+   scratchpad first (same reason as the review workflow; inline `script` if the
+   path is still rejected), then run:
    ```
-   scriptPath: ${SKILL_ROOT}/fix-workflow.js
+   scriptPath: <scratchpad>/fix-workflow.js
    args: { repoSlug, prNumber, targetLabel, worktreePath, diffFile, contextFile,
            promptDir, findings: [<selected findings verbatim>], acList }
    ```
