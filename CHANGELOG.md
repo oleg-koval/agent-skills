@@ -1,3 +1,15 @@
+## [1.51.3](https://github.com/oleg-koval/agent-skills/compare/v1.51.2...v1.51.3) (2026-10-13)
+
+
+### ⚙️ Continuous Integrations
+
+* automerge owner PRs once all checks pass ([#121](https://github.com/oleg-koval/agent-skills/issues/121)) ([faca315](https://github.com/oleg-koval/agent-skills/commit/faca315509825a788c87de95a630f6e1734afb70))
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** copy workflow scripts to scratchpad before Workflow call ([#120](https://github.com/oleg-koval/agent-skills/issues/120)) ([47823d0](https://github.com/oleg-koval/agent-skills/commit/47823d0433daaba6b2b35a2f74031737f79433b3))
+
 ## [1.51.2](https://github.com/oleg-koval/agent-skills/compare/v1.51.1...v1.51.2) (2026-10-12)
 
 
