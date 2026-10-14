@@ -16,6 +16,10 @@ export const VERDICTS = ['lgtm', 'lgtm-with-changes', 'needs-work']
 const POOL_PATH = process.env.LEKKER_FUN_FILE ||
   join(dirname(dirname(fileURLToPath(import.meta.url))), 'references', 'fun.json')
 
+/**
+ * Loads and flattens the curated fun pool from fun.json.
+ * @returns {Array<object>} xkcd and gif entries tagged with a `kind`.
+ */
 export function loadPool() {
   const pool = JSON.parse(readFileSync(POOL_PATH, 'utf8'))
   return [
@@ -24,6 +28,11 @@ export function loadPool() {
   ]
 }
 
+/**
+ * Builds terminal and GitHub markdown renderings for a pool item.
+ * @param {object} item - A pool entry (xkcd or gif), as returned by loadPool.
+ * @returns {object} The item plus `md_terminal` and `md_github` strings.
+ */
 export function render(item) {
   if (item.kind === 'xkcd') {
     const label = `xkcd #${item.num} "${item.title}"`
@@ -40,6 +49,11 @@ export function render(item) {
   }
 }
 
+/**
+ * Validates fun.json: required fields, known verdicts, coverage of every
+ * verdict, and no em dashes. Prints a summary and exits 1 on problems.
+ * @returns {void}
+ */
 function check() {
   const items = loadPool()
   const problems = []
@@ -57,6 +71,12 @@ function check() {
   console.log(`fun.json ok: ${items.length} entries, ${VERDICTS.map(v => `${v}=${items.filter(i => i.verdicts.includes(v)).length}`).join(' ')}`)
 }
 
+/**
+ * Picks a random pool item matching the verdict and prints it as JSON.
+ * Fails soft: any error or empty match is silently swallowed.
+ * @param {string} verdict - One of VERDICTS.
+ * @returns {void}
+ */
 function pick(verdict) {
   try {
     const matches = loadPool().filter(i => i.verdicts?.includes(verdict))
