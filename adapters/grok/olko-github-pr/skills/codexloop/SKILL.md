@@ -60,9 +60,10 @@ Pick the login matching `*codex*` (commonly `chatgpt-codex-connector[bot]`, some
 **Finding nothing here is NOT a stop condition.** On a PR Codex has never reviewed there is no bot
 login to find yet: that is the normal starting state, not a missing app. When the probe comes back
 empty, fall through to step A's pending-state check, and re-run this probe once a review lands;
-until then match any login containing `codex` when polling. Only conclude the app is absent after
-step A's bounded wait has expired with no review and no codex-like login anywhere on the PR, and
-then say so and stop, rather than looping against nothing.
+until then match any login containing `codex` when polling. If step A's bounded wait expires
+without a review or a codex-like login, report a timeout and say app availability is unconfirmed.
+Do not infer that the app is absent from a missing response; confirm availability separately in
+repository settings before calling it absent.
 
 ## Review state comes from the PR, not from memory
 
