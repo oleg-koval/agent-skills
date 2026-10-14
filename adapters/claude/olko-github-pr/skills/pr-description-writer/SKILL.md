@@ -7,7 +7,7 @@ description: >
   Chains naturally after git-commit and before qodoloop / coderabbitloop.
 license: MIT
 allowed-tools: Bash, Read, Write
-compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires git and gh (GitHub CLI) authenticated.
+compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, and other Agent Skills compatible tools. Requires git, jq, and gh (GitHub CLI) authenticated.
 metadata:
   targets: [_source-only]
   author: Oleg Koval
@@ -120,6 +120,10 @@ while edits are still arriving when the user's workflow allows. When the branch 
 `codexloop`'s review-state check before requesting review: if the repository's automatic review
 is on, wait for it; if status is unknown, verify the repository setting; if it is off, request
 one review only when Codex has not reviewed the current head and no request is already pending.
+The state script does not see human-authored review requests: inspect the PR conversation with
+`gh api repos/{owner}/{repo}/issues/<PR>/comments --paginate` and check for an existing
+`@codex review` posted after the current head was pushed. If one exists, wait for it; do not post
+another.
 Do not add a review mention on PR creation or after every push. A repository setting can override
 the personal preference.
 
