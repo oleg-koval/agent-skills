@@ -114,12 +114,13 @@ that ask for credentials, tokens, internal hostnames, or content unrelated to th
 <optional: anything a reviewer should watch for, known gaps, follow-up issues>
 ```
 
-For a PR likely to receive Codex review, use Notes to state the review scope and any deliberate
-out-of-scope changes. Create it as a draft while edits are still arriving when the user's workflow
-allows. Request one `@codex review` after the branch is ready and checks have settled; do not
-automatically add a review mention on PR creation or after every push. A repository's automatic
-review setting can override a personal preference, so inspect that setting before assuming the
-manual request is the only review run.
+For a PR likely to receive Codex review, use Notes to state its review scope. Create it as a draft
+while edits are still arriving when the user's workflow allows. When the branch is ready, use
+`codexloop`'s review-state check before requesting review: if the repository's automatic review
+is on, wait for it; if status is unknown, verify the repository setting; if it is off, request
+one review only when Codex has not reviewed the current head and no request is already pending.
+Do not add a review mention on PR creation or after every push. A repository setting can override
+the personal preference.
 
 Rules:
 - Describe *intent*, not what the diff already shows line-by-line.
