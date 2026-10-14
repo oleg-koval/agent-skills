@@ -259,5 +259,19 @@ console.log('\nrevmux adapter: fixture mapping')
   }
 }
 
+console.log('\ncloser picker: pool is valid and every verdict gets a pick')
+{
+  const { execFileSync } = await import('node:child_process')
+  const pickerPath = join(SKILL, 'scripts', 'pick-closer.mjs')
+  let poolOk = true
+  try { execFileSync('node', [pickerPath, '--check'], { encoding: 'utf8', stdio: 'pipe' }) } catch { poolOk = false }
+  check('fun.json passes --check', poolOk, true)
+  for (const verdict of ['lgtm', 'lgtm-with-changes', 'needs-work']) {
+    const out = execFileSync('node', [pickerPath, '--verdict', verdict], { encoding: 'utf8' }).trim()
+    const picked = out ? JSON.parse(out) : null
+    check(`${verdict}: picks an entry tagged with that verdict`, Boolean(picked?.verdicts?.includes(verdict) && picked.md_terminal && picked.md_github), true)
+  }
+}
+
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)
