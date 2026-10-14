@@ -1,3 +1,17 @@
+# [1.52.0](https://github.com/oleg-koval/agent-skills/compare/v1.51.3...v1.52.0) (2026-10-14)
+
+
+### ✨ Features
+
+* add frontend-direction skill ([#122](https://github.com/oleg-koval/agent-skills/issues/122)) ([e2bf816](https://github.com/oleg-koval/agent-skills/commit/e2bf81644eb63aec6c7f7192c41dec478779c540))
+* **lekker-review:** close every review with a verdict-matched xkcd or GIF ([#123](https://github.com/oleg-koval/agent-skills/issues/123)) ([6e8e9c6](https://github.com/oleg-koval/agent-skills/commit/6e8e9c6ce31712f54d314d4141e7a1e2848a83ca))
+
+
+### 🐛 Bug Fixes
+
+* CodeRabbit auto-fixes for PR [#123](https://github.com/oleg-koval/agent-skills/issues/123) ([#125](https://github.com/oleg-koval/agent-skills/issues/125)) ([896f05b](https://github.com/oleg-koval/agent-skills/commit/896f05b09813f33e3e51992e1827216a84a48306))
+* **lekker-review:** apply review findings on the closer picker ([#124](https://github.com/oleg-koval/agent-skills/issues/124)) ([10726fe](https://github.com/oleg-koval/agent-skills/commit/10726fece3be998f79edf6af3901b01b305def51))
+
 ## [1.51.3](https://github.com/oleg-koval/agent-skills/compare/v1.51.2...v1.51.3) (2026-10-13)
 
 
