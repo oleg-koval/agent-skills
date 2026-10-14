@@ -279,6 +279,9 @@ in Step 4. Use it for a read-only pre-push look.
 **`--no-artifact` flag:** parse and store as `ARTIFACT=false` (default true).
 Skips Step 3.5 (living review artifact) silently.
 
+**`--no-fun` flag:** parse and store as `FUN=false` (default true). Skips the
+closer (Step 3) everywhere: terminal, saved file, artifact, GitHub body.
+
 **`--engine revmux|workflow|codex` flag:** parse and store as `ENGINE`. Default
 to `workflow` for `HOST=claude` and `codex` for `HOST=codex`. Reject an explicit
 engine that does not exist on the current host (`workflow` requires Claude's
@@ -724,6 +727,20 @@ codebase. Never on taste alone. These land in their own section, not in
 Critical/Important. A finding without a cited precedent from the codebase is
 dropped.
 
+**Pick the closer** (skip when `FUN=false`): once the verdict is decided, run
+the picker ONCE and keep its JSON as `CLOSER` for the rest of the run, so the
+terminal, saved file, artifact and GitHub body all show the same joke:
+
+```bash
+# verdict key: ✅ -> lgtm, ⚠️ -> lgtm-with-changes, 🚫 -> needs-work
+node ${SKILL_ROOT}/scripts/pick-closer.mjs --verdict <key>
+```
+
+Empty output means no closer (pool missing or broken): leave `CLOSER` empty and
+carry on. Never invent an xkcd number or GIF URL in its place; the pool in
+`references/fun.json` is URL-verified, a guessed link is not. Unattended runs
+include it too.
+
 **Format** the review per `references/output-format.md` (read it now). Key
 requirements:
 
@@ -797,6 +814,12 @@ commits, write a marker for the NEW head sha too - a gate keys on the tip
 that is about to be pushed, and a marker for a superseded sha would be a lie.
 
 Then print the full review as the response.
+
+**Closer goes last.** The run's FINAL message (this one, or the later summary
+after Step 4 / 4.6 / 5 when those run) ends with `CLOSER.md_terminal` as its
+last line. Print it once per run, on whichever message is last, not on every
+step. Pass `CLOSER` to the Step 3.5 artifact agent and to the Step 5 GitHub
+post.
 
 ---
 
@@ -976,6 +999,7 @@ Follow `references/github-post.md`:
 - Verify post-condition: fetch review list, confirm PENDING state exists.
 - Print count + link.
 - Observation and Idiomatic findings go in the review body, never inline.
+- When `CLOSER` is set, its `md_github` is the last thing in the review body.
 - Never submit the review programmatically.
 - When fix mode applied and committed a finding, EXCLUDE it from the inline
   comments - do not ask for a change you already made. Mention the applied

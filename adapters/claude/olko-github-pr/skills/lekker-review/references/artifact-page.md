@@ -156,6 +156,9 @@ Hard requirements for the HTML page:
 - **Test Quality + Review Cost sections**, mirrored from the review file,
   kept concise (verdict + gaps + cost table; no need to reproduce every
   sentence).
+- **Closer footer** (when the caller passes `CLOSER`): a small last card with
+  the closer's title (or `alt`) as a link to its `url`. Link only, no `<img>`:
+  the CSP blocks external images. Skip the card when `CLOSER` is empty.
 - **Layout:** every code block (`badCode`, `fix`, `redOutput`, `testCode`)
   horizontally scrollable within its own container; the page body itself must
   never scroll horizontally. Keep total page weight sane -- plain `<pre>`
