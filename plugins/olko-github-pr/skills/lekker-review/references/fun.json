@@ -1,0 +1,235 @@
+{
+  "xkcd": [
+    {
+      "num": 1513,
+      "title": "Code Quality",
+      "url": "https://xkcd.com/1513/",
+      "img": "https://imgs.xkcd.com/comics/code_quality.png",
+      "verdicts": [
+        "needs-work"
+      ]
+    },
+    {
+      "num": 1695,
+      "title": "Code Quality 2",
+      "url": "https://xkcd.com/1695/",
+      "img": "https://imgs.xkcd.com/comics/code_quality_2.png",
+      "verdicts": [
+        "needs-work"
+      ]
+    },
+    {
+      "num": 1833,
+      "title": "Code Quality 3",
+      "url": "https://xkcd.com/1833/",
+      "img": "https://imgs.xkcd.com/comics/code_quality_3.png",
+      "verdicts": [
+        "needs-work",
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "num": 2138,
+      "title": "Wanna See the Code?",
+      "url": "https://xkcd.com/2138/",
+      "img": "https://imgs.xkcd.com/comics/wanna_see_the_code.png",
+      "verdicts": [
+        "needs-work",
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "num": 1597,
+      "title": "Git",
+      "url": "https://xkcd.com/1597/",
+      "img": "https://imgs.xkcd.com/comics/git.png",
+      "verdicts": [
+        "lgtm-with-changes",
+        "needs-work"
+      ]
+    },
+    {
+      "num": 303,
+      "title": "Compiling",
+      "url": "https://xkcd.com/303/",
+      "img": "https://imgs.xkcd.com/comics/compiling.png",
+      "verdicts": [
+        "lgtm",
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "num": 1296,
+      "title": "Git Commit",
+      "url": "https://xkcd.com/1296/",
+      "img": "https://imgs.xkcd.com/comics/git_commit.png",
+      "verdicts": [
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "num": 844,
+      "title": "Good Code",
+      "url": "https://xkcd.com/844/",
+      "img": "https://imgs.xkcd.com/comics/good_code.png",
+      "verdicts": [
+        "lgtm",
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "num": 1739,
+      "title": "Fixing Problems",
+      "url": "https://xkcd.com/1739/",
+      "img": "https://imgs.xkcd.com/comics/fixing_problems.png",
+      "verdicts": [
+        "needs-work"
+      ]
+    },
+    {
+      "num": 2347,
+      "title": "Dependency",
+      "url": "https://xkcd.com/2347/",
+      "img": "https://imgs.xkcd.com/comics/dependency.png",
+      "verdicts": [
+        "lgtm",
+        "needs-work"
+      ]
+    },
+    {
+      "num": 979,
+      "title": "Wisdom of the Ancients",
+      "url": "https://xkcd.com/979/",
+      "img": "https://imgs.xkcd.com/comics/wisdom_of_the_ancients.png",
+      "verdicts": [
+        "lgtm",
+        "needs-work"
+      ]
+    },
+    {
+      "num": 1700,
+      "title": "New Bug",
+      "url": "https://xkcd.com/1700/",
+      "img": "https://imgs.xkcd.com/comics/new_bug.png",
+      "verdicts": [
+        "needs-work"
+      ]
+    },
+    {
+      "num": 2200,
+      "title": "Unreachable State",
+      "url": "https://xkcd.com/2200/",
+      "img": "https://imgs.xkcd.com/comics/unreachable_state.png",
+      "verdicts": [
+        "lgtm"
+      ]
+    }
+  ],
+  "gifs": [
+    {
+      "url": "https://media.giphy.com/media/13zeE9qQNC5IKk/giphy.gif",
+      "page": "https://giphy.com/gifs/approval-approve-13zeE9qQNC5IKk",
+      "alt": "Seal of approval thumbs up",
+      "verdicts": [
+        "lgtm"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/SVDvVbkl359Xwzl3V4/giphy.gif",
+      "page": "https://giphy.com/gifs/4010-approved-approval-majed-SVDvVbkl359Xwzl3V4",
+      "alt": "Approved",
+      "verdicts": [
+        "lgtm"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/ely3apij36BJhoZ234/giphy.gif",
+      "page": "https://giphy.com/gifs/good-job-congratulations-otter-ely3apij36BJhoZ234",
+      "alt": "Great job otter",
+      "verdicts": [
+        "lgtm"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/rMEJyjch7L1tlRlCl3/giphy.gif",
+      "page": "https://giphy.com/gifs/cat-ok-thumbs-up-rMEJyjch7L1tlRlCl3",
+      "alt": "Cat says ok",
+      "verdicts": [
+        "lgtm"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/XdUMQuuiaAEkOUtezd/giphy.gif",
+      "page": "https://giphy.com/gifs/animated-thumbs-up-joeyahlbum-XdUMQuuiaAEkOUtezd",
+      "alt": "Animated thumbs up",
+      "verdicts": [
+        "lgtm"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/Qaxd5XpgDWMso/giphy.gif",
+      "page": "https://giphy.com/gifs/dog-ball-pool-Qaxd5XpgDWMso",
+      "alt": "Golden retriever almost has the ball",
+      "verdicts": [
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/YT95XJOLvY1t2SJgpR/giphy.gif",
+      "page": "https://giphy.com/gifs/hang-in-there-dont-give-up-almost-done-YT95XJOLvY1t2SJgpR",
+      "alt": "Don't give up, so close",
+      "verdicts": [
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/NWHBEsCcpuAPiAPMBQ/giphy.gif",
+      "page": "https://giphy.com/gifs/coming-almost-there-eta-NWHBEsCcpuAPiAPMBQ",
+      "alt": "Almost there, on my way",
+      "verdicts": [
+        "lgtm-with-changes"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/0yqoE9MFpFDNjCY9lr/giphy.gif",
+      "page": "https://giphy.com/gifs/draft-rough-0yqoE9MFpFDNjCY9lr",
+      "alt": "Rough draft, still thinking",
+      "verdicts": [
+        "lgtm-with-changes",
+        "needs-work"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/yGREGYYecNd3pSrSU6/giphy.gif",
+      "page": "https://giphy.com/gifs/agile-design-thinking-autentity-yGREGYYecNd3pSrSU6",
+      "alt": "Design thinking iteration loop",
+      "verdicts": [
+        "needs-work"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/hsbwJSHExeC5bVenv7/giphy.gif",
+      "page": "https://giphy.com/gifs/agencyea-work-mood-concept-hsbwJSHExeC5bVenv7",
+      "alt": "Work mood, back to work",
+      "verdicts": [
+        "needs-work"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/CoND5j6Bn1QZUgm1xX/giphy.gif",
+      "page": "https://giphy.com/gifs/crab-pikaole-crabby-CoND5j6Bn1QZUgm1xX",
+      "alt": "Sorry, out of order",
+      "verdicts": [
+        "needs-work"
+      ]
+    },
+    {
+      "url": "https://media.giphy.com/media/2zdnl4CB3OygOHe1kX/giphy.gif",
+      "page": "https://giphy.com/gifs/broken-technical-not-working-2zdnl4CB3OygOHe1kX",
+      "alt": "Technical difficulties, not working",
+      "verdicts": [
+        "needs-work"
+      ]
+    }
+  ]
+}
