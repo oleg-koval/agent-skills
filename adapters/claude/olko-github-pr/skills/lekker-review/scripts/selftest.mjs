@@ -259,18 +259,64 @@ console.log('\nrevmux adapter: fixture mapping')
   }
 }
 
-console.log('\ncloser picker: pool is valid and every verdict gets a pick')
+console.log('\ncloser picker: pool, exact rendering, fail-soft and --check')
 {
-  const { execFileSync } = await import('node:child_process')
+  const { spawnSync } = await import('node:child_process')
+  const { writeFileSync, mkdtempSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
   const pickerPath = join(SKILL, 'scripts', 'pick-closer.mjs')
-  let poolOk = true
-  try { execFileSync('node', [pickerPath, '--check'], { encoding: 'utf8', stdio: 'pipe' }) } catch { poolOk = false }
-  check('fun.json passes --check', poolOk, true)
-  for (const verdict of ['lgtm', 'lgtm-with-changes', 'needs-work']) {
-    const out = execFileSync('node', [pickerPath, '--verdict', verdict], { encoding: 'utf8' }).trim()
-    const picked = out ? JSON.parse(out) : null
-    check(`${verdict}: picks an entry tagged with that verdict`, Boolean(picked?.verdicts?.includes(verdict) && picked.md_terminal && picked.md_github), true)
+  const { VERDICTS, render, loadPool } = await import(pickerPath)
+  const run = (args, pool) => spawnSync('node', [pickerPath, ...args], {
+    encoding: 'utf8', env: { ...process.env, ...(pool ? { LEKKER_FUN_FILE: pool } : {}) },
+  })
+  const tmp = mkdtempSync(join(tmpdir(), 'lekker-fun-'))
+  const writePool = (name, body) => {
+    const p = join(tmp, name)
+    writeFileSync(p, typeof body === 'string' ? body : JSON.stringify(body))
+    return p
   }
+
+  check('fun.json passes --check', run(['--check']).status, 0)
+  for (const item of loadPool()) {
+    const r = render(item)
+    check(`renders ${item.url}`, r.md_github.includes(item.kind === 'xkcd' ? item.img : item.url) && r.md_terminal.endsWith(item.url), true)
+  }
+
+  const xkcd = { num: 1, title: 'T', url: 'https://xkcd.com/1/', img: 'https://imgs.xkcd.com/1.png', verdicts: ['lgtm'] }
+  const gif = { url: 'https://media.giphy.com/media/x/giphy.gif', alt: 'Nod', verdicts: ['lgtm-with-changes', 'needs-work'] }
+  check('xkcd md_terminal', render({ kind: 'xkcd', ...xkcd }).md_terminal, '🎲 xkcd #1 "T" - https://xkcd.com/1/')
+  check('xkcd md_github', render({ kind: 'xkcd', ...xkcd }).md_github, '![xkcd #1 "T"](https://imgs.xkcd.com/1.png)\n[xkcd #1 "T"](https://xkcd.com/1/)')
+  check('gif md_terminal', render({ kind: 'gif', ...gif }).md_terminal, '🎬 Nod - https://media.giphy.com/media/x/giphy.gif')
+  check('gif md_github', render({ kind: 'gif', ...gif }).md_github, '![Nod](https://media.giphy.com/media/x/giphy.gif)')
+
+  // One entry per verdict makes the random pick deterministic.
+  const fixture = writePool('fixture.json', { xkcd: [xkcd], gifs: [gif] })
+  for (const verdict of VERDICTS) {
+    const out = run(['--verdict', verdict], fixture)
+    const expected = render(verdict === 'lgtm' ? { kind: 'xkcd', ...xkcd } : { kind: 'gif', ...gif })
+    check(`${verdict}: picks the matching fixture entry`, out.stdout ? JSON.parse(out.stdout).md_github : null, expected.md_github)
+  }
+
+  for (const [label, pool] of [['missing pool', join(tmp, 'missing.json')], ['malformed pool', writePool('bad.json', '{not json')]]) {
+    const out = run(['--verdict', 'lgtm'], pool)
+    check(`${label} fails soft (exit 0, no output)`, [out.status, out.stdout], [0, ''])
+  }
+
+  for (const [label, pool] of [
+    ['unknown verdict', { xkcd: [xkcd], gifs: [{ ...gif, verdicts: ['lgtm-with-changes', 'needs-work', 'meh'] }] }],
+    ['xkcd without img', { xkcd: [{ ...xkcd, img: '' }], gifs: [gif] }],
+    ['bracket in title', { xkcd: [{ ...xkcd, title: 'a]b' }], gifs: [gif] }],
+    ['uncovered verdict', { xkcd: [xkcd], gifs: [{ ...gif, verdicts: ['needs-work'] }] }],
+    ['em dash in alt', { xkcd: [xkcd], gifs: [{ ...gif, alt: 'a \u2014 b' }] }],
+  ]) {
+    check(`--check rejects ${label}`, run(['--check'], writePool(`${label.replace(/ /g, '-')}.json`, pool)).status, 1)
+  }
+
+  const read = f => readFileSync(join(SKILL, f), 'utf8')
+  check('SKILL.md documents --no-fun', read('SKILL.md').includes('--no-fun') && read('SKILL.md').includes('FUN=false'), true)
+  const fmt = read('references/output-format.md')
+  check('Closer section follows the Review Cost pricing notes', fmt.indexOf('## 🎲 Closer') > fmt.indexOf('Per-MTok pricing'), true)
+  check('github-post and artifact-page both use CLOSER', read('references/github-post.md').includes('CLOSER') && read('references/artifact-page.md').includes('CLOSER'), true)
 }
 
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
