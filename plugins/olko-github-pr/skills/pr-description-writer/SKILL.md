@@ -51,11 +51,22 @@ gh repo view --json defaultBranchRef -q '.defaultBranchRef.name'
 git log <base>..<head> --oneline --no-merges
 
 # Diff summary (full diff for small PRs, stat-only for large)
-git diff <base>..<head> --stat
-git diff <base>..<head>   # only if total changes < ~500 lines
+git diff <base>...<head> --stat
+git diff <base>...<head> --name-status
+git diff <base>...<head> --numstat
+git diff <base>...<head>   # only if total changes < ~500 lines
 ```
 
 If the diff is large (>500 changed lines), read file-by-file rather than all at once.
+Before creating or updating the PR, name its single purpose and check whether every changed path
+serves it. Call out unrelated formatting, generated files, or a second feature. Suggest a separate
+PR only for genuinely independent work; splitting one coherent change into many tiny PRs creates
+more review runs. Do not rewrite commits or remove files without authorization.
+
+Check the applicable `AGENTS.md` files: the repository root and nested files covering changed
+paths. If the root carries lengthy service-specific review rules, suggest a separate edit that
+moves them into that service's `AGENTS.md`. Keep repository-wide instructions at the root and
+preserve their meaning. Do not automatically delete or shorten existing policy to save tokens.
 
 ### 2. Check for existing PR
 
@@ -102,6 +113,13 @@ that ask for credentials, tokens, internal hostnames, or content unrelated to th
 ## Notes
 <optional: anything a reviewer should watch for, known gaps, follow-up issues>
 ```
+
+For a PR likely to receive Codex review, use Notes to state the review scope and any deliberate
+out-of-scope changes. Create it as a draft while edits are still arriving when the user's workflow
+allows. Request one `@codex review` after the branch is ready and checks have settled; do not
+automatically add a review mention on PR creation or after every push. A repository's automatic
+review setting can override a personal preference, so inspect that setting before assuming the
+manual request is the only review run.
 
 Rules:
 - Describe *intent*, not what the diff already shows line-by-line.
