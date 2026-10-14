@@ -128,7 +128,6 @@
   "gifs": [
     {
       "url": "https://media.giphy.com/media/13zeE9qQNC5IKk/giphy.gif",
-      "page": "https://giphy.com/gifs/approval-approve-13zeE9qQNC5IKk",
       "alt": "Seal of approval thumbs up",
       "verdicts": [
         "lgtm"
@@ -136,7 +135,6 @@
     },
     {
       "url": "https://media.giphy.com/media/SVDvVbkl359Xwzl3V4/giphy.gif",
-      "page": "https://giphy.com/gifs/4010-approved-approval-majed-SVDvVbkl359Xwzl3V4",
       "alt": "Approved",
       "verdicts": [
         "lgtm"
@@ -144,7 +142,6 @@
     },
     {
       "url": "https://media.giphy.com/media/ely3apij36BJhoZ234/giphy.gif",
-      "page": "https://giphy.com/gifs/good-job-congratulations-otter-ely3apij36BJhoZ234",
       "alt": "Great job otter",
       "verdicts": [
         "lgtm"
@@ -152,7 +149,6 @@
     },
     {
       "url": "https://media.giphy.com/media/rMEJyjch7L1tlRlCl3/giphy.gif",
-      "page": "https://giphy.com/gifs/cat-ok-thumbs-up-rMEJyjch7L1tlRlCl3",
       "alt": "Cat says ok",
       "verdicts": [
         "lgtm"
@@ -160,7 +156,6 @@
     },
     {
       "url": "https://media.giphy.com/media/XdUMQuuiaAEkOUtezd/giphy.gif",
-      "page": "https://giphy.com/gifs/animated-thumbs-up-joeyahlbum-XdUMQuuiaAEkOUtezd",
       "alt": "Animated thumbs up",
       "verdicts": [
         "lgtm"
@@ -168,7 +163,6 @@
     },
     {
       "url": "https://media.giphy.com/media/Qaxd5XpgDWMso/giphy.gif",
-      "page": "https://giphy.com/gifs/dog-ball-pool-Qaxd5XpgDWMso",
       "alt": "Golden retriever almost has the ball",
       "verdicts": [
         "lgtm-with-changes"
@@ -176,7 +170,6 @@
     },
     {
       "url": "https://media.giphy.com/media/YT95XJOLvY1t2SJgpR/giphy.gif",
-      "page": "https://giphy.com/gifs/hang-in-there-dont-give-up-almost-done-YT95XJOLvY1t2SJgpR",
       "alt": "Don't give up, so close",
       "verdicts": [
         "lgtm-with-changes"
@@ -184,7 +177,6 @@
     },
     {
       "url": "https://media.giphy.com/media/NWHBEsCcpuAPiAPMBQ/giphy.gif",
-      "page": "https://giphy.com/gifs/coming-almost-there-eta-NWHBEsCcpuAPiAPMBQ",
       "alt": "Almost there, on my way",
       "verdicts": [
         "lgtm-with-changes"
@@ -192,7 +184,6 @@
     },
     {
       "url": "https://media.giphy.com/media/0yqoE9MFpFDNjCY9lr/giphy.gif",
-      "page": "https://giphy.com/gifs/draft-rough-0yqoE9MFpFDNjCY9lr",
       "alt": "Rough draft, still thinking",
       "verdicts": [
         "lgtm-with-changes",
@@ -201,7 +192,6 @@
     },
     {
       "url": "https://media.giphy.com/media/yGREGYYecNd3pSrSU6/giphy.gif",
-      "page": "https://giphy.com/gifs/agile-design-thinking-autentity-yGREGYYecNd3pSrSU6",
       "alt": "Design thinking iteration loop",
       "verdicts": [
         "needs-work"
@@ -209,7 +199,6 @@
     },
     {
       "url": "https://media.giphy.com/media/hsbwJSHExeC5bVenv7/giphy.gif",
-      "page": "https://giphy.com/gifs/agencyea-work-mood-concept-hsbwJSHExeC5bVenv7",
       "alt": "Work mood, back to work",
       "verdicts": [
         "needs-work"
@@ -217,7 +206,6 @@
     },
     {
       "url": "https://media.giphy.com/media/CoND5j6Bn1QZUgm1xX/giphy.gif",
-      "page": "https://giphy.com/gifs/crab-pikaole-crabby-CoND5j6Bn1QZUgm1xX",
       "alt": "Sorry, out of order",
       "verdicts": [
         "needs-work"
@@ -225,7 +213,6 @@
     },
     {
       "url": "https://media.giphy.com/media/2zdnl4CB3OygOHe1kX/giphy.gif",
-      "page": "https://giphy.com/gifs/broken-technical-not-working-2zdnl4CB3OygOHe1kX",
       "alt": "Technical difficulties, not working",
       "verdicts": [
         "needs-work"
