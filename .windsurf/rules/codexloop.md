@@ -19,6 +19,9 @@ suggestion applied is worse than the comment itself.
 - **Trigger phrase is `@codex review`.** Codex reviews automatically when a PR opens or gets new
   commits if auto-review is enabled on the repo; the mention forces a fresh pass. Other useful
   mentions: `@codex review focus on <area>` for a scoped re-review.
+- **Review requests consume usage.** Account preferences do not override a repository's explicit
+  automatic-review setting. Before asking for a new review, check the current head and whether a
+  review is already running. Never request a second review merely because the first is slow.
 - **Priority, not confidence.** Codex findings usually lead with a severity/priority word (`P1`,
   `P2`, `P3` or `critical`/`major`/`minor`) or a short titled heading. Weight the top tier
   seriously; treat the bottom tier as usually-skippable nits unless clearly correct.
@@ -47,7 +50,7 @@ Pick the login matching `*codex*` (commonly `chatgpt-codex-connector[bot]`, some
 
 **Finding nothing here is NOT a stop condition.** On a PR Codex has never reviewed there is no bot
 login to find yet: that is the normal starting state, not a missing app. When the probe comes back
-empty, fall through to step A, post `@codex review`, and re-run this probe once a review lands;
+empty, fall through to step A's pending-state check, and re-run this probe once a review lands;
 until then match any login containing `codex` when polling. Only conclude the app is absent after
 step A's bounded wait has expired with no review and no codex-like login anywhere on the PR, and
 then say so and stop, rather than looping against nothing.
@@ -81,6 +84,20 @@ gh pr view --json number,headRefName,headRefOid -q '{number,branch:.headRefName,
 
 Switch to the PR branch if not already on it. Capture `OWNER`/`REPO` (`gh repo view --json owner,name`).
 
+Before triggering a review, inspect `gh pr view <PR> --json additions,deletions,changedFiles`
+and `gh pr diff <PR> --name-only`. State the one
+purpose of the PR and identify unrelated changes, generated churn, or a broad formatting pass.
+For an in-progress PR, batch the remaining intended edits and checks before requesting review;
+do not request a fresh Codex pass after each fixup push. Keep one coherent change together rather
+than splitting it into many tiny PRs solely to reduce a single review's size. Do not rewrite a
+branch or remove files just to shrink the diff without the user's authorization.
+
+Read only the root `AGENTS.md` and the nested `AGENTS.md` files applicable to changed paths.
+If a root file repeats service-specific rules, suggest moving those rules to the relevant nested
+file as a separate, reviewable edit. Preserve the rules' meaning; do not silently delete policy.
+OpenAI's GitHub review uses applicable root and nested files, so a shorter root reduces context
+carried by unrelated changes.
+
 ## 2. The loop (max 5 iterations)
 
 At the end of every invocation, post exactly one top-level PR conversation comment summarizing
@@ -106,11 +123,17 @@ head, so threads left open on purpose cannot make the push look reviewed.
 
 - Exit `10` (`findings`): go to B. On iteration 1 this is whatever Codex (or another bot)
   already posted.
-- Exit `20` (`pending`): post `@codex review` (`gh pr comment <PR> --body "@codex review"`). Then wait with the same command plus `--wait 600`. Run the
+- Exit `20` (`pending`): if automatic-review status is unknown, wait up to 600 seconds first so a
+  review already in progress can land. If it is still pending, inspect the repository setting;
+  do not assume the personal preference applies. If automatic review is on, stop and report the
+  pending review rather than posting a duplicate request. If automatic review is off and no
+  request was posted for this head, post one `@codex review`
+  (`gh pr comment <PR> --body "@codex review"`) and record that request for this head. Then wait
+  with the same command plus `--wait 600`. Run the
   wait in the background where the host allows it (Claude Code: Bash `run_in_background`; you are
   re-invoked when it exits) so ten minutes of polling never sits in the conversation. Still `20`
-  after the wait: say so out loud, post `@codex review` once more, and wait once more. Still `20` after that: stop and
-  report the timeout honestly; never claim success.
+  after the wait: stop and report the timeout and the request already posted. A repeat mention
+  can start another billable review; do not retry it automatically or claim success.
 - Exit `0` (`clean`): go to the exit check. A `--wait` call returns `clean` only after a settle
   re-read 60 seconds later, so a comment landing right behind the review is still caught. A bare
   read (no `--wait`) that says `clean` is good enough only when you have not pushed since Codex's
