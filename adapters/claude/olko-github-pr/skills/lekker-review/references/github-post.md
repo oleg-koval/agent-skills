@@ -95,6 +95,11 @@ Rules:
 
   Keep the body itself under ~2,500 characters. If it is longer, the asks are
   buried: cut prose, never cut the numbered asks.
+
+  **Closer:** when `CLOSER` is set (SKILL.md Step 3), append a blank line and
+  `CLOSER.md_github` as the very last lines of the body. It does not count
+  toward the ~2,500-character budget and is exempt from the no-praise rule
+  below, but the em-dash payload check still applies.
 - Do NOT prefix the body with a banner like "## Lekker review". Do NOT praise the
   PR or describe what it does well: no "solid", "handled well", "clean", "nice".
   State the risk and the asks only.
