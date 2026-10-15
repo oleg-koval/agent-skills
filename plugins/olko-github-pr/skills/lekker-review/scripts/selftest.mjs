@@ -12,7 +12,7 @@
 // It lifts the real functions out of workflow.js by source extraction rather
 // than importing, because workflow.js is written for the Workflow harness (top
 // level `return`, an injected `args` global) and is not importable as a module.
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -142,11 +142,12 @@ check('a custom house rule is a hard rule',
 
 console.log('\nverification scope: depth controls breadth, never the trust bar')
 const crit = { severity: 'critical' }, imp = { severity: 'important' }, obs = { severity: 'observation' }
-// shouldVerify takes one argument now. Depth used to be able to switch verification
-// off entirely, which meant a scan-depth review shipped unverified Criticals.
-check('shouldVerify takes the finding alone', shouldVerify.length, 1)
-check('critical and important are verified, observation is not',
-  [crit, imp, obs].map(f => shouldVerify(f)), [true, true, false])
+// Depth used to be able to switch verification off entirely, which meant a
+// scan-depth review shipped unverified Criticals. Only `deps` opts out now (its
+// single checklist agent reports advisory facts), see the deps depth section.
+check('critical and important are verified at every non-deps depth, observation is not',
+  ['scan', 'medium', 'deep', undefined].map(d => [crit, imp, obs].map(f => shouldVerify(f, d))),
+  Array(4).fill([true, true, false]))
 check('a hard rule is NOT exempt from verification',
   shouldVerify({ severity: 'critical', rule: 'TS-2', file: 'x.js', badCode: '', description: '', title: '' }), true)
 check('a custom hard rule is NOT exempt either',
@@ -317,6 +318,69 @@ console.log('\ncloser picker: pool, exact rendering, fail-soft and --check')
   const fmt = read('references/output-format.md')
   check('Closer section follows the Review Cost pricing notes', fmt.indexOf('## 🎲 Closer') > fmt.indexOf('Per-MTok pricing'), true)
   check('github-post and artifact-page both use CLOSER', read('references/github-post.md').includes('CLOSER') && read('references/artifact-page.md').includes('CLOSER'), true)
+}
+
+console.log('\ndeps depth: routing, classifier, line validation')
+{
+  const dimsSrc = (() => { try { return lift('dimensionsFor') } catch { return null } })()
+  check('workflow.js defines dimensionsFor', Boolean(dimsSrc), true)
+  if (dimsSrc) {
+    const dimensionsFor = new Function(dimsSrc + '\nreturn dimensionsFor')()
+    const M = { review: 'r', triage: 't' }
+    check('deps runs exactly one agent', dimensionsFor('deps', M).map(d => d.file), ['deps.md'])
+    check('scan still runs the triage pair', dimensionsFor('scan', M).length, 2)
+    check('medium still runs five specialists', dimensionsFor('medium', M).length, 5)
+    check('every dimension prompt file exists',
+      ['deps', 'scan', 'medium'].flatMap(d => dimensionsFor(d, M)).every(d => existsSync(join(SKILL, 'references', 'agents', d.file))), true)
+  }
+  check('deps verifies nothing', [crit, imp, obs].map(f => shouldVerify(f, 'deps')), [false, false, false])
+  check('scan still verifies Criticals and Importants', [crit, imp, obs].map(f => shouldVerify(f, 'scan')), [true, true, false])
+  check('deps skips the prover', /depth !== 'scan' && depth !== 'deps'/.test(src), true)
+
+  const { classify } = await import(join(SKILL, 'scripts', 'deps-only.mjs'))
+  const pkg = o => JSON.stringify(o)
+  const files = {
+    'BASE:web/package.json': pkg({ name: 'web', scripts: { t: 'vitest' }, devDependencies: { vitest: '^3.2.0' }, engines: { node: '>=20' } }),
+    'HEAD:web/package.json': pkg({ name: 'web', scripts: { t: 'vitest' }, devDependencies: { vitest: '^3.2.4' }, overrides: { tinypool: '^2.1.2' }, engines: { node: '>=20' } }),
+    'BASE:eng/package.json': pkg({ name: 'eng', engines: { node: '>=20' } }),
+    'HEAD:eng/package.json': pkg({ name: 'eng', engines: { node: '>=24' } }),
+    'BASE:mix/package.json': pkg({ name: 'mix', scripts: { t: 'jest' }, dependencies: { a: '1' } }),
+    'HEAD:mix/package.json': pkg({ name: 'mix', scripts: { t: 'vitest' }, dependencies: { a: '2' } }),
+  }
+  const readAt = (rev, p) => files[`${rev}:${p}`] ?? null
+  const deps = classify(['package-lock.json', 'web/package.json', 'web/package-lock.json'], readAt)
+  check('lockfiles + dep keys -> deps', deps.kind, 'deps')
+  check('deps reports the changed dep keys', deps.packageJsons[0].depKeysChanged, ['devDependencies', 'overrides'])
+  check('deps reports each lockfile dir', deps.lockDirs, ['.', 'web'])
+  check('engines-only change -> deps', classify(['eng/package.json'], readAt).kind, 'deps')
+  check('a scripts change -> mixed', classify(['mix/package.json', 'package-lock.json'], readAt).kind, 'mixed')
+  check('a source file -> mixed', classify(['package-lock.json', 'web/src/a.ts'], readAt).kind, 'mixed')
+  check('an added package.json -> mixed', classify(['new/package.json'], readAt).kind, 'mixed')
+
+  const { validate, loadDedup } = await import(join(SKILL, 'scripts', 'validate-lines.mjs'))
+  const { mkdtempSync, writeFileSync: wf, mkdirSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const wt = mkdtempSync(join(tmpdir(), 'lekker-lines-'))
+  mkdirSync(join(wt, 'web'))
+  const body = Array.from({ length: 80 }, (_, i) => `  "pad${i}": "x",`)
+  body[69] = '    "tinypool": "^2.1.2"'
+  wf(join(wt, 'web', 'package.json'), body.join('\n'))
+  const dedupFn = loadDedup(target)
+  const f = (line, badCode, title = 'tinypool override forces a major') =>
+    ({ file: 'web/package.json', line, severity: 'observation', title, description: '', badCode, fix: '' })
+  const r = validate([
+    f(398, '+    "tinypool": "^2.1.2"'),
+    f(70, '"tinypool": "^2.1.2"', 'tinypool override forces a major vitest does not declare'),
+    f(12, 'something that is not in the file at all', 'phantom'),
+    f(71, '"tinypool": "^2.1.2"', 'near enough'),
+    { file: 'CI: checks / audit', line: 1, severity: 'observation', title: 'ci', description: '', badCode: 'x', fix: '' },
+  ], wt, dedupFn)
+  check('diff line 398 is re-anchored to file line 70, then merged with its twin',
+    r.findings.filter(x => x.line === 70 && /tinypool/.test(x.title)).length, 1)
+  check('an unfindable badCode nulls the line', r.findings.find(x => x.title === 'phantom')?.line, null)
+  check('within +-3 lines is kept', r.findings.some(x => x.line === 71 || x.title === 'near enough'), true)
+  check('a non-file anchor is left alone', r.findings.find(x => x.title === 'ci')?.line, 1)
+  check('summary counts', [r.summary.remapped, r.summary.nulled, r.summary.unchecked], [1, 1, 1])
 }
 
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)

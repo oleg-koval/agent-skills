@@ -30,7 +30,9 @@ Rules:
   review programmatically.
 - Include one comment entry for every Critical and Important finding whose
   `file:line` falls within the diff hunks of this PR (see Step 2 for how to
-  determine commentability).
+  determine commentability). A finding with `line: null` (set by
+  `scripts/validate-lines.mjs` when its quoted code is not in the file) is
+  never an inline comment: list it in the review body instead.
 - **Keep every comment body to 2-4 sentences and under ~700 characters**
   (excluding any suggestion block). Inline comments are read one at a time in a
   narrow column; a long one does not get read, so length actively costs you the

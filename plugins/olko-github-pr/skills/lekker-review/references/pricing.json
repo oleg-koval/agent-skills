@@ -1,13 +1,14 @@
 {
-  "note": "USD per million tokens, keyed by revmux's actual_model. revmux runs `claude --print` under subscription (Max plan) auth, so nothing here is a real API bill; this is an API-list-price ESTIMATE for the cost block only. Where a model exposes separate input/output prices, usd = tokens/1e6 * output price (output-only, not blended), because revmux reports a single combined `tokens` figure per agent with no input/output split to weight a blend. verified:false entries are not confirmed against a current price sheet (no local claude-api pricing doc found on this machine as of 2026-09-09) and must be checked before this cost block is trusted for a real decision. The claude-*-5-5 and claude-fable-5-1 rows carry the prices of their predecessor tier (fable: $10/$50 as listed in output-format.md; opus/sonnet/haiku: the 5-family rates above) until a price sheet confirms the new models.",
-  "claude-fable-5-1": { "input": 10, "output": 50, "blended": 30, "verified": false },
-  "claude-opus-5-5":  { "input": 15,  "output": 75,  "blended": 45,  "verified": false },
-  "claude-sonnet-5-5": { "input": 3,  "output": 15,  "blended": 9,   "verified": false },
-  "claude-haiku-5-5": { "input": 1,  "output": 5,  "blended": 3,   "verified": false },
-  "claude-opus-5":   { "input": 15,  "output": 75,  "blended": 45,  "verified": false },
-  "claude-sonnet-5": { "input": 3,   "output": 15,  "blended": 9,   "verified": false },
-  "claude-haiku-4-5-20251001": { "input": 1, "output": 5, "blended": 3, "verified": false },
-  "opus":   { "input": 15, "output": 75, "blended": 45, "verified": false },
-  "sonnet": { "input": 3,  "output": 15, "blended": 9,  "verified": false },
-  "haiku":  { "input": 1,  "output": 5,  "blended": 3,  "verified": false }
+  "note": "USD per million tokens, keyed by revmux's actual_model. revmux runs `claude --print` under subscription (Max plan) auth, so nothing here is a real API bill; this is an API-list-price ESTIMATE for the cost block only. Where a model exposes separate input/output prices, usd = tokens/1e6 * output price (output-only, not blended), because revmux reports a single combined `tokens` figure per agent with no input/output split to weight a blend. Rates verified 2026-10-15 against the claude-api skill reference (shared/models.md, shared/model-migration.md). Haiku 5.5 has two rate cards; the entry is the <=100K-prompt card. The bare tier aliases (opus/sonnet/haiku) follow the current model of each tier. Re-check there when a model changes.",
+  "claude-fable-5-1": { "input": 10,  "output": 50,  "blended": 30,  "verified": "2026-10-15" },
+  "claude-fable-5":   { "input": 10,  "output": 50,  "blended": 30,  "verified": "2026-10-15" },
+  "claude-opus-5-5":  { "input": 4,   "output": 20,  "blended": 12,  "verified": "2026-10-15" },
+  "claude-opus-5":    { "input": 5,   "output": 25,  "blended": 15,  "verified": "2026-10-15" },
+  "claude-sonnet-5-5": { "input": 2,  "output": 10,  "blended": 6,   "verified": "2026-10-15" },
+  "claude-sonnet-5":  { "input": 2,   "output": 10,  "blended": 6,   "verified": "2026-10-15" },
+  "claude-haiku-5-5": { "input": 0.1, "output": 0.5, "blended": 0.3, "verified": "2026-10-15" },
+  "claude-haiku-4-5-20251001": { "input": 1, "output": 5, "blended": 3, "verified": "2026-10-15" },
+  "opus":   { "input": 4,   "output": 20,  "blended": 12,  "verified": "2026-10-15" },
+  "sonnet": { "input": 2,   "output": 10,  "blended": 6,   "verified": "2026-10-15" },
+  "haiku":  { "input": 0.1, "output": 0.5, "blended": 0.3, "verified": "2026-10-15" }
 }
