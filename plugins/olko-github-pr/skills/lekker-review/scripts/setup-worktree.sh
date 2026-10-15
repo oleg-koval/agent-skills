@@ -134,7 +134,23 @@ if [[ -n "$LOCAL_REPO" ]]; then
         exit 1
     fi
 else
-    git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null || true
+    # Fetch the base branch too: without it origin/<base> is whatever this clone
+    # last saw, and the merge-base drifts back far enough to list files the PR
+    # never touched (65 instead of 9 on one review). Explicit refspecs, because
+    # a --depth clone is single-branch and would not update either ref.
+    # LEKKER_BASE_BRANCH names the branch to fetch when LEKKER_BASE_REF is not
+    # origin/<branch>: a merged PR is diffed against <mergeCommit>^1, because its
+    # head is already inside the base branch and the merge-base would be the head.
+    FETCH_SPECS=("+refs/heads/${PR_BRANCH}:refs/remotes/origin/${PR_BRANCH}")
+    BASE_BRANCH="${LEKKER_BASE_BRANCH:-}"
+    if [[ -z "$BASE_BRANCH" && "${LEKKER_BASE_REF:-}" == origin/* ]]; then
+        BASE_BRANCH="${LEKKER_BASE_REF#origin/}"
+    fi
+    if [[ -n "$BASE_BRANCH" ]]; then
+        FETCH_SPECS+=("+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}")
+    fi
+    git -C "$REPO_ROOT" fetch origin "${FETCH_SPECS[@]}" 2>/dev/null \
+        || git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null || true
 
     if ! git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" "origin/$PR_BRANCH" 2>/dev/null; then
         if ! git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" FETCH_HEAD 2>/dev/null; then
@@ -146,19 +162,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 3. node_modules symlink
-# ---------------------------------------------------------------------------
-NM_LINKED=false
-if [[ -d "$REPO_ROOT/node_modules" ]]; then
-    ln -s "$REPO_ROOT/node_modules" "$WORKTREE_PATH/node_modules"
-    NM_LINKED=true
-else
-    NOTES="${NOTES}no-node_modules-static-checks-skipped;"
-fi
-
-# ---------------------------------------------------------------------------
-# 3b. Determine changed files (to scope tsc/eslint to this PR's diff instead
-#     of the whole repo -- see scripts/changed-files.sh).
+# 3. Determine changed files (to scope tsc/eslint to this PR's diff instead
+#    of the whole repo -- see scripts/changed-files.sh). Runs before the
+#    node_modules step, which needs to know whether a lockfile changed.
 # ---------------------------------------------------------------------------
 CHANGED_FILES_FILE="/tmp/lekker-changed-$$.txt"
 CF_ERR_FILE="$(mktemp "${TMPDIR:-/tmp}/lekker-changed-err.XXXXXX")"
@@ -187,6 +193,100 @@ if [[ -n "$BASE_REF_NOTE" ]] && [[ "$BASE_REF_NOTE" != "unknown" ]]; then
 else
     NOTES="${NOTES}static-checks-repo-wide-no-base-ref;"
 fi
+
+# The caller passes the PR's own file count (gh pr view) so a merge-base that
+# still drifted is reported instead of silently widening the static checks.
+if [[ -n "${LEKKER_EXPECTED_FILES:-}" ]] && [[ -f "$CHANGED_FILES_FILE" ]]; then
+    GOT_FILES="$(grep -c . "$CHANGED_FILES_FILE" 2>/dev/null || true)"
+    if [[ "${GOT_FILES:-0}" != "$LEKKER_EXPECTED_FILES" ]]; then
+        NOTES="${NOTES}changed-files-mismatch:${GOT_FILES:-0}-vs-${LEKKER_EXPECTED_FILES};"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# 3b. node_modules
+#     A PR that changes a lockfile gets a fresh `npm ci` in each changed
+#     lockfile's dir: the repo root's node_modules holds the OLD tree, so
+#     symlinking it would type-check and lint against dependencies the PR
+#     replaced. Every other PR symlinks the root's node_modules as before.
+# ---------------------------------------------------------------------------
+NM_LINKED=false
+DEPS_INSTALL_FILE="/tmp/lekker-deps-install-$$.tsv"
+printf '' > "$DEPS_INSTALL_FILE"
+
+LOCK_DIRS=()
+if [[ -s "$CHANGED_FILES_FILE" ]]; then
+    while IFS= read -r cf; do
+        case "$cf" in
+            package-lock.json|npm-shrinkwrap.json) LOCK_DIRS+=(".") ;;
+            */package-lock.json|*/npm-shrinkwrap.json) LOCK_DIRS+=("${cf%/*}") ;;
+            yarn.lock|*/yarn.lock|pnpm-lock.yaml|*/pnpm-lock.yaml|bun.lock|*/bun.lock|bun.lockb|*/bun.lockb)
+                NOTES="${NOTES}deps-install-unsupported:${cf};" ;;
+        esac
+    done < "$CHANGED_FILES_FILE"
+fi
+
+# Portable timeout (macOS has no `timeout`). Exit 143 means it was killed.
+run_with_timeout() {
+    local secs pid watcher rc
+    secs="$1"; shift
+    "$@" &
+    pid=$!
+    ( sleep "$secs"; kill -TERM "$pid" 2>/dev/null ) &
+    watcher=$!
+    rc=0
+    wait "$pid" || rc=$?
+    kill "$watcher" 2>/dev/null || true
+    wait "$watcher" 2>/dev/null || true
+    return "$rc"
+}
+
+ROOT_LOCK_CHANGED=false
+for d in "${LOCK_DIRS[@]+"${LOCK_DIRS[@]}"}"; do
+    [[ "$d" == "." ]] && ROOT_LOCK_CHANGED=true
+done
+
+if [[ ${#LOCK_DIRS[@]} -gt 0 ]] && [[ -n "${LEKKER_NO_INSTALL:-}" ]]; then
+    NOTES="${NOTES}deps-install-disabled;"
+elif [[ ${#LOCK_DIRS[@]} -gt 0 ]]; then
+    for d in "${LOCK_DIRS[@]}"; do
+        log_file="/tmp/lekker-npm-ci-$$-${d//\//_}.log"
+        # --ignore-scripts: a dependency bump under review must not get to run
+        # its postinstall on the reviewer's machine.
+        rc=0
+        (cd "$WORKTREE_PATH/$d" && run_with_timeout 300 npm ci --ignore-scripts \
+            --no-audit --no-fund --prefer-offline) > "$log_file" 2>&1 || rc=$?
+        if [[ "$rc" == "0" ]]; then
+            status="ok"
+            [[ "$d" == "." ]] && NM_LINKED=true
+        elif [[ "$rc" == "143" ]]; then
+            status="timeout"
+        else
+            status="failed"
+        fi
+        printf '%s\t%s\t%s\n' "$d" "$status" "$log_file" >> "$DEPS_INSTALL_FILE"
+        [[ "$status" == "ok" ]] || NOTES="${NOTES}deps-install-${status}:${d};"
+    done
+fi
+
+if [[ "$ROOT_LOCK_CHANGED" == "false" ]]; then
+    if [[ -d "$REPO_ROOT/node_modules" ]]; then
+        ln -s "$REPO_ROOT/node_modules" "$WORKTREE_PATH/node_modules"
+        NM_LINKED=true
+    fi
+fi
+
+# Nested packages (web/, extensions/*) resolve imports from their own
+# node_modules; without it tsc reports every import in them as TS2307.
+while IFS= read -r pj; do
+    d="${pj#"$WORKTREE_PATH"/}"; d="${d%/package.json}"
+    [[ -e "$WORKTREE_PATH/$d/node_modules" ]] && continue
+    [[ -d "$REPO_ROOT/$d/node_modules" ]] || continue
+    case " ${LOCK_DIRS[*]+"${LOCK_DIRS[*]}"} " in *" $d "*) continue ;; esac
+    ln -s "$REPO_ROOT/$d/node_modules" "$WORKTREE_PATH/$d/node_modules"
+done < <(find "$WORKTREE_PATH" -mindepth 2 -maxdepth 3 -name package.json \
+    -not -path '*/node_modules/*' 2>/dev/null)
+[[ "$NM_LINKED" == "true" ]] || NOTES="${NOTES}no-node_modules-static-checks-skipped;"
 
 # Lintable, still-on-disk changed files (a deleted file must not go to eslint).
 ESLINT_TARGETS=()
@@ -327,6 +427,7 @@ python3 - \
     "$TSC_CHANGED_FILE" \
     "$TSC_COUNT_FILE" \
     "$MERGE_BASE_VAL" \
+    "$DEPS_INSTALL_FILE" \
     "$OUT_JSON" <<'PYEOF'
 import json, sys, os
 
@@ -334,13 +435,30 @@ import json, sys, os
  tsc_file, eslint_file, rules_file, delta_file, notes,
  changed_files_file, base_ref_val, eslint_scope_file,
  tsc_changed_file, tsc_count_file, merge_base_val,
- out_json) = sys.argv[1:17]
+ deps_install_file, out_json) = sys.argv[1:18]
 
 def read_file(path):
     if not os.path.exists(path):
         return ""
     with open(path, "r", errors="replace") as f:
         return f.read()
+
+# One row per changed-lockfile dir: dir<TAB>status<TAB>log path. Empty = no
+# lockfile changed (or install disabled), so the root node_modules was linked.
+deps_install = []
+for row in read_file(deps_install_file).splitlines():
+    parts = row.split("\t")
+    if len(parts) != 3:
+        continue
+    d, status, log = parts
+    entry = {"dir": d, "status": status}
+    if status != "ok":
+        entry["tail"] = "\n".join(read_file(log).splitlines()[-20:])
+    deps_install.append(entry)
+    try:
+        os.remove(log)
+    except OSError:
+        pass
 
 changed_files = [l for l in read_file(changed_files_file).splitlines() if l.strip()]
 
@@ -367,10 +485,12 @@ data = {
     "eslintScope":    eslint_scope,
     "tscChangedTail": read_file(tsc_changed_file),
     "tscErrorCount":  tsc_error_count,
+    "depsInstall":    deps_install,
 }
 
 for p in (tsc_file, eslint_file, rules_file, changed_files_file,
-          eslint_scope_file, tsc_changed_file, tsc_count_file):
+          eslint_scope_file, tsc_changed_file, tsc_count_file,
+          deps_install_file):
     try:
         os.remove(p)
     except OSError:
