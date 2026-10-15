@@ -10,6 +10,7 @@ permissions:
   checks: read
   statuses: read
   issues: write
+  actions: write
 
 jobs:
   automerge:
@@ -21,3 +22,20 @@ jobs:
           bot-logins: dependabot[bot],snyk-bot,renovate[bot],oleg-koval
           maintainer-handles: oleg-koval
           merge-method: squash
+      # A merge made with GITHUB_TOKEN starts no push run, so ci-release.yml
+      # never released bot-merged PRs. workflow_dispatch is the documented
+      # exception: a dispatch made with GITHUB_TOKEN does start a run.
+      - name: Dispatch release after a merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          # Only bot merges: a merge by a person pushes with their token, which
+          # already starts the release run on its own.
+          merged_by=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedBy -q '.mergedBy.login // ""')
+          if [ "${merged_by#app/}" = "github-actions" ]; then
+            gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$BASE_REF"
+          else
+            echo "PR #$PR_NUMBER not merged by this workflow (merged_by=${merged_by:-none}); no release dispatched."
+          fi

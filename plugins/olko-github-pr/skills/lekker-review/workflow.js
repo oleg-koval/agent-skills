@@ -280,11 +280,40 @@ function dedup(allFindings) {
   return result
 }
 
-function shouldVerify(finding) {
-  // Review depth controls breadth, not the trust bar. Every finding that can
-  // affect the verdict must be checked. Hard rules take the verifier's
+function shouldVerify(finding, depth) {
+  // deps: one checklist agent over version bumps. Its findings are advisory
+  // facts (audit delta, install result, override vs declared range), not
+  // runtime-failure claims, so there is nothing for a verifier to refute.
+  if (depth === 'deps') {
+    return false
+  }
+  // Every other depth: review depth controls breadth, not the trust bar. Every finding
+  // that can affect the verdict must be checked. Hard rules take the verifier's
   // rule-specific anchor/applicability path instead of its runtime challenges.
   return finding.severity === 'critical' || finding.severity === 'important'
+}
+
+// Which reviewers run at each depth. `deps` is a PR whose only changes are
+// lockfiles and the dependency keys of package.json: five specialists would
+// produce a couple of notes that a single checklist agent covers, so it gets
+// exactly one.
+function dimensionsFor(depth, MODEL) {
+  if (depth === 'deps') {
+    return [{ key: 'deps', file: 'deps.md', model: MODEL.review }]
+  }
+  if (depth === 'scan') {
+    return [
+      { key: 'triage-quality', file: 'triage-quality.md', model: MODEL.triage },
+      { key: 'triage-logic',   file: 'triage-logic.md',   model: MODEL.triage },
+    ]
+  }
+  return [
+    { key: 'quality',        file: 'quality.md',        model: MODEL.review },
+    { key: 'implementation', file: 'implementation.md', model: MODEL.review },
+    { key: 'simplification', file: 'simplification.md', model: MODEL.review },
+    { key: 'conventions',    file: 'conventions.md',    model: MODEL.review },
+    { key: 'test-quality',   file: 'test-quality.md',   model: MODEL.review },
+  ]
 }
 
 /**
@@ -465,20 +494,8 @@ const budgetAtStart = budget.spent()
   // Dimensions by depth
   // -------------------------------------------------------------------------
 
-  const isScan = depth === 'scan'
-
-  const dimensions = isScan
-    ? [
-        { key: 'triage-quality', file: 'triage-quality.md', model: 'haiku' },
-        { key: 'triage-logic',   file: 'triage-logic.md',   model: 'haiku' },
-      ]
-    : [
-        { key: 'quality',        file: 'quality.md',        model: 'sonnet' },
-        { key: 'implementation', file: 'implementation.md', model: 'sonnet' },
-        { key: 'simplification', file: 'simplification.md', model: 'sonnet' },
-        { key: 'conventions',    file: 'conventions.md',    model: 'sonnet' },
-        { key: 'test-quality',   file: 'test-quality.md',   model: 'sonnet' },
-      ]
+  const MODEL = { review: 'sonnet', triage: 'haiku' }
+  const dimensions = dimensionsFor(depth, MODEL)
 
   const wtDisplay = worktreePath || 'null (scan mode: diff only)'
 
@@ -497,6 +514,9 @@ const budgetAtStart = budget.spent()
         + ` (it is a REQUIRED property, so do not omit it even when there is nothing to report).`
         + ` If you found no issues, return {"findings": []}, never prose, never an empty object,`
         + ` never a "findings" key nested under anything else.`,
+      `LINE NUMBERS: each finding's "line" is the 1-based line in the file at HEAD,`
+        + ` counted from the hunk header (@@ -a,b +c,d @@ starts at line c), never a line`
+        + ` number of DIFF_FILE itself. Quote the code at that line verbatim in "badCode".`,
     ].join(' ')
 
     if (prevSha) {
@@ -555,7 +575,7 @@ const budgetAtStart = budget.spent()
     })
 
     log(`${dim.key}: ${findings.length} findings, ${
-      findings.filter(function(f) { return shouldVerify(f) }).length
+      findings.filter(function(f) { return shouldVerify(f, depth) }).length
     } to verify`)
 
     return {
@@ -577,7 +597,7 @@ const budgetAtStart = budget.spent()
 
   // A model verdict cannot replace the required production boundary map.
   function enforceBoundary(finding) {
-    if (!shouldVerify(finding)) return finding
+    if (!shouldVerify(finding, depth)) return finding
     const boundary = finding.boundary
     const hasText = function(value) {
       return typeof value === 'string' && value.trim().length > 0
@@ -599,10 +619,10 @@ const budgetAtStart = budget.spent()
   async function verifyAll(findings) {
     findings = findings.map(enforceBoundary)
     const inScope = findings.filter(function(f) {
-      return shouldVerify(f)
+      return shouldVerify(f, depth)
     })
     const outOfScope = findings.filter(function(f) {
-      return !shouldVerify(f)
+      return !shouldVerify(f, depth)
     })
 
     if (inScope.length === 0) {
@@ -712,7 +732,7 @@ const budgetAtStart = budget.spent()
   }))
 
   log(`${deduped.length} unique finding(s) after dedup; verifying ${
-    deduped.filter(function(f) { return shouldVerify(f) }).length
+    deduped.filter(function(f) { return shouldVerify(f, depth) }).length
   }`)
 
   phase('Verify')
@@ -850,7 +870,7 @@ const budgetAtStart = budget.spent()
     ].join(' ')
   }
 
-  if (worktreePath && depth !== 'scan') {
+  if (worktreePath && depth !== 'scan' && depth !== 'deps') {
     const proveCandidates = finalFindings.filter(function(f) {
       return shouldProve(f) && !isHardRule(f)
     })
