@@ -1,3 +1,21 @@
+# [1.53.0](https://github.com/oleg-koval/agent-skills/compare/v1.52.0...v1.53.0) (2026-10-15)
+
+
+### ✨ Features
+
+* **lekker-review:** deps depth, fresh base fetch, real installs, line validation; dispatch release after bot merge ([#129](https://github.com/oleg-koval/agent-skills/issues/129)) ([684183f](https://github.com/oleg-koval/agent-skills/commit/684183f555d593663fb39ca9d112c258e4c8234c))
+
+
+### 🐛 Bug Fixes
+
+* guard against duplicate Codex review requests ([#128](https://github.com/oleg-koval/agent-skills/issues/128)) ([fb69bd6](https://github.com/oleg-koval/agent-skills/commit/fb69bd6d016d0807921a81cf5ed4d9f01badc63f))
+* tighten Codex review workflow guidance ([#127](https://github.com/oleg-koval/agent-skills/issues/127)) ([5aa520b](https://github.com/oleg-koval/agent-skills/commit/5aa520b3fd241c6a99515ff0c7bb5cd5ab09cb12))
+
+
+### 📚 Documentation
+
+* reduce redundant Codex review requests ([#126](https://github.com/oleg-koval/agent-skills/issues/126)) ([d8bdb0c](https://github.com/oleg-koval/agent-skills/commit/d8bdb0ca90f110b7989096cb4ee111b12613cfeb))
+
 # [1.52.0](https://github.com/oleg-koval/agent-skills/compare/v1.51.3...v1.52.0) (2026-10-14)
 
 
