@@ -23,7 +23,7 @@ Output the review as a markdown response (not via printf). No ANSI escapes.
 **Findings:** <X Critical / Y Important / Z Observations / W Idiomatic>
 **Proofs:** <M proven / N attempted> *(include only when N > 0)*
 **CI:** <✅ All passing | ⚠️ N failing: check-name | ⏳ Pending | N/A>
-**Depth:** <⚡ scan | 🔍 medium | 🔬 deep>
+**Depth:** <📦 deps | ⚡ scan | 🔍 medium | 🔬 deep>
 **Engine:** <workflow | codex | revmux>
 
 ---
@@ -215,7 +215,7 @@ if empty.)*
 ## 💰 Review Cost
 
 ```
-Depth:            <⚡ scan | 🔍 medium | 🔬 deep>
+Depth:            <📦 deps | ⚡ scan | 🔍 medium | 🔬 deep>
 Diff size:        ~<N> lines (~<N> tokens)
 Agents run:       <N total>: <breakdown, e.g. "5 reviewers (sonnet) + 6 verifiers (sonnet) + 2 provers (sonnet) + 1 critic (sonnet)">
 Rule checks:      <N> hard-rule finding(s) validated with rule-specific checks (omit the line when 0)
@@ -228,15 +228,16 @@ Input tokens:     ~<N>  ← estimated: diff tokens × agent passes + context fil
 Cost: ~$<X.XX>  (output actual, input estimated; blended across model tiers below)
 ```
 
-Per-MTok pricing (input/output), verified 2026-07-07 from the claude-api reference; re-check there if models changed. The Claude 5.5 rows and fable-5-1 are not yet on that sheet: they reuse the predecessor-tier rates and must be re-checked:
-- claude-fable-5-1: $10 / $50 (unverified, as claude-fable-5)
-- claude-opus-5-5: $15 / $75 (unverified; copied from the opus-5 rate in pricing.json, not checked)
-- claude-sonnet-5-5: $3 / $15 (unverified)
-- claude-haiku-5-5: $1 / $5 (unverified)
-- claude-fable-5: $10 / $50
-- claude-opus-4-8: $5 / $25
-- claude-sonnet-4-6 / claude-sonnet-5: $3 / $15
+Per-MTok pricing (input/output) - verified 2026-10-15 from the claude-api reference (`shared/models.md`); re-check there if models changed:
+- claude-fable-5-1 / claude-fable-5: $10 / $50
+- claude-opus-5-5: $4 / $20
+- claude-opus-5 / claude-opus-4-8: $5 / $25
+- claude-sonnet-5-5 / claude-sonnet-5: $2 / $10
+- claude-sonnet-4-6: $3 / $15
+- claude-haiku-5-5: $0.10 / $0.50 (prompt <=100K tokens; $0.50 / $2.50 above)
 - claude-haiku-4-5: $1 / $5
+
+The main-loop line uses the session model's rate from this list. When the session model is not listed, say so in the cost block rather than leaving the main loop out silently.
 
 Reviewer agents, verifiers, provers, and the critic all run on sonnet; triage and housekeeping on haiku. Only the main loop (context gathering + this synthesis) runs on the session model: use the session model's actual ID for that tier.
 
