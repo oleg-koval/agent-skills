@@ -5,6 +5,9 @@ on:
     branches: [main, beta]
   pull_request:
     branches: [main, beta]
+  # Bot automerge merges with GITHUB_TOKEN, and a push made with that token
+  # starts no workflow run, so automerge dispatches this workflow instead.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,7 +33,7 @@ jobs:
 
   release-readiness:
     needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -51,7 +54,7 @@ jobs:
 
   release:
     needs: release-readiness
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
     runs-on: ubuntu-latest
     permissions:
       contents: write

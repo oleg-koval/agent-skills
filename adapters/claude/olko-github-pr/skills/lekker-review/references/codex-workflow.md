@@ -60,6 +60,7 @@ unavailable; do not infer what it meant from prose.
 
 Select dimensions exactly as the Claude workflow does:
 
+- deps: `deps` (single checklist agent; no verifier, no prover)
 - scan: `triage-quality`, `triage-logic`
 - medium/deep: `quality`, `implementation`, `simplification`, `conventions`,
   `test-quality`

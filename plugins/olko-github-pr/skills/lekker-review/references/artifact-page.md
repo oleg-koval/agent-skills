@@ -38,6 +38,25 @@ All of the following are already in hand after Step 3 of SKILL.md:
 
 ### Claude Code
 
+The subagent RENDERS; the main loop PUBLISHES. Leaf agents run without the
+Artifact tool (a renderer can write the page and then be unable to publish
+it), so never ask the subagent to publish.
+
+**Closer image (main loop, before launching):** when `CLOSER` is set, fetch its
+image so the page can show it inline. The page CSP blocks external images but
+not `data:` URIs.
+
+```bash
+# xkcd: the strip image (`img`); gif: the gif itself (`url`). Cap 500 KB, 10 s.
+curl -sfL --max-time 10 --max-filesize 512000 -o <scratchpad>/closer-img <image url> \
+  && [ "$(wc -c < <scratchpad>/closer-img)" -le 512000 ] \
+  && echo "data:<image/png or image/gif>;base64,$(base64 < <scratchpad>/closer-img | tr -d '\n')" \
+     > <scratchpad>/closer-datauri.txt
+```
+
+Pass `CLOSER_DATAURI_FILE=<scratchpad>/closer-datauri.txt` when that file
+exists; otherwise omit it and the card stays link-only.
+
 Launch exactly ONE `general-purpose` agent, `model: sonnet`, in the
 background. Do not block printing the review on it (see Hard rules).
 
@@ -53,17 +72,12 @@ Read the findings at <findings.json path> and the saved review at
 Write ONE self-contained HTML file to the session scratchpad:
 review-pr-<PR_NUMBER>-<repo-short>.html
 
-Follow the page specification below exactly. Then publish it with the
-Artifact tool using:
-  - favicon: "🥩"   (keep this IDENTICAL on every republish)
-  - title: "Review: <repo-short> #<PR_NUMBER>"
-  - description: <one sentence, e.g. "Living code review for PR #<N> --
-    findings update as commits land">
-  - url: <PREV_ARTIFACT_TARGET>   (include ONLY when the target is a validated
-    http or https URL, so the SAME published artifact updates in place; omit
-    the `url` parameter for null or local-path targets)
+Follow the page specification below exactly. The <title> is
+"Review: <repo-short> #<PR_NUMBER>". CLOSER=<closer JSON, or empty>.
+CLOSER_DATAURI_FILE=<path, or empty>. Do NOT publish the page and do not look
+for an Artifact tool: the caller publishes it.
 
-Return ONLY the resulting artifact URL as your final text. No other output.
+Return ONLY the absolute path of the HTML file as your final text.
 
 --- PAGE SPECIFICATION ---
 <paste Step 3 verbatim here>
@@ -157,8 +171,11 @@ Hard requirements for the HTML page:
   kept concise (verdict + gaps + cost table; no need to reproduce every
   sentence).
 - **Closer footer** (when the caller passes `CLOSER`): a small last card with
-  the closer's title (or `alt`) as a link to its `url`. Link only, no `<img>`:
-  the CSP blocks external images. Skip the card when `CLOSER` is empty.
+  the closer's title (or `alt`) as a link to its `url`. When
+  `CLOSER_DATAURI_FILE` is set, read it and render
+  `<img src="<its contents>" alt="<title or alt>">` above the link, at
+  `max-width:100%; height:auto`. Never point `<img>` at an external URL: the
+  CSP blocks it. Skip the card when `CLOSER` is empty.
 - **Layout:** every code block (`badCode`, `fix`, `redOutput`, `testCode`)
   horizontally scrollable within its own container; the page body itself must
   never scroll horizontally. Keep total page weight sane -- plain `<pre>`
@@ -170,7 +187,15 @@ Hard requirements for the HTML page:
 
 ## Step 4 -- Record the artifact target (fresh post-condition)
 
-When the renderer completes:
+When the renderer completes (Claude Code: the subagent returns the HTML path):
+
+1. Read the HTML file in full (the Artifact tool publishes only files that were
+   read), and check that it has a `<title>` and no external `<img src="http`.
+2. Publish with the Artifact tool: `file_path` = that path, `description` = one
+   sentence ("Living code review for PR #<N>; findings update as commits
+   land"), and `url: <PREV_ARTIFACT_TARGET>` ONLY when it is a validated `http`
+   or `https` URL, so the same artifact updates in place. On a first publish
+   add `icon: "review"`; omit `icon` on a republish so the page keeps its icon.
 
 **On success (URL or stable local HTML path returned):**
 1. Append or refresh a `**Artifact:** <target>` line in the saved review file's
@@ -203,5 +228,5 @@ When the renderer completes:
 - Never include secrets or tokens from context. The page contains only what
   the saved review file already contains -- nothing pulled fresh from
   scratchpad context that isn't already in the review.
-- Favicon stays `🥩` forever for this artifact -- never change it on
+- Set the artifact icon only on the first publish; never change it on
   republish.
