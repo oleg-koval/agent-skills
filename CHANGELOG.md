@@ -1,3 +1,10 @@
+# [1.54.0](https://github.com/oleg-koval/agent-skills/compare/v1.53.0...v1.54.0) (2026-10-17)
+
+
+### ✨ Features
+
+* **github-actions:** add NAS migration skill ([#131](https://github.com/oleg-koval/agent-skills/issues/131)) ([ef23c5e](https://github.com/oleg-koval/agent-skills/commit/ef23c5e13d770312fe97ba99ee2f42b05beb5506))
+
 # [1.53.0](https://github.com/oleg-koval/agent-skills/compare/v1.52.0...v1.53.0) (2026-10-15)
 
 
