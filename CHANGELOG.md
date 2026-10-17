@@ -1,3 +1,10 @@
+## [1.54.4](https://github.com/oleg-koval/agent-skills/compare/v1.54.3...v1.54.4) (2026-10-17)
+
+
+### 🐛 Bug Fixes
+
+* pin automerge action with review guard ([#135](https://github.com/oleg-koval/agent-skills/issues/135)) ([ef3142d](https://github.com/oleg-koval/agent-skills/commit/ef3142d13a811cdd68b0c7f1ff26d6cd683f6fb4))
+
 ## [1.54.3](https://github.com/oleg-koval/agent-skills/compare/v1.54.2...v1.54.3) (2026-10-17)
 
 
