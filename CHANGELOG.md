@@ -1,3 +1,10 @@
+## [1.54.3](https://github.com/oleg-koval/agent-skills/compare/v1.54.2...v1.54.3) (2026-10-17)
+
+
+### 🐛 Bug Fixes
+
+* address closed NAS migration review findings ([#134](https://github.com/oleg-koval/agent-skills/issues/134)) ([6285927](https://github.com/oleg-koval/agent-skills/commit/6285927d648e2e0bdfb879fe845485aa37717690))
+
 ## [1.54.2](https://github.com/oleg-koval/agent-skills/compare/v1.54.1...v1.54.2) (2026-10-17)
 
 
