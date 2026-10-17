@@ -57,7 +57,7 @@ jobs:
           else
             open_prs="$(
               gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" |
-                jq -s -c 'add | map(.number)'
+                jq -s -c 'add | map(select(.draft == false and (.user.login | IN("dependabot[bot]", "snyk-bot", "renovate[bot]", "oleg-koval"))) | .number)'
             )"
             pending_prs="$(
               gh api --paginate "repos/$GITHUB_REPOSITORY/issues?state=all&labels=release-dispatch-pending&per_page=100" |
@@ -135,9 +135,10 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$RELEASE_PENDING_LABEL" >/dev/null
           release_title="CI and release ($merge_sha)"
           existing_runs="$(
-            gh run list --repo "$GITHUB_REPOSITORY" --workflow ci-release.yml \
-              --event workflow_dispatch --branch "$base_ref" --limit 100 --json displayTitle |
-              jq --arg title "$release_title" '[.[] | select(.displayTitle == $title)] | length'
+            gh api --paginate --method GET \
+              "repos/$GITHUB_REPOSITORY/actions/workflows/ci-release.yml/runs" \
+              -f event=workflow_dispatch -f "branch=$base_ref" -f per_page=100 |
+              jq -s --arg title "$release_title" '[.[].workflow_runs[] | select(.display_title == $title)] | length'
           )"
           if [ "$existing_runs" -eq 0 ]; then
             gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref" \
@@ -199,9 +200,10 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$RELEASE_PENDING_LABEL" >/dev/null
           release_title="CI and release ($merge_sha)"
           existing_runs="$(
-            gh run list --repo "$GITHUB_REPOSITORY" --workflow ci-release.yml \
-              --event workflow_dispatch --branch "$base_ref" --limit 100 --json displayTitle |
-              jq --arg title "$release_title" '[.[] | select(.displayTitle == $title)] | length'
+            gh api --paginate --method GET \
+              "repos/$GITHUB_REPOSITORY/actions/workflows/ci-release.yml/runs" \
+              -f event=workflow_dispatch -f "branch=$base_ref" -f per_page=100 |
+              jq -s --arg title "$release_title" '[.[].workflow_runs[] | select(.display_title == $title)] | length'
           )"
           if [ "$existing_runs" -eq 0 ]; then
             gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref" \
@@ -262,9 +264,10 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$RELEASE_PENDING_LABEL" >/dev/null
           release_title="CI and release ($merge_sha)"
           existing_runs="$(
-            gh run list --repo "$GITHUB_REPOSITORY" --workflow ci-release.yml \
-              --event workflow_dispatch --branch "$base_ref" --limit 100 --json displayTitle |
-              jq --arg title "$release_title" '[.[] | select(.displayTitle == $title)] | length'
+            gh api --paginate --method GET \
+              "repos/$GITHUB_REPOSITORY/actions/workflows/ci-release.yml/runs" \
+              -f event=workflow_dispatch -f "branch=$base_ref" -f per_page=100 |
+              jq -s --arg title "$release_title" '[.[].workflow_runs[] | select(.display_title == $title)] | length'
           )"
           if [ "$existing_runs" -eq 0 ]; then
             gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref" \

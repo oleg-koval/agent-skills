@@ -25,7 +25,7 @@ for job in ('retry', 'manual', 'automerge'):
     guard = block.index("if: steps.premerge.outputs.should-dispatch == 'true'")
     assert premerge < action < dispatch < guard, f'{job}: incorrect merge-gate ordering'
     dispatch_step = block[dispatch:]
-    assert 'gh run list' in dispatch_step
+    assert 'gh api --paginate --method GET' in dispatch_step
     assert 'gh workflow run ci-release.yml' in dispatch_step
     assert 'RELEASE_PENDING_LABEL' in dispatch_step
 PY
