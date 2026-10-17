@@ -2,13 +2,13 @@ name: Bot automerge
 
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, ready_for_review, edited]
+    types: [opened, reopened, synchronize, ready_for_review, edited, closed]
   pull_request_review:
     types: [submitted, edited, dismissed]
   pull_request_review_comment:
     types: [created, edited, deleted]
   # GitHub Actions does not expose pull_request_review_thread, so recheck open
-  # PRs periodically after a thread is resolved without another review event.
+  # PRs and release-pending merged PRs periodically after a thread is resolved.
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
@@ -34,6 +34,9 @@ concurrency:
   group: automerge-${{ github.event.pull_request.number || inputs.pr-number || github.run_id }}
   cancel-in-progress: false
 
+env:
+  RELEASE_PENDING_LABEL: release-dispatch-pending
+
 jobs:
   discover:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.pr-number == '')
@@ -45,21 +48,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBERS: ${{ inputs.pr-numbers }}
+          DEFAULT_REF: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
+
           if [ -n "$PR_NUMBERS" ]; then
-            prs="$PR_NUMBERS"
+            prs="$(jq -ce 'if type == "array" and all(.[]; type == "number") then . else error("pr-numbers must be a JSON array of numbers") end' <<< "$PR_NUMBERS")"
           else
-            prs="$(gh api --paginate \
-              "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" \
-              | jq -s 'add | map(.number)')"
+            open_prs="$(
+              gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" |
+                jq -s -c 'add | map(.number)'
+            )"
+            pending_prs="$(
+              gh api --paginate "repos/$GITHUB_REPOSITORY/issues?state=all&labels=release-dispatch-pending&per_page=100" |
+                jq -s -c 'add | map(select(.pull_request != null) | .number)'
+            )"
+            prs="$(jq -n -c --argjson open "$open_prs" --argjson pending "$pending_prs" '$open + $pending | unique | sort')"
           fi
-          # Each run evaluates at most 256 PRs, the Actions matrix limit.
+
+          total="$(jq -er 'length' <<< "$prs")"
           printf 'pr-numbers=%s\n' "$(jq -c '.[0:256]' <<< "$prs")" >> "$GITHUB_OUTPUT"
-          jq -c '. as $prs | range(256; length; 256) | $prs[.:. + 256]' <<< "$prs" |
-            while IFS= read -r batch; do
-              gh workflow run automerge.yml --repo "$GITHUB_REPOSITORY" \
-                --ref "$GITHUB_REF_NAME" -f pr-numbers="$batch"
-            done
+
+          for ((offset = 256; offset < total; offset += 256)); do
+            batch="$(jq -c --argjson start "$offset" --argjson end "$((offset + 256))" '.[$start:$end]' <<< "$prs")"
+            gh workflow run automerge.yml --repo "$GITHUB_REPOSITORY" \
+              --ref "$DEFAULT_REF" -f "pr-numbers=$batch"
+          done
 
   retry:
     needs: discover
@@ -78,12 +92,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ matrix.pr-number }}
+          EVENT_ACTION: ''
+          EVENT_MERGED: 'false'
         run: |
-          merged_at="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt -q '.mergedAt // ""')"
-          if [ -n "$merged_at" ]; then
-            printf 'already-merged=true\n' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt,mergeCommit,mergedBy,baseRefName,labels)"
+          merged_at="$(jq -r '.mergedAt // ""' <<< "$pr_json")"
+          pending_marker="$(jq -r --arg label "$RELEASE_PENDING_LABEL" 'if ([.labels[].name] | index($label)) == null then "false" else "true" end' <<< "$pr_json")"
+          printf 'already-merged=%s\n' "$([ -n "$merged_at" ] && printf true || printf false)" >> "$GITHUB_OUTPUT"
+          printf 'release-pending=%s\n' "$([ "$pending_marker" = true ] && printf true || printf false)" >> "$GITHUB_OUTPUT"
+          if [ -z "$merged_at" ] || [ "$pending_marker" = true ]; then
+            printf 'should-dispatch=true\n' >> "$GITHUB_OUTPUT"
           else
-            printf 'already-merged=false\n' >> "$GITHUB_OUTPUT"
+            printf 'should-dispatch=false\n' >> "$GITHUB_OUTPUT"
           fi
       - uses: oleg-koval/pr-automerge-github-action@39316e1ba4f70de3f1576da572866841578be442 # v1.5.0
         with:
@@ -93,19 +114,38 @@ jobs:
           merge-method: squash
           pr-number: ${{ matrix.pr-number }}
       - name: Dispatch release after a newly completed merge
-        if: steps.premerge.outputs.already-merged != 'true'
+        if: steps.premerge.outputs.should-dispatch == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ matrix.pr-number }}
         run: |
-          pr_data="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,mergedAt,mergedBy --jq '[.baseRefName, .mergedAt // "", .mergedBy.login // ""] | @tsv')"
-          IFS=$'\t' read -r base_ref merged_at merged_by <<< "$pr_data"
+          set -euo pipefail
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,mergedAt,mergeCommit,mergedBy)"
+          base_ref="$(jq -r '.baseRefName' <<< "$pr_json")"
+          merged_at="$(jq -r '.mergedAt // ""' <<< "$pr_json")"
+          merge_sha="$(jq -r '.mergeCommit.oid // ""' <<< "$pr_json")"
+          merged_by="$(jq -r '.mergedBy.login // ""' <<< "$pr_json")"
           normalized_merged_by="${merged_by#app/}"
-          if [ -n "$merged_at" ] && { [ "$normalized_merged_by" = "github-actions" ] || [ "$normalized_merged_by" = "github-actions[bot]" ]; }; then
-            gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref"
-          else
-            echo "PR #$PR_NUMBER was not newly merged by this workflow (merged_by=${merged_by:-none}); no release dispatched."
+          if [ -z "$merged_at" ] || { [ "$normalized_merged_by" != "github-actions" ] && [ "$normalized_merged_by" != "github-actions[bot]" ]; }; then
+            echo "PR #$PR_NUMBER was not merged by GitHub Actions; no release dispatched."
+            exit 0
           fi
+          gh label create "$RELEASE_PENDING_LABEL" --repo "$GITHUB_REPOSITORY" \
+            --color B60205 --description 'Bot merge awaiting CI release dispatch' --force >/dev/null
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$RELEASE_PENDING_LABEL" >/dev/null
+          release_title="CI and release ($merge_sha)"
+          existing_runs="$(
+            gh run list --repo "$GITHUB_REPOSITORY" --workflow ci-release.yml \
+              --event workflow_dispatch --branch "$base_ref" --limit 100 --json displayTitle |
+              jq --arg title "$release_title" '[.[] | select(.displayTitle == $title)] | length'
+          )"
+          if [ "$existing_runs" -eq 0 ]; then
+            gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref" \
+              -f "release-key=$merge_sha"
+          else
+            echo "Release workflow already accepted for merge $merge_sha."
+          fi
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$RELEASE_PENDING_LABEL" >/dev/null
 
   manual:
     if: github.event_name == 'workflow_dispatch' && inputs.pr-number != ''
@@ -116,12 +156,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr-number }}
+          EVENT_ACTION: ''
+          EVENT_MERGED: 'false'
         run: |
-          merged_at="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt -q '.mergedAt // ""')"
-          if [ -n "$merged_at" ]; then
-            printf 'already-merged=true\n' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt,mergeCommit,mergedBy,baseRefName,labels)"
+          merged_at="$(jq -r '.mergedAt // ""' <<< "$pr_json")"
+          pending_marker="$(jq -r --arg label "$RELEASE_PENDING_LABEL" 'if ([.labels[].name] | index($label)) == null then "false" else "true" end' <<< "$pr_json")"
+          printf 'already-merged=%s\n' "$([ -n "$merged_at" ] && printf true || printf false)" >> "$GITHUB_OUTPUT"
+          printf 'release-pending=%s\n' "$([ "$pending_marker" = true ] && printf true || printf false)" >> "$GITHUB_OUTPUT"
+          if [ -z "$merged_at" ] || [ "$pending_marker" = true ]; then
+            printf 'should-dispatch=true\n' >> "$GITHUB_OUTPUT"
           else
-            printf 'already-merged=false\n' >> "$GITHUB_OUTPUT"
+            printf 'should-dispatch=false\n' >> "$GITHUB_OUTPUT"
           fi
       - uses: oleg-koval/pr-automerge-github-action@39316e1ba4f70de3f1576da572866841578be442 # v1.5.0
         with:
@@ -131,19 +178,38 @@ jobs:
           merge-method: squash
           pr-number: ${{ inputs.pr-number }}
       - name: Dispatch release after a newly completed merge
-        if: steps.premerge.outputs.already-merged != 'true'
+        if: steps.premerge.outputs.should-dispatch == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr-number }}
         run: |
-          pr_data="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,mergedAt,mergedBy --jq '[.baseRefName, .mergedAt // "", .mergedBy.login // ""] | @tsv')"
-          IFS=$'\t' read -r base_ref merged_at merged_by <<< "$pr_data"
+          set -euo pipefail
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,mergedAt,mergeCommit,mergedBy)"
+          base_ref="$(jq -r '.baseRefName' <<< "$pr_json")"
+          merged_at="$(jq -r '.mergedAt // ""' <<< "$pr_json")"
+          merge_sha="$(jq -r '.mergeCommit.oid // ""' <<< "$pr_json")"
+          merged_by="$(jq -r '.mergedBy.login // ""' <<< "$pr_json")"
           normalized_merged_by="${merged_by#app/}"
-          if [ -n "$merged_at" ] && { [ "$normalized_merged_by" = "github-actions" ] || [ "$normalized_merged_by" = "github-actions[bot]" ]; }; then
-            gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref"
-          else
-            echo "PR #$PR_NUMBER was not newly merged by this workflow (merged_by=${merged_by:-none}); no release dispatched."
+          if [ -z "$merged_at" ] || { [ "$normalized_merged_by" != "github-actions" ] && [ "$normalized_merged_by" != "github-actions[bot]" ]; }; then
+            echo "PR #$PR_NUMBER was not merged by GitHub Actions; no release dispatched."
+            exit 0
           fi
+          gh label create "$RELEASE_PENDING_LABEL" --repo "$GITHUB_REPOSITORY" \
+            --color B60205 --description 'Bot merge awaiting CI release dispatch' --force >/dev/null
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$RELEASE_PENDING_LABEL" >/dev/null
+          release_title="CI and release ($merge_sha)"
+          existing_runs="$(
+            gh run list --repo "$GITHUB_REPOSITORY" --workflow ci-release.yml \
+              --event workflow_dispatch --branch "$base_ref" --limit 100 --json displayTitle |
+              jq --arg title "$release_title" '[.[] | select(.displayTitle == $title)] | length'
+          )"
+          if [ "$existing_runs" -eq 0 ]; then
+            gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref" \
+              -f "release-key=$merge_sha"
+          else
+            echo "Release workflow already accepted for merge $merge_sha."
+          fi
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$RELEASE_PENDING_LABEL" >/dev/null
 
   automerge:
     if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
@@ -154,12 +220,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_MERGED: ${{ github.event.pull_request.merged }}
         run: |
-          merged_at="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt -q '.mergedAt // ""')"
-          if [ -n "$merged_at" ]; then
-            printf 'already-merged=true\n' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt,mergeCommit,mergedBy,baseRefName,labels)"
+          merged_at="$(jq -r '.mergedAt // ""' <<< "$pr_json")"
+          pending_marker="$(jq -r --arg label "$RELEASE_PENDING_LABEL" 'if ([.labels[].name] | index($label)) == null then "false" else "true" end' <<< "$pr_json")"
+          printf 'already-merged=%s\n' "$([ -n "$merged_at" ] && printf true || printf false)" >> "$GITHUB_OUTPUT"
+          printf 'release-pending=%s\n' "$([ "$pending_marker" = true ] && printf true || printf false)" >> "$GITHUB_OUTPUT"
+          if [ -z "$merged_at" ] || [ "$pending_marker" = true ] || { [ "$EVENT_ACTION" = closed ] && [ "$EVENT_MERGED" = true ]; }; then
+            printf 'should-dispatch=true\n' >> "$GITHUB_OUTPUT"
           else
-            printf 'already-merged=false\n' >> "$GITHUB_OUTPUT"
+            printf 'should-dispatch=false\n' >> "$GITHUB_OUTPUT"
           fi
       - uses: oleg-koval/pr-automerge-github-action@39316e1ba4f70de3f1576da572866841578be442 # v1.5.0
         with:
@@ -168,16 +241,35 @@ jobs:
           maintainer-handles: oleg-koval
           merge-method: squash
       - name: Dispatch release after a newly completed merge
-        if: steps.premerge.outputs.already-merged != 'true'
+        if: steps.premerge.outputs.should-dispatch == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          pr_data="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,mergedAt,mergedBy --jq '[.baseRefName, .mergedAt // "", .mergedBy.login // ""] | @tsv')"
-          IFS=$'\t' read -r base_ref merged_at merged_by <<< "$pr_data"
+          set -euo pipefail
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,mergedAt,mergeCommit,mergedBy)"
+          base_ref="$(jq -r '.baseRefName' <<< "$pr_json")"
+          merged_at="$(jq -r '.mergedAt // ""' <<< "$pr_json")"
+          merge_sha="$(jq -r '.mergeCommit.oid // ""' <<< "$pr_json")"
+          merged_by="$(jq -r '.mergedBy.login // ""' <<< "$pr_json")"
           normalized_merged_by="${merged_by#app/}"
-          if [ -n "$merged_at" ] && { [ "$normalized_merged_by" = "github-actions" ] || [ "$normalized_merged_by" = "github-actions[bot]" ]; }; then
-            gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref"
-          else
-            echo "PR #$PR_NUMBER was not newly merged by this workflow (merged_by=${merged_by:-none}); no release dispatched."
+          if [ -z "$merged_at" ] || { [ "$normalized_merged_by" != "github-actions" ] && [ "$normalized_merged_by" != "github-actions[bot]" ]; }; then
+            echo "PR #$PR_NUMBER was not merged by GitHub Actions; no release dispatched."
+            exit 0
           fi
+          gh label create "$RELEASE_PENDING_LABEL" --repo "$GITHUB_REPOSITORY" \
+            --color B60205 --description 'Bot merge awaiting CI release dispatch' --force >/dev/null
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$RELEASE_PENDING_LABEL" >/dev/null
+          release_title="CI and release ($merge_sha)"
+          existing_runs="$(
+            gh run list --repo "$GITHUB_REPOSITORY" --workflow ci-release.yml \
+              --event workflow_dispatch --branch "$base_ref" --limit 100 --json displayTitle |
+              jq --arg title "$release_title" '[.[] | select(.displayTitle == $title)] | length'
+          )"
+          if [ "$existing_runs" -eq 0 ]; then
+            gh workflow run ci-release.yml --repo "$GITHUB_REPOSITORY" --ref "$base_ref" \
+              -f "release-key=$merge_sha"
+          else
+            echo "Release workflow already accepted for merge $merge_sha."
+          fi
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$RELEASE_PENDING_LABEL" >/dev/null
