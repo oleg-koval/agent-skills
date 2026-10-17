@@ -456,9 +456,13 @@ node ${SKILL_ROOT}/scripts/lint-findings.mjs \
 # 2. Bot-comment patterns - refresh only when the mined section for this repo
 #    is missing or older than 30 days; it is history, it does not change hourly.
 #    Needs `gh` auth with read access to the repo's PR review comments.
+#    Age comes from the section's own `<!-- mined: YYYY-MM-DD -->` marker, not
+#    the file mtime: the file is shared, so mining one repo would otherwise
+#    mark every other repo's section fresh.
 BP="${LEKKER_DATA_DIR:-$HOME/.cache/lekker-review}/bot-patterns.md"
-if ! grep -q "^## <REPO_SLUG>$" "$BP" 2>/dev/null \
-   || [[ -n "$(find "$BP" -mtime +30 2>/dev/null)" ]]; then
+MINED=$(awk -v h="## <REPO_SLUG>" '$0==h{f=1;next} f&&/^## /{exit} f&&/^<!-- mined: /{print $3;exit}' "$BP" 2>/dev/null)
+CUTOFF=$(date -v-30d +%F 2>/dev/null || date -d '30 days ago' +%F)
+if [[ -z "$MINED" || "$MINED" < "$CUTOFF" ]]; then
   ${SKILL_ROOT}/scripts/mine-bot-comments.sh <REPO_SLUG>
 fi
 ```

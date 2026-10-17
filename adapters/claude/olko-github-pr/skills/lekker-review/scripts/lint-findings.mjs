@@ -18,7 +18,8 @@
 // Findings are grouped by ruleId so a rule that fires 40 times produces one
 // finding listing the other sites, not 40 findings that drown the review.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join, relative } from 'node:path';
 
 const [, , inPath, outPath, ...rest] = process.argv;
 
@@ -39,32 +40,30 @@ function severityFor(eslintSeverity) {
   return eslintSeverity === 2 ? 'important' : 'idiomatic';
 }
 
-function emptyResult(reason) {
-  return { findings: [], summary: { status: reason, ruleCount: 0, messageCount: 0 } };
+// Write a zero-finding result whose status says why, then stop. A missing,
+// empty or malformed report is "unknown", never "clean", so the review header
+// cannot claim a green lint that never ran.
+function bail(status, why) {
+  writeFileSync(
+    outPath,
+    JSON.stringify({ findings: [], summary: { status, ruleCount: 0, messageCount: 0 } }, null, 2),
+  );
+  console.log(`lint-findings: ${why}, 0 findings`);
+  process.exit(0);
 }
 
 let report;
 try {
   const raw = readFileSync(inPath, 'utf8').trim();
-  if (!raw) {
-    writeFileSync(outPath, JSON.stringify(emptyResult('empty-report'), null, 2));
-    console.log('lint-findings: empty eslint report, 0 findings');
-    process.exit(0);
-  }
+  if (!raw) bail('empty-report', 'empty eslint report');
   report = JSON.parse(raw);
 } catch (err) {
-  // A missing or unparseable report is "unknown", never "clean" - say so in the
-  // summary so the review header cannot claim a green lint that never ran.
-  writeFileSync(outPath, JSON.stringify(emptyResult('unreadable: ' + err.message), null, 2));
-  console.log('lint-findings: could not read eslint report (' + err.message + '), 0 findings');
-  process.exit(0);
+  bail('unreadable: ' + err.message, `could not read eslint report (${err.message})`);
 }
 
-if (!Array.isArray(report)) {
-  writeFileSync(outPath, JSON.stringify(emptyResult('not-an-eslint-json-report'), null, 2));
-  console.log('lint-findings: report is not an eslint JSON array, 0 findings');
-  process.exit(0);
-}
+if (!Array.isArray(report)) bail('not-an-eslint-json-report', 'report is not an eslint JSON array');
+// eslint emits one entry per linted file, so [] means nothing was linted.
+if (report.length === 0) bail('empty-report', 'eslint report lists no files');
 
 // Group every message by ruleId. Parse errors arrive with ruleId null; they are
 // real and worth surfacing, so they get their own bucket.
@@ -101,13 +100,34 @@ const buckets = [...byRule.values()].sort((a, b) => {
   return b.sites.length - a.sites.length;
 });
 
-const repoRoot = process.env.LEKKER_WORKTREE_PATH ?? '';
+// Resolve symlinks on both sides: on macOS /tmp is /private/tmp, so eslint's
+// filePath and the worktree path given here can spell the same dir differently.
+function real(p) {
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
+}
+
+const repoRoot = process.env.LEKKER_WORKTREE_PATH ? real(process.env.LEKKER_WORKTREE_PATH) : '';
 
 function relativize(p) {
-  if (repoRoot && p.startsWith(repoRoot)) {
-    return p.slice(repoRoot.length).replace(/^\/+/, '');
+  if (!repoRoot || !isAbsolute(p)) return p;
+  const rel = relative(repoRoot, real(p));
+  return rel.startsWith('..') ? p : rel;
+}
+
+// The offending source line, so badCode is code and not a location string.
+function sourceLine(file, line) {
+  try {
+    const abs = isAbsolute(file) ? file : join(repoRoot, file);
+    const text = readFileSync(abs, 'utf8').split('\n')[line - 1];
+    if (text?.trim()) return text.trim();
+  } catch {
+    // unreadable file: fall back to the location
   }
-  return p;
+  return null;
 }
 
 const findings = buckets.slice(0, MAX_FINDINGS).map(bucket => {
@@ -129,7 +149,8 @@ const findings = buckets.slice(0, MAX_FINDINGS).map(bucket => {
       `This is the repo's configured rule, not a preference - it is the single most likely ` +
       `bot-reviewer comment on this diff, and CI enforces it.` +
       (bucket.fixable ? ' eslint can fix this automatically (`eslint --fix`).' : ''),
-    badCode: `${relativize(first.file)}:${first.line}:${first.column}`,
+    badCode:
+      sourceLine(first.file, first.line) ?? `${relativize(first.file)}:${first.line}:${first.column}`,
     fix: bucket.fixable
       ? `Run \`npx eslint --fix\` on the changed files, then re-read the hunk - the autofix is authoritative here.`
       : `Resolve \`${bucket.ruleId}\` as the config intends. Check what the rule permits before ` +

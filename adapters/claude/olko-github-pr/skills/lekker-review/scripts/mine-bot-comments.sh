@@ -14,10 +14,14 @@
 #   out-md      default: $LEKKER_DATA_DIR/bot-patterns.md, where LEKKER_DATA_DIR
 #               defaults to ~/.cache/lekker-review (outside the skill dir, so a
 #               plugin update does not wipe the mined history)
-#   --limit N   max review comments to fetch (default 400)
+#   --limit N   max review comments to fetch, newest first (default 400);
+#               paging stops there, so a long history is never pulled whole
 #
 # Writes/replaces a "## <repo-slug>" section in out-md, leaving other repos'
-# sections alone, and prints a one-line summary.
+# sections alone, and prints a one-line summary. The section carries a
+# "<!-- mined: YYYY-MM-DD -->" marker that SKILL.md reads to decide staleness;
+# a repo with no bot comments still gets a section, so it is not re-mined on
+# every run.
 
 set -uo pipefail
 
@@ -40,34 +44,35 @@ while [[ $# -gt 0 ]]; do
 done
 
 mkdir -p "$(dirname "$OUT_MD")"
-RAW="$(mktemp "${TMPDIR:-/tmp}/lekker-botcomments.XXXXXX")"
-trap 'rm -f "$RAW"' EXIT
 
-# Review comments are the inline ones - the class the bots actually bill for.
-# per_page maxes at 100, so paginate and cut at LIMIT.
-if ! gh api "repos/$REPO_SLUG/pulls/comments?per_page=100&sort=created&direction=desc" \
-        --paginate --slurp > "$RAW" 2>/dev/null; then
-    echo "mine-bot-comments: gh api failed for $REPO_SLUG (auth? repo name?)" >&2
-    exit 1
-fi
-
-python3 - "$RAW" "$REPO_SLUG" "$OUT_MD" "$LIMIT" <<'PYEOF'
-import json, os, re, sys
+python3 - "$REPO_SLUG" "$OUT_MD" "$LIMIT" <<'PYEOF'
+import datetime, json, os, re, subprocess, sys
 from collections import defaultdict
 
-raw_path, repo_slug, out_md, limit = sys.argv[1:5]
+repo_slug, out_md, limit = sys.argv[1:4]
 limit = int(limit)
 
-with open(raw_path) as f:
-    pages = json.load(f)
-
-# --slurp gives a list of pages (each a list) OR a flat list on a single page.
+# Review comments are the inline ones - the class the bots actually bill for.
+# Page by hand rather than `gh api --paginate`, which fetches the whole history
+# before LIMIT could apply.
 comments = []
-for page in pages:
-    if isinstance(page, list):
-        comments.extend(page)
-    elif isinstance(page, dict):
-        comments.append(page)
+page = 1
+while len(comments) < limit:
+    res = subprocess.run(
+        ["gh", "api", "repos/%s/pulls/comments?per_page=100&sort=created&direction=desc&page=%d"
+         % (repo_slug, page)],
+        capture_output=True, text=True)
+    if res.returncode != 0:
+        print("mine-bot-comments: gh api failed for %s (auth? repo name?)" % repo_slug, file=sys.stderr)
+        sys.exit(1)
+    batch = json.loads(res.stdout or "[]")
+    if not isinstance(batch, list):
+        break
+    comments.extend(batch)
+    if len(batch) < 100:
+        break
+    page += 1
+comments = comments[:limit]
 
 BOT_RE = re.compile(r'gemini-code-assist|greptile|coderabbit', re.I)
 
@@ -76,11 +81,7 @@ def is_bot(c):
     return bool(BOT_RE.search((c.get("user") or {}).get("login", "")))
 
 
-bot_comments = [c for c in comments if is_bot(c)][:limit]
-
-if not bot_comments:
-    print("mine-bot-comments: 0 bot comments found for %s - nothing written" % repo_slug)
-    sys.exit(0)
+bot_comments = [c for c in comments if is_bot(c)]
 
 
 def first_claim(body):
@@ -187,39 +188,44 @@ merged.sort(key=lambda m: -len(m["items"]))
 
 lines = []
 lines.append("## %s" % repo_slug)
+lines.append("<!-- mined: %s -->" % datetime.date.today().isoformat())
 lines.append("")
-lines.append("Mined from %d bot review comment(s) (%s). Counts are how many times the "
-             "bots have raised that pattern in THIS repo - the higher the count, the more "
-             "certain it is to come back on the next PR."
-             % (len(bot_comments), ", ".join(sorted({(c.get("user") or {}).get("login", "?")
-                                                     for c in bot_comments}))))
-lines.append("")
-lines.append("### Categories, most-raised first")
-lines.append("")
-lines.append("| times raised | category | typical priority |")
-lines.append("|---|---|---|")
-for name, count in sorted(category_counts.items(), key=lambda kv: -kv[1]):
-    prios = category_priority.get(name, [])
-    typical = min(prios) if prios else "-"
-    lines.append("| %d | %s | %s |" % (count, name, typical))
-lines.append("")
-lines.append("A comment can land in more than one category, so the column sums above the")
-lines.append("comment total. Read the categories as priors: on a diff that touches one of")
-lines.append("them, assume the bots will raise it and settle it before opening the PR.")
-lines.append("")
-lines.append("### Concrete comments, most-repeated first")
-lines.append("")
+if not bot_comments:
+    lines.append("No bot review comments in the newest %d review comment(s)." % len(comments))
+    lines.append("")
+else:
+    lines.append("Mined from %d bot review comment(s) (%s). Counts are how many times the "
+                 "bots have raised that pattern in THIS repo - the higher the count, the more "
+                 "certain it is to come back on the next PR."
+                 % (len(bot_comments), ", ".join(sorted({(c.get("user") or {}).get("login", "?")
+                                                         for c in bot_comments}))))
+    lines.append("")
+    lines.append("### Categories, most-raised first")
+    lines.append("")
+    lines.append("| times raised | category | typical priority |")
+    lines.append("|---|---|---|")
+    for name, count in sorted(category_counts.items(), key=lambda kv: -kv[1]):
+        prios = category_priority.get(name, [])
+        typical = min(prios) if prios else "-"
+        lines.append("| %d | %s | %s |" % (count, name, typical))
+    lines.append("")
+    lines.append("A comment can land in more than one category, so the column sums above the")
+    lines.append("comment total. Read the categories as priors: on a diff that touches one of")
+    lines.append("them, assume the bots will raise it and settle it before opening the PR.")
+    lines.append("")
+    lines.append("### Concrete comments, most-repeated first")
+    lines.append("")
 
-for m in merged:
-    if len(m["items"]) < 2 and len(merged) > 12:
-        continue
-    claim, c = m["items"][0]
-    count = len(m["items"])
-    path = c.get("path") or "?"
-    lines.append("- **x%d** - %s" % (count, claim))
-    lines.append("  - e.g. `%s` ([comment](%s))" % (path, c.get("html_url", "")))
+    for m in merged:
+        if len(m["items"]) < 2 and len(merged) > 12:
+            continue
+        claim, c = m["items"][0]
+        count = len(m["items"])
+        path = c.get("path") or "?"
+        lines.append("- **x%d** - %s" % (count, claim))
+        lines.append("  - e.g. `%s` ([comment](%s))" % (path, c.get("html_url", "")))
 
-lines.append("")
+    lines.append("")
 
 body = "\n".join(lines)
 
@@ -241,7 +247,8 @@ if not existing.startswith("# Bot reviewer patterns"):
 # Replace this repo's section in place; leave every other repo alone.
 pattern = re.compile(r'^## %s$.*?(?=^## |\Z)' % re.escape(repo_slug), re.M | re.S)
 if pattern.search(existing):
-    existing = pattern.sub(body, existing)
+    # A function replacement, so backslashes in mined bot text are literal.
+    existing = pattern.sub(lambda _: body, existing)
 else:
     existing = existing.rstrip() + "\n\n" + body
 
@@ -249,5 +256,5 @@ with open(out_md, "w") as f:
     f.write(existing)
 
 print("mine-bot-comments: %d bot comment(s) -> %d pattern(s) -> %s"
-      % (len(bot_comments), len([m for m in merged if len(m["items"]) >= 1]), out_md))
+      % (len(bot_comments), len(merged), out_md))
 PYEOF

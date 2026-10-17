@@ -386,17 +386,17 @@ console.log('\ndeps depth: routing, classifier, line validation')
 console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store')
 {
   const { spawnSync } = await import('node:child_process')
-  const { mkdtempSync, writeFileSync: wf, readFileSync: rf, mkdirSync, chmodSync } = await import('node:fs')
+  const { mkdtempSync, writeFileSync: wf, readFileSync: rf, mkdirSync, chmodSync, symlinkSync, existsSync, rmSync } = await import('node:fs')
   const { tmpdir } = await import('node:os')
   const tmp = mkdtempSync(join(tmpdir(), 'lekker-bots-'))
   const script = name => join(SKILL, 'scripts', name)
 
-  const lint = (name, content) => {
+  const lint = (name, content, worktree = '/wt') => {
     const inPath = join(tmp, `${name}.json`)
     const outPath = join(tmp, `${name}.out.json`)
     if (content !== undefined) wf(inPath, content)
     const res = spawnSync('node', [script('lint-findings.mjs'), inPath, outPath], {
-      encoding: 'utf8', env: { ...process.env, LEKKER_WORKTREE_PATH: '/wt' },
+      encoding: 'utf8', env: { ...process.env, LEKKER_WORKTREE_PATH: worktree },
     })
     return { status: res.status, out: JSON.parse(rf(outPath, 'utf8')) }
   }
@@ -415,6 +415,16 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   check('lint: summary', [issues.out.summary.status, issues.out.summary.messageCount, issues.out.summary.ruleCount], ['issues', 4, 2])
   check('lint: a report with no messages is clean', lint('clean', '[{"filePath":"/wt/a.ts","messages":[]}]').out.summary.status, 'clean')
   check('lint: an empty report is not clean', lint('empty', '').out.summary.status, 'empty-report')
+  check('lint: a report listing no files is not clean', lint('nofiles', '[]').out.summary.status, 'empty-report')
+  // eslint reports the resolved path while the worktree arrives via a symlink
+  // (macOS: /tmp -> /private/tmp); the finding must still be repo-relative.
+  const realWt = join(tmp, 'real-wt')
+  mkdirSync(join(realWt, 'web'), { recursive: true })
+  wf(join(realWt, 'web', 'd.ts'), 'const a = 1\nconst unused = 2\n')
+  symlinkSync(realWt, join(tmp, 'link-wt'))
+  const viaLink = lint('symlink', JSON.stringify([{ filePath: join(realWt, 'web', 'd.ts'), messages: [msg('no-unused-vars', 2)] }]), join(tmp, 'link-wt'))
+  check('lint: symlinked worktree still gives a relative path', viaLink.out.findings[0].file, 'web/d.ts')
+  check('lint: badCode is the source line, not a location', viaLink.out.findings[0].badCode, 'const unused = 2')
   check('lint: a non-array report is not clean', lint('obj', '{}').out.summary.status, 'not-an-eslint-json-report')
   const missing = lint('missing')
   check('lint: a missing report is unknown, exit 0', [missing.status, missing.out.summary.status.startsWith('unreadable:')], [0, true])
@@ -429,6 +439,18 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   check('precision: no prediction scores as nothing, not 0%', /no recorded prediction/.test(prec(['score', '--repo', 'acme/app', '--pr', '8']).stdout), true)
   check('precision: summary with no scores', /no scored reviews yet/.test(prec(['summary']).stdout), true)
 
+  // Data dir: LEKKER_DATA_DIR wins, else ~/.cache/lekker-review - never the
+  // skill dir, which a plugin update replaces.
+  const noJsonl = (env, args) => spawnSync('node', [script('bot-precision.mjs'), ...args], { encoding: 'utf8', env: { ...process.env, ...env } })
+  const dataDir = join(tmp, 'data')
+  noJsonl({ LEKKER_DATA_DIR: dataDir }, ['record', '--repo', 'acme/app', '--pr', '1', '--predicted', predicted])
+  check('precision: LEKKER_DATA_DIR sets the store', existsSync(join(dataDir, 'bot-precision.jsonl')), true)
+  const home = join(tmp, 'home')
+  const envNoData = { ...process.env, HOME: home }
+  delete envNoData.LEKKER_DATA_DIR
+  spawnSync('node', [script('bot-precision.mjs'), 'record', '--repo', 'acme/app', '--pr', '1', '--predicted', predicted], { encoding: 'utf8', env: envNoData })
+  check('precision: default store is ~/.cache/lekker-review', existsSync(join(home, '.cache', 'lekker-review', 'bot-precision.jsonl')), true)
+
   // Stub gh on PATH so the miner runs offline against a fixed comment set.
   const bin = join(tmp, 'bin')
   mkdirSync(bin)
@@ -437,19 +459,55 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
     { user: { login: 'gemini-code-assist[bot]' }, path: 'src/b.ts', html_url: 'https://x/4', body: 'The promise is not awaited, so errors are silently ignored by the caller.' },
     { user: { login: 'a-human' }, path: 'src/c.ts', html_url: 'https://x/5', body: 'Humans are not mined, only the bots are counted here.' },
   ]
-  wf(join(tmp, 'comments.json'), JSON.stringify([comments]))
-  wf(join(bin, 'gh'), `#!/bin/sh\ncat "${join(tmp, 'comments.json')}"\n`)
+  wf(join(tmp, 'comments.json'), JSON.stringify(comments))
+  // Precision fixture, served --slurp style (a list of pages) for pulls/9.
+  const bot = (login, path, line) => ({ user: { login }, path, line, html_url: `https://x/${path}`, body: `${path} remark` })
+  wf(join(tmp, 'pr9.json'), JSON.stringify([[
+    bot('greptile-apps[bot]', 'web/a.ts', 10),
+    bot('gemini-code-assist[bot]', 'web/c.ts', 5),
+    bot('greptile-apps[bot]', 'web/b.ts', 50),
+    bot('a-human', 'web/a.ts', 100),
+  ]]))
+  wf(join(bin, 'gh'), [
+    '#!/bin/sh',
+    'case "$*" in',
+    `  *pulls/9/comments*) cat "${join(tmp, 'pr9.json')}" ;;`,
+    "  *acme/empty*) echo '[]' ;;",
+    `  *'&page=1') cat "${join(tmp, 'comments.json')}" ;;`,
+    "  *) echo '[]' ;;",
+    'esac',
+    '',
+  ].join('\n'))
   chmodSync(join(bin, 'gh'), 0o755)
+  const ghEnv = { ...process.env, PATH: `${bin}:${process.env.PATH}` }
+
+  // Predictions: a.ts:3 is 7 lines from a bot comment (hit), a.ts:100 has no
+  // bot comment within 20 lines (the human one does not count), b.ts with no
+  // line matches any comment on b.ts. c.ts was not predicted (missed).
+  const pr9 = join(tmp, 'pr9-predicted.json')
+  wf(pr9, JSON.stringify([{ file: 'web/a.ts', line: 3 }, { file: 'web/a.ts', line: 100 }, { file: 'web/b.ts', line: null }]))
+  const score9 = args => spawnSync('node', [script('bot-precision.mjs'), ...args, '--jsonl', store], { encoding: 'utf8', env: ghEnv })
+  score9(['record', '--repo', 'acme/app', '--pr', '9', '--predicted', pr9])
+  const s9 = score9(['score', '--repo', 'acme/app', '--pr', '9'])
+  const last = () => rf(store, 'utf8').trim().split('\n').map(l => JSON.parse(l)).filter(r => r.kind === 'score').pop()
+  const sc = last()
+  check('precision: score counts only bot comments', [s9.status, sc.botCommentCount], [0, 3])
+  check('precision: precision and recall', [sc.predictedAndRaised, sc.botCommentsPredicted, sc.precision.toFixed(3), sc.recall.toFixed(3)], [2, 2, '0.667', '0.667'])
+  check('precision: a null line is "no line", not line 0', sc.predictedAndRaised, 2)
+  check('precision: missed comments listed', sc.missedBotComments.map(c => c.path), ['web/c.ts'])
+  score9(['score', '--repo', 'acme/app', '--pr', '9'])
+  check('precision: a re-scored PR counts once in the summary', /summary: 1 scored review/.test(score9(['summary']).stdout), true)
   const out = join(tmp, 'patterns.md')
-  const mine = slug => spawnSync('bash', [script('mine-bot-comments.sh'), slug, out], {
-    encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
-  })
+  const mine = slug => spawnSync('bash', [script('mine-bot-comments.sh'), slug, out], { encoding: 'utf8', env: ghEnv })
   const m1 = mine('acme/app')
   const md1 = rf(out, 'utf8')
   check('mine: exit 0 and a section for the repo', [m1.status, md1.includes('## acme/app\n')], [0, true])
   check('mine: counts only bot comments', /Mined from 4 bot review comment/.test(md1), true)
   check('mine: a repeated claim is one pattern with its count', /\*\*x3\*\* - This type cast/.test(md1), true)
   check('mine: categories table', /\| 3 \| type cast \/ any \|/.test(md1), true)
+  check('mine: section carries its own mined date', md1.includes(`## acme/app\n<!-- mined: ${new Date().toISOString().slice(0, 10)} -->`), true)
+  const empty = mine('acme/empty')
+  check('mine: a repo with no bot comments still gets a section', [empty.status, rf(out, 'utf8').includes('## acme/empty\n<!-- mined: ')], [0, true])
   mine('acme/other')
   mine('acme/app')
   const md2 = rf(out, 'utf8')
@@ -460,6 +518,9 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   const skillMd = readFileSync(join(SKILL, 'SKILL.md'), 'utf8')
   check('SKILL.md passes preflightFile and botPatternsFile in CONTEXT_FILE',
     skillMd.includes('"preflightFile":') && skillMd.includes('"botPatternsFile":'), true)
+  check('SKILL.md ages bot patterns by the section marker, not file mtime',
+    skillMd.includes('<!-- mined: /') && !skillMd.includes('-mtime +30'), true)
+  rmSync(tmp, { recursive: true, force: true })
 }
 
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)

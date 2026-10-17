@@ -334,7 +334,7 @@ const raw = fs.readFileSync(process.argv[1], "utf8");
 if (!raw.trim()) process.exit(3);
 let report;
 try { report = JSON.parse(raw); } catch { process.exit(3); }
-if (!Array.isArray(report)) process.exit(3);
+if (!Array.isArray(report) || !report.length) process.exit(3);
 const lines = [];
 let errors = 0, warnings = 0;
 for (const f of report) {

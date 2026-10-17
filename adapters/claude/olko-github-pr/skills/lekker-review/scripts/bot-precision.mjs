@@ -72,19 +72,27 @@ function append(record) {
 // and file+line is checkable by hand from the jsonl.
 const LINE_WINDOW = 20;
 
+// Both sides are repo-relative paths, so only a leading "./" or "/" differs.
 function normFile(p) {
-  return String(p || '').replace(/^\/+/, '').replace(/^.*?(?=web\/|extensions\/|src\/)/, '');
+  return String(p || '').replace(/^(\.\/|\/)+/, '');
+}
+
+// null/undefined is "no line", not line 0 (Number(null) is 0).
+function toLine(v) {
+  return v == null ? NaN : Number(v);
 }
 
 function matches(prediction, comment) {
   if (normFile(prediction.file) !== normFile(comment.path)) return false;
-  const a = Number(prediction.line);
-  const b = Number(comment.line ?? comment.original_line);
+  const a = toLine(prediction.line);
+  const b = toLine(comment.line ?? comment.original_line);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return true; // same file, no usable line
   return Math.abs(a - b) <= LINE_WINDOW;
 }
 
 const BOT_RE = /gemini-code-assist|greptile|coderabbit/i;
+
+const pct = v => (v === null ? 'n/a' : `${Math.round(v * 100)}%`);
 
 function fetchBotComments(repo, pr) {
   const raw = execFileSync(
@@ -207,7 +215,6 @@ if (cmd === 'score') {
   };
   append(record);
 
-  const pct = v => (v === null ? 'n/a' : `${Math.round(v * 100)}%`);
   console.log(
     `bot-precision ${repo}#${pr}: ` +
       `predicted ${record.predictedCount}, bots left ${record.botCommentCount}, ` +
@@ -225,7 +232,13 @@ if (cmd === 'score') {
 }
 
 if (cmd === 'summary') {
-  const scores = readRecords().filter(r => r.kind === 'score');
+  // A PR is scored again once more bot comments land; only its latest score
+  // counts, or a re-scored PR would weigh double in the means.
+  const latest = new Map();
+  for (const r of readRecords()) {
+    if (r.kind === 'score') latest.set(`${r.repo}#${r.pr}`, r);
+  }
+  const scores = [...latest.values()];
   if (!scores.length) {
     console.log('bot-precision: no scored reviews yet');
     process.exit(0);
@@ -234,7 +247,6 @@ if (cmd === 'summary') {
     const vals = scores.map(s => s[key]).filter(v => typeof v === 'number');
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
   };
-  const pct = v => (v === null ? 'n/a' : `${Math.round(v * 100)}%`);
   console.log(
     `bot-precision summary: ${scores.length} scored review(s), ` +
       `mean precision ${pct(avg('precision'))}, mean recall ${pct(avg('recall'))}`,
