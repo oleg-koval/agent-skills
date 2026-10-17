@@ -1,3 +1,10 @@
+## [1.54.2](https://github.com/oleg-koval/agent-skills/compare/v1.54.1...v1.54.2) (2026-10-17)
+
+
+### 📚 Documentation
+
+* account for repository Codex review settings ([#130](https://github.com/oleg-koval/agent-skills/issues/130)) ([dea6b7b](https://github.com/oleg-koval/agent-skills/commit/dea6b7b73a95316f3f95897eb2199d821f2cd954))
+
 ## [1.54.1](https://github.com/oleg-koval/agent-skills/compare/v1.54.0...v1.54.1) (2026-10-17)
 
 
