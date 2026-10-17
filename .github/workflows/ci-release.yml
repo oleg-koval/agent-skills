@@ -8,6 +8,17 @@ on:
   # Bot automerge merges with GITHUB_TOKEN, and a push made with that token
   # starts no workflow run, so automerge dispatches this workflow instead.
   workflow_dispatch:
+    inputs:
+      release-key:
+        description: Merge commit key used to deduplicate bot-triggered releases
+        required: false
+        type: string
+
+run-name: CI and release (${{ inputs.release-key || github.sha }})
+
+concurrency:
+  group: ci-release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
