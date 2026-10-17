@@ -14,6 +14,8 @@ set -euo pipefail
 REPO_SLUG="${1:?REPO_SLUG required}"
 PR_BRANCH="${2:?PR_BRANCH required}"
 OUT_JSON="${3:?OUT_JSON required}"
+# Absolute, because the static checks run after cd into the worktree.
+case "$OUT_JSON" in /*) ;; *) OUT_JSON="$PWD/$OUT_JSON" ;; esac
 PREV_SHA="${4:-}"
 
 LOCAL_REPO="${LEKKER_LOCAL_REPO:-}"

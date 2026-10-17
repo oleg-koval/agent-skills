@@ -84,7 +84,10 @@ BOT_RE = re.compile(r'gemini-code-assist|greptile|coderabbit', re.I)
 
 def is_bot(c):
     # A reply in a bot's own thread ("Thanks, updated") is not a new finding.
-    return bool(BOT_RE.search((c.get("user") or {}).get("login", ""))) and not c.get("in_reply_to_id")
+    # The account type too: a human login can contain a bot's name.
+    user = c.get("user") or {}
+    return (user.get("type") == "Bot" and bool(BOT_RE.search(user.get("login", "")))
+            and not c.get("in_reply_to_id"))
 
 
 bot_comments = [c for c in comments if is_bot(c)]

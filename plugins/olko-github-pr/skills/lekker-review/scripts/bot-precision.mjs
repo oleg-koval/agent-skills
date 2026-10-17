@@ -7,7 +7,7 @@
 // down BEFORE the bots run and compare afterwards - so that is what this does.
 //
 // Usage:
-//   node bot-precision.mjs record --repo <slug> --pr <n> --predicted <findings.json>
+//   node bot-precision.mjs record --repo <slug> --pr <n> --predicted <findings.json> [--at <iso>]
 //   node bot-precision.mjs score  --repo <slug> --pr <n>
 //   node bot-precision.mjs summary
 //
@@ -40,8 +40,9 @@ function die(msg, code = 2) {
   process.exit(code);
 }
 
+// Private: the store quotes review comments, which can come from private repos.
 function ensureStore() {
-  mkdirSync(dirname(JSONL), { recursive: true });
+  mkdirSync(dirname(JSONL), { recursive: true, mode: 0o700 });
 }
 
 function readRecords() {
@@ -61,7 +62,7 @@ function readRecords() {
 
 function append(record) {
   ensureStore();
-  appendFileSync(JSONL, JSON.stringify(record) + '\n');
+  appendFileSync(JSONL, JSON.stringify(record) + '\n', { mode: 0o600 });
 }
 
 // --- matching -------------------------------------------------------------
@@ -108,7 +109,7 @@ function fetchBotComments(repo, pr) {
   }
   // Replies in a bot's own thread ("Thanks, updated") are not new findings.
   return flat
-    .filter(c => BOT_RE.test(c?.user?.login || '') && !c.in_reply_to_id)
+    .filter(c => c?.user?.type === 'Bot' && BOT_RE.test(c?.user?.login || '') && !c.in_reply_to_id)
     .map(c => ({
       path: c.path,
       line: c.line ?? c.original_line,
@@ -151,11 +152,15 @@ if (cmd === 'record') {
       source: f.botPredicted ? 'lint-preflight' : 'review-agent',
     })),
   );
+  // --at backdates the prediction to when it was made: branch mode records it
+  // after creating the PR, and a bot can comment in between.
+  const at = flag('at') || new Date().toISOString();
+  if (Number.isNaN(Date.parse(at))) die(`--at is not a timestamp: ${at}`);
   append({
     kind: 'prediction',
     repo,
     pr: Number(pr),
-    at: new Date().toISOString(),
+    at,
     predictedCount: predicted.length,
     predicted,
   });
@@ -188,7 +193,10 @@ if (cmd === 'score') {
   }
   // A comment posted before the prediction was visible when it was made, so
   // it cannot count as predicted or missed.
-  const comments = fetched.filter(c => !c.createdAt || c.createdAt >= prediction.at);
+  // Compared as instants at whole-second precision: GitHub timestamps have no
+  // fraction, and a string compare against "...:00.500Z" orders them wrongly.
+  const cutoff = Math.floor(Date.parse(prediction.at) / 1000) * 1000;
+  const comments = fetched.filter(c => !c.createdAt || Date.parse(c.createdAt) >= cutoff);
   const preexisting = fetched.length - comments.length;
 
   if (comments.length === 0) {

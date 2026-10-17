@@ -20,8 +20,9 @@
 // where each finding matches the FINDINGS_SCHEMA shape used by workflow.js,
 // plus `botPredicted: true` and `rule: "LINT:<ruleId>"`.
 //
-// Findings are grouped by ruleId so a rule that fires 40 times produces one
-// finding listing the other sites, not 40 findings that drown the review.
+// Findings are grouped by ruleId and file so a rule that fires 40 times in a
+// file produces one finding listing the other sites, not 40 findings that drown
+// the review. Per file, because fix mode routes each finding to its one file.
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
@@ -97,7 +98,10 @@ function addedLines() {
   if (!BASE || !repoRoot) return null;
   let out;
   try {
-    out = execFileSync('git', ['-C', repoRoot, 'diff', '-U0', '--no-color', BASE, 'HEAD'], {
+    // Explicit prefixes: diff.noprefix / diff.mnemonicPrefix would otherwise
+    // change the "+++ b/" header the parser below slices.
+    const args = ['-C', repoRoot, 'diff', '-U0', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', BASE, 'HEAD'];
+    out = execFileSync('git', args, {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
     });
@@ -143,10 +147,11 @@ for (const file of report) {
       continue;
     }
     messageCount++;
-    if (!byRule.has(ruleId)) {
-      byRule.set(ruleId, { ruleId, severity: m.severity ?? 2, fixable: false, sites: [] });
+    const key = `${ruleId}\0${filePath}`;
+    if (!byRule.has(key)) {
+      byRule.set(key, { ruleId, severity: m.severity ?? 2, fixable: false, sites: [] });
     }
-    const bucket = byRule.get(ruleId);
+    const bucket = byRule.get(key);
     // A rule reported at both levels keeps the louder one.
     bucket.severity = Math.max(bucket.severity, m.severity ?? 2);
     if (m.fix) {
@@ -163,6 +168,7 @@ for (const file of report) {
 
 // Errors before warnings, then the rules that fire most - a rule hit 12 times
 // is a pattern the author is repeating, and worth more than a one-off.
+const ruleCount = new Set([...byRule.values()].map(b => b.ruleId)).size;
 const buckets = [...byRule.values()].sort((a, b) => {
   if (b.severity !== a.severity) return b.severity - a.severity;
   return b.sites.length - a.sites.length;
@@ -219,7 +225,7 @@ const result = {
   findings,
   summary: {
     status: messageCount === 0 ? 'clean' : 'issues',
-    ruleCount: byRule.size,
+    ruleCount: ruleCount,
     messageCount,
     truncated: Math.max(0, buckets.length - findings.length),
     outOfDiff,
@@ -228,6 +234,6 @@ const result = {
 
 writeFileSync(outPath, JSON.stringify(result, null, 2));
 console.log(
-  `lint-findings: ${messageCount} message(s) across ${byRule.size} rule(s) -> ` +
+  `lint-findings: ${messageCount} message(s) across ${ruleCount} rule(s) -> ` +
     `${findings.length} finding(s)${result.summary.truncated ? ` (${result.summary.truncated} rule(s) truncated)` : ''}`,
 );

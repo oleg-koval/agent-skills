@@ -864,6 +864,8 @@ and need no remapping) BEFORE formatting, and:
   lines AND the same rule or claim - keep the pre-flight one and drop the
   agent's. The linter's wording is exact and the agent's is a paraphrase of it.
   Sharing a file alone is not a duplicate: never drop an agent finding for it.
+- When `summary.truncated` is above 0, say in the header how many lint rule
+  groups were left out, so a capped list is not read as the whole lint result.
 - When `summary.status` is not `clean` or `issues`, add one line to the header
   saying the lint verdict is unknown and why. Do not imply a clean lint.
 
@@ -1134,11 +1136,16 @@ Rules for each answer:
   mode did NOT apply (every row of the fixes table that is not `✅ applied`):
   an applied fix is gone from the code the bots read, so they cannot raise it,
   and recording it would sink precision for doing exactly what branch mode is
-  for. Write those to `<scratchpad>/unfixed.json` (a bare array is fine):
+  for. Build `<scratchpad>/unfixed.json` (a bare array is fine) from the merged
+  `findings.json` minus the findings fix mode applied; when fix mode did not
+  run or applied nothing, it is the whole merged set. Take
+  `PREDICTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)` just BEFORE `gh pr create`, so
+  a bot comment that lands before the record step still counts:
 
   ```bash
   node ${SKILL_ROOT}/scripts/bot-precision.mjs record \
-    --repo "$repo_slug" --pr <NEW_PR_NUMBER> --predicted <scratchpad>/unfixed.json
+    --repo "$repo_slug" --pr <NEW_PR_NUMBER> --predicted <scratchpad>/unfixed.json \
+    --at "$PREDICTED_AT"
   ```
 
   The review is already saved locally; offer `--post` on the new PR number only if the user asks - findings that fix

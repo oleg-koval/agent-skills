@@ -407,10 +407,11 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
     { filePath: '/wt/web/c.ts', messages: [] },
   ])
   const issues = lint('issues', report)
-  check('lint: one finding per rule, errors first', issues.out.findings.map(f => f.rule), ['LINT:no-unused-vars', 'LINT:no-console'])
-  check('lint: error -> important, warning -> idiomatic', issues.out.findings.map(f => f.severity), ['important', 'idiomatic'])
+  check('lint: one finding per rule and file, errors first',
+    issues.out.findings.map(f => `${f.rule} ${f.file}`), ['LINT:no-unused-vars web/a.ts', 'LINT:no-unused-vars web/b.ts', 'LINT:no-console web/a.ts'])
+  check('lint: error -> important, warning -> idiomatic', issues.out.findings.map(f => f.severity), ['important', 'important', 'idiomatic'])
   check('lint: paths relative to the worktree', issues.out.findings[0].file, 'web/a.ts')
-  check('lint: fixable and site count carried', [issues.out.findings[0].lintFixable, issues.out.findings[0].lintSiteCount], [true, 3])
+  check('lint: fixable and site count carried', [issues.out.findings[0].lintFixable, issues.out.findings[0].lintSiteCount], [true, 2])
   check('lint: every finding is botPredicted', issues.out.findings.every(f => f.botPredicted === true), true)
   check('lint: summary', [issues.out.summary.status, issues.out.summary.messageCount, issues.out.summary.ruleCount], ['issues', 4, 2])
   check('lint: a report with no messages is clean', lint('clean', '[{"filePath":"/wt/a.ts","messages":[]}]').out.summary.status, 'clean')
@@ -428,7 +429,7 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   check('lint: a non-array report is not clean', lint('obj', '{}').out.summary.status, 'not-an-eslint-json-report')
   const missing = lint('missing')
   check('lint: a missing report is unknown, exit 0', [missing.status, missing.out.summary.status.startsWith('unreadable:')], [0, true])
-  check('lint: every site is carried for scoring', issues.out.findings[0].lintSites.map(x => `${x.file}:${x.line}`), ['web/a.ts:3', 'web/a.ts:7', 'web/b.ts:1'])
+  check('lint: every site is carried for scoring', issues.out.findings[0].lintSites.map(x => `${x.file}:${x.line}`), ['web/a.ts:3', 'web/a.ts:7'])
   const notices = lint('notices', JSON.stringify([{ filePath: '/wt/web/e.ts', messages: [
     { ruleId: null, severity: 1, line: 0, message: 'File ignored because of a matching ignore pattern.' },
     { ruleId: null, fatal: true, severity: 2, line: 4, message: 'Parsing error: Unexpected token' },
@@ -443,6 +444,7 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   const git = (...a) => spawnSync('git', ['-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { encoding: 'utf8' })
   git('init', '-q')
   wf(join(repo, 'web', 'f.ts'), 'one\ntwo\nthree\n')
+  git('config', 'diff.noprefix', 'true')
   git('add', '.'); git('commit', '-qm', 'base')
   const base = git('rev-parse', 'HEAD').stdout.trim()
   wf(join(repo, 'web', 'f.ts'), 'one\nTWO\nthree\nfour\n')
@@ -485,19 +487,21 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   const bin = join(tmp, 'bin')
   mkdirSync(bin)
   const comments = [
-    { user: { login: 'greptile-apps[bot]' }, path: 'src/a.ts', in_reply_to_id: 1, html_url: 'https://x/r', body: 'Thanks for the update, this looks resolved now to me.' },
-    ...[1, 2, 3].map(i => ({ user: { login: 'greptile-apps[bot]' }, path: 'src/a.ts', html_url: `https://x/${i}`, body: 'This type cast bypasses the compiler and hides a real mismatch here.' })),
-    { user: { login: 'gemini-code-assist[bot]' }, path: 'src/b.ts', html_url: 'https://x/4', body: 'The promise is not awaited, so errors are silently ignored by the caller.' },
+    { user: { login: 'greptile-apps[bot]', type: 'Bot' }, path: 'src/a.ts', in_reply_to_id: 1, html_url: 'https://x/r', body: 'Thanks for the update, this looks resolved now to me.' },
+    { user: { login: 'coderabbit-fan', type: 'User' }, path: 'src/a.ts', html_url: 'https://x/h', body: 'A human whose login names a bot is still a human here.' },
+    ...[1, 2, 3].map(i => ({ user: { login: 'greptile-apps[bot]', type: 'Bot' }, path: 'src/a.ts', html_url: `https://x/${i}`, body: 'This type cast bypasses the compiler and hides a real mismatch here.' })),
+    { user: { login: 'gemini-code-assist[bot]', type: 'Bot' }, path: 'src/b.ts', html_url: 'https://x/4', body: 'The promise is not awaited, so errors are silently ignored by the caller.' },
     { user: { login: 'a-human' }, path: 'src/c.ts', html_url: 'https://x/5', body: 'Humans are not mined, only the bots are counted here.' },
   ]
   wf(join(tmp, 'comments.json'), JSON.stringify(comments))
   // Precision fixture, served --slurp style (a list of pages) for pulls/9.
-  const bot = (login, path, line) => ({ user: { login }, path, line, html_url: `https://x/${path}`, body: `${path} remark` })
+  const bot = (login, path, line) => ({ user: { login, type: login.endsWith('[bot]') ? 'Bot' : 'User' }, path, line, html_url: `https://x/${path}`, body: `${path} remark` })
   wf(join(tmp, 'pr9.json'), JSON.stringify([[
     bot('greptile-apps[bot]', 'web/a.ts', 10),
     bot('gemini-code-assist[bot]', 'web/c.ts', 5),
     bot('greptile-apps[bot]', 'web/b.ts', 50),
     bot('a-human', 'web/a.ts', 100),
+    bot('coderabbit-fan', 'web/z.ts', 1),
     { ...bot('greptile-apps[bot]', 'web/x.ts', 1), in_reply_to_id: 1 },
     { ...bot('greptile-apps[bot]', 'web/y.ts', 1), created_at: '2000-01-01T00:00:00Z' },
   ]]))
@@ -520,7 +524,8 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   const pr9 = join(tmp, 'pr9-predicted.json')
   wf(pr9, JSON.stringify([{ file: 'web/a.ts', line: 3 }, { file: 'web/a.ts', line: 100 }, { file: 'web/b.ts', line: null }]))
   const score9 = args => spawnSync('node', [script('bot-precision.mjs'), ...args, '--jsonl', store], { encoding: 'utf8', env: ghEnv })
-  score9(['record', '--repo', 'acme/app', '--pr', '9', '--predicted', pr9])
+  score9(['record', '--repo', 'acme/app', '--pr', '9', '--predicted', pr9, '--at', new Date(Date.now() - 60000).toISOString()])
+  check('precision: --at must be a timestamp', score9(['record', '--repo', 'acme/app', '--pr', '9', '--predicted', pr9, '--at', 'soon']).status, 2)
   // A later prediction (a re-review after the bots ran) must not be scored.
   const late = join(tmp, 'pr9-late.json')
   wf(late, JSON.stringify([{ file: 'web/c.ts', line: 5 }]))
