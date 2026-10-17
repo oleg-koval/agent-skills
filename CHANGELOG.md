@@ -1,3 +1,10 @@
+# [1.55.0](https://github.com/oleg-koval/agent-skills/compare/v1.54.4...v1.55.0) (2026-10-17)
+
+
+### ✨ Features
+
+* **lekker-review:** pre-empt bot reviewer comments with lint pre-flight and mined patterns ([#136](https://github.com/oleg-koval/agent-skills/issues/136)) ([8aeedc2](https://github.com/oleg-koval/agent-skills/commit/8aeedc27257edb016247d10aff442c06c066d8d2))
+
 ## [1.54.4](https://github.com/oleg-koval/agent-skills/compare/v1.54.3...v1.54.4) (2026-10-17)
 
 
