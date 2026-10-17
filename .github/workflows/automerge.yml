@@ -3,6 +3,10 @@ name: Bot automerge
 on:
   pull_request_target:
     types: [opened, reopened, synchronize, ready_for_review, edited]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
 
 permissions:
   contents: write
@@ -16,7 +20,8 @@ jobs:
   automerge:
     runs-on: ubuntu-latest
     steps:
-      - uses: oleg-koval/pr-automerge-github-action@v1
+      # Immutable action revision with the open-review-thread guard and review-event support.
+      - uses: oleg-koval/pr-automerge-github-action@dffbecb3f1ad3ce3640326da1bb7e4c8b735941d
         with:
           github-token: ${{ github.token }}
           bot-logins: dependabot[bot],snyk-bot,renovate[bot],oleg-koval
