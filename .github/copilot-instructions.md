@@ -21,6 +21,7 @@ Available reusable prompt files:
 - copilotloop: .github/prompts/copilotloop.prompt.md
 - geminiloop: .github/prompts/geminiloop.prompt.md
 - ci-fix-loop: .github/prompts/ci-fix-loop.prompt.md
+- nas-actions-migration: .github/prompts/nas-actions-migration.prompt.md
 - dependabot-triage: .github/prompts/dependabot-triage.prompt.md
 - git-commit: .github/prompts/git-commit.prompt.md
 - gh-cli: .github/prompts/gh-cli.prompt.md
