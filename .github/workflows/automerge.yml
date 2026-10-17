@@ -16,12 +16,28 @@ permissions:
   issues: write
   actions: write
 
+concurrency:
+  group: automerge-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
   automerge:
     runs-on: ubuntu-latest
     steps:
-      # Immutable action revision with the open-review-thread guard and review-event support.
-      - uses: oleg-koval/pr-automerge-github-action@dffbecb3f1ad3ce3640326da1bb7e4c8b735941d
+      - name: Record merge state before evaluation
+        id: premerge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          merged_at="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt -q '.mergedAt // ""')"
+          if [ -n "$merged_at" ]; then
+            printf 'already-merged=true\n' >> "$GITHUB_OUTPUT"
+          else
+            printf 'already-merged=false\n' >> "$GITHUB_OUTPUT"
+          fi
+      # Immutable v1.5.0 action revision with review-thread retry and guard.
+      - uses: oleg-koval/pr-automerge-github-action@39316e1ba4f70de3f1576da572866841578be442 # v1.5.0
         with:
           github-token: ${{ github.token }}
           bot-logins: dependabot[bot],snyk-bot,renovate[bot],oleg-koval
@@ -30,7 +46,8 @@ jobs:
       # A merge made with GITHUB_TOKEN starts no push run, so ci-release.yml
       # never released bot-merged PRs. workflow_dispatch is the documented
       # exception: a dispatch made with GITHUB_TOKEN does start a run.
-      - name: Dispatch release after a merge
+      - name: Dispatch release after a newly completed merge
+        if: steps.premerge.outputs.already-merged != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
