@@ -17,6 +17,10 @@ on:
         description: Pull request number to re-evaluate
         required: false
         type: string
+      pr-numbers:
+        description: JSON array of pull request numbers for a retry batch
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -40,11 +44,22 @@ jobs:
       - id: list
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBERS: ${{ inputs.pr-numbers }}
         run: |
-          prs="$(gh api --paginate \
-            "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" \
-            | jq -s 'add | map(.number)')"
-          printf 'pr-numbers=%s\n' "$prs" >> "$GITHUB_OUTPUT"
+          if [ -n "$PR_NUMBERS" ]; then
+            prs="$PR_NUMBERS"
+          else
+            prs="$(gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" \
+              | jq -s 'add | map(.number)')"
+          fi
+          # Each run evaluates at most 256 PRs, the Actions matrix limit.
+          printf 'pr-numbers=%s\n' "$(jq -c '.[0:256]' <<< "$prs")" >> "$GITHUB_OUTPUT"
+          jq -c '. as $prs | range(256; length; 256) | $prs[.:. + 256]' <<< "$prs" |
+            while IFS= read -r batch; do
+              gh workflow run automerge.yml --repo "$GITHUB_REPOSITORY" \
+                --ref "$GITHUB_REF_NAME" -f pr-numbers="$batch"
+            done
 
   retry:
     needs: discover
