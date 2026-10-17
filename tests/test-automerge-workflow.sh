@@ -37,7 +37,7 @@ assert workflow.count(pin) == 3
 assert 'oleg-koval/pr-automerge-github-action@v1' not in workflow
 assert workflow.count('name: Record merge state before evaluation') == 3
 assert workflow.count('name: Dispatch release after a newly completed merge') == 3
-assert workflow.count("if: steps.premerge.outputs.should-dispatch == 'true'") == 3
+
 
 
 def job_block(name: str) -> str:
@@ -60,7 +60,9 @@ for job, pr_reference in (
     assert '--json mergedAt' in premerge[0]
     assert 'should-dispatch=true' in premerge[0]
     assert 'should-dispatch=false' in premerge[0]
-    assert "\n        if: steps.premerge.outputs.should-dispatch == 'true'\n" in dispatch[0]
+    assert "\n        if: steps.premerge.outputs.should-dispatch == 'true'\n" in dispatch[0], \
+        f'{job}: dispatch is not guarded by this job’s premerge state'
+    assert 'steps.premerge.outputs.should-dispatch' in dispatch[0]
     assert 'RELEASE_PENDING_LABEL' in dispatch[0]
     assert 'gh api --paginate --method GET' in dispatch[0]
     assert 'gh workflow run ci-release.yml' in dispatch[0]
@@ -154,6 +156,22 @@ output, _ = run_step(run_scripts('discover')[0], {
                 [{'number': 42, 'state': 'closed', 'pull_request': {'merged_at': '2026-10-17'}}]],
 })
 assert json.loads(output.removeprefix('pr-numbers=')) == [1, 2, 3, 4, 42], output
+
+# A discovery list over the matrix limit must fan out without dropping or
+# duplicating any PR: one 256-job matrix plus another dispatched batch.
+large_open_prs = [
+    {'number': number, 'draft': False, 'user': {'login': 'oleg-koval'}}
+    for number in range(1, 258)
+]
+output, calls = run_step(run_scripts('discover')[0], {
+    'open': [large_open_prs],
+    'pending': [[]],
+})
+first_batch = json.loads(output.removeprefix('pr-numbers='))
+batch_dispatches = [call for call in calls if call[:3] == ['workflow', 'run', 'automerge.yml']]
+assert len(first_batch) == 256, len(first_batch)
+assert json.loads(next(arg.split('=', 1)[1] for arg in batch_dispatches[0] if arg.startswith('pr-numbers='))) == [257]
+assert len(batch_dispatches) == 1, batch_dispatches
 
 pr = {'baseRefName': 'release/test', 'mergedAt': '2026-10-17',
       'mergeCommit': {'oid': 'merge-sha'}, 'mergedBy': {'login': 'app/github-actions'}}

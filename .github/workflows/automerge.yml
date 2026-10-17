@@ -70,7 +70,7 @@ jobs:
           printf 'pr-numbers=%s\n' "$(jq -c '.[0:256]' <<< "$prs")" >> "$GITHUB_OUTPUT"
 
           for ((offset = 256; offset < total; offset += 256)); do
-            batch="$(jq -c --argjson start "$offset" --argjson end "$((offset + 256))" '.[$start:$end]' <<< "$prs")"
+            batch="$(jq -c --argjson start "$offset" --argjson end_index "$((offset + 256))" '.[$start:$end_index]' <<< "$prs")"
             gh workflow run automerge.yml --repo "$GITHUB_REPOSITORY" \
               --ref "$DEFAULT_REF" -f "pr-numbers=$batch"
           done
