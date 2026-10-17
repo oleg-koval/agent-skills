@@ -40,24 +40,26 @@ Use when asked to move Actions/CI jobs to a NAS, copy the Roazon/Funda Radar run
    runs-on: ${{ vars.CI_RUNNER == 'nas' && fromJSON('["self-hosted","linux","REPO-nas"]') || 'ubuntu-latest' }}
    ```
 
-   For every job that can execute repository-controlled code on the NAS, add a fork guard:
+   For every job that can execute repository-controlled code on the NAS, never use `github.event_name != 'pull_request'` as a trust predicate: it treats privileged events as trusted merely because they are not `pull_request`. Choose the origin check for the actual trigger:
 
-   ```yaml
-   if: >-
-     github.event_name != 'pull_request'
-     || github.event.pull_request.head.repo.full_name == github.repository
-   ```
+   - `pull_request`: allow NAS only for a verified trusted origin; keep fork PRs on the hosted fallback.
+   - `pull_request_target`: keep the job hosted unless the workflow is base-controlled, never checks out the PR head, and independently verifies a trusted origin.
+   - `workflow_run`: verify `github.event.workflow_run.head_repository.full_name`, the triggering workflow, and the trusted ref before allowing NAS execution.
+   - `merge_group`: keep NAS off unless the merge-queue source is explicitly verified as trusted; do not infer trust from the event name.
+   - `issue_comment`: resolve the referenced PR and verify its origin and the comment actor through the API before running any PR-controlled code; otherwise keep it hosted.
 
-   Guard each job independently. Never rely on a downstream job's guard to protect an unguarded dependency. If the hosted fallback should continue running fork PR checks while NAS mode excludes them, use the three-part guard:
+   For a simple `pull_request` workflow whose fork checks must remain enabled on hosted runners, scope the NAS restriction to NAS routing and guard each job independently:
 
    ```yaml
    if: >-
      vars.CI_RUNNER != 'nas'
-     || github.event_name != 'pull_request'
-     || github.event.pull_request.head.repo.full_name == github.repository
+     || (
+       github.event_name == 'pull_request'
+       && github.event.pull_request.head.repo.full_name == github.repository
+     )
    ```
 
-   Add `workflow_dispatch` to a workflow's `on:` triggers if the provisioning/verification instructions dispatch it manually. Add exact toolchain setup because runner images may not contain Node, Bun, browsers, Docker, or compatible system libraries.
+   Never rely on a downstream job's guard to protect an unguarded dependency. Same-repository automation PRs still require an explicit trust policy; repository identity alone is not sufficient. Add `workflow_dispatch` to a workflow's `on:` triggers if the provisioning/verification instructions dispatch it manually. Add exact toolchain setup because runner images may not contain Node, Bun, browsers, Docker, or compatible system libraries.
 
 5. **Document provisioning and rollback.** Provide the target repo's exact runner name, label, container/image, dedicated work directory, ephemeral/restart settings, required tool installation, safe secret storage, and health check. For persistent `myoung34/github-runner` containers, use a narrowly scoped fine-grained PAT with repository Administration read/write in the NAS secret store; pass it as `ACCESS_TOKEN` only via a root-readable env file and set `UNSET_CONFIG_VARS=true`. Verify the selected image's entrypoint supports this option; it must unset `ACCESS_TOKEN` and other setup credentials after registration and before starting the listener. Add a preflight check before running downloaded or repository-controlled tooling to fail if `ACCESS_TOKEN` reached job steps. Do not print, commit, message, or substitute a short-lived registration token for a restart-persistent credential. Never reuse another repo's `/_work` or token.
 
