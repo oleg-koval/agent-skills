@@ -47,8 +47,10 @@ Use when asked to move Actions/CI jobs to a NAS, copy the Roazon/Funda Radar run
 4. **Route through an explicit opt-in variable.** Use a repository variable such as `CI_RUNNER=nas`, with a hosted-runner fallback until activation:
 
    ```yaml
-   runs-on: ${{ vars.CI_RUNNER == 'nas' && fromJSON('["self-hosted","linux","REPO-nas"]') || 'ubuntu-latest' }}
+   runs-on: ${{ vars.CI_RUNNER == 'nas' && fromJSON('["self-hosted","linux","REPO-nas"]') || 'ORIGINAL_HOSTED_RUNNER' }}
    ```
+
+   Replace `ORIGINAL_HOSTED_RUNNER` with the job's exact existing hosted `runs-on` value; do not silently substitute `ubuntu-latest`. Required fork checks must remain non-skipped on the hosted fallback. If a required check cannot safely run on NAS, keep that job hosted or add a separate non-skipped required gate that blocks until the trusted check runs.
 
    For every job that can execute repository-controlled code on the NAS, never use `github.event_name != 'pull_request'` as a trust predicate: it treats privileged events as trusted merely because they are not `pull_request`. Choose the origin check for the actual trigger:
 
