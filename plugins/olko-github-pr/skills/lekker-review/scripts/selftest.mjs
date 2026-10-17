@@ -383,5 +383,84 @@ console.log('\ndeps depth: routing, classifier, line validation')
   check('summary counts', [r.summary.remapped, r.summary.nulled, r.summary.unchecked], [1, 1, 1])
 }
 
+console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store')
+{
+  const { spawnSync } = await import('node:child_process')
+  const { mkdtempSync, writeFileSync: wf, readFileSync: rf, mkdirSync, chmodSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const tmp = mkdtempSync(join(tmpdir(), 'lekker-bots-'))
+  const script = name => join(SKILL, 'scripts', name)
+
+  const lint = (name, content) => {
+    const inPath = join(tmp, `${name}.json`)
+    const outPath = join(tmp, `${name}.out.json`)
+    if (content !== undefined) wf(inPath, content)
+    const res = spawnSync('node', [script('lint-findings.mjs'), inPath, outPath], {
+      encoding: 'utf8', env: { ...process.env, LEKKER_WORKTREE_PATH: '/wt' },
+    })
+    return { status: res.status, out: JSON.parse(rf(outPath, 'utf8')) }
+  }
+  const msg = (ruleId, line, severity = 2, fix) => ({ ruleId, line, column: 1, severity, message: `${ruleId} hit`, ...(fix ? { fix } : {}) })
+  const report = JSON.stringify([
+    { filePath: '/wt/web/a.ts', messages: [msg('no-unused-vars', 3), msg('no-console', 9, 1), msg('no-unused-vars', 7, 2, { range: [0, 1], text: '' })] },
+    { filePath: '/wt/web/b.ts', messages: [msg('no-unused-vars', 1)] },
+    { filePath: '/wt/web/c.ts', messages: [] },
+  ])
+  const issues = lint('issues', report)
+  check('lint: one finding per rule, errors first', issues.out.findings.map(f => f.rule), ['LINT:no-unused-vars', 'LINT:no-console'])
+  check('lint: error -> important, warning -> idiomatic', issues.out.findings.map(f => f.severity), ['important', 'idiomatic'])
+  check('lint: paths relative to the worktree', issues.out.findings[0].file, 'web/a.ts')
+  check('lint: fixable and site count carried', [issues.out.findings[0].lintFixable, issues.out.findings[0].lintSiteCount], [true, 3])
+  check('lint: every finding is botPredicted', issues.out.findings.every(f => f.botPredicted === true), true)
+  check('lint: summary', [issues.out.summary.status, issues.out.summary.messageCount, issues.out.summary.ruleCount], ['issues', 4, 2])
+  check('lint: a report with no messages is clean', lint('clean', '[{"filePath":"/wt/a.ts","messages":[]}]').out.summary.status, 'clean')
+  check('lint: an empty report is not clean', lint('empty', '').out.summary.status, 'empty-report')
+  check('lint: a non-array report is not clean', lint('obj', '{}').out.summary.status, 'not-an-eslint-json-report')
+  const missing = lint('missing')
+  check('lint: a missing report is unknown, exit 0', [missing.status, missing.out.summary.status.startsWith('unreadable:')], [0, true])
+
+  const store = join(tmp, 'precision.jsonl')
+  const prec = args => spawnSync('node', [script('bot-precision.mjs'), ...args, '--jsonl', store], { encoding: 'utf8' })
+  const predicted = join(tmp, 'issues.out.json')
+  const rec = prec(['record', '--repo', 'acme/app', '--pr', '7', '--predicted', predicted])
+  check('precision: record appends one prediction', [rec.status, JSON.parse(rf(store, 'utf8').trim()).predictedCount], [0, 2])
+  check('precision: lint findings are tagged lint-preflight',
+    JSON.parse(rf(store, 'utf8').trim()).predicted.every(p => p.source === 'lint-preflight'), true)
+  check('precision: no prediction scores as nothing, not 0%', /no recorded prediction/.test(prec(['score', '--repo', 'acme/app', '--pr', '8']).stdout), true)
+  check('precision: summary with no scores', /no scored reviews yet/.test(prec(['summary']).stdout), true)
+
+  // Stub gh on PATH so the miner runs offline against a fixed comment set.
+  const bin = join(tmp, 'bin')
+  mkdirSync(bin)
+  const comments = [
+    ...[1, 2, 3].map(i => ({ user: { login: 'greptile-apps[bot]' }, path: 'src/a.ts', html_url: `https://x/${i}`, body: 'This type cast bypasses the compiler and hides a real mismatch here.' })),
+    { user: { login: 'gemini-code-assist[bot]' }, path: 'src/b.ts', html_url: 'https://x/4', body: 'The promise is not awaited, so errors are silently ignored by the caller.' },
+    { user: { login: 'a-human' }, path: 'src/c.ts', html_url: 'https://x/5', body: 'Humans are not mined, only the bots are counted here.' },
+  ]
+  wf(join(tmp, 'comments.json'), JSON.stringify([comments]))
+  wf(join(bin, 'gh'), `#!/bin/sh\ncat "${join(tmp, 'comments.json')}"\n`)
+  chmodSync(join(bin, 'gh'), 0o755)
+  const out = join(tmp, 'patterns.md')
+  const mine = slug => spawnSync('bash', [script('mine-bot-comments.sh'), slug, out], {
+    encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+  })
+  const m1 = mine('acme/app')
+  const md1 = rf(out, 'utf8')
+  check('mine: exit 0 and a section for the repo', [m1.status, md1.includes('## acme/app\n')], [0, true])
+  check('mine: counts only bot comments', /Mined from 4 bot review comment/.test(md1), true)
+  check('mine: a repeated claim is one pattern with its count', /\*\*x3\*\* - This type cast/.test(md1), true)
+  check('mine: categories table', /\| 3 \| type cast \/ any \|/.test(md1), true)
+  mine('acme/other')
+  mine('acme/app')
+  const md2 = rf(out, 'utf8')
+  check('mine: re-mining replaces the section, other repos kept',
+    [md2.split('## acme/app\n').length - 1, md2.includes('## acme/other\n')], [1, true])
+
+  check('workflow.js tells agents not to re-report the pre-flight', src.includes('"preflightFile"'), true)
+  const skillMd = readFileSync(join(SKILL, 'SKILL.md'), 'utf8')
+  check('SKILL.md passes preflightFile and botPatternsFile in CONTEXT_FILE',
+    skillMd.includes('"preflightFile":') && skillMd.includes('"botPatternsFile":'), true)
+}
+
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)

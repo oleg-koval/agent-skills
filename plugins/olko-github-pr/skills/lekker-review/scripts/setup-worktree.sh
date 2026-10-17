@@ -311,11 +311,49 @@ TSC_CHANGED_FILE="/tmp/lekker-tsc-changed-$$.txt"
 TSC_COUNT_FILE="/tmp/lekker-tsc-count-$$.txt"
 ESLINT_TAIL_FILE="/tmp/lekker-eslint-$$.txt"
 ESLINT_SCOPE_FILE="/tmp/lekker-eslint-scope-$$.txt"
+# Structured lint report, kept beside the output JSON (NOT deleted with the
+# temp files): lint-findings.mjs turns it into botPredicted findings, so the
+# review can fix what the bot reviewers would have charged for. Exported by
+# path as eslintJson.
+ESLINT_JSON_FILE="$(dirname "$OUT_JSON")/eslint-report.json"
 printf '' > "$TSC_TAIL_FILE"
 printf '' > "$TSC_CHANGED_FILE"
 printf '0' > "$TSC_COUNT_FILE"
 printf '' > "$ESLINT_TAIL_FILE"
 printf 'skipped' > "$ESLINT_SCOPE_FILE"
+printf '' > "$ESLINT_JSON_FILE"
+
+# Render a stylish-style tail from the JSON report. An empty or unparseable
+# report (eslint crashed, bad config) keeps whatever eslint wrote on stderr
+# instead of rendering "0 errors" from nothing.
+render_eslint_tail() {
+    local rendered="$ESLINT_JSON_FILE.txt"
+    node -e '
+const fs = require("fs");
+const raw = fs.readFileSync(process.argv[1], "utf8");
+if (!raw.trim()) process.exit(3);
+let report;
+try { report = JSON.parse(raw); } catch { process.exit(3); }
+if (!Array.isArray(report)) process.exit(3);
+const lines = [];
+let errors = 0, warnings = 0;
+for (const f of report) {
+  const msgs = f.messages || [];
+  if (!msgs.length) continue;
+  lines.push(f.filePath);
+  for (const m of msgs) {
+    if (m.severity === 2) errors++; else warnings++;
+    lines.push(`  ${m.line}:${m.column}  ${m.severity === 2 ? "error" : "warning"}  ${m.message}  ${m.ruleId || ""}`);
+  }
+}
+lines.push(`total: ${errors} error(s), ${warnings} warning(s)`);
+process.stdout.write(lines.slice(-40).join("\n") + "\n");
+' "$ESLINT_JSON_FILE" > "$rendered" 2>/dev/null
+    if [[ -s "$rendered" ]]; then
+        cat "$rendered" > "$ESLINT_TAIL_FILE"
+    fi
+    rm -f "$rendered"
+}
 
 run_tsc() {
     # tsc needs the whole program to resolve types, so it always runs
@@ -345,8 +383,11 @@ run_eslint() {
         if [[ "$has_config" == "true" ]]; then
             if [[ -s "$CHANGED_FILES_FILE" ]]; then
                 if [[ ${#ESLINT_TARGETS[@]} -gt 0 ]]; then
-                    # Default (stylish) formatter: ESLint 9 removed the bundled "compact" formatter
-                    (cd "$WORKTREE_PATH" && npx eslint --max-warnings=0 "${ESLINT_TARGETS[@]}" 2>&1 | tail -40 >> "$ESLINT_TAIL_FILE") || true
+                    # One run, JSON formatter: the machine-readable report feeds
+                    # lint-findings.mjs and the human tail is rendered from the
+                    # same report, so the two can never disagree.
+                    (cd "$WORKTREE_PATH" && npx eslint --max-warnings=0 -f json -o "$ESLINT_JSON_FILE" "${ESLINT_TARGETS[@]}" 2> "$ESLINT_TAIL_FILE") || true
+                    render_eslint_tail
                     printf 'changed-files' > "$ESLINT_SCOPE_FILE"
                 else
                     printf 'no-changed-lintable-files\n' > "$ESLINT_TAIL_FILE"
@@ -354,6 +395,8 @@ run_eslint() {
                 fi
             else
                 # Base ref could not be resolved -- fall back to the old repo-wide run.
+                # No JSON here on purpose: a repo-wide report is standing debt,
+                # not this change's, and must not become botPredicted findings.
                 (cd "$WORKTREE_PATH" && npx eslint . --max-warnings=0 2>&1 | tail -40 >> "$ESLINT_TAIL_FILE") || true
                 printf 'full-fallback' > "$ESLINT_SCOPE_FILE"
             fi
@@ -428,6 +471,7 @@ python3 - \
     "$TSC_COUNT_FILE" \
     "$MERGE_BASE_VAL" \
     "$DEPS_INSTALL_FILE" \
+    "$ESLINT_JSON_FILE" \
     "$OUT_JSON" <<'PYEOF'
 import json, sys, os
 
@@ -435,7 +479,7 @@ import json, sys, os
  tsc_file, eslint_file, rules_file, delta_file, notes,
  changed_files_file, base_ref_val, eslint_scope_file,
  tsc_changed_file, tsc_count_file, merge_base_val,
- deps_install_file, out_json) = sys.argv[1:18]
+ deps_install_file, eslint_json_file, out_json) = sys.argv[1:19]
 
 def read_file(path):
     if not os.path.exists(path):
@@ -462,6 +506,14 @@ for row in read_file(deps_install_file).splitlines():
 
 changed_files = [l for l in read_file(changed_files_file).splitlines() if l.strip()]
 
+
+def file_has_content(path):
+    try:
+        return os.path.getsize(path) > 0
+    except OSError:
+        return False
+
+
 eslint_scope = read_file(eslint_scope_file).strip() or "skipped"
 
 try:
@@ -486,6 +538,10 @@ data = {
     "tscChangedTail": read_file(tsc_changed_file),
     "tscErrorCount":  tsc_error_count,
     "depsInstall":    deps_install,
+    # Path, not content: lint-findings.mjs reads it. None when eslint produced
+    # no structured report (skipped, no config, crashed, or the repo-wide
+    # fallback), so a consumer can tell "no lint report" from "no problems".
+    "eslintJson":     eslint_json_file if file_has_content(eslint_json_file) else None,
 }
 
 for p in (tsc_file, eslint_file, rules_file, changed_files_file,

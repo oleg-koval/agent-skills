@@ -519,6 +519,16 @@ const budgetAtStart = budget.spent()
         + ` number of DIFF_FILE itself. Quote the code at that line verbatim in "badCode".`,
     ].join(' ')
 
+    // The deterministic lint pre-flight has already collected every rule the
+    // repo's own eslint config fires on this diff, and those are exactly the
+    // comments the bot reviewers bill for. An agent re-reporting them costs a
+    // verifier round and produces a worse description than the linter's.
+    prompt += ` PRE-FLIGHT: CONTEXT_FILE may carry a key "preflightFile" pointing`
+      + ` at lint findings already collected deterministically from the repo's own`
+      + ` eslint config. If it is present and non-null, Read it and do NOT re-report`
+      + ` anything it already lists - those are already queued for fixing. Report`
+      + ` only what it missed.`
+
     if (prevSha) {
       prompt += ` RE-REVIEW MODE: a prior review covered up to commit ${prevSha}.`
         + ` Focus findings on the delta (see key deltaFile in CONTEXT_FILE);`

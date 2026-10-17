@@ -386,8 +386,9 @@ ${SKILL_ROOT}/scripts/setup-worktree.sh \
 
 On completion, read `worktree.json`. Keys emitted:
 `worktreePath`, `repoRoot`, `headSha`, `headShaShort`, `tscTail`,
-`tscChangedTail`, `tscErrorCount`, `eslintTail`, `eslintScope`, `changedFiles`,
-`baseRef`, `mergeBase`, `projectRules`, `deltaFile`, `notes`, `depsInstall`.
+`tscChangedTail`, `tscErrorCount`, `eslintTail`, `eslintScope`, `eslintJson`,
+`changedFiles`, `baseRef`, `mergeBase`, `projectRules`, `deltaFile`, `notes`,
+`depsInstall`.
 
 `notes` containing `changed-files-mismatch:<got>-vs-<expected>` means the
 merge-base still disagrees with the PR. Use the `files` list from `gh pr view`
@@ -435,6 +436,52 @@ standing debt - do not try to infer that from the raw tail:
   check step to your language's compiler/linter equivalents.
 
 A failing CI build or test = Critical finding input.
+
+#### Bot-comment pre-emption (runs right after `worktree.json` lands)
+
+The bot reviewers (Greptile, Gemini, CodeRabbit) bill for a predictable class of
+comment, and most of that class is either the repo's own eslint config or a
+pattern they have already raised in this repo many times. Both are knowable
+before the PR exists, so collect them deterministically instead of asking an
+agent to guess:
+
+```bash
+# 1. Lint pre-flight - the repo's linter is the authority for this class.
+#    Skip when eslintJson is null (scan with no worktree, no eslint config, an
+#    eslint crash, or the repo-wide fallback, whose contents are standing debt).
+LEKKER_WORKTREE_PATH=<worktreePath> \
+node ${SKILL_ROOT}/scripts/lint-findings.mjs \
+  <eslintJson from worktree.json> <scratchpad>/preflight.json
+
+# 2. Bot-comment patterns - refresh only when the mined section for this repo
+#    is missing or older than 30 days; it is history, it does not change hourly.
+#    Needs `gh` auth with read access to the repo's PR review comments.
+BP="${LEKKER_DATA_DIR:-$HOME/.cache/lekker-review}/bot-patterns.md"
+if ! grep -q "^## <REPO_SLUG>$" "$BP" 2>/dev/null \
+   || [[ -n "$(find "$BP" -mtime +30 2>/dev/null)" ]]; then
+  ${SKILL_ROOT}/scripts/mine-bot-comments.sh <REPO_SLUG>
+fi
+```
+
+The mined file lives outside the skill directory on purpose: a plugin update
+replaces the skill directory and would wipe the history.
+
+Then set, for use in CONTEXT_FILE and Step 3:
+- `PREFLIGHT_FILE` = `<scratchpad>/preflight.json` when step 1 ran, else null.
+- `BOT_PATTERNS_FILE` = the `bot-patterns.md` path when it contains a
+  `## <REPO_SLUG>` section, else null. Never pass a file with no section for
+  this repo: another repo's patterns are noise.
+
+Read `preflight.json`'s `summary.status`. It is `clean` (lint ran, nothing to
+report), `issues`, `empty-report`, `not-an-eslint-json-report`, or
+`unreadable: <reason>`. Only `clean` licenses saying the lint is green; every
+other non-`issues` value, and a null `eslintJson`, means the lint verdict is
+UNKNOWN and the review header must say so rather than implying a pass.
+
+**These findings do not go through the review agents or the verifier.** eslint
+already proved them by running, the agents are told (via `preflightFile`) not to
+re-report them, and a verifier asking "does this fail at runtime?" of a lint
+rule would drop it. Merge them in at Step 3 instead.
 
 When depth=scan: set `WORKTREE_PATH=null` without launching the script - unless
 `FIX_MODE=true`, in which case run the script anyway (fix mode cannot edit code
@@ -513,6 +560,8 @@ Write `<scratchpad>/context.json` with keys:
   "houseRulesFile":  "${SKILL_ROOT}/references/house-rules.md",
   "reviewTarget":    "<TARGET_LABEL, e.g. 'PR #412' or 'branch feat/offline-orders'>",
   "prePush":         "<true in MODE=branch, false in MODE=pr>",
+  "preflightFile":   "<PREFLIGHT_FILE, or null>",
+  "botPatternsFile": "<BOT_PATTERNS_FILE, or null>",
   "depsReport":      "<deps-report.json contents at depth deps, else null>",
   "depsInstall":     "<worktree.json depsInstall>",
   "prBody":          "<PR body at depth deps, else omit>"
@@ -792,6 +841,39 @@ never post it as an inline comment. With no worktree (scan), skip this and do
 not claim the lines were checked. Print the summary counts only when something
 was remapped or nulled.
 
+**Merge the lint pre-flight findings.** `preflight.json`'s `findings` array is
+part of the review's finding set, not a separate report. Concatenate it with the
+workflow's `findings` (after the line check above: lint lines come from eslint
+and need no remapping) BEFORE formatting, and:
+
+- Keep the severity `lint-findings.mjs` assigned (eslint error -> `important`,
+  warning -> `idiomatic`). Never promote one to Critical: a lint rule is not an
+  outage.
+- Mark each one `🤖 predicted bot comment` in the review body, so the author can
+  see which findings exist because a bot would otherwise have charged for them.
+- Say plainly that they were NOT adversarially verified and did not need to be:
+  eslint proved them by running. Give the receipt - `eslint: <messageCount>
+  message(s) across <ruleCount> rule(s)` from `summary`.
+- If a workflow finding duplicates a pre-flight one (same file, same rule, or
+  the same claim within ~20 lines), keep the pre-flight one and drop the
+  agent's. The linter's wording is exact and the agent's is a paraphrase of it.
+- When `summary.status` is not `clean` or `issues`, add one line to the header
+  saying the lint verdict is unknown and why. Do not imply a clean lint.
+
+The merged set is what goes into `findings.json`, so fix mode applies the lint
+findings alongside everything else - which is the point: they are the cheapest
+fixes in the review and the ones the bots would have billed for.
+
+**Record the prediction** (needs a PR number, so pr mode only; branch mode does
+this in Step 4.6 after the PR is created):
+
+```bash
+# Only when the bots have NOT commented yet - scoring a prediction made after
+# the fact would grade against comments already visible in the review context.
+node ${SKILL_ROOT}/scripts/bot-precision.mjs record \
+  --repo <REPO_SLUG> --pr <PR_NUMBER> --predicted <scratchpad>/findings.json
+```
+
 **Pick the closer** (skip when `FUN=false`): once the verdict is decided, run
 the picker ONCE and keep its JSON as `CLOSER` for the rest of the run, so the
 terminal, saved file, artifact and GitHub body all show the same joke:
@@ -1034,8 +1116,16 @@ Rules for each answer:
   "$local_branch" --title "$pr_title" --body-file "$pr_body_file"`. Derive the title
   from the commit log (the recommended prefix plus a summary of the change) and
   the body from a short summary of what the branch does - do not leave either
-  as a placeholder. Report the PR url. The review is already saved locally;
-  offer `--post` on the new PR number only if the user asks - findings that fix
+  as a placeholder. Report the PR url. Then record the prediction against the
+  new PR number - a branch-mode review is the ideal case for this, because the
+  prediction provably predates every bot comment:
+
+  ```bash
+  node ${SKILL_ROOT}/scripts/bot-precision.mjs record \
+    --repo "$repo_slug" --pr <NEW_PR_NUMBER> --predicted <scratchpad>/findings.json
+  ```
+
+  The review is already saved locally; offer `--post` on the new PR number only if the user asks - findings that fix
   mode already applied must never be posted as review comments.
 - **Push only:** `git push -u origin "$local_branch"` and stop. Say in one line
   that no PR was created.
@@ -1074,6 +1164,21 @@ Follow `references/github-post.md`:
   fixes in one line of the review body instead.
 
 ### Housekeeping (skip when depth=scan, optional)
+
+**Score the bot prediction** (pr mode, when a prediction was recorded for this
+PR and the bots have had their turn, e.g. on a re-review):
+
+```bash
+node ${SKILL_ROOT}/scripts/bot-precision.mjs score \
+  --repo <REPO_SLUG> --pr <PR_NUMBER>
+node ${SKILL_ROOT}/scripts/bot-precision.mjs summary
+```
+
+Report the precision/recall line verbatim. Recall is the number that matters:
+of what the bots raised, how much the review had already found. Low precision
+is not failure, the review may find things the bots never would. `0 bot
+comment(s)` is ambiguous (nothing found, or the bots have not run yet); never
+turn it into a 100% claim. Store: `~/.cache/lekker-review/bot-precision.jsonl`.
 
 If you maintain a persistent notes/memory system across reviews, launch ONE
 background Agent with `model: 'haiku'`, passing the review file path +
