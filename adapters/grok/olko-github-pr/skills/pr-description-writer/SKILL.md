@@ -119,10 +119,10 @@ For a PR likely to receive Codex review, use Notes to state its review scope. Cr
 while edits are still arriving when the user's workflow allows. When the branch is ready, use
 `codexloop`'s review-state check before requesting review. Check the selected repository under
 ChatGPT Settings → Code Review: repository-level automatic review can override personal
-preferences, and its scope and trigger determine whether this PR should already be reviewed. If
-automatic review is on for this PR, wait for it; if status is unknown, verify the repository
-setting; if it is off, request one review only when Codex has not reviewed the current head and no
-request is already pending. The minimum reporting severity controls which findings Codex reports;
+preferences, and its scope and trigger determine whether this PR should already be reviewed. Also
+check Exhaustive review. If automatic review is on for this PR, wait for it; if status is unknown,
+verify the repository setting; if it is off, request one review only when Codex has not reviewed the
+current head and no request is already pending. The minimum reporting severity controls which findings Codex reports;
 do not describe it as reducing compute or usage without evidence. Check whether automatic security
 review is enabled too, since it may run whenever code review runs.
 The state script does not see human-authored review requests: inspect the PR conversation with
