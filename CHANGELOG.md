@@ -1,3 +1,10 @@
+## [1.54.1](https://github.com/oleg-koval/agent-skills/compare/v1.54.0...v1.54.1) (2026-10-17)
+
+
+### 📚 Documentation
+
+* **github-actions:** harden NAS runner migration guidance ([#133](https://github.com/oleg-koval/agent-skills/issues/133)) ([94516ca](https://github.com/oleg-koval/agent-skills/commit/94516ca0299b012daa7869dca00a9b236d2a3e8d))
+
 # [1.54.0](https://github.com/oleg-koval/agent-skills/compare/v1.53.0...v1.54.0) (2026-10-17)
 
 
