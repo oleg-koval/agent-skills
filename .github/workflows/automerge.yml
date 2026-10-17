@@ -41,7 +41,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          prs="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number --jq '[.[].number]')"
+          prs="$(gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" \
+            | jq -s 'add | map(.number)')"
           printf 'pr-numbers=%s\n' "$prs" >> "$GITHUB_OUTPUT"
 
   retry:
@@ -93,9 +95,6 @@ jobs:
   manual:
     if: github.event_name == 'workflow_dispatch' && inputs.pr-number != ''
     runs-on: ubuntu-latest
-    concurrency:
-      group: automerge-${{ inputs.pr-number }}
-      cancel-in-progress: false
     steps:
       - name: Record merge state before evaluation
         id: premerge
