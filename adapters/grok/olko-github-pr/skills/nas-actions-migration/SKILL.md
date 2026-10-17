@@ -59,9 +59,18 @@ Use when asked to move Actions/CI jobs to a NAS, copy the Roazon/Funda Radar run
      || github.event.pull_request.head.repo.full_name == github.repository
    ```
 
-   Guard each job independently. Never rely on a downstream job's guard to protect an unguarded dependency. Add exact toolchain setup because runner images may not contain Node, Bun, browsers, Docker, or compatible system libraries.
+   Guard each job independently. Never rely on a downstream job's guard to protect an unguarded dependency. If the hosted fallback should continue running fork PR checks while NAS mode excludes them, use the three-part guard:
 
-5. **Document provisioning and rollback.** Provide the target repo's exact runner name, label, container/image, dedicated work directory, ephemeral/restart settings, required tool installation, safe secret storage, and health check. For persistent runners, use a narrowly scoped fine-grained PAT with repository Administration read/write in the NAS secret store; pass it as `ACCESS_TOKEN` only via a root-readable env file. Do not print, commit, message, or substitute a short-lived registration token for a restart-persistent credential. Never reuse another repo's `/_work` or token.
+   ```yaml
+   if: >-
+     vars.CI_RUNNER != 'nas'
+     || github.event_name != 'pull_request'
+     || github.event.pull_request.head.repo.full_name == github.repository
+   ```
+
+   Add `workflow_dispatch` to a workflow's `on:` triggers if the provisioning/verification instructions dispatch it manually. Add exact toolchain setup because runner images may not contain Node, Bun, browsers, Docker, or compatible system libraries.
+
+5. **Document provisioning and rollback.** Provide the target repo's exact runner name, label, container/image, dedicated work directory, ephemeral/restart settings, required tool installation, safe secret storage, and health check. For persistent `myoung34/github-runner` containers, use a narrowly scoped fine-grained PAT with repository Administration read/write in the NAS secret store; pass it as `ACCESS_TOKEN` only via a root-readable env file and set `UNSET_CONFIG_VARS=true`. Verify the selected image's entrypoint supports this option; it must unset `ACCESS_TOKEN` and other setup credentials after registration and before starting the listener. Add a preflight check before running downloaded or repository-controlled tooling to fail if `ACCESS_TOKEN` reached job steps. Do not print, commit, message, or substitute a short-lived registration token for a restart-persistent credential. Never reuse another repo's `/_work` or token.
 
    Document rollback as deleting the opt-in variable, which routes eligible jobs back to `ubuntu-latest`. State that this fallback still depends on GitHub Actions billing being available.
 
