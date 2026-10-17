@@ -233,6 +233,27 @@
           ]
         },
         {
+          "name": "nas-actions-migration",
+          "lookupName": "olko:nas-actions-migration",
+          "path": "plugins/olko-github-pr/skills/nas-actions-migration",
+          "description": "Safely migrates trusted GitHub Actions jobs to a repository-scoped NAS runner, with fork guards, credential boundaries, rollback, and verified activation.",
+          "tags": [
+            "github-actions",
+            "self-hosted-runner",
+            "nas",
+            "ci",
+            "deployment",
+            "migration"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok"
+          ]
+        },
+        {
           "name": "dependabot-triage",
           "lookupName": "olko:dependabot-triage",
           "path": "plugins/olko-github-pr/skills/dependabot-triage",
