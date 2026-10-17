@@ -1,3 +1,10 @@
+## [1.55.2](https://github.com/oleg-koval/agent-skills/compare/v1.55.1...v1.55.2) (2026-10-17)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** deduplicate automerge release dispatch ([#138](https://github.com/oleg-koval/agent-skills/issues/138)) ([5ab6fdc](https://github.com/oleg-koval/agent-skills/commit/5ab6fdcee651a654355f566ae10056a11710bb62))
+
 ## [1.55.1](https://github.com/oleg-koval/agent-skills/compare/v1.55.0...v1.55.1) (2026-10-17)
 
 
