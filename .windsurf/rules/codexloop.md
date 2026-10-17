@@ -19,9 +19,15 @@ suggestion applied is worse than the comment itself.
 - **Trigger phrase is `@codex review`.** Codex reviews automatically when a PR opens or gets new
   commits if auto-review is enabled on the repo; the mention forces a fresh pass. Other useful
   mentions: `@codex review focus on <area>` for a scoped re-review.
-- **Review requests consume usage.** Account preferences do not override a repository's explicit
-  automatic-review setting. Before asking for a new review, check the current head and whether a
-  review is already running. Never request a second review merely because the first is slow.
+- **Review requests consume usage.** A repository's Code Review settings can override personal
+  preferences. Before diagnosing an unexpected review or requesting one manually, inspect the
+  selected repository under ChatGPT Settings → Code Review. Check Automatic review, its PR scope
+  and trigger, Exhaustive review, and Auto security review; security review may run whenever code
+  review runs. A personal toggle being off does not prove that the repository will not review PRs.
+  The minimum reporting severity controls which findings Codex reports; do not present it as a
+  compute-saving control without evidence. Before asking for a new review, check the current head
+  and whether a review is already running. Never request a second review merely because the first
+  is slow.
 - **Priority, not confidence.** Codex findings usually lead with a severity/priority word (`P1`,
   `P2`, `P3` or `critical`/`major`/`minor`) or a short titled heading. Weight the top tier
   seriously; treat the bottom tier as usually-skippable nits unless clearly correct.
@@ -125,9 +131,10 @@ head, so threads left open on purpose cannot make the push look reviewed.
 - Exit `10` (`findings`): go to B. On iteration 1 this is whatever Codex (or another bot)
   already posted.
 - Exit `20` (`pending`): if automatic-review status is unknown, wait up to 600 seconds first so a
-  review already in progress can land. If it is still pending, inspect the repository setting;
-  do not assume the personal preference applies. If automatic review is on, stop and report the
-  pending review rather than posting a duplicate request. If automatic review is off and no
+  review already in progress can land. If it is still pending, inspect that repository's Code
+  Review settings, including its automatic-review scope and trigger; do not assume the personal
+  preference applies. If automatic review is on for this PR, stop and report the pending review
+  rather than posting a duplicate request. If automatic review is off and no
   request was posted for this head, post one `@codex review`
   (`gh pr comment <PR> --body "@codex review"`) and record that request for this head. Then wait
   with the same command plus `--wait 600`. Run the
