@@ -141,9 +141,10 @@ head, so threads left open on purpose cannot make the push look reviewed.
 - Exit `20` (`pending`): if automatic-review status is unknown, wait up to 600 seconds first so a
   review already in progress can land. If it is still pending, inspect that repository's Code
   Review settings, including its automatic-review scope and trigger; do not assume the personal
-  preference applies. If automatic review is on for this PR, stop and report the pending review
-  rather than posting a duplicate request. If automatic review is off and no
-  request was posted for this head, post one `@codex review`
+  preference applies. If automatic review is on for this PR and its configured scope and trigger cover
+  the current head, stop and report the pending review rather than posting a duplicate request. If
+  automatic review is off or its configured scope and trigger do not cover this head, and no request
+  was posted for this head, post one `@codex review`
   (`gh pr comment <PR> --body "@codex review"`) and record that request for this head. Then wait
   with the same command plus `--wait 600`. Run the
   wait in the background where the host allows it (Claude Code: Bash `run_in_background`; you are
