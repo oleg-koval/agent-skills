@@ -9,7 +9,12 @@
 // the authority for this class of finding, not an LLM.
 //
 // Usage:
-//   node lint-findings.mjs <eslint-json-file> <out-findings-json> [--max N]
+//   node lint-findings.mjs <eslint-json-file> <out-findings-json> [--max N] [--base <sha>]
+//
+// --base keeps only messages on lines the change added (git diff -U0 <sha> HEAD
+// in LEKKER_WORKTREE_PATH). eslint lints whole files, but bots comment on diff
+// lines, so standing debt elsewhere in a touched file is not a prediction and
+// must not reach fix mode. The dropped count is reported as summary.outOfDiff.
 //
 // Reads an `eslint -f json` report. Writes {"findings":[...], "summary": {...}}
 // where each finding matches the FINDINGS_SCHEMA shape used by workflow.js,
@@ -18,18 +23,21 @@
 // Findings are grouped by ruleId so a rule that fires 40 times produces one
 // finding listing the other sites, not 40 findings that drown the review.
 
+import { execFileSync } from 'node:child_process';
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative } from 'node:path';
 
 const [, , inPath, outPath, ...rest] = process.argv;
 
 if (!inPath || !outPath) {
-  console.error('usage: lint-findings.mjs <eslint-json-file> <out-json> [--max N]');
+  console.error('usage: lint-findings.mjs <eslint-json-file> <out-json> [--max N] [--base <sha>]');
   process.exit(2);
 }
 
 const maxIdx = rest.indexOf('--max');
 const MAX_FINDINGS = maxIdx === -1 ? 25 : Number(rest[maxIdx + 1]) || 25;
+const baseIdx = rest.indexOf('--base');
+const BASE = baseIdx === -1 ? null : rest[baseIdx + 1];
 
 // eslint severity 2 = error, 1 = warning.
 //
@@ -65,6 +73,57 @@ if (!Array.isArray(report)) bail('not-an-eslint-json-report', 'report is not an 
 // eslint emits one entry per linted file, so [] means nothing was linted.
 if (report.length === 0) bail('empty-report', 'eslint report lists no files');
 
+// Resolve symlinks on both sides: on macOS /tmp is /private/tmp, so eslint's
+// filePath and the worktree path given here can spell the same dir differently.
+function real(p) {
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
+}
+
+const repoRoot = process.env.LEKKER_WORKTREE_PATH ? real(process.env.LEKKER_WORKTREE_PATH) : '';
+
+function relativize(p) {
+  if (!repoRoot || !isAbsolute(p)) return p;
+  const rel = relative(repoRoot, real(p));
+  return rel.startsWith('..') ? p : rel;
+}
+
+// repo-relative path -> Set of line numbers the change added, or null when no
+// --base was given or git could not answer (then nothing is filtered).
+function addedLines() {
+  if (!BASE || !repoRoot) return null;
+  let out;
+  try {
+    out = execFileSync('git', ['-C', repoRoot, 'diff', '-U0', '--no-color', BASE, 'HEAD'], {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch {
+    return null;
+  }
+  const added = new Map();
+  let file = null;
+  for (const line of out.split('\n')) {
+    if (line.startsWith('+++ ')) {
+      file = line === '+++ /dev/null' ? null : line.slice(6);
+      if (file && !added.has(file)) added.set(file, new Set());
+      continue;
+    }
+    const hunk = file && /^@@ -\S+ \+(\d+)(?:,(\d+))? @@/.exec(line);
+    if (!hunk) continue;
+    const start = Number(hunk[1]);
+    const count = hunk[2] === undefined ? 1 : Number(hunk[2]);
+    for (let i = 0; i < count; i++) added.get(file).add(start + i);
+  }
+  return added;
+}
+
+const added = addedLines();
+let outOfDiff = 0;
+
 // Group every message by ruleId. Parse errors arrive with ruleId null; they are
 // real and worth surfacing, so they get their own bucket.
 const byRule = new Map();
@@ -73,7 +132,16 @@ let messageCount = 0;
 for (const file of report) {
   const filePath = String(file?.filePath ?? '');
   for (const m of file?.messages ?? []) {
+    // A message with no ruleId is a parse error only when eslint marks it
+    // fatal. The rest are notices such as "File ignored because of a matching
+    // ignore pattern", which flag nothing wrong with the code.
+    if (!m.ruleId && !m.fatal) continue;
     const ruleId = m.ruleId ?? 'parse-error';
+    // A parse error breaks the whole file, so it counts wherever it lands.
+    if (added && ruleId !== 'parse-error' && !added.get(relativize(filePath))?.has(m.line)) {
+      outOfDiff++;
+      continue;
+    }
     messageCount++;
     if (!byRule.has(ruleId)) {
       byRule.set(ruleId, { ruleId, severity: m.severity ?? 2, fixable: false, sites: [] });
@@ -99,24 +167,6 @@ const buckets = [...byRule.values()].sort((a, b) => {
   if (b.severity !== a.severity) return b.severity - a.severity;
   return b.sites.length - a.sites.length;
 });
-
-// Resolve symlinks on both sides: on macOS /tmp is /private/tmp, so eslint's
-// filePath and the worktree path given here can spell the same dir differently.
-function real(p) {
-  try {
-    return realpathSync(p);
-  } catch {
-    return p;
-  }
-}
-
-const repoRoot = process.env.LEKKER_WORKTREE_PATH ? real(process.env.LEKKER_WORKTREE_PATH) : '';
-
-function relativize(p) {
-  if (!repoRoot || !isAbsolute(p)) return p;
-  const rel = relative(repoRoot, real(p));
-  return rel.startsWith('..') ? p : rel;
-}
 
 // The offending source line, so badCode is code and not a location string.
 function sourceLine(file, line) {
@@ -152,13 +202,16 @@ const findings = buckets.slice(0, MAX_FINDINGS).map(bucket => {
     badCode:
       sourceLine(first.file, first.line) ?? `${relativize(first.file)}:${first.line}:${first.column}`,
     fix: bucket.fixable
-      ? `Run \`npx eslint --fix\` on the changed files, then re-read the hunk - the autofix is authoritative here.`
+      ? `Apply eslint's autofix for \`${bucket.ruleId}\` to the cited lines only, then re-read the hunk. ` +
+        `A file-wide \`eslint --fix\` also rewrites lines this change did not touch.`
       : `Resolve \`${bucket.ruleId}\` as the config intends. Check what the rule permits before ` +
         `substituting another form: a config that bans one idiom often bans its obvious replacement too.`,
     rule: `LINT:${bucket.ruleId}`,
     botPredicted: true,
     lintFixable: bucket.fixable,
     lintSiteCount: bucket.sites.length,
+    // Every site, so bot-precision can match a bot comment on any of them.
+    lintSites: bucket.sites.map(s => ({ file: relativize(s.file), line: s.line })),
   };
 });
 
@@ -169,6 +222,7 @@ const result = {
     ruleCount: byRule.size,
     messageCount,
     truncated: Math.max(0, buckets.length - findings.length),
+    outOfDiff,
   },
 };
 

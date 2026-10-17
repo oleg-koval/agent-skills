@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Mine real Greptile / Gemini review comments from a repo's merged PR history
+# Mine real Greptile / Gemini review comments from a repo's newest PR review comments
 # and cluster them into the patterns worth pre-empting.
 #
 # Why this exists: predicting bot-reviewer comments from a model's intuition is
@@ -38,10 +38,15 @@ LIMIT=400
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --limit) LIMIT="${2:-400}"; shift 2 ;;
+        --limit) LIMIT="${2:-}"; shift; [[ $# -gt 0 ]] && shift ;;
         *)       OUT_MD="$1"; shift ;;
     esac
 done
+
+if ! [[ "$LIMIT" =~ ^[1-9][0-9]*$ ]]; then
+    echo "mine-bot-comments: --limit needs a positive integer, got '$LIMIT'" >&2
+    exit 2
+fi
 
 mkdir -p "$(dirname "$OUT_MD")"
 
@@ -78,7 +83,8 @@ BOT_RE = re.compile(r'gemini-code-assist|greptile|coderabbit', re.I)
 
 
 def is_bot(c):
-    return bool(BOT_RE.search((c.get("user") or {}).get("login", "")))
+    # A reply in a bot's own thread ("Thanks, updated") is not a new finding.
+    return bool(BOT_RE.search((c.get("user") or {}).get("login", ""))) and not c.get("in_reply_to_id")
 
 
 bot_comments = [c for c in comments if is_bot(c)]
@@ -112,9 +118,10 @@ we i be his her they code line file change changes when which what while also"""
 def signature(claim):
     words = re.findall(r'[a-z]+', claim.lower())
     words = [w for w in words if len(w) > 3 and w not in STOP]
-    # The 6 rarest-feeling words are a good enough fingerprint at this scale;
-    # sorted so wording order does not split one pattern into two clusters.
-    return tuple(sorted(set(words))[:6])
+    # The 6 longest words are a good enough fingerprint at this scale: short
+    # common words carry little. Ties break alphabetically so wording order
+    # does not split one pattern into two clusters.
+    return tuple(sorted(set(words), key=lambda w: (-len(w), w))[:6])
 
 
 # A curated taxonomy on top of the free-text clustering. Fingerprint clustering
@@ -229,6 +236,13 @@ else:
 
 body = "\n".join(lines)
 
+# The file is shared by every repo, so two reviews mining at once must not
+# lose each other's sections: hold a lock across read-modify-write, and replace
+# the file atomically so a reader never sees half of it.
+import fcntl, tempfile
+lock = open(out_md + ".lock", "w")
+fcntl.flock(lock, fcntl.LOCK_EX)
+
 existing = ""
 if os.path.exists(out_md):
     with open(out_md) as f:
@@ -252,8 +266,11 @@ if pattern.search(existing):
 else:
     existing = existing.rstrip() + "\n\n" + body
 
-with open(out_md, "w") as f:
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(out_md)), prefix=".bot-patterns.")
+with os.fdopen(fd, "w") as f:
     f.write(existing)
+os.replace(tmp, out_md)
+fcntl.flock(lock, fcntl.LOCK_UN)
 
 print("mine-bot-comments: %d bot comment(s) -> %d pattern(s) -> %s"
       % (len(bot_comments), len(merged), out_md))

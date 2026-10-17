@@ -428,12 +428,42 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   check('lint: a non-array report is not clean', lint('obj', '{}').out.summary.status, 'not-an-eslint-json-report')
   const missing = lint('missing')
   check('lint: a missing report is unknown, exit 0', [missing.status, missing.out.summary.status.startsWith('unreadable:')], [0, true])
+  check('lint: every site is carried for scoring', issues.out.findings[0].lintSites.map(x => `${x.file}:${x.line}`), ['web/a.ts:3', 'web/a.ts:7', 'web/b.ts:1'])
+  const notices = lint('notices', JSON.stringify([{ filePath: '/wt/web/e.ts', messages: [
+    { ruleId: null, severity: 1, line: 0, message: 'File ignored because of a matching ignore pattern.' },
+    { ruleId: null, fatal: true, severity: 2, line: 4, message: 'Parsing error: Unexpected token' },
+  ] }]))
+  check('lint: an ignored-file notice is not a finding, a fatal parse error is',
+    [notices.out.summary.messageCount, notices.out.findings.map(f => f.rule)], [1, ['LINT:parse-error']])
+
+  // --base: only lines the change added count. A real repo, since the filter
+  // reads git diff -U0 <base> HEAD in the worktree.
+  const repo = join(tmp, 'diffrepo')
+  mkdirSync(join(repo, 'web'), { recursive: true })
+  const git = (...a) => spawnSync('git', ['-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { encoding: 'utf8' })
+  git('init', '-q')
+  wf(join(repo, 'web', 'f.ts'), 'one\ntwo\nthree\n')
+  git('add', '.'); git('commit', '-qm', 'base')
+  const base = git('rev-parse', 'HEAD').stdout.trim()
+  wf(join(repo, 'web', 'f.ts'), 'one\nTWO\nthree\nfour\n')
+  git('commit', '-qam', 'change')
+  const inDiff = (() => {
+    const inPath = join(tmp, 'diff.json'), outPath = join(tmp, 'diff.out.json')
+    wf(inPath, JSON.stringify([{ filePath: join(repo, 'web', 'f.ts'), messages: [
+      msg('no-console', 1), msg('no-console', 2), msg('no-unused-vars', 4),
+      { ruleId: null, fatal: true, severity: 2, line: 1, message: 'Parsing error' },
+    ] }]))
+    spawnSync('node', [script('lint-findings.mjs'), inPath, outPath, '--base', base], { encoding: 'utf8', env: { ...process.env, LEKKER_WORKTREE_PATH: repo } })
+    return JSON.parse(rf(outPath, 'utf8'))
+  })()
+  check('lint --base: untouched lines dropped, added lines and parse errors kept',
+    [inDiff.summary.messageCount, inDiff.summary.outOfDiff, inDiff.findings.flatMap(f => f.lintSites.map(x => x.line)).sort()], [3, 1, [1, 2, 4]])
 
   const store = join(tmp, 'precision.jsonl')
   const prec = args => spawnSync('node', [script('bot-precision.mjs'), ...args, '--jsonl', store], { encoding: 'utf8' })
   const predicted = join(tmp, 'issues.out.json')
   const rec = prec(['record', '--repo', 'acme/app', '--pr', '7', '--predicted', predicted])
-  check('precision: record appends one prediction', [rec.status, JSON.parse(rf(store, 'utf8').trim()).predictedCount], [0, 2])
+  check('precision: record appends one prediction per lint site', [rec.status, JSON.parse(rf(store, 'utf8').trim()).predictedCount], [0, 4])
   check('precision: lint findings are tagged lint-preflight',
     JSON.parse(rf(store, 'utf8').trim()).predicted.every(p => p.source === 'lint-preflight'), true)
   check('precision: no prediction scores as nothing, not 0%', /no recorded prediction/.test(prec(['score', '--repo', 'acme/app', '--pr', '8']).stdout), true)
@@ -455,6 +485,7 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   const bin = join(tmp, 'bin')
   mkdirSync(bin)
   const comments = [
+    { user: { login: 'greptile-apps[bot]' }, path: 'src/a.ts', in_reply_to_id: 1, html_url: 'https://x/r', body: 'Thanks for the update, this looks resolved now to me.' },
     ...[1, 2, 3].map(i => ({ user: { login: 'greptile-apps[bot]' }, path: 'src/a.ts', html_url: `https://x/${i}`, body: 'This type cast bypasses the compiler and hides a real mismatch here.' })),
     { user: { login: 'gemini-code-assist[bot]' }, path: 'src/b.ts', html_url: 'https://x/4', body: 'The promise is not awaited, so errors are silently ignored by the caller.' },
     { user: { login: 'a-human' }, path: 'src/c.ts', html_url: 'https://x/5', body: 'Humans are not mined, only the bots are counted here.' },
@@ -467,6 +498,8 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
     bot('gemini-code-assist[bot]', 'web/c.ts', 5),
     bot('greptile-apps[bot]', 'web/b.ts', 50),
     bot('a-human', 'web/a.ts', 100),
+    { ...bot('greptile-apps[bot]', 'web/x.ts', 1), in_reply_to_id: 1 },
+    { ...bot('greptile-apps[bot]', 'web/y.ts', 1), created_at: '2000-01-01T00:00:00Z' },
   ]]))
   wf(join(bin, 'gh'), [
     '#!/bin/sh',
@@ -488,10 +521,16 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   wf(pr9, JSON.stringify([{ file: 'web/a.ts', line: 3 }, { file: 'web/a.ts', line: 100 }, { file: 'web/b.ts', line: null }]))
   const score9 = args => spawnSync('node', [script('bot-precision.mjs'), ...args, '--jsonl', store], { encoding: 'utf8', env: ghEnv })
   score9(['record', '--repo', 'acme/app', '--pr', '9', '--predicted', pr9])
+  // A later prediction (a re-review after the bots ran) must not be scored.
+  const late = join(tmp, 'pr9-late.json')
+  wf(late, JSON.stringify([{ file: 'web/c.ts', line: 5 }]))
+  score9(['record', '--repo', 'acme/app', '--pr', '9', '--predicted', late])
   const s9 = score9(['score', '--repo', 'acme/app', '--pr', '9'])
   const last = () => rf(store, 'utf8').trim().split('\n').map(l => JSON.parse(l)).filter(r => r.kind === 'score').pop()
   const sc = last()
-  check('precision: score counts only bot comments', [s9.status, sc.botCommentCount], [0, 3])
+  check('precision: score counts only bot comments, no replies', [s9.status, sc.botCommentCount], [0, 3])
+  check('precision: comments older than the prediction excluded', sc.preexistingExcluded, 1)
+  check('precision: the first prediction is scored, not a later one', sc.predictedCount, 3)
   check('precision: precision and recall', [sc.predictedAndRaised, sc.botCommentsPredicted, sc.precision.toFixed(3), sc.recall.toFixed(3)], [2, 2, '0.667', '0.667'])
   check('precision: a null line is "no line", not line 0', sc.predictedAndRaised, 2)
   check('precision: missed comments listed', sc.missedBotComments.map(c => c.path), ['web/c.ts'])
@@ -506,6 +545,8 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   check('mine: a repeated claim is one pattern with its count', /\*\*x3\*\* - This type cast/.test(md1), true)
   check('mine: categories table', /\| 3 \| type cast \/ any \|/.test(md1), true)
   check('mine: section carries its own mined date', md1.includes(`## acme/app\n<!-- mined: ${new Date().toISOString().slice(0, 10)} -->`), true)
+  const noLimit = spawnSync('bash', [script('mine-bot-comments.sh'), 'acme/app', out, '--limit'], { encoding: 'utf8', env: ghEnv, timeout: 10000 })
+  check('mine: --limit with no value fails fast', noLimit.status, 2)
   const empty = mine('acme/empty')
   check('mine: a repo with no bot comments still gets a section', [empty.status, rf(out, 'utf8').includes('## acme/empty\n<!-- mined: ')], [0, true])
   mine('acme/other')

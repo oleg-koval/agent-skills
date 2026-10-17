@@ -106,11 +106,13 @@ function fetchBotComments(repo, pr) {
     if (Array.isArray(page)) flat.push(...page);
     else if (page) flat.push(page);
   }
+  // Replies in a bot's own thread ("Thanks, updated") are not new findings.
   return flat
-    .filter(c => BOT_RE.test(c?.user?.login || ''))
+    .filter(c => BOT_RE.test(c?.user?.login || '') && !c.in_reply_to_id)
     .map(c => ({
       path: c.path,
       line: c.line ?? c.original_line,
+      createdAt: c.created_at || null,
       author: c.user.login,
       url: c.html_url,
       claim: String(c.body || '')
@@ -137,14 +139,18 @@ if (cmd === 'record') {
     die(`could not read predictions: ${err.message}`);
   }
   const findings = Array.isArray(parsed) ? parsed : parsed.findings || [];
-  const predicted = findings.map(f => ({
-    file: f.file,
-    line: f.line,
-    title: f.title,
-    rule: f.rule || null,
-    severity: f.severity || null,
-    source: f.botPredicted ? 'lint-preflight' : 'review-agent',
-  }));
+  // A grouped lint finding stands for every site it lists; a bot comment on
+  // any of them was predicted.
+  const predicted = findings.flatMap(f =>
+    (Array.isArray(f.lintSites) && f.lintSites.length ? f.lintSites : [f]).map(s => ({
+      file: s.file,
+      line: s.line,
+      title: f.title,
+      rule: f.rule || null,
+      severity: f.severity || null,
+      source: f.botPredicted ? 'lint-preflight' : 'review-agent',
+    })),
+  );
   append({
     kind: 'prediction',
     repo,
@@ -162,9 +168,11 @@ if (cmd === 'score') {
   const pr = flag('pr');
   if (!repo || !pr) die('usage: bot-precision.mjs score --repo <slug> --pr <n>');
 
-  const prediction = readRecords()
-    .filter(r => r.kind === 'prediction' && r.repo === repo && r.pr === Number(pr))
-    .pop();
+  // The FIRST prediction is the one made before the bots ran; a re-review
+  // records another after seeing their comments.
+  const prediction = readRecords().find(
+    r => r.kind === 'prediction' && r.repo === repo && r.pr === Number(pr),
+  );
   if (!prediction) {
     // No prediction is "unknown", not "0% precision" - scoring an unrecorded
     // review would manufacture a number out of a missing input.
@@ -172,12 +180,16 @@ if (cmd === 'score') {
     process.exit(0);
   }
 
-  let comments;
+  let fetched;
   try {
-    comments = fetchBotComments(repo, pr);
+    fetched = fetchBotComments(repo, pr);
   } catch (err) {
     die(`gh api failed: ${err.message}`, 1);
   }
+  // A comment posted before the prediction was visible when it was made, so
+  // it cannot count as predicted or missed.
+  const comments = fetched.filter(c => !c.createdAt || c.createdAt >= prediction.at);
+  const preexisting = fetched.length - comments.length;
 
   if (comments.length === 0) {
     // Distinguish "the bots left nothing" from "the bots have not run yet":
@@ -206,6 +218,7 @@ if (cmd === 'score') {
     at: new Date().toISOString(),
     predictedCount: prediction.predicted.length,
     botCommentCount: comments.length,
+    preexistingExcluded: preexisting,
     predictedAndRaised: hitPredictions.length,
     botCommentsPredicted: predictedComments.length,
     precision,

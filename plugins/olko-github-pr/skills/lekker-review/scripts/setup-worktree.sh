@@ -346,6 +346,7 @@ for (const f of report) {
     lines.push(`  ${m.line}:${m.column}  ${m.severity === 2 ? "error" : "warning"}  ${m.message}  ${m.ruleId || ""}`);
   }
 }
+if (!errors && !warnings) process.exit(0);
 lines.push(`total: ${errors} error(s), ${warnings} warning(s)`);
 process.stdout.write(lines.slice(-40).join("\n") + "\n");
 ' "$ESLINT_JSON_FILE" > "$rendered" 2>/dev/null
