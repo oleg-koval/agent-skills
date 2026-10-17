@@ -38,7 +38,9 @@ field, and its `file` exists in the worktree.
 - Findings without a `fix` field are review-only. List them as "not
   auto-fixable" in the report; never guess a fix.
 - `observation` and `idiomatic` findings are NEVER auto-fixed. They are
-  judgment calls and non-blocking by definition.
+  judgment calls and non-blocking by definition. The one exception is a lint
+  pre-flight finding (`rule: LINT:*`): an eslint warning is the repo's own
+  configured rule, not a judgment call, so it is eligible at any severity.
 - `PR-1` (title prefix) is not a code fix. Never edit the PR title as part of
   fix mode -- it stays a `⛔ CANNOT MERGE` instruction for the author.
 - Skip any finding whose `file` is generated (`*/generated/*`, lockfiles,
