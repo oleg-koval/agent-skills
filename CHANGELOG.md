@@ -1,3 +1,10 @@
+## [1.55.1](https://github.com/oleg-koval/agent-skills/compare/v1.55.0...v1.55.1) (2026-10-17)
+
+
+### ⚙️ Continuous Integrations
+
+* pin review-safe automerge action ([#137](https://github.com/oleg-koval/agent-skills/issues/137)) ([d0ae3dc](https://github.com/oleg-koval/agent-skills/commit/d0ae3dc99ad951cf885a5dc8134fbb1a763031dc))
+
 # [1.55.0](https://github.com/oleg-koval/agent-skills/compare/v1.54.4...v1.55.0) (2026-10-17)
 
 
