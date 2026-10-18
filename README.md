@@ -137,7 +137,9 @@ cd agent-skills
 
 The installer links all 55 canonical skill packages under
 `${HERMES_HOME:-$HOME/.hermes}/skills/olko-agent-skills/`. It leaves existing paths untouched and
-fails on a collision. Set `HERMES_HOME` to target another profile. Run it again after adding
+fails on a collision. It reports obsolete catalog-owned links without removing them; after
+reviewing those links, run `./scripts/install-hermes-symlinks.sh --prune` to remove them.
+Set `HERMES_HOME` to target another profile. Run the installer again after adding
 skills to an updated checkout, then start a new Hermes session or use `/reload-skills`.
 Use `/skills` to browse or `/wrap-up` to invoke a skill; a skill with a duplicate name can
 be selected by its `olko-agent-skills/<plugin>/<skill>` path.
