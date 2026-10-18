@@ -1,3 +1,10 @@
+## [1.56.1](https://github.com/oleg-koval/agent-skills/compare/v1.56.0...v1.56.1) (2026-10-18)
+
+
+### 🛠 Builds
+
+* **deps:** update semantic release dependencies ([#141](https://github.com/oleg-koval/agent-skills/issues/141)) ([9a41ae1](https://github.com/oleg-koval/agent-skills/commit/9a41ae1de094e9a77026c5da55279852f3af5b84))
+
 # [1.56.0](https://github.com/oleg-koval/agent-skills/compare/v1.55.3...v1.56.0) (2026-10-18)
 
 
