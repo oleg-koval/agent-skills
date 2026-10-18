@@ -1,3 +1,10 @@
+# [1.56.0](https://github.com/oleg-koval/agent-skills/compare/v1.55.3...v1.56.0) (2026-10-18)
+
+
+### ✨ Features
+
+* **hermes:** expose all catalog skills to Hermes Agent ([#140](https://github.com/oleg-koval/agent-skills/issues/140)) ([733d844](https://github.com/oleg-koval/agent-skills/commit/733d8442ba0a2927a4e87af4af43b664b2d001ec))
+
 ## [1.55.3](https://github.com/oleg-koval/agent-skills/compare/v1.55.2...v1.55.3) (2026-10-18)
 
 
