@@ -25,7 +25,8 @@
             "copilot",
             "grok",
             "windsurf",
-            "kiro"
+            "kiro",
+            "hermes"
           ]
         },
         {
@@ -48,7 +49,8 @@
             "copilot",
             "grok",
             "windsurf",
-            "kiro"
+            "kiro",
+            "hermes"
           ]
         },
         {
@@ -72,7 +74,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -93,7 +96,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -116,7 +120,8 @@
             "copilot",
             "grok",
             "windsurf",
-            "kiro"
+            "kiro",
+            "hermes"
           ]
         },
         {
@@ -139,7 +144,8 @@
             "copilot",
             "grok",
             "windsurf",
-            "kiro"
+            "kiro",
+            "hermes"
           ]
         },
         {
@@ -162,7 +168,8 @@
             "copilot",
             "grok",
             "windsurf",
-            "kiro"
+            "kiro",
+            "hermes"
           ]
         },
         {
@@ -185,7 +192,8 @@
             "copilot",
             "grok",
             "windsurf",
-            "kiro"
+            "kiro",
+            "hermes"
           ]
         },
         {
@@ -208,7 +216,8 @@
             "copilot",
             "grok",
             "windsurf",
-            "kiro"
+            "kiro",
+            "hermes"
           ]
         },
         {
@@ -229,7 +238,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -250,7 +260,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -272,7 +283,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -290,7 +302,8 @@
           ],
           "adapters": [
             "codex",
-            "claude"
+            "claude",
+            "hermes"
           ]
         }
       ]
@@ -316,7 +329,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -338,7 +352,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -359,7 +374,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
@@ -388,7 +404,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -413,7 +430,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -438,7 +456,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -459,7 +478,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -484,7 +504,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
@@ -512,7 +533,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -536,7 +558,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -560,7 +583,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -584,7 +608,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -607,7 +632,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
@@ -636,7 +662,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -658,7 +685,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -676,7 +704,8 @@
           ],
           "adapters": [
             "claude",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -697,7 +726,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -720,7 +750,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -742,7 +773,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -758,7 +790,8 @@
           ],
           "adapters": [
             "claude",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -775,7 +808,8 @@
             "documentation"
           ],
           "adapters": [
-            "claude"
+            "claude",
+            "hermes"
           ]
         }
       ]
@@ -802,7 +836,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -825,7 +860,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -849,7 +885,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -873,7 +910,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -896,7 +934,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -919,7 +958,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
@@ -955,7 +995,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -977,7 +1018,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1000,7 +1042,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
@@ -1030,7 +1073,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1054,7 +1098,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
@@ -1083,7 +1128,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
@@ -1110,7 +1156,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1132,7 +1179,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1156,7 +1204,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1177,7 +1226,8 @@
             "claude",
             "cursor",
             "copilot",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1230,7 +1280,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1277,7 +1328,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         },
         {
@@ -1300,7 +1352,8 @@
             "copilot",
             "windsurf",
             "kiro",
-            "grok"
+            "grok",
+            "hermes"
           ]
         }
       ]
