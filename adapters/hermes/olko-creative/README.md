@@ -2,6 +2,11 @@
 
 # Hermes adapter: olko-creative
 
-Use the canonical skills directly:
+Run `./scripts/install-hermes-symlinks.sh` from the repository root to link these skills
+into the active Hermes profile. The canonical packages are:
 
+- `plugins/olko-creative/skills/gallery/SKILL.md`
+- `plugins/olko-creative/skills/fill-music-player/SKILL.md`
+- `plugins/olko-creative/skills/music-to-plex/SKILL.md`
+- `plugins/olko-creative/skills/vinted-listing/SKILL.md`
 - `plugins/olko-creative/skills/wikipedia-uk-editor/SKILL.md`

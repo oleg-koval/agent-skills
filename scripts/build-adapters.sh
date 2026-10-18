@@ -135,7 +135,10 @@ for (const skill of catalog.skills) {
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, 'README.md'), [
       generatedHeader, '', `# ${label} adapter: ${skill.plugin.name}`, '',
-      'Use the canonical skills directly:', '',
+      ...(target === 'hermes'
+        ? ['Run `./scripts/install-hermes-symlinks.sh` from the repository root to link these skills',
+           'into the active Hermes profile. The canonical packages are:', '']
+        : ['Use the canonical skills directly:', '']),
       ...skill.plugin.skills.filter((s) => s.adapters.includes(target))
         .map((s) => `- \`${s.path}/SKILL.md\``),
       '',
