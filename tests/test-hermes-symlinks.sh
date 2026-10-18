@@ -14,8 +14,10 @@ skills_dir="$TMP/profile with spaces/skills/olko-agent-skills"
 expected=55
 catalog_total="$(node --input-type=module -e 'import {loadCatalog} from "./scripts/lib/catalog.mjs"; console.log(loadCatalog().skills.length)')"
 hermes_total="$(node --input-type=module -e 'import {loadCatalog} from "./scripts/lib/catalog.mjs"; console.log(loadCatalog().skills.filter(s => s.adapters.includes("hermes")).length)')"
-test "$catalog_total" = "$expected" && test "$hermes_total" = "$catalog_total" || {
-  echo "FAIL: Hermes covers $hermes_total of $catalog_total canonical skills, expected $expected" >&2; exit 1; }
+if test "$catalog_total" != "$expected" || test "$hermes_total" != "$catalog_total"; then
+  echo "FAIL: Hermes covers $hermes_total of $catalog_total canonical skills, expected $expected" >&2
+  exit 1
+fi
 actual="$(find "$skills_dir" -type l | wc -l | tr -d ' ')"
 test "$actual" = "$expected" || { echo "FAIL: linked $actual of $expected Hermes skills" >&2; exit 1; }
 find "$skills_dir" -type l | while IFS= read -r link; do
@@ -44,16 +46,23 @@ if HERMES_HOME="$TMP/profile with spaces" sh ./scripts/install-hermes-symlinks.s
 fi
 test -L "$stale" || { echo "FAIL: stale link removed without --prune" >&2; exit 1; }
 HERMES_HOME="$TMP/profile with spaces" sh ./scripts/install-hermes-symlinks.sh --prune >/dev/null
-test ! -L "$stale" && test -L "$foreign" || {
-  echo "FAIL: pruning did not preserve foreign links" >&2; exit 1; }
+if test -L "$stale" || ! test -L "$foreign"; then
+  echo "FAIL: pruning did not preserve foreign links" >&2
+  exit 1
+fi
 
 # Two simultaneous installs should both finish successfully.
 HERMES_HOME="$TMP/parallel" sh ./scripts/install-hermes-symlinks.sh >"$TMP/parallel-1.log" 2>&1 &
 first_pid=$!
 HERMES_HOME="$TMP/parallel" sh ./scripts/install-hermes-symlinks.sh >"$TMP/parallel-2.log" 2>&1 &
 second_pid=$!
-wait "$first_pid" && wait "$second_pid" || {
-  echo "FAIL: concurrent Hermes installers did not both succeed" >&2; exit 1; }
+failed=0
+wait "$first_pid" || failed=1
+wait "$second_pid" || failed=1
+if test "$failed" -ne 0; then
+  echo "FAIL: concurrent Hermes installers did not both succeed" >&2
+  exit 1
+fi
 
 # A collision must fail before creating any links.
 mkdir -p "$TMP/conflict/skills/olko-agent-skills/olko-reflection/wrap-up"
