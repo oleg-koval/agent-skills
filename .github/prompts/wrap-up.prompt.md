@@ -20,8 +20,8 @@ Use this as a proportional end-of-task audit. Preserve pre-existing work and do 
 
 - Detect the project type and configured commands from local instructions, manifests, scripts, and CI before running anything. Choose checks proportional to the change, from focused checks to broader gates when warranted.
 - Run configured, non-destructive formatter checks, lint, typecheck, unit and integration tests, build, and project-specific validation when applicable. Distinguish a formatter check from a formatter command that rewrites files; inspect side effects before running the latter.
-- Record the exact command and `pass`, `fail`, `skipped`, or `not applicable` for each gate. Explain skips. Show the smallest useful failing output and never invent a result or claim success after a required failure.
-- For user-facing behavior, include browser, device, or human acceptance evidence when the task requires it. Keep local checks, commit, remote SHA, PR, CI, deployment, and acceptance as separate gates.
+- Record each command and `pass`, `fail`, `skipped`, or `not applicable` for each gate. Explain skips. Redact secrets and personal data from commands and failing output before quoting the smallest useful excerpt; never invent a result or claim success after a required failure.
+- Inspect each required delivery gate at its authoritative source: local commit, remote SHA, PR state and review threads, current-head CI, deployed version or endpoint, and browser, device, or human acceptance. Mark unavailable evidence `unknown`; do not infer one gate from another.
 
 ## 3. Audit the diff, hygiene, and context
 
@@ -32,10 +32,10 @@ Use this as a proportional end-of-task audit. Preserve pre-existing work and do 
 
 ## 4. Prepare safe cleanup
 
-- Propose exact cleanup commands for task-owned artifacts; do not execute destructive cleanup automatically. Never delete an unknown untracked file, broad directory, or unresolved glob.
+- Propose cleanup commands only. Do not remove any file, branch, or worktree automatically, including generated or temporary files. Never propose deletion of an unknown untracked file, broad directory, or unresolved glob.
 - Before proposing worktree or branch deletion, verify a clean worktree, ownership, no unpushed commits, and that the branch is not active in another worktree. Check `git branch --merged <default-branch>` and remote/merge state where relevant. An unmerged pushed branch may be the recovery point.
-- Prefer `git worktree remove <path>` and `git branch -d <branch>` for confirmed safe targets. Use `git fetch --prune` only when network access and remote cleanup are appropriate. Force deletion requires explicit approval.
-- Read-only inspection and configured non-destructive checks may run automatically. Ask before committing, pushing, creating or updating a PR, deleting branches or worktrees, modifying external systems, or removing files that are not clearly generated or temporary. Existing explicit authorization for the task still applies.
+- For confirmed safe targets, propose `git worktree remove -- 'path with spaces'` or `git branch -d -- 'topic/branch'` with the actual argument shell-quoted, including embedded quotes. Use `--` to end options; never interpolate untrusted names as raw shell text. Use `git fetch --prune` only when network access and remote cleanup are appropriate. Force deletion requires explicit approval.
+- Read-only inspection and configured non-destructive checks may run automatically. Ask before committing, pushing, creating or updating a PR, deleting any file, branch, or worktree, or modifying external systems. Existing explicit authorization for the task still applies.
 
 ## 5. Handoff
 
@@ -45,7 +45,7 @@ Use the report below, keeping it brief for a small change and adding detail only
 ### Wrap-up report
 
 **Objective**
-<original task and acceptance criteria, with completed / partially completed / intentionally deferred / blocked outcomes>
+<original task and acceptance criteria, each marked completed / partially completed / intentionally deferred / blocked / unknown; use unknown when evidence is unavailable>
 
 **Status**
 `completed | partially completed | blocked`
@@ -61,6 +61,14 @@ Use the report below, keeping it brief for a small change and adding detail only
 | Typecheck | pass/fail/skipped/not applicable | ... |
 | Unit / integration tests | pass/fail/skipped/not applicable | ... |
 | Build / project validation | pass/fail/skipped/not applicable | ... |
+
+**Delivery**
+- Local commit: <SHA or not applicable>
+- Remote: <verified SHA and branch, pending, or not applicable>
+- PR and review: <state, unresolved threads, or not applicable>
+- CI: <current-head checks and result, pending, or not applicable>
+- Deployment: <version or endpoint evidence, unknown, or not applicable>
+- Browser/device/human acceptance: <evidence, unknown, or not applicable>
 
 **Cleanup**
 - Proposed: <exact safe commands or none>
