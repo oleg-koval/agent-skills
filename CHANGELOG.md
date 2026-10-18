@@ -1,3 +1,10 @@
+## [1.55.3](https://github.com/oleg-koval/agent-skills/compare/v1.55.2...v1.55.3) (2026-10-18)
+
+
+### 🐛 Bug Fixes
+
+* **wrap-up:** verify task outcomes and prepare safe handoffs ([#139](https://github.com/oleg-koval/agent-skills/issues/139)) ([7eb3bb5](https://github.com/oleg-koval/agent-skills/commit/7eb3bb5fd43c8ce93d7bfbd3a430d419cab8eba5))
+
 ## [1.55.2](https://github.com/oleg-koval/agent-skills/compare/v1.55.1...v1.55.2) (2026-10-17)
 
 
