@@ -1,15 +1,15 @@
 <div align="center">
   <h1>agent skills</h1>
-  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, and other skill-aware tools.</strong></p>
+  <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-53-2563eb" alt="53 skills">
-    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro">
+    <img src="https://img.shields.io/badge/skills-55-2563eb" alt="55 skills">
+    <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
 </div>
 
-Agent-agnostic skill collection for Codex, Claude, Cursor, Grok, and other skill-aware tools.
+Agent-agnostic skill collection for Codex, Claude, Cursor, Grok, Hermes Agent, and other skill-aware tools.
 
 **Browse the catalog: [skills.olegkoval.com](https://skills.olegkoval.com)**
 
@@ -121,6 +121,27 @@ Then mention a lookup name in a new Codex session. The Codexloop skill is availa
 ```text
 Use the olko:semantic-release-beta skill to add prereleases on a beta branch.
 ```
+
+</details>
+
+<details>
+<summary><b>Hermes Agent</b></summary>
+
+Install the catalog into the active Hermes profile from a persistent checkout:
+
+```bash
+git clone https://github.com/oleg-koval/agent-skills.git
+cd agent-skills
+./scripts/install-hermes-symlinks.sh
+```
+
+The installer links all 55 canonical skill packages under
+`${HERMES_HOME:-$HOME/.hermes}/skills/olko-agent-skills/`. It leaves existing paths untouched and
+fails on a collision. Set `HERMES_HOME` to target another profile. Run it again after adding
+skills to an updated checkout, then start a new Hermes session or use `/reload-skills`.
+Use `/skills` to browse or `/wrap-up` to invoke a skill; a skill with a duplicate name can
+be selected by its `olko-agent-skills/<plugin>/<skill>` path.
+Individual skills may still require the tools, credentials, or services named in their instructions.
 
 </details>
 
@@ -477,7 +498,7 @@ layout, the first-run walkthrough, and the contract callers follow when writing 
 | Grok | `adapters/grok/<plugin>/` | Per-plugin skill copies |
 | Codex | `adapters/codex/<plugin>/README.md` | Pointer to the canonical skills |
 | Pi | `adapters/pi/<plugin>/README.md` | Pointer to the canonical skills |
-| Hermes | `adapters/hermes/<plugin>/README.md` | Pointer to the canonical skills |
+| Hermes Agent | `adapters/hermes/<plugin>/README.md` | Pointer to the canonical skills |
 | GitHub Copilot | `.github/copilot-instructions.md` | Repository instructions |
 | GitHub Copilot | `.github/prompts/*.prompt.md` | Per-skill prompt files |
 | Windsurf | `.windsurf/rules/*.md` | Cascade rules |
@@ -485,10 +506,11 @@ layout, the first-run walkthrough, and the contract callers follow when writing 
 
 Every file above is generated from `catalog/skills.json` by `./scripts/build-adapters.sh`.
 Never edit one by hand: CI regenerates and fails on any difference.
+The maintained `scripts/install-hermes-symlinks.sh` makes the Hermes pointers usable by its skills loader.
 
 Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
-decides which targets it ships to, so the file counts differ per target: Claude 49, Grok 47,
-Cursor 45, Copilot 45, Codex 42, Windsurf 35, Kiro 35, Pi 2, Hermes 2. A skill is absent from a
+decides which targets it ships to, so the file counts differ per target: Claude 55, Grok 53,
+Cursor 51, Copilot 51, Codex 49, Windsurf 40, Kiro 40, Pi 2, Hermes 55. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
 ## Local validation

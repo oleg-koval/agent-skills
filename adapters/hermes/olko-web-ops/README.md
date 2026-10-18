@@ -2,6 +2,10 @@
 
 # Hermes adapter: olko-web-ops
 
-Use the canonical skills directly:
+Run `./scripts/install-hermes-symlinks.sh` from the repository root to link these skills
+into the active Hermes profile. The canonical packages are:
 
+- `plugins/olko-web-ops/skills/cloudflare-block-countries/SKILL.md`
 - `plugins/olko-web-ops/skills/search-console-indexing-audit/SKILL.md`
+- `plugins/olko-web-ops/skills/docs-index-keeper/SKILL.md`
+- `plugins/olko-web-ops/skills/website-analytics-bootstrap/SKILL.md`
