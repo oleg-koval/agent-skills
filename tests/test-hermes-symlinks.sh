@@ -12,6 +12,8 @@ trap cleanup EXIT
 HERMES_HOME="$TMP/profile with spaces" sh ./scripts/install-hermes-symlinks.sh >/dev/null
 skills_dir="$TMP/profile with spaces/skills/olko-agent-skills"
 expected="$(node --input-type=module -e 'import {loadCatalog} from "./scripts/lib/catalog.mjs"; console.log(loadCatalog().skills.filter(s => s.adapters.includes("hermes")).length)')"
+test "$expected" = 55 || {
+  echo "FAIL: expected 55 Hermes skills in catalog, found $expected" >&2; exit 1; }
 actual="$(find "$skills_dir" -type l | wc -l | tr -d ' ')"
 test "$actual" = "$expected" || { echo "FAIL: linked $actual of $expected Hermes skills" >&2; exit 1; }
 find "$skills_dir" -type l | while IFS= read -r link; do
