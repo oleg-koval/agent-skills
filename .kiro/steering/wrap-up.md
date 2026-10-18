@@ -2,96 +2,89 @@
 
 ---
 inclusion: manual
-description: "Verify a completed task against its original objective, confirm applicable checks, and safely tidy task-owned artifacts, worktrees, and local branches."
+description: "Verify a task against its original objective, run applicable checks, audit task-owned artifacts, and prepare a safe, evidence-backed handoff."
 ---
 
 # Wrap Up
 
-Run this skill manually from time to time or as the final step after a task reaches its goal. It is a delivery audit and cleanup pass, not permission to expand scope or hide unfinished work.
+Use this as a proportional end-of-task audit. Preserve pre-existing work and do not expand the task to make the report look complete.
 
-## 1. Reconstruct the task
+## 1. Verify the objective
 
-- Read the original request, acceptance criteria, task plan, and final diff.
-- Write a short objective statement and an acceptance matrix: each requested outcome, its evidence, and its status.
-- Compare the result with the original idea, not merely with the implementation plan. Mark anything ambiguous or unverified as `UNKNOWN` rather than assuming it is complete.
-- Identify the exact repositories, worktrees, branches, files, services, and temporary paths owned by this task. Preserve pre-existing user work.
+- Restate the original request, issue, or ticket and its acceptance criteria. Compare each criterion with the actual diff and evidence, not just the implementation plan.
+- Mark each outcome `completed`, `partially completed`, `intentionally deferred`, or `blocked`; mark unverified facts `unknown`. Give the reason and next action for anything incomplete.
+- Set overall status to `completed` only when every required criterion and check passes. If required evidence is missing or a check fails, report `partially completed` or `blocked` as appropriate. A deliberate deferral is complete only when it was outside the agreed acceptance criteria.
 
-## 2. Verify the implementation
+## 2. Run applicable quality gates
 
-- Inspect the final diff and confirm every requested behavior is implemented.
-- Check related tests, types, docs, configuration, migrations, and feature flags where the change requires them.
-- Run the repository-defined checks appropriate to the change. Follow local instructions and use the project’s package scripts rather than bypassing its tooling.
-- Prefer the smallest meaningful verification first, then the full applicable suite. Record exact commands and results.
-- If a check fails, determine whether it is caused by this task. Do not call the task green because an unrelated check happened to pass.
-- For user-facing behavior, require real browser/device or human evidence when that is part of acceptance; automated tests alone are not visual acceptance.
+- Detect the project type and configured commands from local instructions, manifests, scripts, and CI before running anything. Choose checks proportional to the change, from focused checks to broader gates when warranted.
+- Run configured, non-destructive formatter checks, lint, typecheck, unit and integration tests, build, and project-specific validation when applicable. Distinguish a formatter check from a formatter command that rewrites files; inspect side effects before running the latter.
+- Record each command and `pass`, `fail`, `skipped`, or `not applicable` for each gate. Explain skips. Redact secrets and personal data from commands and failing output before quoting the smallest useful excerpt; never invent a result or claim success after a required failure.
+- Inspect each required delivery gate at its authoritative source: local commit, remote SHA, PR state and review threads, current-head CI, deployed version or endpoint, and browser, device, or human acceptance. Mark unavailable evidence `unknown`; do not infer one gate from another.
 
-## 3. Verify delivery state
+## 3. Audit the diff, hygiene, and context
 
-Keep these gates separate and evidence-backed:
+- Inspect `git status`, staged and unstaged diffs, untracked files, recent branches, and `git worktree list`. Identify task-owned worktrees, scratch branches, generated files, debug files, and local-only configuration; leave uncertain or pre-existing work untouched.
+- Scan introduced lines for `console.log`, `print`, `dbg!`, `debugger`, equivalent debug output, commented-out code, new TODO/FIXME/HACK markers, temporary flags, and unused imports, files, dependencies, or configuration. Flag legitimate diagnostic logging for review; do not remove it automatically.
+- Check the diff and untracked files for keys, tokens, passwords, private keys, connection strings, cookies, personal data, and credentials in logs or examples. Report locations without printing values; recommend environment variables or a secret manager where relevant.
+- Decide from the actual change whether README, architecture or API docs, OpenAPI, CHANGELOG, CONTRIBUTING, `.env.example`, ADRs, or runbooks need an update. Name the exact change needed. Skip documentation for trivial internal changes unless it helps future maintenance.
 
-- Local worktree: branch, `HEAD`, tracked changes, and untracked files.
-- Remote: tracking branch and remote SHA, verified with Git or the existing provider CLI.
-- PR: current title/body, merge state, review threads, and required checks, when applicable.
-- CI: current-head status, not an old successful run.
-- Deployment: actual deployed version or endpoint health, when applicable.
-- Device or human QA: real acceptance evidence, when applicable.
+## 4. Prepare safe cleanup
 
-Do not claim remote, PR, CI, deployment, or QA completion from a local test or commit alone. Do not push, merge, deploy, or delete a remote branch as a side effect of this skill unless the task explicitly authorized it.
+- Propose cleanup commands only. Do not remove any file, branch, or worktree automatically, including generated or temporary files. Never propose deletion of an unknown untracked file, broad directory, or unresolved glob.
+- Before proposing worktree or branch deletion, verify a clean worktree, ownership, no unpushed commits, and that the branch is not active in another worktree. Check `git branch --merged <default-branch>` and remote/merge state where relevant. An unmerged pushed branch may be the recovery point.
+- For confirmed safe targets, propose `git worktree remove -- 'path with spaces'` or `git branch -d -- 'topic/branch'` with the actual argument shell-quoted, including embedded quotes. Use `--` to end options; never interpolate untrusted names as raw shell text. Use `git fetch --prune` only when network access and remote cleanup are appropriate. Force deletion requires explicit approval.
+- Read-only inspection and configured non-destructive checks may run automatically. Ask before committing, pushing, creating or updating a PR, deleting any file, branch, or worktree, or modifying external systems. Existing explicit authorization for the task still applies.
 
-## 4. Clean task-owned artifacts
+## 5. Handoff
 
-Clean only paths created by this task or explicitly named for cleanup.
+Use the report below, keeping it brief for a small change and adding detail only where evidence or risk warrants it. State what was executed and what still needs confirmation. If a PR is appropriate, draft its motivation, changes, testing evidence, rollout and rollback considerations, and reviewer notes; do not publish it without authorization. Suggest a conventional commit message without committing.
 
-- Remove known temporary files, test output, logs, copied fixtures, and scratch directories after capturing any required evidence.
-- Never recursively delete a broad directory, the workspace root, an unresolved glob, or an unknown untracked file.
-- For dirty paths that predate this task or cannot be attributed confidently, leave them in place and report them.
-- Check the repository’s worktree list and remove only task-owned worktrees that are clean and no longer needed. Use an exact path; never remove a worktree containing uncommitted user work.
+```markdown
+### Wrap-up report
 
-## 5. Clean local branches safely
+**Objective**
+<original task and acceptance criteria, each marked completed / partially completed / intentionally deferred / blocked / unknown; use unknown when evidence is unavailable>
 
-- Confirm the task branch has the intended commit and that the remote branch contains the same work when remote delivery was required.
-- If the remote branch is merged, verify the merge state before deleting the local branch.
-- If the remote branch is pushed but unmerged, treat it as the recovery point. Delete the local branch only when the task is delivered, the remote branch is confirmed intact, the worktree is clean, and the user’s workflow permits local deletion. Otherwise preserve it and report why.
-- Never use force branch deletion or destructive checkout/reset commands unless the user explicitly requests that exact recovery operation.
-- Before deleting a branch, verify it is not checked out by another worktree and that no unique local commits would be lost.
+**Status**
+`completed | partially completed | blocked`
 
-## 6. Report the result
+**Changes**
+- <file or area>: <what changed and why>
 
-Lead with the outcome. Use a short `DELIVERY RECEIPT` heading and a one- or
-two-sentence summary before the fields. Add `STATUS`, `NEXT_PHASE`, and
-`NEXT_STEP` near the top when follow-up work remains. Keep the required fields
-flush-left and grouped with one blank line between logical groups, not between
-every field. Keep each value concise and avoid repeating the same prose. Do
-not use Markdown tables, decorative separators, bullets, emojis, or indented
-continuation lines inside the canonical field block. Put `FINAL_STATUS` last.
-Add `LOCAL_COMMIT` when a local commit exists. Always finish with this receipt,
-using `NOT_APPLICABLE` for out-of-scope gates and `NOT_RUN` for applicable
-checks that were not executed:
+**Checks**
+| Check | Result | Notes |
+|---|---|---|
+| Formatter | pass/fail/skipped/not applicable | <command and evidence or reason> |
+| Lint | pass/fail/skipped/not applicable | ... |
+| Typecheck | pass/fail/skipped/not applicable | ... |
+| Unit / integration tests | pass/fail/skipped/not applicable | ... |
+| Build / project validation | pass/fail/skipped/not applicable | ... |
 
-```text
-DELIVERY RECEIPT
+**Delivery**
+- Local commit: <SHA or not applicable>
+- Remote: <verified SHA and branch, pending, or not applicable>
+- PR and review: <state, unresolved threads, or not applicable>
+- CI: <current-head checks and result, pending, or not applicable>
+- Deployment: <version or endpoint evidence, unknown, or not applicable>
+- Browser/device/human acceptance: <evidence, unknown, or not applicable>
 
-<short outcome summary>
-STATUS: <DELIVERED | BLOCKED | INTENTIONALLY_UNCHANGED>
-NEXT_PHASE: <next phase or NOT_APPLICABLE>
-NEXT_STEP: <single smallest next action or NOT_APPLICABLE>
+**Cleanup**
+- Proposed: <exact safe commands or none>
+- Executed: <actions or none>
+- Requires confirmation: <actions or none>
 
-OBJECTIVE:
-CHANGED:
-NOT_CHANGED:
+**Documentation**
+- Created: <files or none>
+- Updated: <files or none>
+- Not needed: <reason or none>
 
-TESTS:
-BUILD:
+**Risks and follow-ups**
+- <remaining risk, blocked gate, or next action; include delivery state if relevant>
 
-REMOTE:
-PR:
-CI:
-DEPLOYMENT:
-DEVICE_OR_HUMAN_QA:
+**Suggested commit**
+`type(scope): concise imperative summary`
 
-KNOWN_LIMITATIONS:
-LOCAL_COMMIT: <hash and subject, or NOT_APPLICABLE>
-FINAL_STATUS:
+**Handoff**
+<2–5 sentences with the evidence and next step a teammate needs>
 ```
-
-`FINAL_STATUS` must be exactly one of `DELIVERED`, `BLOCKED`, or `INTENTIONALLY_UNCHANGED`. Use `BLOCKED` when required evidence or cleanup cannot safely be completed; name the blocker and next action. Never promote a partial result to `DELIVERED`.
