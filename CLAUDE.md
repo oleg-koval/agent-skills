@@ -1,7 +1,7 @@
 # agent-skills
 
 An agent-agnostic skill catalog published to Claude Code, Codex, Cursor, Grok,
-Copilot, Windsurf and Kiro.
+Copilot, Windsurf, Kiro and Hermes Agent.
 
 ## Hard rules
 
