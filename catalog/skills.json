@@ -588,6 +588,30 @@
           ]
         },
         {
+          "name": "frontend-direction",
+          "lookupName": "olko:frontend-direction",
+          "path": "plugins/olko-product/skills/frontend-direction",
+          "description": "Choose a distinctive, coherent visual direction and source-backed components before building a new frontend, page, or substantial UI redesign. Use for frontend implementation and requests to make an interface less generic; keep small fixes within the existing design.",
+          "tags": [
+            "frontend",
+            "design",
+            "components",
+            "art-direction",
+            "ui"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes",
+            "pi"
+          ]
+        },
+        {
           "name": "starter-rules",
           "lookupName": "olko:starter-rules",
           "path": "plugins/olko-product/skills/starter-rules",

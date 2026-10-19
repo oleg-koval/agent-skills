@@ -7,5 +7,6 @@ Use the canonical skills directly:
 - `plugins/olko-product/skills/product-builder/SKILL.md`
 - `plugins/olko-product/skills/mvp-oneshot/SKILL.md`
 - `plugins/olko-product/skills/ux-ui-audit-loop/SKILL.md`
+- `plugins/olko-product/skills/frontend-direction/SKILL.md`
 - `plugins/olko-product/skills/starter-rules/SKILL.md`
 - `plugins/olko-product/skills/viral-launch/SKILL.md`
