@@ -1,3 +1,10 @@
+## [1.56.2](https://github.com/oleg-koval/agent-skills/compare/v1.56.1...v1.56.2) (2026-10-19)
+
+
+### 📚 Documentation
+
+* add Aman Singh's resource post as seed for frontend-direction skill ([#142](https://github.com/oleg-koval/agent-skills/issues/142)) ([c60e157](https://github.com/oleg-koval/agent-skills/commit/c60e1572b7c1c68c83c2fe6c0345acd24c86c5ce))
+
 ## [1.56.1](https://github.com/oleg-koval/agent-skills/compare/v1.56.0...v1.56.1) (2026-10-18)
 
 
