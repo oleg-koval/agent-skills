@@ -1,3 +1,10 @@
+# [1.58.0](https://github.com/oleg-koval/agent-skills/compare/v1.57.0...v1.58.0) (2026-10-19)
+
+
+### ✨ Features
+
+* **frontend-direction:** require pre-code direction record ([#144](https://github.com/oleg-koval/agent-skills/issues/144)) ([85cde28](https://github.com/oleg-koval/agent-skills/commit/85cde287ce92f14f7423edf382765443708bc78c))
+
 # [1.57.0](https://github.com/oleg-koval/agent-skills/compare/v1.56.2...v1.57.0) (2026-10-19)
 
 
