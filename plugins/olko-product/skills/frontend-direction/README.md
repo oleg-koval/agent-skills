@@ -4,7 +4,7 @@ Give your coding agent a visual direction before it writes the frontend.
 
 For new pages and substantial redesigns, this skill chooses a composition, selects compatible components, records the decisions and checks the rendered result. Small UI fixes stay within the existing design. The reference catalog includes the seven resources from [Nero's post](https://x.com/neropursue/status/2109514246853677192).
 
-Status: experimental. Skill structure is validated; comparative visual-quality evaluation and end-to-end trials in all four agents are still pending.
+Status: experimental beta. Discovery passes in all four agents. Codex and Claude Code produced functional pages and passed the small-fix case; Codex stated its direction before coding, while Claude did not demonstrate that checkpoint before its first UI edit. This update makes the checkpoint explicit. Pi and Hermes model trials remain deferred because provider authentication is unavailable. See the [evaluation and controlled comparison](../../../../docs/frontend-direction-evaluation-2026-10-19.md). The updated checkpoint still needs a Claude rerun; the current Claude CLI returned `Not logged in` before generating a response.
 
 ## Install
 
@@ -30,7 +30,7 @@ Start a new session after installation. Explicit invocation avoids relying on th
 
 For routine use, add this instruction to the project's active agent instructions: `AGENTS.md` for Codex and Pi, `CLAUDE.md` for Claude Code, and the active project context file for Hermes. Hermes can prioritize `.hermes.md` or `AGENTS.override.md` over `AGENTS.md`; put the rule in the file actually loaded.
 
-> Before implementing a frontend page or substantial UI redesign, load and follow the installed frontend-direction skill. State the chosen visual direction and component sources before coding. For small UI fixes, use its lightweight path and preserve the existing design. If the skill is unavailable, report that and use the project's existing design guidance.
+> Before editing UI implementation files for a new page or substantial redesign, load and follow the installed frontend-direction skill. State the chosen composition, visual anchors, component choices and sources, and a relevant rejected alternative. Then continue without waiting for approval unless a design checkpoint was requested. For small UI fixes, use its lightweight path and preserve the existing design. If the skill is unavailable, report that and use the project's existing design guidance.
 
 This is an instruction-level requirement, not a runtime enforcement hook. Check that the agent actually loads the skill and states a direction on the first frontend task. Do not assume discovery proves usage or visual quality. Installing the plugin does not modify project instructions.
 
