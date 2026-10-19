@@ -34,6 +34,7 @@ Available reusable prompt files:
 - product-builder: .github/prompts/product-builder.prompt.md
 - mvp-oneshot: .github/prompts/mvp-oneshot.prompt.md
 - ux-ui-audit-loop: .github/prompts/ux-ui-audit-loop.prompt.md
+- frontend-direction: .github/prompts/frontend-direction.prompt.md
 - starter-rules: .github/prompts/starter-rules.prompt.md
 - viral-launch: .github/prompts/viral-launch.prompt.md
 - context-repo: .github/prompts/context-repo.prompt.md
