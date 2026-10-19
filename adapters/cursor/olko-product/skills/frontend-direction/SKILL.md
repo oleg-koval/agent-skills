@@ -20,11 +20,22 @@ For a new page or substantial redesign, use the workflow below. For a small fix,
 
 Read the relevant application instructions, stack, existing components and visual conventions. Inspect the current screen when available. Infer the audience, primary action, content density and constraints from the task. Ask only when a missing decision materially changes the result; otherwise state the assumption and proceed within the user's authorization.
 
-## Choose the direction before the components
+## State the direction and component choices before coding
+
+For a new page or substantial redesign, make a visible pre-code decision record before the first UI implementation edit. Put it in the existing task plan or in the response; when neither exists, state it in the response. This is a required workflow checkpoint, not a request for user approval: state the choice, then continue autonomously unless the user asked to review it first.
+
+The record must name:
+
+- the chosen composition and why it serves the task;
+- the visual anchors: hierarchy, typography, palette, density, image treatment, and motion purpose;
+- the component or pattern for the primary UI roles, with a source URL or local path and any dependency or licensing cost;
+- one relevant alternative considered and why it was rejected.
+
+Do not create or edit UI implementation files until this record is present. If the user requests immediate implementation, include the record immediately before making the first UI edit. For an existing task plan, update it instead of creating another document. Keep the record compact and skip details that do not apply.
 
 For an open-ended brief, consider two or three genuinely different compositions and choose the strongest fit. A color swap is not a different direction. A buyer comparing evidence may need an inspection workspace; a photographer may need an image-led editorial sequence. Avoid defaulting every product to a centered hero followed by identical cards.
 
-Briefly state the choice and why it helps the primary task. Do not require approval unless the user requested a design checkpoint or the choice would change their scope or brand. Respect supplied designs and existing systems.
+Respect supplied designs and existing systems. Do not require approval for an ordinary direction choice unless the user requested a design checkpoint or the choice would change their scope or brand.
 
 Define the visual anchors: layout and hierarchy, typography roles, palette, density, image treatment, and motion purpose. Reuse tokens where possible. Choose one or two signature treatments for emphasis, such as an annotated comparison rail or an editorial image sequence. Keep frequent controls familiar. Treat these as a default attention budget, not a prohibition on expressive briefs.
 
@@ -38,7 +49,7 @@ Inspect the exact official component page and available source before copying or
 
 Prefer one primary component family per surface. Borrow an isolated interaction from another source only when it can share the same typography, spacing, radius, color and motion conventions. Never add a framework merely to use a decorative component. If browsing fails, label references unverified, use local primitives, and continue without claiming live checks.
 
-Before substantial implementation, leave a compact decision record in the task's existing plan, or in the response if no plan exists:
+In the pre-code record, use a compact table for the component decisions when there are multiple UI roles:
 
 | UI role | Chosen component or pattern | Source or local path | Why it fits | Adaptation and cost |
 | --- | --- | --- | --- | --- |
