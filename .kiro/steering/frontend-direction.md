@@ -27,7 +27,7 @@ Define the visual anchors: layout and hierarchy, typography roles, palette, dens
 
 ## Select a coherent component set
 
-Read [references/sources.md](references/sources.md) when external references would improve the result. The catalog is a starting point, not a required dependency list. Existing project components and a small custom implementation are valid choices.
+Read [references/sources.md](references/sources.md) when external references would improve the result. If that file is not bundled with your copy of this skill, read the [published catalog](https://github.com/oleg-koval/agent-skills/blob/main/plugins/olko-product/skills/frontend-direction/references/sources.md) instead. The catalog is a starting point, not a required dependency list. Existing project components and a small custom implementation are valid choices.
 
 Start with at most three relevant candidates. Expand only if none fits. Judge task fit, visual coherence, stack compatibility, accessibility, dependency cost and reuse terms. Do not rank novelty above usability or invent numeric scores that imply measurement.
 
