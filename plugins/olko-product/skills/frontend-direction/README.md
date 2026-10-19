@@ -4,60 +4,18 @@ Give your coding agent a visual direction before it writes the frontend.
 
 For new pages and substantial redesigns, this skill chooses a composition, selects compatible components, records the decisions and checks the rendered result. Small UI fixes stay within the existing design. The reference catalog includes the seven resources from [Nero's post](https://x.com/neropursue/status/2109514246853677192).
 
-Status: experimental. Skill structure is validated; comparative visual-quality evaluation and end-to-end trials in all four agents are still pending. This branch is available for testing before merge and is not a stable release.
+Status: experimental. Skill structure is validated; comparative visual-quality evaluation and end-to-end trials in all four agents are still pending.
 
-## Install the beta
+## Install
 
-Clone the beta branch into a new directory:
+The skill ships in the `olko-product` plugin. In Claude Code:
 
-```sh
-git clone --depth 1 --branch feat/frontend-direction https://github.com/oleg-koval/agent-skills.git skills-frontend-direction-beta
-cd skills-frontend-direction-beta
+```
+/plugin marketplace add oleg-koval/agent-skills
+/plugin install olko-product@olko-agent-skills
 ```
 
-Install for Codex, using its configured home when present:
-
-```sh
-mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-if [ -e "${CODEX_HOME:-$HOME/.codex}/skills/frontend-direction" ] || [ -L "${CODEX_HOME:-$HOME/.codex}/skills/frontend-direction" ]; then
-  echo "frontend-direction already exists; keep it or back it up before installing."
-else
-  cp -R frontend-direction "${CODEX_HOME:-$HOME/.codex}/skills/frontend-direction"
-fi
-```
-
-Install for Claude Code:
-
-```sh
-mkdir -p "$HOME/.claude/skills"
-if [ -e "$HOME/.claude/skills/frontend-direction" ] || [ -L "$HOME/.claude/skills/frontend-direction" ]; then
-  echo "frontend-direction already exists; keep it or back it up before installing."
-else
-  cp -R frontend-direction "$HOME/.claude/skills/frontend-direction"
-fi
-```
-
-Install for Pi:
-
-```sh
-mkdir -p "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/skills"
-if [ -e "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/skills/frontend-direction" ] || [ -L "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/skills/frontend-direction" ]; then
-  echo "frontend-direction already exists; keep it or back it up before installing."
-else
-  cp -R frontend-direction "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/skills/frontend-direction"
-fi
-```
-
-Install for Hermes (set `HERMES_HOME` to the active profile directory when using a named profile):
-
-```sh
-mkdir -p "${HERMES_HOME:-$HOME/.hermes}/skills"
-if [ -e "${HERMES_HOME:-$HOME/.hermes}/skills/frontend-direction" ] || [ -L "${HERMES_HOME:-$HOME/.hermes}/skills/frontend-direction" ]; then
-  echo "frontend-direction already exists; keep it or back it up before installing."
-else
-  cp -R frontend-direction "${HERMES_HOME:-$HOME/.hermes}/skills/frontend-direction"
-fi
-```
+For Codex, Pi, Hermes and the other agents, follow the install steps for that agent in the [repository README](../../../../README.md).
 
 ## Activate before frontend work
 
@@ -67,14 +25,14 @@ Start a new session after installation. Explicit invocation avoids relying on th
 | --- | --- |
 | Pi | `/skill:frontend-direction Build this page; choose the direction before coding.` |
 | Codex | `$frontend-direction Build this page; choose the direction before coding.` |
-| Claude Code | `/frontend-direction Build this page; choose the direction before coding.` |
+| Claude Code | `/olko-product:frontend-direction Build this page; choose the direction before coding.` |
 | Hermes | `/frontend-direction Build this page; choose the direction before coding.` |
 
 For routine use, add this instruction to the project's active agent instructions: `AGENTS.md` for Codex and Pi, `CLAUDE.md` for Claude Code, and the active project context file for Hermes. Hermes can prioritize `.hermes.md` or `AGENTS.override.md` over `AGENTS.md`; put the rule in the file actually loaded.
 
 > Before implementing a frontend page or substantial UI redesign, load and follow the installed frontend-direction skill. State the chosen visual direction and component sources before coding. For small UI fixes, use its lightweight path and preserve the existing design. If the skill is unavailable, report that and use the project's existing design guidance.
 
-This is an instruction-level requirement, not a runtime enforcement hook. Check that the agent actually loads the skill and states a direction on the first frontend task. Do not assume discovery proves usage or visual quality. The installer blocks above only copy files; they do not modify project instructions automatically.
+This is an instruction-level requirement, not a runtime enforcement hook. Check that the agent actually loads the skill and states a direction on the first frontend task. Do not assume discovery proves usage or visual quality. Installing the plugin does not modify project instructions.
 
 ## Compatibility sources
 
@@ -87,7 +45,7 @@ One portable skill folder serves all four agents. The workflow uses capabilities
 - [Hermes skills and profiles](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills/)
 - [Hermes project context](https://hermes-agent.nousresearch.com/docs/user-guide/features/context-files/)
 
-The beta branch can change. Record `git rev-parse HEAD` when reporting results. For reproducible trials, keep the same checkout and installed copy throughout the comparison.
+Record the installed plugin version when reporting results. For reproducible trials, keep the same installed copy throughout the comparison.
 
 ## What to evaluate
 

@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-55-2563eb" alt="55 skills">
+    <img src="https://img.shields.io/badge/skills-56-2563eb" alt="56 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -135,7 +135,7 @@ cd agent-skills
 ./scripts/install-hermes-symlinks.sh
 ```
 
-The installer links all 55 canonical skill packages under
+The installer links all 56 canonical skill packages under
 `${HERMES_HOME:-$HOME/.hermes}/skills/olko-agent-skills/`. It leaves existing paths untouched and
 fails on a collision. It reports obsolete catalog-owned links without removing them; after
 reviewing those links, run `./scripts/install-hermes-symlinks.sh --prune` to remove them.
@@ -264,7 +264,7 @@ Ship a release: semantic-release setup, changelogs, store listing copy, release-
 | [changelog-generator](plugins/olko-release/skills/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, a CHANGELOG entry, or "what changed since the last release"; for setting up the release pipeline itself use semantic-release-beta |
 | [store-listing-copy](plugins/olko-release/skills/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
 
-### olko-product (5)
+### olko-product (6)
 
 Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.
 
@@ -273,6 +273,7 @@ Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/U
 | [product-builder](plugins/olko-product/skills/product-builder/SKILL.md) | Builds a full-stack web app or SaaS product from a user description using production-oriented defaults | Building a complete app, SaaS, dashboard, or product rather than a prototype |
 | [mvp-oneshot](plugins/olko-product/skills/mvp-oneshot/SKILL.md) | Takes a rough product idea and produces a scoped, testable MVP plan and initial implementation in a single pass | Going from idea to a shippable one-week MVP without losing scope |
 | [ux-ui-audit-loop](plugins/olko-product/skills/ux-ui-audit-loop/SKILL.md) | Audits and improves a web UI through browser evidence, severity triage, minimal fixes, and before/after verification | The user says "audit this UI", "fix the UX", "review this page visually", "make this page polished", or asks for an autonomous screenshot-and-fix loop |
+| [frontend-direction](plugins/olko-product/skills/frontend-direction/SKILL.md) | Chooses a distinctive, coherent visual direction and source-backed components before writing frontend code | Building a new page or a substantial UI redesign, or making an interface less generic; small fixes keep the existing design |
 | [starter-rules](plugins/olko-product/skills/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
 | [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, or package for public launch ("prep for Product Hunt", "write the launch post", "make this shareable"); for building the thing itself use mvp-oneshot or product-builder |
 
@@ -511,8 +512,8 @@ Never edit one by hand: CI regenerates and fails on any difference.
 The maintained `scripts/install-hermes-symlinks.sh` makes the Hermes pointers usable by its skills loader.
 
 Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
-decides which targets it ships to, so the file counts differ per target: Claude 55, Grok 53,
-Cursor 51, Copilot 51, Codex 49, Windsurf 40, Kiro 40, Pi 2, Hermes 55. A skill is absent from a
+decides which targets it ships to, so the file counts differ per target: Claude 56, Grok 54,
+Cursor 52, Copilot 52, Codex 50, Windsurf 41, Kiro 41, Pi 3, Hermes 56. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
 ## Local validation
