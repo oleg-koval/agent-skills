@@ -1,3 +1,10 @@
+# [1.57.0](https://github.com/oleg-koval/agent-skills/compare/v1.56.2...v1.57.0) (2026-10-19)
+
+
+### ✨ Features
+
+* **olko-product:** ship frontend-direction in the olko-product plugin ([#143](https://github.com/oleg-koval/agent-skills/issues/143)) ([de448d9](https://github.com/oleg-koval/agent-skills/commit/de448d9682895035ff6f98de72b4c0a6c5a60267))
+
 ## [1.56.2](https://github.com/oleg-koval/agent-skills/compare/v1.56.1...v1.56.2) (2026-10-19)
 
 
