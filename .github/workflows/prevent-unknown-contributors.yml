@@ -26,6 +26,7 @@ jobs:
             // OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR = has prior commits to the repo
             const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
             if (trusted.includes(association)) return;
+            if (login === 'oleg-koval-fleet[bot]' && pr.head.ref.startsWith('fleet/sync') && pr.head.repo?.full_name === pr.base.repo.full_name) return;
 
             async function ensureLabelExists() {
               try {
