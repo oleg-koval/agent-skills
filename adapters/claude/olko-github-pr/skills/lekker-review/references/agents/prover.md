@@ -80,7 +80,8 @@ repo's real test directories and trivially findable for cleanup.
 ## Step 3 -- Run it
 
 Exactly one run command from that package dir, scoped to your file only, for
-the runner the `TEST_RUNNER` line names:
+the runner paired with that package dir in the `TEST_RUNNER` mapping
+(use the most specific package dir containing the finding):
 
 - vitest: `npx vitest run lekker-proof-<file-slug>-<line>.test.ts --no-coverage --reporter=verbose`
 - jest: `npx jest lekker-proof-<file-slug>-<line>.test.ts --ci`

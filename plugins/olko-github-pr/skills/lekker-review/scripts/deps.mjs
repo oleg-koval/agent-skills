@@ -135,7 +135,7 @@ function requiredMissing() {
 function presence(ledger) {
   const out = {};
   for (const [name, entry] of Object.entries(ledger.tools)) {
-    if (entry.choice !== 'installed') continue;
+    if (entry.choice !== 'installed' || !Object.hasOwn(OPTIONAL, name)) continue;
     out[name] = onPath(OPTIONAL[name].versionCmd[0]) ? 'present' : 'missing';
   }
   return out;
@@ -146,7 +146,7 @@ function fullCheck(ledger, now) {
   ledger.lastAttemptAt = new Date(now).toISOString();
   let allResolved = true;
   for (const [name, entry] of Object.entries(ledger.tools)) {
-    if (entry.choice !== 'installed') continue;
+    if (entry.choice !== 'installed' || !Object.hasOwn(OPTIONAL, name)) continue;
     entry.version = installedVersion(name);
     const latest = latestVersion(name);
     if (latest) entry.latest = latest;

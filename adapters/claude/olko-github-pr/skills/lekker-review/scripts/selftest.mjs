@@ -569,6 +569,74 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   rmSync(tmp, { recursive: true, force: true })
 }
 
+console.log('\ndeps: obsolete ledger tools are ignored')
+{
+  const { spawnSync } = await import('node:child_process')
+  const { mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const tmp = mkdtempSync(join(tmpdir(), 'lekker-deps-'))
+  try {
+    const bin = join(tmp, 'bin')
+    mkdirSync(bin)
+    for (const name of ['git', 'gh', 'node', 'npx', 'jq', 'python3', 'icm']) {
+      const output = name === 'gh' ? 'v2.0.0' : '1.0.0'
+      writeFileSync(join(bin, name), `#!/bin/sh\necho ${output}\n`)
+      chmodSync(join(bin, name), 0o755)
+    }
+    const now = new Date().toISOString()
+    const obsolete = { choice: 'installed', version: '0.1.0' }
+    const ledger = join(tmp, 'deps.json')
+    writeFileSync(ledger, JSON.stringify({
+      initialisedAt: now, checkedAt: now, lastAttemptAt: now, cadenceDays: 7, autoUpdate: false,
+      tools: { legacy: obsolete, constructor: obsolete, icm: { choice: 'installed' }, revmux: { choice: 'skipped' } },
+    }))
+    const run = args => spawnSync(process.execPath, [join(SKILL, 'scripts', 'deps.mjs'), 'check', ...args], {
+      encoding: 'utf8', env: { ...process.env, PATH: bin, LEKKER_STATE_DIR: tmp },
+    })
+    for (const args of [[], ['--force']]) {
+      const result = run(args)
+      check(`deps ${args.length ? 'full' : 'presence'} check exits successfully`, result.status, 0)
+      const out = JSON.parse(result.stdout)
+      check('deps reports only registered installed tools', out.presence, { icm: 'present' })
+      check('deps preserves skipped tools', out.skipped, ['revmux'])
+    }
+    const saved = JSON.parse(readFileSync(ledger, 'utf8'))
+    check('deps leaves obsolete entries untouched', [saved.tools.legacy, saved.tools.constructor], [obsolete, obsolete])
+    check('deps still checks registered versions', [saved.tools.icm.version, saved.tools.icm.latest, saved.tools.icm.outdated], ['1.0.0', '2.0.0', true])
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+console.log('\nrun log: repeated finishes retain optional metadata')
+{
+  const { execFileSync } = await import('node:child_process')
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const tmp = mkdtempSync(join(tmpdir(), 'lekker-run-log-'))
+  try {
+    const run = args => JSON.parse(execFileSync(process.execPath, [join(SKILL, 'scripts', 'run-log.mjs'), ...args], {
+      encoding: 'utf8', env: { ...process.env, LEKKER_STATE_DIR: tmp },
+    }))
+    const { runId } = run(['start', '--repo', 'example/repo', '--target', 'pr-1'])
+    const meta = () => JSON.parse(readFileSync(join(tmp, 'runs', runId, 'run.json'), 'utf8'))
+    const values = row => [row.verdict, row.reviewFile, row.note]
+    run(['finish', runId])
+    check('run log defaults absent metadata to null', values(meta()), [null, null, null])
+    run(['finish', runId, '--verdict', 'needs-work', '--review-file', '/tmp/review.md', '--note', 'initial review'])
+    run(['finish', runId, '--artifact-url', 'https://example.invalid/review'])
+    check('run log retains omitted metadata', values(meta()), ['needs-work', '/tmp/review.md', 'initial review'])
+    const rows = readFileSync(join(tmp, 'runs.jsonl'), 'utf8').trim().split('\n').map(JSON.parse)
+    check('run log appends retained values to the ledger', values(rows.at(-1)), values(meta()))
+    run(['finish', runId, '--verdict', 'lgtm', '--review-file', '/tmp/updated.md', '--note', ''])
+    check('run log accepts explicit replacements including empty values', values(meta()), ['lgtm', '/tmp/updated.md', ''])
+    run(['finish', runId])
+    check('run log retains explicit empty values', values(meta()), ['lgtm', '/tmp/updated.md', ''])
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 console.log('\nprove: skipped without an installed test runner')
 {
   const { spawnSync } = await import('node:child_process')
@@ -585,7 +653,26 @@ console.log('\nprove: skipped without an installed test runner')
   check('declared but uninstalled runner is not usable', [missing.runner, /node_modules\/\.bin\/vitest missing/.test(missing.reason)], [null, true])
   mkdirSync(join(tmp, 'node_modules', '.bin'), { recursive: true })
   writeFileSync(join(tmp, 'node_modules', '.bin', 'vitest'), '')
-  check('installed runner is usable at the root', runnerOf(tmp), { runner: 'vitest', dirs: ['.'], reason: null })
+  check('installed runner is usable at the root', runnerOf(tmp), { runner: 'vitest', dirs: [{ dir: '.', runner: 'vitest' }], reason: null })
+  const pkg = (dir, data) => {
+    mkdirSync(join(tmp, dir), { recursive: true })
+    writeFileSync(join(tmp, dir, 'package.json'), JSON.stringify(data))
+  }
+  pkg('packages/a', { devDependencies: { vitest: '^2' } })
+  pkg('packages/b', { devDependencies: { jest: '^29' } })
+  pkg('packages/c', { scripts: { test: 'node --test' } })
+  mkdirSync(join(tmp, 'packages', 'node_modules', '.bin'), { recursive: true })
+  writeFileSync(join(tmp, 'packages', 'node_modules', '.bin', 'jest'), '')
+  check('each package retains its runner, including root and intermediate hoists', runnerOf(tmp), {
+    runner: 'vitest', dirs: [
+      { dir: '.', runner: 'vitest' }, { dir: 'packages/a', runner: 'vitest' },
+      { dir: 'packages/b', runner: 'jest' }, { dir: 'packages/c', runner: 'node-test' },
+    ], reason: null,
+  })
+  pkg('isolated', { devDependencies: { vitest: '^2' } })
+  const isolated = runnerOf(join(tmp, 'isolated') + '/')
+  check('binary lookup stops at the worktree root, including a trailing slash',
+    [isolated.runner, isolated.dirs, /node_modules\/\.bin\/vitest missing/.test(isolated.reason)], [null, [], true])
   rmSync(tmp, { recursive: true, force: true })
 }
 

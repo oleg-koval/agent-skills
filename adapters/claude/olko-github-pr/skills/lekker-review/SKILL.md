@@ -349,13 +349,18 @@ page for this PR.
 **Open the run log** once mode, depth and engine are settled (see
 `references/traces.md` for where every trace of a run lives):
 
+Resolve the run-log script path in every shell call. The examples below use
+Claude Code's `CLAUDE_PLUGIN_ROOT`. In Codex, replace the quoted script path in
+each invocation with the absolute path to `scripts/run-log.mjs` beside the
+selected `SKILL.md`. Do not rely on a shell variable set by an earlier call.
+
 ```bash
-RL=${SKILL_ROOT}/scripts/run-log.mjs
-node $RL start --repo <REPO_SLUG> --target <TARGET_SLUG> --mode <MODE> \
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" start --repo <REPO_SLUG> --target <TARGET_SLUG> --mode <MODE> \
   --depth <depth> --engine <ENGINE> [--fix]
 ```
 
-Keep the returned `runId` as `RUN_ID`. Then `node $RL mark <RUN_ID> <phase>`
+Keep the returned `runId` as `RUN_ID`. Then run
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" mark <RUN_ID> <phase>`
 at each step boundary: `context` (Step 1), `review` (Step 2), `synthesis`
 (Step 3), `fix` (Step 4), `post` (Step 5). A marker is one line of JSON; never
 skip the review because the log failed, just say `run log unavailable`.
@@ -440,7 +445,8 @@ On completion, read `worktree.json`. Keys emitted:
 
 `testRunner` is `{runner, dirs, reason}` from `scripts/test-runner.mjs`:
 `runner` is `vitest|jest|mocha|node-test` only when its binary is installed
-in the worktree, `dirs` lists the package dirs that have one, and `reason`
+in the worktree, `dirs` lists `{dir, runner}` pairs for each usable package
+(including binaries installed in a parent dir within the worktree), and `reason`
 says why `runner` is null. Pass it to the workflow unchanged; Prove skips
 without one instead of paying provers to find the missing `node_modules`.
 
@@ -1032,9 +1038,9 @@ that is about to be pushed, and a marker for a superseded sha would be a lie.
 **Close the run log** right after the receipt, then print the review:
 
 ```bash
-node $RL attach <RUN_ID> <scratchpad>/findings.json <scratchpad>/worktree.json \
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" attach <RUN_ID> <scratchpad>/findings.json <scratchpad>/worktree.json \
   <scratchpad>/preflight.json <scratchpad>/context.json
-node $RL finish <RUN_ID> --status ok --verdict lgtm|lgtm-with-changes|needs-work \
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" finish <RUN_ID> --status ok --verdict lgtm|lgtm-with-changes|needs-work \
   --review-file "$REVIEW_FILE" [--wf <wf_id of the lekker-review-core run>]
 ```
 
@@ -1042,9 +1048,10 @@ node $RL finish <RUN_ID> --status ok --verdict lgtm|lgtm-with-changes|needs-work
 hosts). `finish` copies duration, tokens, agent count, verifier drops and
 prove results out of the harness's own record, which Claude Code deletes with
 old sessions. When fix mode, the artifact or a post follows, call `finish`
-again at the very end with every `--wf` id of the run (review and fix) and
+again at the very end using the resolved script path, with every `--wf` id of
+the run (review and fix) and
 `--artifact-url`: the newest row wins. A run that dies part-way still gets
-`finish --status failed --note <why>`.
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" finish <RUN_ID> --status failed --note <why>`.
 
 Then print the full review as the response.
 
@@ -1307,7 +1314,7 @@ If `repoRoot` starts with `/tmp/lekker-clone-`, also remove that clone dir.
 Remove the delta file if `deltaFile` was set in worktree.json. Verify with
 `git -C <repoRoot> worktree list` that no `lekker-review` entries remain.
 
-**Measuring changes.** `node ${SKILL_ROOT}/scripts/run-log.mjs report --days 30`
+**Measuring changes.** `node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" report --days 30`
 prints duration, tokens, findings, verifier drop rate and prove yield per
 engine and depth. Run it before and after a change to `workflow.js` or the
 prompts and quote both. `backfill` imports past runs (idempotent).

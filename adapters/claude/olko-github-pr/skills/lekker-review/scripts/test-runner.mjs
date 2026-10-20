@@ -10,10 +10,10 @@
 // Usage: node test-runner.mjs <worktreePath>
 // Prints {runner, dirs, reason}. `runner` is the first usable runner found
 // (vitest|jest|mocha|node-test) or null; `dirs` lists every package dir with a
-// usable one, relative to the worktree ("." for the root).
+// usable one as {dir, runner}, relative to the worktree ("." for the root).
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 const root = process.argv[2];
 if (!root || !existsSync(root)) {
@@ -44,7 +44,10 @@ function usableRunner(dir) {
   for (const r of RUNNERS) {
     if (!declared[r] && !testScript.includes(r)) continue;
     // existsSync follows the symlinked node_modules setup-worktree.sh creates.
-    if (existsSync(join(dir, 'node_modules', '.bin', r))) return { runner: r };
+    for (let binDir = resolve(dir); ; binDir = dirname(binDir)) {
+      if (existsSync(join(binDir, 'node_modules', '.bin', r))) return { runner: r };
+      if (binDir === resolve(root) || dirname(binDir) === binDir) break;
+    }
     return { reason: `${r} declared but node_modules/.bin/${r} missing` };
   }
   if (/\bnode\b[^&|;]*--test\b/.test(testScript)) return { runner: 'node-test' };
@@ -58,7 +61,7 @@ for (const dir of packageDirs(root, 3)) {
   const rel = relative(root, dir) || '.';
   const r = usableRunner(dir);
   if (r.runner) {
-    dirs.push(rel);
+    dirs.push({ dir: rel, runner: r.runner });
     runner ??= r.runner;
   } else {
     reasons.push(`${rel}: ${r.reason}`);

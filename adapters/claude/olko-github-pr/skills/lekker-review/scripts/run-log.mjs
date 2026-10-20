@@ -194,16 +194,16 @@ if (cmd === 'start') {
     ...meta,
     finishedAt,
     status: flag('status', 'ok'),
-    verdict: flag('verdict'),
+    verdict: flag('verdict', meta.verdict ?? null),
     wallS: Math.round((Date.parse(finishedAt) - Date.parse(meta.startedAt)) / 1000),
     phasesS: phaseDurations(timeline),
     findings: severityCounts(readJson(join(dir, 'findings.json'))),
     review: reviewWf,
     workflows,
     tokensTotal: sum(workflows.map((w) => w.totalTokens)) || null,
-    reviewFile: flag('review-file'),
+    reviewFile: flag('review-file', meta.reviewFile ?? null),
     artifactUrl: flag('artifact-url'),
-    note: flag('note'),
+    note: flag('note', meta.note ?? null),
   };
   writeFileSync(join(dir, 'run.json'), JSON.stringify({ ...row, timeline }, null, 2) + '\n');
   append(row);

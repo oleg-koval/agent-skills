@@ -879,7 +879,8 @@ const budgetAtStart = budget.spent()
       `Read and follow ${promptDir}/prover.md.`,
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${worktreePath}.`,
-      `TEST_RUNNER=${testRunner.runner}, usable in package dir(s): ${(testRunner.dirs || []).join(', ')}.`,
+      `TEST_RUNNER per package (JSON; dirs relative to WORKTREE_PATH): ${JSON.stringify(testRunner.dirs || [])}.`,
+      `Use the runner paired with the most specific package dir containing the finding.`,
       `You get ONE attempt. Leave the worktree exactly as you found it.`,
     ].join(' ')
   }
