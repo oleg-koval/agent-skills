@@ -141,6 +141,12 @@ returns the number checked as `hardRuleCount`.
 Resolve every `references/...` and script path relative to `SKILL_ROOT`; never
 assume a `~/.claude/skills/` installation path.
 
+Run one simple command per shell call. Do not prefix commands with
+`cd <dir> &&`; use absolute paths, `git -C <dir>`, and `grep -rn <pattern> <dir>`
+instead. Permission checkers cannot vet a compound or `cd`-prefixed command,
+so in an unattended or auto-approved run each one becomes a denial and a
+wasted turn.
+
 ## Host selection
 
 Set `HOST=codex` when native Codex collaboration tools such as `spawn_agent`
@@ -602,7 +608,10 @@ First copy the script into the scratchpad. The Workflow tool rejects a
 `scriptPath` outside the working directory or added dirs ("scriptPath must be a
 script path this tool returned, or a file you can already read"), and the skill
 dir is usually neither: `cp ${SKILL_ROOT}/workflow.js <scratchpad>/workflow.js`.
-If it still rejects the path, pass the script inline via `script` instead.
+If `workflow.js` is already in the working directory (an unattended runner may
+stage it there), use that copy and skip the `cp`: some permission checks deny
+reading files out of the skill dir. If the Workflow tool still rejects the
+path, pass the script inline via `script` instead.
 
 Invoke the Workflow tool:
 
@@ -1038,8 +1047,9 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
    its severity. Never auto-fix any other Observation or Idiomatic finding, or a
    title/process rule.
 3. Invoke the host's fix workflow. In Claude, copy `fix-workflow.js` to the
-   scratchpad first (same reason as the review workflow; inline `script` if the
-   path is still rejected), then run:
+   scratchpad first (same reason as the review workflow; skip the copy when it
+   is already in the working directory; inline `script` if the path is still
+   rejected), then run:
    ```
    scriptPath: <scratchpad>/fix-workflow.js
    args: { repoSlug, prNumber, targetLabel, worktreePath, diffFile, contextFile,
