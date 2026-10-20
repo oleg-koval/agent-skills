@@ -133,8 +133,13 @@ comments.
 ```bash
 gh api "repos/<REPO_SLUG>/pulls/<PR_NUMBER>/reviews" \
   --method POST \
-  --input /tmp/lekker-post-$$.json
+  --input /tmp/lekker-post-$$.json  # pending-ok
 ```
+
+The payload has no `event` field on purpose: the review lands as a PENDING
+draft for the user to submit. Keep the `# pending-ok` comment. Guard hooks
+that block event-less review POSTs (they would otherwise create an invisible
+draft by accident) let a command through when it carries that marker.
 
 ---
 
