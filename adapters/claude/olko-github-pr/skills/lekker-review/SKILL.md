@@ -165,6 +165,39 @@ single-agent review is not equivalent to lekker-review.
 
 ## Step 0 - Parse input
 
+### Dependencies (first thing, every run)
+
+```bash
+node ${SKILL_ROOT}/scripts/deps.mjs check   # add --unattended when no human is present
+```
+
+Milliseconds: it only checks presence. The upstream version check needs the
+network, so it runs at most once per `cadenceDays` (default 7) and the ledger
+`~/.local/state/lekker-review/deps.json` records when it last ran. Act on `state`:
+
+- `first-run`: ask ONCE (AskUserQuestion in Claude Code): a multiSelect of the
+  `offer[]` tools (label = tool, description = `usedBy`), plus "keep them
+  updated automatically?" yes/no. Then
+  `deps.mjs init --install <picked> --skip <the rest> --auto-update on|off`.
+  A tool not picked is recorded as skipped and never offered again; the user can
+  still run `deps.mjs install <tool>` later. Unattended: do not ask, do not
+  install; carry on and say `deps not initialised` in the header.
+- `missing-required`: stop and print the `missing` list. The review needs them.
+- `undecided` non-empty (a tool added to the registry since init): ask about
+  those tools only, then `deps.mjs install <tool>` or `deps.mjs skip <tool>`.
+- `outdated` non-empty and `updated` null: one line, e.g.
+  `deps outdated: revmux 0.2.6 -> 0.2.7 (deps.mjs update)`. With auto-update on,
+  `check` already upgraded them when the check was due; report `updated`.
+- `revmuxPromptsInSync: false`: run
+  `bash ${SKILL_ROOT}/scripts/install-revmux-prompts.sh`, which resyncs the
+  lekker profiles into `~/.config/revmux` (`deps.mjs update revmux` does the
+  same after upgrading).
+- An install that returns `manual` (no Homebrew on PATH) prints the command to
+  run by hand; pass it on, do not improvise another installer.
+
+`ENGINE=revmux` additionally needs revmux `present`; when it is missing or
+skipped, fall back to the host's native engine and say why in the header.
+
 ### Pick the mode first
 
 `MODE=branch` when ANY of these hold:
@@ -319,6 +352,25 @@ treat as a full review and leave PREV_SHA unset. Also grep the same file for
 - Step 3.5 reuses that exact URL or local path so the artifact stays a living
 page for this PR.
 
+**Open the run log** once mode, depth and engine are settled (see
+`references/traces.md` for where every trace of a run lives):
+
+Resolve the run-log script path in every shell call. The examples below use
+Claude Code's `CLAUDE_PLUGIN_ROOT`. In Codex, replace the quoted script path in
+each invocation with the absolute path to `scripts/run-log.mjs` beside the
+selected `SKILL.md`. Do not rely on a shell variable set by an earlier call.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" start --repo <REPO_SLUG> --target <TARGET_SLUG> --mode <MODE> \
+  --depth <depth> --engine <ENGINE> [--fix]
+```
+
+Keep the returned `runId` as `RUN_ID`. Then run
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" mark <RUN_ID> <phase>`
+at each step boundary: `context` (Step 1), `review` (Step 2), `synthesis`
+(Step 3), `fix` (Step 4), `post` (Step 5). A marker is one line of JSON; never
+skip the review because the log failed, just say `run log unavailable`.
+
 ---
 
 ## Depth gate
@@ -395,7 +447,14 @@ On completion, read `worktree.json`. Keys emitted:
 `worktreePath`, `repoRoot`, `headSha`, `headShaShort`, `tscTail`,
 `tscChangedTail`, `tscErrorCount`, `eslintTail`, `eslintScope`, `eslintJson`,
 `changedFiles`, `baseRef`, `mergeBase`, `projectRules`, `deltaFile`, `notes`,
-`depsInstall`.
+`depsInstall`, `testRunner`.
+
+`testRunner` is `{runner, dirs, reason}` from `scripts/test-runner.mjs`:
+`runner` is `vitest|jest|mocha|node-test` only when its binary is installed
+in the worktree, `dirs` lists `{dir, runner}` pairs for each usable package
+(including binaries installed in a parent dir within the worktree), and `reason`
+says why `runner` is null. Pass it to the workflow unchanged; Prove skips
+without one instead of paying provers to find the missing `node_modules`.
 
 `notes` containing `changed-files-mismatch:<got>-vs-<expected>` means the
 merge-base still disagrees with the PR. Use the `files` list from `gh pr view`
@@ -627,7 +686,8 @@ args: {
   contextFile: "<scratchpad>/context.json",
   worktreePath: <null for scan, else from worktree.json>,
   promptDir:   "${SKILL_ROOT}/references/agents",
-  prevSha:     <null unless re-review>
+  prevSha:     <null unless re-review>,
+  testRunner:  <worktree.json testRunner, null for scan>
 }
 ```
 
@@ -672,14 +732,16 @@ The workflow runs three phases:
   thirty-finding PR launches thirty concurrent agents.
 - **Critic (deep only):** completeness critic gets the full deduped finding
   list + DIFF_FILE; its findings go through verifier agents before promotion.
-- **Prove (medium/deep, worktree required):** each non-hard-rule Critical gets
-  one prover agent (`references/agents/prover.md`, sonnet, max 5, run
+- **Prove (medium/deep, worktree and an installed test runner required):**
+  each Critical without a `rule` tag gets one prover agent (`references/agents/prover.md`, sonnet, max 5, run
   `maxConcurrent` at a time) that writes a test asserting the CORRECT behaviour,
   runs it in the worktree, and captures it failing because of the bug. The proof rides on the finding as
   `proof: {attempted, proven, outcome, reason, testCode?, testCommand?, redOutput?}`.
   A proof that comes back GREEN (code behaved correctly) is counter-evidence -
   the workflow automatically downgrades the finding from Critical to Important.
-  Hard-rule findings are never proved (policy violations have no failing test).
+  Rule-tagged findings are never proved (policy violations have no failing
+  test). With `testRunner.runner` null, no prover runs and each candidate
+  carries `proof: {attempted: false, reason: "no runnable test runner: ..."}`.
 
 Findings have schema:
 `{file, line, severity, title, description, badCode, fix, rule?, precedent?, agreedBy?, verificationStatus?, verifierReasoning?, proof?}`
@@ -741,7 +803,8 @@ round; Prove runs through the current host's native engine. Steps:
    adapter's `agents` array has `degraded: true`. State the fallback in the
    review header (`**Note:** revmux unavailable - fell back to workflow
    engine` or `...fell back to codex engine`) and re-run the native path from
-   the top of Step 2.
+   the top of Step 2. Quote the last lines of `<round dir>/revmux.stderr.log`
+   in that note: it is the only record of why the agents failed.
 
 **Trust boundary:** always pass `--config-dir ~/.config/revmux` explicitly.
 Without it revmux also reads the reviewed repo's checked-in `.revmux/`, which
@@ -980,6 +1043,24 @@ printf '%s\n' "$REVIEW_FILE" > ~/.cache/lekker-review/reviewed/<headSha>
 Write it against the sha that was actually reviewed. When fix mode later adds
 commits, write a marker for the NEW head sha too - a gate keys on the tip
 that is about to be pushed, and a marker for a superseded sha would be a lie.
+
+**Close the run log** right after the receipt, then print the review:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" attach <RUN_ID> <scratchpad>/findings.json <scratchpad>/worktree.json \
+  <scratchpad>/preflight.json <scratchpad>/context.json
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" finish <RUN_ID> --status ok --verdict lgtm|lgtm-with-changes|needs-work \
+  --review-file "$REVIEW_FILE" [--wf <wf_id of the lekker-review-core run>]
+```
+
+`--wf` is the `runId` the Claude Code Workflow tool returned (omit it on other
+hosts). `finish` copies duration, tokens, agent count, verifier drops and
+prove results out of the harness's own record, which Claude Code deletes with
+old sessions. When fix mode, the artifact or a post follows, call `finish`
+again at the very end using the resolved script path, with every `--wf` id of
+the run (review and fix) and
+`--artifact-url`: the newest row wins. A run that dies part-way still gets
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" finish <RUN_ID> --status failed --note <why>`.
 
 Then print the full review as the response.
 
@@ -1242,6 +1323,11 @@ git -C <repoRoot> worktree prune
 If `repoRoot` starts with `/tmp/lekker-clone-`, also remove that clone dir.
 Remove the delta file if `deltaFile` was set in worktree.json. Verify with
 `git -C <repoRoot> worktree list` that no `lekker-review` entries remain.
+
+**Measuring changes.** `node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" report --days 30`
+prints duration, tokens, findings, verifier drop rate and prove yield per
+engine and depth. Run it before and after a change to `workflow.js` or the
+prompts and quote both. `backfill` imports past runs (idempotent).
 
 ---
 

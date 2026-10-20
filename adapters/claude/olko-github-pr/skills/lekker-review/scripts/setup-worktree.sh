@@ -290,6 +290,12 @@ done < <(find "$WORKTREE_PATH" -mindepth 2 -maxdepth 3 -name package.json \
     -not -path '*/node_modules/*' 2>/dev/null)
 [[ "$NM_LINKED" == "true" ]] || NOTES="${NOTES}no-node_modules-static-checks-skipped;"
 
+# Can a single test file run here? The prove phase reads this instead of
+# paying a prover agent to discover a missing node_modules.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEST_RUNNER_JSON="$(node "$SCRIPT_DIR/test-runner.mjs" "$WORKTREE_PATH" 2>/dev/null \
+    || printf '{"runner":null,"dirs":[],"reason":"test-runner.mjs failed"}')"
+
 # Lintable, still-on-disk changed files (a deleted file must not go to eslint).
 ESLINT_TARGETS=()
 if [[ -s "$CHANGED_FILES_FILE" ]]; then
@@ -475,6 +481,7 @@ python3 - \
     "$MERGE_BASE_VAL" \
     "$DEPS_INSTALL_FILE" \
     "$ESLINT_JSON_FILE" \
+    "$TEST_RUNNER_JSON" \
     "$OUT_JSON" <<'PYEOF'
 import json, sys, os
 
@@ -482,7 +489,13 @@ import json, sys, os
  tsc_file, eslint_file, rules_file, delta_file, notes,
  changed_files_file, base_ref_val, eslint_scope_file,
  tsc_changed_file, tsc_count_file, merge_base_val,
- deps_install_file, eslint_json_file, out_json) = sys.argv[1:19]
+ deps_install_file, eslint_json_file, test_runner_json, out_json) = sys.argv[1:20]
+
+def parse_runner(raw):
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return {"runner": None, "dirs": [], "reason": "unparseable test-runner output"}
 
 def read_file(path):
     if not os.path.exists(path):
@@ -541,6 +554,8 @@ data = {
     "tscChangedTail": read_file(tsc_changed_file),
     "tscErrorCount":  tsc_error_count,
     "depsInstall":    deps_install,
+    # {runner, dirs, reason}; runner null means Prove is skipped.
+    "testRunner":     parse_runner(test_runner_json),
     # Path, not content: lint-findings.mjs reads it. None when eslint produced
     # no structured report (skipped, no config, crashed, or the repo-wide
     # fallback), so a consumer can tell "no lint report" from "no problems".
