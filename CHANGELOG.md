@@ -1,3 +1,15 @@
+# [1.59.0](https://github.com/oleg-koval/agent-skills/compare/v1.58.1...v1.59.0) (2026-10-20)
+
+
+### ✨ Features
+
+* **lekker-review:** run ledger, cadenced deps ledger, skip Prove without a test runner ([#148](https://github.com/oleg-koval/agent-skills/issues/148)) ([3ef0af8](https://github.com/oleg-koval/agent-skills/commit/3ef0af836e00483426aefc3b9354d8dabf280985))
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** head off permission denials in unattended runs ([#149](https://github.com/oleg-koval/agent-skills/issues/149)) ([2e5a579](https://github.com/oleg-koval/agent-skills/commit/2e5a57931a9674147dde055cfad3f8b73fe49c81))
+
 ## [1.58.1](https://github.com/oleg-koval/agent-skills/compare/v1.58.0...v1.58.1) (2026-10-20)
 
 
