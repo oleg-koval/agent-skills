@@ -44,9 +44,10 @@ hold:
   network) and the repo has no test infra to fake it cheaply.
 - The buggy logic is not importable/reachable from a test without large
   scaffolding (deep framework wiring, a webhook server bootstrap).
-- No test runner exists: check `package.json` for `vitest` or `jest` (in
-  `devDependencies` AND a matching script) and confirm `node_modules` is
-  present. Missing either -> not attemptable.
+- The code under test lives outside every package dir the prompt's
+  `TEST_RUNNER` line lists. The workflow already checked those dirs for an
+  installed runner binary, so do not re-check; a finding in any other package
+  has nothing to run its test.
 
 Deciding "not testable" quickly is a GOOD outcome, not a failure of yours --
 say why in one sentence and stop. Do not burn effort scaffolding around a fake
@@ -56,7 +57,8 @@ IO layer just to force a test into existence.
 
 ## Step 2 -- Write the test
 
-One file at the worktree ROOT named `lekker-proof-<file-slug>-<line>.test.ts`,
+One file at the root of the listed package dir that contains the finding
+(`.` means the worktree root) named `lekker-proof-<file-slug>-<line>.test.ts`,
 where `<file-slug>` is the finding's file path with every `/` and `.` replaced
 by `-` (e.g. finding at `src/sync/orders.ts:142` -> 
 `lekker-proof-src-sync-orders-ts-142.test.ts`). The slug matters: another
@@ -77,10 +79,20 @@ repo's real test directories and trivially findable for cleanup.
 
 ## Step 3 -- Run it
 
-Exactly one run command, scoped to your file only:
+Exactly one run command from that package dir, scoped to your file only, for
+the runner paired with that package dir in the `TEST_RUNNER` mapping
+(use the most specific package dir containing the finding):
 
 - vitest: `npx vitest run lekker-proof-<file-slug>-<line>.test.ts --no-coverage --reporter=verbose`
 - jest: `npx jest lekker-proof-<file-slug>-<line>.test.ts --ci`
+- mocha: `npx mocha lekker-proof-<file-slug>-<line>.test.ts`
+- node-test: `node --test lekker-proof-<file-slug>-<line>.test.ts` (needs a
+  runtime that strips types; if it rejects TypeScript, that is an environment
+  failure, below)
+
+When the package dir is not `.`, prefix the command with
+`cd <package dir> && ` and keep that prefix in `testCommand`: fix mode
+re-runs the proof from the worktree root.
 
 Set the Bash tool's `timeout` parameter to 120000 for this call.
 
@@ -114,7 +126,7 @@ Delete your test file and verify the worktree is exactly as clean as you
 found it:
 
 ```bash
-rm lekker-proof-<file-slug>-<line>.test.ts
+rm <package dir>/lekker-proof-<file-slug>-<line>.test.ts
 git -C <WORKTREE_PATH> status --porcelain
 ```
 

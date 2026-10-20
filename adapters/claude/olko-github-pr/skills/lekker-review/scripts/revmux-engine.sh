@@ -134,18 +134,23 @@ cp "$WORKTREE_JSON" "$CONTEXT_DIR/worktree.json"
 cp "$PROFILE_FILE" "$PROFILE_INPUT_FILE"
 
 REVMUX_OUT="$OUT"
+# revmux keeps no stderr of its own. Seven rounds between 2026-10-08 and
+# 2026-10-14 had every agent exit -1 within seconds with nothing in the
+# archive to say why, so keep it beside the round (input/scope.md -> round dir).
+STDERR_LOG="$(dirname "$(dirname "$SCOPE_FILE")")/revmux.stderr.log"
 set +e
 revmux --task "$TASK" --run "$RUN" --profile "$PROFILE_NAME" \
     --workdir "$WORKDIR" --tasks-dir "$TASKS_DIR" --config-dir "$CONFIG_DIR" \
     --tools=Read,Grep,Glob,WebFetch,WebSearch \
-    --no-tui > "$REVMUX_OUT"
+    --no-tui > "$REVMUX_OUT" 2> "$STDERR_LOG"
 CODE=$?
 set -e
+cat "$STDERR_LOG" >&2
 
 case "$CODE" in
     0) printf 'revmux exit 0 (no findings)\n' >&2 ;;
     1) printf 'revmux exit 1 (findings reported)\n' >&2 ;;
-    *) printf 'revmux exit %s (tool error)\n' "$CODE" >&2 ;;
+    *) printf 'revmux exit %s (tool error), stderr kept in %s\n' "$CODE" "$STDERR_LOG" >&2 ;;
 esac
 
 exit "$CODE"
