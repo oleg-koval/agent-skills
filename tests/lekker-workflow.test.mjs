@@ -53,6 +53,7 @@ async function runScenario({ depth = 'medium', worktreePath = null, extraArgs = 
       contextFile: '/tmp/context.json',
       worktreePath,
       promptDir: '/tmp/prompts',
+      testRunner: { runner: 'vitest', dirs: ['.'], reason: null },
     }, extraArgs),
     agent,
     async (thunks) => Promise.all(thunks.map(async (thunk) => {
@@ -281,6 +282,26 @@ test('hard-rule verification is counted when the verifier returns no result', as
     result.findings[0].verifierReasoning,
     'verifier agent returned no usable result; downgraded to non-blocking',
   )
+})
+
+test('prove is skipped without an installed test runner', async () => {
+  const { calls, result } = await runScenario({
+    worktreePath: '/tmp/fake-worktree',
+    extraArgs: { testRunner: { runner: null, dirs: [], reason: '.: vitest declared but node_modules/.bin/vitest missing' } },
+    respond: ({ options }) => {
+      if (options.label === 'review:quality') return { findings: [{ ...baseFinding }] }
+      if (options.label.startsWith('review:')) return { findings: [] }
+      if (options.label.startsWith('verify:')) {
+        return { verdict: 'confirmed', reasoning: 'Failure is reachable and unmitigated.' }
+      }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  assert.equal(calls.some((label) => label.startsWith('prove:')), false)
+  assert.equal(result.findings[0].severity, 'critical')
+  assert.equal(result.findings[0].proof.outcome, 'not_attempted')
+  assert.match(result.findings[0].proof.reason, /no runnable test runner/)
 })
 
 test('a passing proof automatically downgrades a Critical finding', async () => {

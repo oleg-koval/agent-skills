@@ -569,5 +569,25 @@ console.log('\nbot pre-emption: lint pre-flight, pattern mining, precision store
   rmSync(tmp, { recursive: true, force: true })
 }
 
+console.log('\nprove: skipped without an installed test runner')
+{
+  const { spawnSync } = await import('node:child_process')
+  const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const wf = readFileSync(join(SKILL, 'workflow.js'), 'utf8')
+  check('prover is skipped without a usable test runner', /proveCandidates\.length > 0 && !hasRunner/.test(wf), true)
+  check('workflow reads testRunner from args', /^\s+testRunner,$/m.test(wf), true)
+
+  const runnerOf = dir => JSON.parse(spawnSync('node', [join(SKILL, 'scripts', 'test-runner.mjs'), dir], { encoding: 'utf8' }).stdout)
+  const tmp = mkdtempSync(join(tmpdir(), 'lekker-runner-'))
+  writeFileSync(join(tmp, 'package.json'), JSON.stringify({ devDependencies: { vitest: '^2' }, scripts: { test: 'vitest' } }))
+  const missing = runnerOf(tmp)
+  check('declared but uninstalled runner is not usable', [missing.runner, /node_modules\/\.bin\/vitest missing/.test(missing.reason)], [null, true])
+  mkdirSync(join(tmp, 'node_modules', '.bin'), { recursive: true })
+  writeFileSync(join(tmp, 'node_modules', '.bin', 'vitest'), '')
+  check('installed runner is usable at the root', runnerOf(tmp), { runner: 'vitest', dirs: ['.'], reason: null })
+  rmSync(tmp, { recursive: true, force: true })
+}
+
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)

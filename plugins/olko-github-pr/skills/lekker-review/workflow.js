@@ -450,6 +450,7 @@ const {
   targetLabel: targetLabelArg,
   engine: engineArg,
   findingsFile,
+  testRunner,
 } = input
 
 // 'revmux' skips straight to Prove on pre-computed findings, so Prove's
@@ -866,7 +867,9 @@ const budgetAtStart = budget.spent()
   // with no runtime failure to demonstrate), attempt to produce an
   // executable failing test in the worktree. Only runs with a worktree and
   // outside scan depth, and is capped so a pathological finding count can't
-  // blow the budget.
+  // blow the budget. `testRunner` comes from worktree.json: without a runner
+  // whose binary is installed a prover cannot run its test, which is how 5 of
+  // the first 7 proof attempts failed.
   // -------------------------------------------------------------------------
 
   function proverPrompt(finding) {
@@ -876,6 +879,7 @@ const budgetAtStart = budget.spent()
       `Read and follow ${promptDir}/prover.md.`,
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${worktreePath}.`,
+      `TEST_RUNNER=${testRunner.runner}, usable in package dir(s): ${(testRunner.dirs || []).join(', ')}.`,
       `You get ONE attempt. Leave the worktree exactly as you found it.`,
     ].join(' ')
   }
@@ -884,8 +888,15 @@ const budgetAtStart = budget.spent()
     const proveCandidates = finalFindings.filter(function(f) {
       return shouldProve(f) && !isHardRule(f)
     })
+    const hasRunner = Boolean(testRunner && testRunner.runner)
 
-    if (proveCandidates.length > 0) {
+    if (proveCandidates.length > 0 && !hasRunner) {
+      const reason = 'no runnable test runner: ' + ((testRunner && testRunner.reason) || 'testRunner not passed')
+      for (const f of proveCandidates) {
+        f.proof = { attempted: false, proven: false, outcome: 'not_attempted', reason: reason }
+      }
+      log(`Prove: skipped ${proveCandidates.length} finding(s), ${reason}`)
+    } else if (proveCandidates.length > 0) {
       phase('Prove')
 
       const capped = proveCandidates.slice(0, 5)

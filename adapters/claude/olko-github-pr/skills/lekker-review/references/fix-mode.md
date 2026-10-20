@@ -189,7 +189,8 @@ For each proven finding in a committable group:
 
 1. **Re-materialize the test**: write `proof.testCode` back to its original
    filename (the same `lekker-proof-<file-slug>-<line>.test.ts` name it was captured
-   under) at the worktree root.
+   under) in the package dir `proof.testCommand` starts with `cd` into, or at
+   the worktree root when it has no `cd` prefix.
 2. **Run** exactly `proof.testCommand` (Bash `timeout` 120000).
 3. **Judge**:
    - **PASSES now** -> the fix demonstrably resolves the finding. Record
