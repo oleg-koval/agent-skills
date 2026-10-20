@@ -1,3 +1,10 @@
+## [1.58.1](https://github.com/oleg-koval/agent-skills/compare/v1.58.0...v1.58.1) (2026-10-20)
+
+
+### ♻️ Chores
+
+* **ci:** let fleet sync PRs past the first-time contributor gate ([#147](https://github.com/oleg-koval/agent-skills/issues/147)) ([d84a13d](https://github.com/oleg-koval/agent-skills/commit/d84a13d8f6e947ffab77135dc4d2bf37eb40b9ee))
+
 # [1.58.0](https://github.com/oleg-koval/agent-skills/compare/v1.57.0...v1.58.0) (2026-10-19)
 
 
