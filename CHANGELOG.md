@@ -1,3 +1,10 @@
+## [1.59.2](https://github.com/oleg-koval/agent-skills/compare/v1.59.1...v1.59.2) (2026-10-21)
+
+
+### 🚀 Performance Improvements
+
+* **lekker-review:** run main review loop on sonnet ([#152](https://github.com/oleg-koval/agent-skills/issues/152)) ([72b9061](https://github.com/oleg-koval/agent-skills/commit/72b90612c152d12d92529679e6b0d50b607c84f5))
+
 ## [1.59.1](https://github.com/oleg-koval/agent-skills/compare/v1.59.0...v1.59.1) (2026-10-20)
 
 
