@@ -29,6 +29,7 @@ description: >
   the PR", provides a GitHub PR URL, or asks for a pull request review in any
   form.
 license: MIT
+model: sonnet
 allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact, spawn_agent, wait_agent, followup_task, send_message, interrupt_agent, list_agents
 compatibility: >
   Claude Code and OpenAI Codex. Claude uses Workflow/Agent/Artifact. Codex uses
