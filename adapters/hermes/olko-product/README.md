@@ -5,6 +5,7 @@
 Run `./scripts/install-hermes-symlinks.sh` from the repository root to link these skills
 into the active Hermes profile. The canonical packages are:
 
+- `plugins/olko-product/skills/ingest-publication-slice/SKILL.md`
 - `plugins/olko-product/skills/product-builder/SKILL.md`
 - `plugins/olko-product/skills/mvp-oneshot/SKILL.md`
 - `plugins/olko-product/skills/ux-ui-audit-loop/SKILL.md`
