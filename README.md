@@ -32,7 +32,7 @@ These skills are opinionated by design. They encode working defaults, preferred 
 
 ## Start here
 
-Ten skills across different plugins that cover the most common jobs. Full catalog is below.
+Eleven skills across different plugins that cover the most common jobs. Full catalog is below.
 
 | What you're doing | Skill | Key principle |
 |--------------------|-------|----------------|
@@ -265,7 +265,7 @@ Ship a release: semantic-release setup, changelogs, store listing copy, release-
 | [changelog-generator](plugins/olko-release/skills/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, a CHANGELOG entry, or "what changed since the last release"; for setting up the release pipeline itself use semantic-release-beta |
 | [store-listing-copy](plugins/olko-release/skills/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
 
-### olko-product (6)
+### olko-product (7)
 
 Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.
 
