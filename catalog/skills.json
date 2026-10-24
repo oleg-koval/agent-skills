@@ -515,6 +515,28 @@
       "description": "Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.",
       "skills": [
         {
+          "name": "ingest-publication-slice",
+          "lookupName": "olko:ingest-publication-slice",
+          "path": "plugins/olko-product/skills/ingest-publication-slice",
+          "description": "Build and verify a small end-to-end publication path for validated ingested data, including atomic persistence, read fallback, and static artifact precedence.",
+          "tags": [
+            "ingest",
+            "publication",
+            "testing",
+            "workflow"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro",
+            "hermes"
+          ]
+        },
+        {
           "name": "product-builder",
           "lookupName": "olko:product-builder",
           "path": "plugins/olko-product/skills/product-builder",
