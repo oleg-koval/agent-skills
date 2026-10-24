@@ -4,6 +4,7 @@
 
 Use the canonical skills directly:
 
+- `plugins/olko-product/skills/ingest-publication-slice/SKILL.md`
 - `plugins/olko-product/skills/product-builder/SKILL.md`
 - `plugins/olko-product/skills/mvp-oneshot/SKILL.md`
 - `plugins/olko-product/skills/ux-ui-audit-loop/SKILL.md`

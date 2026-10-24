@@ -31,6 +31,7 @@ Available reusable prompt files:
 - release-day: .github/prompts/release-day.prompt.md
 - changelog-generator: .github/prompts/changelog-generator.prompt.md
 - store-listing-copy: .github/prompts/store-listing-copy.prompt.md
+- ingest-publication-slice: .github/prompts/ingest-publication-slice.prompt.md
 - product-builder: .github/prompts/product-builder.prompt.md
 - mvp-oneshot: .github/prompts/mvp-oneshot.prompt.md
 - ux-ui-audit-loop: .github/prompts/ux-ui-audit-loop.prompt.md

@@ -32,7 +32,7 @@ These skills are opinionated by design. They encode working defaults, preferred 
 
 ## Start here
 
-Ten skills across different plugins that cover the most common jobs. Full catalog is below.
+Eleven skills across different plugins that cover the most common jobs. Full catalog is below.
 
 | What you're doing | Skill | Key principle |
 |--------------------|-------|----------------|
@@ -43,6 +43,7 @@ Ten skills across different plugins that cover the most common jobs. Full catalo
 | Closing out a finished piece of work | [wrap-up](plugins/olko-reflection/skills/wrap-up/SKILL.md) (`olko:wrap-up`) | Verify the objective and propose safe cleanup |
 | Running a recurring engineering retrospective | [retro-analysis](plugins/olko-reflection/skills/retro-analysis/SKILL.md) (`olko:retro-analysis`) | Evidence from delivery and code, not vibes |
 | Going from idea to a shippable MVP | [mvp-oneshot](plugins/olko-product/skills/mvp-oneshot/SKILL.md) (`olko:mvp-oneshot`) | Scope for one week, not the whole roadmap |
+| Publishing validated ingested data immediately | [ingest-publication-slice](plugins/olko-product/skills/ingest-publication-slice/SKILL.md) (`olko:ingest-publication-slice`) | Test the atomic write, fallback read, and artifact precedence end to end |
 | Ramping up on an unfamiliar codebase fast | [crash-course](plugins/olko-reflection/skills/crash-course/SKILL.md) (`olko:crash-course`) | Source-grounded, timed, and testable |
 | Cutting a release from ready-code to submitted-build | [release-day](plugins/olko-release/skills/release-day/SKILL.md) (`olko:release-day`) | One orchestrated pass, not five manual steps |
 | Starting the workday with the queue synced | [morning-routine](plugins/olko-obsidian/skills/morning-routine/SKILL.md) (`olko:morning-routine`) | Chain the routines instead of running them separately |
@@ -264,7 +265,7 @@ Ship a release: semantic-release setup, changelogs, store listing copy, release-
 | [changelog-generator](plugins/olko-release/skills/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, a CHANGELOG entry, or "what changed since the last release"; for setting up the release pipeline itself use semantic-release-beta |
 | [store-listing-copy](plugins/olko-release/skills/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
 
-### olko-product (6)
+### olko-product (7)
 
 Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.
 
@@ -275,6 +276,7 @@ Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/U
 | [ux-ui-audit-loop](plugins/olko-product/skills/ux-ui-audit-loop/SKILL.md) | Audits and improves a web UI through browser evidence, severity triage, minimal fixes, and before/after verification | The user says "audit this UI", "fix the UX", "review this page visually", "make this page polished", or asks for an autonomous screenshot-and-fix loop |
 | [frontend-direction](plugins/olko-product/skills/frontend-direction/SKILL.md) | Chooses a distinctive, coherent visual direction and source-backed components before writing frontend code | Building a new page or a substantial UI redesign, or making an interface less generic; small fixes keep the existing design |
 | [starter-rules](plugins/olko-product/skills/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
+| [ingest-publication-slice](plugins/olko-product/skills/ingest-publication-slice/SKILL.md) | Builds a test-first ingest-to-publication path with atomic persistence, read fallback, and static artifact precedence | Publishing validated ingested data before a static artifact exists |
 | [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, or package for public launch ("prep for Product Hunt", "write the launch post", "make this shareable"); for building the thing itself use mvp-oneshot or product-builder |
 
 ### olko-skill-meta (8)
