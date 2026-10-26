@@ -17,6 +17,13 @@ updates:
     patterns:
       - "*"
     multi-ecosystem-group: "weekly"
+    ignore:
+      - dependency-name: "@semantic-release/changelog"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@semantic-release/git"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "github-actions"
     directory: "/"
     patterns:
