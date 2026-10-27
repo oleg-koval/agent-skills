@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-56-2563eb" alt="56 skills">
+    <img src="https://img.shields.io/badge/skills-58-2563eb" alt="58 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -334,7 +334,7 @@ Build, test and publish Garmin Connect IQ watch faces.
 |-------|-------------|----------|
 | [garmin-watchface](plugins/olko-garmin-kit/skills/garmin-watchface/SKILL.md) | Designs, builds, tests, screenshots, and publishes Garmin Connect IQ watch faces in Monkey C | Working on a Connect IQ watch face, SVG design proposals, inspiration gathering, layout that clips or overlaps, simulator screenshots, app settings, device support, or store submission |
 
-### olko-creative (5)
+### olko-creative (6)
 
 Creative and personal projects: photo galleries, music players, Plex ingest, listings, wiki editing.
 
@@ -345,6 +345,7 @@ Creative and personal projects: photo galleries, music players, Plex ingest, lis
 | [music-to-plex](plugins/olko-creative/skills/music-to-plex/SKILL.md) | Acquires albums, DJ crates, and YouTube playlists for Plex/Plexamp with verified NAS delivery, Plex visibility, and source-backed Obsidian radio notes | Adding or downloading music to Plex/Plexamp, including an album request, DJ crate, or YouTube playlist |
 | [vinted-listing](plugins/olko-creative/skills/vinted-listing/SKILL.md) | Creates and safely publishes Vinted listings from verified item details and the seller's original photos, with automatic suggestions, duplicate checks, draft verification, and publish confirmation | Listing, selling, relisting, or pricing an item on Vinted, or editing and publishing an existing draft |
 | [wikipedia-uk-editor](plugins/olko-creative/skills/wikipedia-uk-editor/SKILL.md) | Drafts policy-compliant Ukrainian Wikipedia edits, en→uk translation, stub expansion, sourcing, backlog cleanup, returning ready-to-paste wikitext, an edit summary, and a verified source list | Editing, translating, or sourcing a uk.wikipedia.org article, or planning what to contribute next |
+| [shorts-animator](plugins/olko-creative/skills/shorts-animator/SKILL.md) | Makes narrated, painted animated shorts from a script and a look in words: scenes drawn in code, GPU-painted on twos, voiced locally, captioned and scored into an MP4 | Making a TikTok, Reels or YouTube Shorts animation, a painted quote or verse video, or any faceless short that should look drawn |
 
 ### olko-web-ops (4)
 
