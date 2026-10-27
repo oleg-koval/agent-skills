@@ -826,8 +826,23 @@ anchors. Apply your own judgment to every finding.
 - Comment wording choices
 - Scenarios requiring multiple simultaneous unrealistic failures
 - Tiny DRY opportunities (2-3 duplicated lines)
-- Pre-existing code not touched by this diff
+- Pre-existing code not touched by this diff, EXCEPT a real bug (not style or debt) that you can quote: report it under `## Pre-existing` (see below), never as a Critical/Important
 - Anything you are not confident about - omit rather than hedge
+
+**Pre-existing bugs.** A real defect in code this diff does not change, but that
+sits on the path the diff touches, is worth one line: list it under a separate
+`## Pre-existing` section (`file:line`, one sentence, the quoted line). Rules: it
+never counts toward the finding totals, never affects the verdict, is never
+posted as an inline comment, and is never auto-fixed by `--fix`. Style, debt and
+tsc/eslint noise are not pre-existing bugs: omit them. Omit the section when empty.
+
+**REVIEW.md.** A `REVIEW.md` at the repo root (or in a package, depth <= 3) is
+review-only guidance, collected into `projectRules` next to `CLAUDE.md` and
+`AGENTS.md`. Honour three kinds of line in it: what to ALWAYS flag (treat a
+match as at least Important), paths to IGNORE (drop findings in those paths),
+and a nit limit (cap Observation and Idiomatic findings at that number, highest
+value first). `REVIEW.md` narrows what is reported; it never switches off a hard
+rule from `CLAUDE.md` or the house rules.
 
 **Approval standard.** The verdict answers "does this definitely improve the
 codebase's health", not "is this how I would have written it". Perfect code does

@@ -35,6 +35,15 @@ Axes to cover:
   missing DB indexes for new query patterns.
 - Time/Space Complexity: O(n²) where linear exists, large payloads in memory,
   sort/dedup on large arrays that could be done at DB level.
+- Root cause vs symptom (bug-fix PRs): when the PR title, body or linked ticket
+  says it fixes a bug, identify the root cause from the ticket and the code
+  path, then check that the diff changes THAT. A fix that only guards, catches,
+  retries, defaults or special-cases the symptom (a null check at the crash
+  site while the producer still emits null, a try/catch around the failing
+  call, a retry on a deterministic error) is an `important` finding: `title`
+  starts "Fix addresses the symptom", `description` names the root cause and
+  where it still lives, `fix` points at the producing code. Quiet when the
+  diff reaches the root cause or the PR is not a bug fix.
 - Integration Contracts: Shopify API misuse, BC API assumptions, webhook
   idempotency, external API pagination not handled.
 

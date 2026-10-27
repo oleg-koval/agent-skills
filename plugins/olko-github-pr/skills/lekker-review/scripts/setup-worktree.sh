@@ -427,17 +427,20 @@ wait "$TSC_PID" || true
 wait "$ESLINT_PID" || true
 
 # ---------------------------------------------------------------------------
-# 5. Collect PROJECT_RULES from CLAUDE.md files (depth <= 3, skip node_modules)
+# 5. Collect PROJECT_RULES from CLAUDE.md, REVIEW.md and AGENTS.md files
+#    (depth <= 3, skip node_modules). REVIEW.md is review-only guidance: what to
+#    always flag, paths to ignore, nit limit (see SKILL.md, "REVIEW.md").
 # ---------------------------------------------------------------------------
 PROJECT_RULES_FILE="/tmp/lekker-rules-$$.txt"
 printf '' > "$PROJECT_RULES_FILE"
 
-while IFS= read -r claude_md; do
-    printf '=== %s ===\n' "$claude_md" >> "$PROJECT_RULES_FILE"
-    cat "$claude_md" >> "$PROJECT_RULES_FILE"
+while IFS= read -r rules_md; do
+    printf '=== %s ===\n' "$rules_md" >> "$PROJECT_RULES_FILE"
+    cat "$rules_md" >> "$PROJECT_RULES_FILE"
     printf '\n' >> "$PROJECT_RULES_FILE"
-done < <(find "$WORKTREE_PATH" -maxdepth 3 -name 'CLAUDE.md' \
-    -not -path '*/node_modules/*' 2>/dev/null)
+done < <(find "$WORKTREE_PATH" -maxdepth 3 \
+    \( -name 'CLAUDE.md' -o -name 'REVIEW.md' -o -name 'AGENTS.md' \) \
+    -not -path '*/node_modules/*' 2>/dev/null | sort)
 
 # ---------------------------------------------------------------------------
 # 6. HEAD SHA
