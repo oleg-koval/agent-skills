@@ -9,3 +9,5 @@ Use the canonical skills directly:
 - `plugins/olko-creative/skills/music-to-plex/SKILL.md`
 - `plugins/olko-creative/skills/vinted-listing/SKILL.md`
 - `plugins/olko-creative/skills/wikipedia-uk-editor/SKILL.md`
+- `plugins/olko-creative/skills/shorts-animator/SKILL.md`
+- `plugins/olko-creative/skills/carousel-maker/SKILL.md`

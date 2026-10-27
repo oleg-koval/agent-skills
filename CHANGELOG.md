@@ -1,3 +1,10 @@
+# [1.61.0](https://github.com/oleg-koval/agent-skills/compare/v1.60.0...v1.61.0) (2026-10-27)
+
+
+### ✨ Features
+
+* shorts-animator skill ([#157](https://github.com/oleg-koval/agent-skills/issues/157)) ([f1db20f](https://github.com/oleg-koval/agent-skills/commit/f1db20f18e7ff6fbf6237362f5062cf30329a159)), closes [#166](https://github.com/oleg-koval/agent-skills/issues/166)
+
 # [1.60.0](https://github.com/oleg-koval/agent-skills/compare/v1.59.3...v1.60.0) (2026-10-27)
 
 
