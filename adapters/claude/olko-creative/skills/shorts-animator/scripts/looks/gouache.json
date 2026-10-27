@@ -1,0 +1,7 @@
+{
+  "about": "Gouache storybook: flat matte shapes, crisp edges, a little brush texture and paper. Calm and graphic.",
+  "mode": "strokes", "brush": 6, "length": 2.2, "layers": 2, "swirl": 0.2, "flow": 300, "curve": 0.3,
+  "bristle": 0.35, "impasto": 0.1, "hueJitter": 0.05, "valueJitter": 0.07, "satJitter": 0.1, "respect": 1,
+  "boil": 0.3, "paper": 0.8, "grain": 0.35, "saturation": 1.02, "contrast": 1.02, "warmth": 0.1, "vignette": 0.15, "bloom": 0.05,
+  "captions": { "style": "box", "size": 44 }
+}
