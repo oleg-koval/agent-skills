@@ -11,3 +11,4 @@ into the active Hermes profile. The canonical packages are:
 - `plugins/olko-creative/skills/vinted-listing/SKILL.md`
 - `plugins/olko-creative/skills/wikipedia-uk-editor/SKILL.md`
 - `plugins/olko-creative/skills/shorts-animator/SKILL.md`
+- `plugins/olko-creative/skills/carousel-maker/SKILL.md`

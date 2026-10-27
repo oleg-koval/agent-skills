@@ -61,6 +61,7 @@ Available reusable prompt files:
 - vinted-listing: .github/prompts/vinted-listing.prompt.md
 - wikipedia-uk-editor: .github/prompts/wikipedia-uk-editor.prompt.md
 - shorts-animator: .github/prompts/shorts-animator.prompt.md
+- carousel-maker: .github/prompts/carousel-maker.prompt.md
 - cloudflare-block-countries: .github/prompts/cloudflare-block-countries.prompt.md
 - search-console-indexing-audit: .github/prompts/search-console-indexing-audit.prompt.md
 - docs-index-keeper: .github/prompts/docs-index-keeper.prompt.md
