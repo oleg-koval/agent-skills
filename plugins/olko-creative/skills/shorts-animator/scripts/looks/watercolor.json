@@ -1,0 +1,6 @@
+{
+  "about": "Watercolour on cold-press paper: soft bleeding washes, pigment pooled at the edges, granulation, light and airy.",
+  "mode": "wash", "wash": 0.9, "bleed": 0.8, "paper": 0.9, "paperColor": "#f6f1e6", "grain": 0.25, "boil": 0.4,
+  "outline": 0, "saturation": 0.92, "contrast": 0.96, "warmth": 0.1, "vignette": 0.12, "bloom": 0.1,
+  "captions": { "style": "box", "size": 44, "box": "rgba(34,38,58,0.58)" }
+}
