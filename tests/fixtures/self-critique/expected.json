@@ -1,0 +1,8 @@
+{
+  "correct": { "min_round1_score": 90 },
+  "seeded": {
+    "max_round1_score": 70,
+    "must_refute": ["retries", "timeout"],
+    "must_miss": ["swallow"]
+  }
+}
