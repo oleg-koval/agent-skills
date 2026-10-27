@@ -212,6 +212,16 @@ if empty.)*
 
 ---
 
+## Pre-existing
+
+- `<file>:<line>`: <one sentence: the real bug that already existed>. `<quoted line>`
+
+*(Real bugs in code this diff does not change. Never counted in **Findings**,
+never affects the verdict, never an inline comment, never auto-fixed. Omit the
+section if empty.)*
+
+---
+
 ## 💰 Review Cost
 
 ```
