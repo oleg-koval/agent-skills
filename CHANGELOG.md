@@ -1,3 +1,10 @@
+# [1.60.0](https://github.com/oleg-koval/agent-skills/compare/v1.59.3...v1.60.0) (2026-10-27)
+
+
+### ✨ Features
+
+* **self-critique:** v2 blind critic, computed score, rule lifecycle ([#156](https://github.com/oleg-koval/agent-skills/issues/156)) ([826f757](https://github.com/oleg-koval/agent-skills/commit/826f7578165a5a84583039e782d78b186da22cbd))
+
 ## [1.59.3](https://github.com/oleg-koval/agent-skills/compare/v1.59.2...v1.59.3) (2026-10-27)
 
 
