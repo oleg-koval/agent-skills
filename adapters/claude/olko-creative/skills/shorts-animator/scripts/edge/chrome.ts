@@ -109,8 +109,8 @@ async function connect(url: string): Promise<Wire> {
   ws.onmessage = (ev) => {
     const m = parse(ev.data);
     if (!m) return;
-    const reply = typeof m.id === "number" ? pending.get(m.id) : undefined;
-    if (reply && typeof m.id === "number") { pending.delete(m.id); reply(m); return; }
+    const id = typeof m.id === "number" && pending.has(m.id) ? m.id : undefined;
+    if (id !== undefined) { const reply = pending.get(id); pending.delete(id); reply?.(m); return; }
     const line = logLine(m);
     if (line !== undefined) logs.push(line);
   };
