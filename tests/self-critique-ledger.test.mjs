@@ -53,6 +53,13 @@ test('penalises accepted inferred findings', () => {
   assert.equal(scoreLedger({ version: 1, claims: [inferred('c1', false)], missed: [] }).score, 95)
 })
 
+test('penalises a verified claim found only by the critic', () => {
+  assert.deepEqual(scoreLedger({ version: 1, claims: [claim('c1', true, 'verified', 'critic')], missed: [] }), {
+    score: 95,
+    breakdown: { only_critic_found: 5 },
+  })
+})
+
 test('floors at 0', () => {
   const claims = ['c1', 'c2', 'c3', 'c4', 'c5'].map((id) => refuted(id, true))
   assert.equal(scoreLedger({ version: 1, claims, missed: [] }).score, 0)
@@ -94,9 +101,30 @@ test('cli exits 2 with a JSON error on malformed input', () => {
   JSON.parse(r.stderr)
 })
 
-test('rejects a refuted claim checked only by inference', () => {
-  const l = { version: 1, claims: [{ ...refuted('c1', true), checked_by: 'inferred' }], missed: [] }
-  assert.deepEqual(validateLedger(l), ['claims[0].checked_by: a refuted claim must be checked by command or read'])
+test('rejects verified and refuted claims checked only by inference', () => {
+  for (const status of ['verified', 'refuted']) {
+    const l = { version: 1, claims: [{ ...claim('c1', true, status), checked_by: 'inferred' }], missed: [] }
+    assert.deepEqual(validateLedger(l), ['claims[0].checked_by: verified and refuted claims must be checked by command or read'])
+  }
+})
+
+test('requires non-empty receipts for verified and refuted claims', () => {
+  for (const status of ['verified', 'refuted']) {
+    for (const receipt of [undefined, null, '', ' \n ', 42]) {
+      const l = { version: 1, claims: [{ ...claim('c1', true, status), receipt }], missed: [] }
+      assert.deepEqual(validateLedger(l), ['claims[0].receipt: verified and refuted claims require a non-empty receipt'])
+    }
+    for (const checked_by of ['command', 'read']) {
+      assert.deepEqual(validateLedger({ version: 1, claims: [{ ...claim('c1', true, status), checked_by }], missed: [] }), [])
+    }
+  }
+})
+
+test('keeps inferred and unverifiable claims valid without receipts', () => {
+  const claims = ['inferred', 'unverifiable'].map((status) => ({
+    ...claim(status, true, status), checked_by: 'inferred', receipt: undefined,
+  }))
+  assert.deepEqual(validateLedger({ version: 1, claims, missed: [] }), [])
 })
 
 test('requires checked_by on missed items', () => {

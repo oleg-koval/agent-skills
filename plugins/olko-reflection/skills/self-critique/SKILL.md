@@ -41,6 +41,10 @@ durable rule has bought every answer after it.
 Do not use for trivial one-shot replies or simple chat. The overhead only pays off on load-bearing
 answers.
 
+**Standalone Cursor installation.** Use the generated Cursor adapter or the full skill package,
+including its `scripts/` directory. Copying only `SKILL.md` is insufficient for this workflow,
+which calls the bundled scripts.
+
 ## Procedure
 
 1. **Snapshot the target.** Capture your last substantial answer verbatim and the original task
@@ -58,10 +62,13 @@ answers.
 
    **Replay pass.** Before spawning the critic, check the answer against every stored rule. Resolve
    the memory dir as the auto-memory dir for the current project, else the repo's `.claude/memory`;
-   if neither exists, skip this pass with a one-line note. Run
-   `node <skill>/scripts/rule-store.mjs checklist --dir <memory dir>` and test the answer against
-   each rule it prints. Tag each hit `(recurring)` in the report and record it with
+   if neither exists, skip replay, evidence-check, and prune with a one-line note. Run
+   `node <skill>/scripts/rule-store.mjs checklist --dir <memory dir>`, then open each listed rule's
+   memory file and read its body before testing the answer against it. The checklist's names and
+   descriptions alone are insufficient. Tag each hit `(recurring)` in the report and record it with
    `node <skill>/scripts/rule-store.mjs fire <name> --dir <memory dir> --date <today>`.
+   Fire counters and pruning apply only to rules in this memory directory. Rules routed to
+   `CLAUDE.md`, `AGENTS.md`, or the shared store are neither counted nor pruned.
 
 2. **Spawn the critic (blind).** Launch one independent agent with live-source access (issue tracker,
    code host, error monitor, the repo). Round one input is the original task text and the answer
@@ -73,9 +80,10 @@ answers.
 
 2b. **Merge into the ledger.** Match the critic's claims to yours by meaning and set `origin` on
    each: `both`, `author` (only you found it), `critic` (only the critic found it). Every critic
-   finding with `checked_by: inferred` must be re-verified by you before it may become `refuted`;
-   if you cannot verify it, it stays `inferred`. A `refuted` claim with `checked_by: inferred` is
-   rejected by validation. Save `.self-critique/ledger-v1.json`, then run
+   finding with `checked_by: inferred` must be re-verified by you before it may become `verified`
+   or `refuted`; if you cannot verify it, it stays `inferred`. Both statuses require
+   `checked_by: command` or `checked_by: read` and a non-empty receipt; validation rejects inferred evidence or a missing
+   receipt. Save `.self-critique/ledger-v1.json`, then run
    `node <skill>/scripts/claim-ledger.mjs score .self-critique/ledger-v1.json` and
    `node <skill>/scripts/claim-ledger.mjs summary .self-critique/ledger-v1.json` (an invalid ledger
    exits 2 and prints the errors as JSON).
@@ -94,10 +102,12 @@ answers.
    - `status`: `verified` | `refuted` | `unverifiable` | `inferred`
    - `checked_by`: `command` (run, output quoted) | `read` (file or record opened, quoted) |
      `inferred` (reasoning only). Required on `missed` items too; an `inferred` missed item is not
-     penalised, and a `refuted` claim may not be `inferred`.
+     penalised. A `verified` or `refuted` claim may not use inferred evidence and requires a
+     non-empty receipt.
 
-3. **Decide and loop.** Stop when the score is at least 90, OR no `refuted`, `missed`, or
-   load-bearing `unverifiable` ledger item is left that a revision could fix, OR 3 rounds have run.
+3. **Decide and loop.** Accept a score of at least 90 only after all fixable findings are resolved
+   or explicitly qualified in the answer and report; otherwise continue the critique loop. Stop
+   when that condition holds, OR no ledger item is left that a revision could fix, OR 3 rounds have run.
    Otherwise revise the answer to produce `v2`, write `ledger-v2.json`, and run
    `node <skill>/scripts/claim-ledger.mjs ratchet .self-critique/ledger-v1.json .self-critique/ledger-v2.json`
    on the previous and new ledger: a lower re-score discards the revision, and you keep the winner. Round
@@ -112,7 +122,10 @@ answers.
 4. **Report, always, even after a single round.** In this order:
    - **Corrected answer (`v_final`)** - restated in full, not as a diff, so the user can act on it
      without reading anything else. After a single round with no revision, restate `v1` unchanged.
-   - **Claim ledger** - the table printed by `node <skill>/scripts/claim-ledger.mjs summary .self-critique/ledger-v1.json`, with the computed score.
+   - **Claim ledger** - run `node <skill>/scripts/claim-ledger.mjs summary <ledger for v_final>`
+     and `node <skill>/scripts/claim-ledger.mjs score <ledger for v_final>` using the ledger for
+     whichever version the ratchet accepted (for example, `.self-critique/ledger-v2.json`). Report
+     that table and its computed score.
    - **Where you were wrong** - consolidated, each item with the receipt the critic cited.
    - **Asymmetric claims** - claims only you found, and claims only the critic found.
    - **Recurring rules fired** - each stored rule the replay pass hit, with its new `fires` count.
@@ -177,16 +190,22 @@ receipt. This redaction requirement does not apply to local agent memory or repo
 **Dedupe before writing.** Read the store first. If a rule of the same shape exists, add one dated
 evidence line to it instead of creating a second entry, with at most three evidence lines per rule.
 A fourth incident means the rule named the incident, not the shape: rewrite the rule text and keep
-the three most recent evidence lines. Link related rules instead of restating them. Run
+the three most recent evidence lines. Link related rules instead of restating them. Only when the
+memory directory resolved in Step 1 exists, run
 `node <skill>/scripts/rule-store.mjs evidence-check --dir <memory dir>` before writing and report
-any rule it flags.
+any rule it flags. Skip this command when neither supported memory directory exists.
 
-**Counters are not hand-edited.** A stored rule's `fires` and `last_fired` live under `metadata:` in
-the memory file's frontmatter and are written only by `fire`.
+**Memory rule identity and counters.** Mark each rule stored by this workflow with
+`rule_store: self-critique` under `metadata:` in its memory file's frontmatter. Mark an existing
+rule only after reading it and confirming it belongs to this workflow. Only marked rules are
+pruning candidates; unrelated project and user memories are excluded. A memory rule's `fires` and
+`last_fired` live under `metadata:` and are written only by `fire`. Rules routed to `CLAUDE.md`,
+`AGENTS.md`, or the shared store are neither counted nor pruned.
 
-**Prune pass.** At the end of this step run
+**Prune pass.** At the end of this step, only when a valid memory directory is available, run
 `node <skill>/scripts/rule-store.mjs prune --dir <memory dir> --idle-days 60`. List the candidates
-in the report under "Rules proposed for deletion". Never delete a rule without the user's reply.
+in the report under "Rules proposed for deletion". Skip this command when neither supported memory
+directory exists. Never delete a rule without the user's reply.
 
 **Then close the loop.** State in your report where the rule was written and what it says, so the
 user can veto it. A rule the user has not seen is a rule they cannot correct.

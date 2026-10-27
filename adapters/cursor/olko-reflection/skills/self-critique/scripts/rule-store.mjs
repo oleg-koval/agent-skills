@@ -2,6 +2,7 @@
 // Rule store over a directory of Claude Code memory files (Markdown + frontmatter).
 // Frontmatter is parsed line by line so unrelated lines survive a rewrite byte for byte.
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -97,7 +98,14 @@ export function fire(dir, name, isoDate) {
   const entry = readRuleFiles(dir).find((e) => e.rule.name === name);
   if (!entry) throw new Error(`rule not found: ${name}`);
   const updated = bumpFire(entry.rule, isoDate);
-  fs.writeFileSync(path.join(dir, entry.file), serializeRule(updated));
+  const target = path.join(dir, entry.file);
+  const temporary = path.join(dir, `.${entry.file}.${randomUUID()}.tmp`);
+  try {
+    fs.writeFileSync(temporary, serializeRule(updated), { flag: 'wx', mode: fs.statSync(target).mode });
+    fs.renameSync(temporary, target);
+  } finally {
+    fs.rmSync(temporary, { force: true });
+  }
   return updated;
 }
 
@@ -121,6 +129,7 @@ export function pruneReason(rule, { idleDays, today, mtimeIso }) {
 
 export function prune(dir, { idleDays, today }) {
   return readRuleFiles(dir).flatMap(({ file, rule }) => {
+    if (rule.metadata.rule_store !== 'self-critique') return [];
     const mtimeIso = fs.statSync(path.join(dir, file)).mtime.toISOString().slice(0, 10);
     const reason = pruneReason(rule, { idleDays, today, mtimeIso });
     return reason ? [{ name: rule.name, reason }] : [];

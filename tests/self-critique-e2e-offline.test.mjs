@@ -54,18 +54,32 @@ test('seeded canned output scores at most 70 and passes the assertions', () => {
   )
 })
 
-test('assertExpectations reports A and C', () => {
+test('assertExpectations reports A, B and C', () => {
   const ledger = toLedger(cannedSeeded, authorClaims(seededAnswer))
   const { score } = scoreLedger(ledger)
   assert.deepEqual(
     assertExpectations({ correctScore: 80, seededScore: score, seededLedger: ledger, expected }),
     ['A'],
   )
+  assert.deepEqual(
+    assertExpectations({ correctScore: 95, seededScore: 80, seededLedger: ledger, expected }),
+    ['B'],
+  )
   const noMiss = { ...ledger, missed: [] }
   assert.deepEqual(
     assertExpectations({ correctScore: 95, seededScore: score, seededLedger: noMiss, expected }),
     ['C'],
   )
+})
+
+test('toLedger retains an author claim unmatched by the critic as unverifiable', () => {
+  const author = { id: 'a1', text: 'Authentication requires credentials', load_bearing: true }
+  const ledger = toLedger(cannedSeeded, [author])
+  const authorClaim = ledger.claims.find((c) => c.id === author.id)
+  assert.ok(authorClaim)
+  assert.equal(authorClaim.text, author.text)
+  assert.equal(authorClaim.origin, 'author')
+  assert.equal(authorClaim.status, 'unverifiable')
 })
 
 test('downgrades an inferred refutation to inferred', () => {

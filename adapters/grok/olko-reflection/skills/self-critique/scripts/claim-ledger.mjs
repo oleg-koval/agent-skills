@@ -34,8 +34,11 @@ const claimErrors = (c, i) => {
     ...enumError(path, 'origin', c.origin, ORIGINS),
     ...enumError(path, 'status', c.status, STATUSES),
     ...enumError(path, 'checked_by', c.checked_by, CHECKED_BY),
-    ...(c.status === 'refuted' && c.checked_by === 'inferred'
-      ? [`${path}.checked_by: a refuted claim must be checked by command or read`]
+    ...(['verified', 'refuted'].includes(c.status) && c.checked_by === 'inferred'
+      ? [`${path}.checked_by: verified and refuted claims must be checked by command or read`]
+      : []),
+    ...(['verified', 'refuted'].includes(c.status) && !(typeof c.receipt === 'string' && c.receipt.trim().length > 0)
+      ? [`${path}.receipt: verified and refuted claims require a non-empty receipt`]
       : []),
   ]
 }

@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   parseRule,
   serializeRule,
@@ -13,11 +15,14 @@ import {
   evidenceCheck,
 } from '../plugins/olko-reflection/skills/self-critique/scripts/rule-store.mjs';
 
+const script = fileURLToPath(new URL('../plugins/olko-reflection/skills/self-critique/scripts/rule-store.mjs', import.meta.url));
+
 const RULE_A = `---
 name: rule-a
 description: First rule
 metadata:
   type: feedback
+  rule_store: self-critique
   fires: 2
   last_fired: 2026-09-01
   modified: 2026-08-01
@@ -32,6 +37,7 @@ name: rule-b
 description: Second rule
 metadata:
   type: feedback
+  rule_store: self-critique
   modified: 2026-06-01
 ---
 Body of B.
@@ -93,15 +99,94 @@ test('fire increments and preserves every other frontmatter line and the body by
   );
 });
 
-test('prune lists never-fired and idle rules only', () => {
+test('fire publishes a complete rule by renaming a temporary file excluded from readers', (t) => {
   const dir = fixtureDir();
+  const target = path.join(dir, 'a.md');
+  const rename = fs.renameSync;
+  let renamed = false;
+  t.mock.method(fs, 'renameSync', (temporary, destination) => {
+    renamed = true;
+    assert.equal(destination, target);
+    assert.equal(path.dirname(temporary), dir);
+    assert.ok(!temporary.endsWith('.md'));
+    assert.equal(fs.readFileSync(target, 'utf8'), RULE_A);
+    assert.equal(parseRule(fs.readFileSync(temporary, 'utf8')).metadata.fires, '3');
+    assert.deepEqual(listRules(dir).map((r) => r.metadata.fires), ['2', undefined]);
+    rename(temporary, destination);
+  });
+  fire(dir, 'rule-a', '2026-10-27');
+  assert.ok(renamed);
+  assert.equal(parseRule(fs.readFileSync(target, 'utf8')).metadata.fires, '3');
+  assert.deepEqual(fs.readdirSync(dir).sort(), ['a.md', 'b.md']);
+});
+
+test('fire preserves the original and removes the temporary file when rename fails', (t) => {
+  const dir = fixtureDir();
+  t.mock.method(fs, 'renameSync', () => { throw new Error('rename failed'); });
+  assert.throws(() => fire(dir, 'rule-a', '2026-10-27'), /rename failed/);
+  assert.equal(fs.readFileSync(path.join(dir, 'a.md'), 'utf8'), RULE_A);
+  assert.deepEqual(fs.readdirSync(dir).sort(), ['a.md', 'b.md']);
+});
+
+test('prune lists never-fired and idle rules only', () => {
+  const dir = fixtureDir({
+    'boundary.md': RULE_A.replace('rule-a', 'boundary').replace('2026-09-01', '2026-09-27'),
+    'created.md': RULE_B.replace('rule-b', 'created-only').replace('modified:', 'created:'),
+    'never-boundary.md': RULE_B.replace('rule-b', 'never-boundary').replace('2026-06-01', '2026-09-27'),
+    'no-last.md': RULE_A.replace('rule-a', 'no-last').replace('  last_fired: 2026-09-01\n', ''),
+  });
+  assert.deepEqual(prune(dir, { idleDays: 30, today: '2026-10-27' }), [
+    { name: 'rule-a', reason: 'idle' },
+    { name: 'rule-b', reason: 'never-fired' },
+    { name: 'created-only', reason: 'never-fired' },
+  ]);
+  assert.deepEqual(prune(dir, { idleDays: 90, today: '2026-10-27' }), [
+    { name: 'rule-b', reason: 'never-fired' },
+    { name: 'created-only', reason: 'never-fired' },
+  ]);
+});
+
+test('prune excludes unrelated project, user and unmarked feedback memories', () => {
+  const unmarked = RULE_B.replace('  rule_store: self-critique\n', '');
+  const dir = fixtureDir({
+    'project.md': unmarked.replace('rule-b', 'project-memory').replace('type: feedback', 'type: project'),
+    'user.md': unmarked.replace('rule-b', 'user-memory').replace('type: feedback', 'type: user'),
+    'feedback.md': unmarked.replace('rule-b', 'other-feedback'),
+  });
   assert.deepEqual(prune(dir, { idleDays: 30, today: '2026-10-27' }), [
     { name: 'rule-a', reason: 'idle' },
     { name: 'rule-b', reason: 'never-fired' },
   ]);
-  assert.deepEqual(prune(dir, { idleDays: 90, today: '2026-10-27' }), [
+});
+
+test('prune CLI supports explicit flags and defaults to 60 idle days', () => {
+  const dir = fixtureDir({
+    'boundary.md': RULE_A.replace('rule-a', 'exactly-60').replace('2026-09-01', '2026-08-28'),
+    'over.md': RULE_A.replace('rule-a', 'over-60').replace('2026-09-01', '2026-08-27'),
+  });
+  const explicit = spawnSync(process.execPath, [script, 'prune', '--dir', dir, '--idle-days', '30', '--date', '2026-10-27'], { encoding: 'utf8' });
+  assert.equal(explicit.status, 0, explicit.stderr);
+  assert.deepEqual(JSON.parse(explicit.stdout), [
+    { name: 'rule-a', reason: 'idle' },
     { name: 'rule-b', reason: 'never-fired' },
+    { name: 'exactly-60', reason: 'idle' },
+    { name: 'over-60', reason: 'idle' },
   ]);
+  const defaults = spawnSync(process.execPath, [script, 'prune', '--dir', dir, '--date', '2026-10-27'], { encoding: 'utf8' });
+  assert.equal(defaults.status, 0, defaults.stderr);
+  assert.deepEqual(JSON.parse(defaults.stdout), [
+    { name: 'rule-b', reason: 'never-fired' },
+    { name: 'over-60', reason: 'idle' },
+  ]);
+});
+
+test('fire CLI exits non-zero for an unknown rule', () => {
+  const dir = fixtureDir();
+  const result = spawnSync(process.execPath, [script, 'fire', 'unknown-rule', '--dir', dir, '--date', '2026-10-27'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /rule not found: unknown-rule/);
+  assert.equal(fs.readFileSync(path.join(dir, 'a.md'), 'utf8'), RULE_A);
+  assert.equal(fs.readFileSync(path.join(dir, 'b.md'), 'utf8'), RULE_B);
 });
 
 test('evidence-check flags a fourth incident', () => {
@@ -134,13 +219,13 @@ test('a file without frontmatter is skipped, not thrown', () => {
 });
 
 test('does not propose a fresh rule that has never fired', () => {
-  const dir = fixtureDir({ 'c.md': '---\nname: rule-c\ndescription: Fresh\n---\nBody.\n' })
+  const dir = fixtureDir({ 'c.md': '---\nname: rule-c\ndescription: Fresh\nmetadata:\n  rule_store: self-critique\n---\nBody.\n' })
   const names = prune(dir, { idleDays: 30, today: new Date().toISOString().slice(0, 10) }).map((p) => p.name)
   assert.ok(!names.includes('rule-c'))
 });
 
 test('proposes a never-fired rule older than idleDays', () => {
-  const dir = fixtureDir({ 'c.md': '---\nname: rule-c\ndescription: Old\n---\nBody.\n' })
+  const dir = fixtureDir({ 'c.md': '---\nname: rule-c\ndescription: Old\nmetadata:\n  rule_store: self-critique\n---\nBody.\n' })
   const old = new Date(Date.now() - 100 * 86_400_000)
   fs.utimesSync(path.join(dir, 'c.md'), old, old)
   const today = new Date().toISOString().slice(0, 10)
