@@ -353,6 +353,27 @@ treat as a full review and leave PREV_SHA unset. Also grep the same file for
 - Step 3.5 reuses that exact URL or local path so the artifact stays a living
 page for this PR.
 
+**Convergence state (every PR, first review included):** the review file
+records only the last head sha, so finding status lives in
+`scripts/finding-state.mjs` (one JSON file per PR under
+`~/.local/state/lekker-review/findings/`). In `pr` mode, on a re-review, first
+fetch the PR's review threads into `<scratchpad>/threads.json` as
+`{ "prAuthor": <login>, "threads": [{ path, line, body, isResolved, isOutdated,
+replies: [{ author, body }] }] }` (`gh api graphql` over `reviewThreads`; `body`
+is the first comment, `replies` the later ones). Then run
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/finding-state.mjs" begin --repo <REPO_SLUG> --target <TARGET_SLUG> [--threads <scratchpad>/threads.json]`
+and pass its `cycle`, `suppressed` and `recurringClasses` to the workflow. A
+finding is `fixed` when its thread is outdated, `intentional` when the author
+replied "by design" and nothing changed, `rejected` when the author dismissed it
+or the thread was resolved with no code change. The workflow never re-raises a
+`suppressed` (rejected or intentional) finding. From `cycle` 4 the workflow
+returns `verdict: "rethink"` with the recurring finding classes and runs no
+agents: skip Steps 2 to 4, render the verdict as `RETHINK THE APPROACH: this PR
+has been reviewed N times; the same classes keep coming back: <classes>`, and
+suggest the author and reviewer agree the approach before another round.
+After the review, run `finding-state.mjs record ... --findings <findings.json>`
+so the next cycle knows what was raised.
+
 **Open the run log** once mode, depth and engine are settled (see
 `references/traces.md` for where every trace of a run lives):
 
@@ -688,6 +709,9 @@ args: {
   worktreePath: <null for scan, else from worktree.json>,
   promptDir:   "${SKILL_ROOT}/references/agents",
   prevSha:     <null unless re-review>,
+  cycle,             // finding-state.mjs begin output; omit when unknown
+  suppressed,        // rejected/intentional findings never to re-raise
+  recurringClasses,  // shown in the rethink verdict
   testRunner:  <worktree.json testRunner, null for scan>
 }
 ```
