@@ -297,7 +297,14 @@ additions+deletions: a regenerated lockfile is thousands of lines nobody reads.
   until then run Track B as for `scan`.
 - `scan` if additions+deletions < 150 AND changedFiles <= 5
 - `deep` if additions+deletions > 800 OR changedFiles > 25 OR diff touches
-  `migrations/` or `*.sql`
+  `migrations/` or `*.sql` OR `scripts/risk-paths.mjs` reports a risky path
+  (`.github/workflows/**`, auth/session/permission code, billing/payment,
+  installers or setup scripts, P21 payload/mapping by path or the identifier
+  `p21` in added lines). Run
+  `node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/risk-paths.mjs" <changed files>`
+  (add `--diff <pr.diff>` once the diff exists). When it returns
+  `needsHumanReview: true` the review header carries `NEEDS HUMAN REVIEW: <categories>`;
+  a human must read these paths whatever the verdict says.
 - `medium` otherwise
 
 State the chosen depth (and whether it was auto-selected) in the review header.

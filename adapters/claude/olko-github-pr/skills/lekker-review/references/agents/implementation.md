@@ -48,6 +48,16 @@ Axes to cover:
   fixed, the mitigation fully resolves the defect, or the PR is not a bug fix.
 - Integration Contracts: Shopify API misuse, BC API assumptions, webhook
   idempotency, external API pagination not handled.
+- Rollout safety (external writes): when the diff changes what is WRITTEN to
+  another system (an API payload, field mapping, or a DB write into a system
+  this service does not own), state whether the PR has a feature flag
+  (Reflag / `getShopFlag` / `isEnabled` style check around the new write) or a
+  documented revert plan (PR body or code comment). Look in the diff and in the
+  PR body in CONTEXT_FILE. If it has neither, report an `important` finding:
+  `title` starts "No flag or revert plan for external write", `badCode` quotes
+  the changed write, `fix` names the flag guard to add. A pure UI/copy change or
+  a write that is trivially undone by deploying again is exempt. Quiet when the
+  flag or plan is present; do not report its presence.
 
 Boundary contract and lifecycle map (required for every Critical/Important
 finding involving routing, persistence, caching, fallback, proxying, or an
