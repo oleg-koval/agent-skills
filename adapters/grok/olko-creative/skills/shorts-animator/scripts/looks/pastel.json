@@ -1,0 +1,7 @@
+{
+  "about": "Soft pastel / crayon on toned paper: straight chalky hatching, paper tooth everywhere, pale gentle colour.",
+  "mode": "strokes", "brush": 6, "length": 4.6, "layers": 3, "swirl": 0.05, "flow": 600, "curve": 0,
+  "bristle": 1, "impasto": 0, "hueJitter": 0.1, "valueJitter": 0.3, "satJitter": 0.2, "respect": 0.5,
+  "boil": 0.8, "paper": 1.6, "grain": 0.8, "saturation": 0.82, "contrast": 0.9, "warmth": 0.35, "vignette": 0.2, "bloom": 0.1,
+  "captions": { "style": "box", "size": 44 }
+}

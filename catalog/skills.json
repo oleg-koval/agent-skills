@@ -1300,6 +1300,29 @@
             "hermes",
             "pi"
           ]
+        },
+        {
+          "name": "shorts-animator",
+          "lookupName": "olko:shorts-animator",
+          "path": "plugins/olko-creative/skills/shorts-animator",
+          "description": "Make narrated, painted animated shorts (TikTok, Reels, YouTube Shorts) from a script and a look described in words: scenes drawn in code, GPU-painted, voiced locally, captioned and scored into an MP4.",
+          "tags": [
+            "video",
+            "animation",
+            "shorts",
+            "narration",
+            "canvas"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes"
+          ]
         }
       ]
     },
