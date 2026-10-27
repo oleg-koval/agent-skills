@@ -636,3 +636,13 @@ test('artifact contract renders passed-proof counter-evidence', () => {
   assert.match(artifactPrompt, /downgraded the finding to Important/)
   assert.match(artifactPrompt, /do not present the\s+passing input as proof that every related input is safe/)
 })
+
+test('findings expose their originating agent as dimension, not _dimension', async () => {
+  const { result } = await runScenario({
+    respond: ({ options }) => (options.label === 'review:conventions'
+      ? { findings: [{ ...baseFinding, severity: 'observation' }] }
+      : { findings: [] }),
+  })
+  assert.equal(result.findings[0].dimension, 'conventions')
+  assert.equal(result.findings[0]._dimension, undefined)
+})

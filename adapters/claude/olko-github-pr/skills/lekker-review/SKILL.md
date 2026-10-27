@@ -1295,6 +1295,14 @@ is not failure, the review may find things the bots never would. `0 bot
 comment(s)` is ambiguous (nothing found, or the bots have not run yet); never
 turn it into a 100% claim. Store: `~/.cache/lekker-review/bot-precision.jsonl`.
 
+Bots are not the only signal. To measure noise from what humans did, run
+`node ${SKILL_ROOT}/scripts/human-noise.mjs --repo <REPO_SLUG> --pr <N> [--pr <N>...]`
+on merged or settled PRs: it classifies each posted lekker inline comment as
+fixed (thread outdated), dismissed (author reply or resolved with no change) or
+ignored, and prints the dismissal rate per agent. Only comments ending in the
+`<!-- lekker:<dimension> -->` marker (see `references/github-post.md`) are
+counted, so PRs posted before the marker existed score zero comments.
+
 If you maintain a persistent notes/memory system across reviews, launch ONE
 background Agent with `model: 'haiku'`, passing the review file path +
 repo-short-name + PR author login, instructed to follow
