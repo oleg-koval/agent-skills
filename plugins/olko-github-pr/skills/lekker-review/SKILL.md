@@ -1294,6 +1294,14 @@ is not failure, the review may find things the bots never would. `0 bot
 comment(s)` is ambiguous (nothing found, or the bots have not run yet); never
 turn it into a 100% claim. Store: `~/.cache/lekker-review/bot-precision.jsonl`.
 
+**Eval harness.** `evals/manifest.json` lists PRs with a known outcome (`expect:
+"buggy"` with `knownBug: "file:line description"`, or `"clean"`). Run lekker on
+each, save the `findings` arrays as `{"<repo>#<pr>": [...]}`, then
+`node ${SKILL_ROOT}/scripts/eval-runner.mjs --manifest ${SKILL_ROOT}/evals/manifest.json --results <results.json>`
+prints recall on buggy PRs and the false-positive count (critical or important
+findings) on clean ones. The shipped manifest holds two placeholders; choosing
+real PRs is a human job.
+
 If you maintain a persistent notes/memory system across reviews, launch ONE
 background Agent with `model: 'haiku'`, passing the review file path +
 repo-short-name + PR author login, instructed to follow
