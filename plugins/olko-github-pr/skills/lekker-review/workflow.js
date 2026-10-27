@@ -27,7 +27,7 @@ const FINDINGS_ARRAY_SCHEMA = {
   type: 'array',
   items: {
     type: 'object',
-    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
+    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix', 'bugClass', 'otherInstances'],
     anyOf: [
       { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
       { required: ['boundary'] },
@@ -43,6 +43,10 @@ const FINDINGS_ARRAY_SCHEMA = {
       precedent:   { type: 'string' },
       rule:        { type: 'string', minLength: 1, pattern: '\\S' },
       boundary:    BOUNDARY_SCHEMA,
+      // Short kebab-case slug naming the class of bug ("missing-null-check").
+      bugClass:    { type: 'string', minLength: 1, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' },
+      // Other places in the diff with the same pattern, as "file:line".
+      otherInstances: { type: 'array', items: { type: 'string', pattern: '^.+:[1-9][0-9]*$' } },
     },
   },
 }
@@ -193,6 +197,8 @@ function mergeFindings(a, b) {
   merged.badCode = longest(a.badCode, b.badCode)
   merged.fix = longest(a.fix, b.fix)
   merged.precedent = longest(a.precedent, b.precedent)
+  merged.bugClass = a.bugClass || b.bugClass
+  merged.otherInstances = Array.from(new Set((a.otherInstances || []).concat(b.otherInstances || [])))
 
   if (!merged.rule && b.rule) {
     merged.rule = b.rule
@@ -519,6 +525,11 @@ const budgetAtStart = budget.spent()
         + ` counted from the hunk header (@@ -a,b +c,d @@ starts at line c), never a line`
         + ` number of DIFF_FILE itself. Quote the code at that line verbatim in "badCode".`,
     ].join(' ')
+
+    prompt += ` BUG CLASS: give every finding a "bugClass" (short kebab-case slug for the`
+      + ` kind of defect, e.g. missing-null-check) and "otherInstances": after the first`
+      + ` hit, search the diff for the same pattern and list every other place as`
+      + ` "file:line" (empty array when there is none). Report the class, not just the first hit.`
 
     // The deterministic lint pre-flight has already collected every rule the
     // repo's own eslint config fires on this diff, and those are exactly the

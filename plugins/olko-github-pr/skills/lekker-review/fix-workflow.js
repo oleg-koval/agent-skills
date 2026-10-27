@@ -97,8 +97,45 @@ let retryCount = 0
 // same file concurrently.
 // ---------------------------------------------------------------------------
 
+// A finding names its bug class and the other places the same pattern occurs.
+// Each other instance becomes a sibling finding in ITS file's group, so the whole
+// class is fixed in one pass and the one-agent-per-file rule still holds.
+function parseInstance(ref) {
+  const at = String(ref).lastIndexOf(':')
+  const line = Number(String(ref).slice(at + 1))
+  return at > 0 && Number.isInteger(line) && line > 0
+    ? { file: String(ref).slice(0, at), line }
+    : null
+}
+
+function expandInstances(list) {
+  const taken = new Set(list.map(function(f) { return f.file + ':' + f.line }))
+  const siblings = []
+  for (const f of list) {
+    for (const ref of (Array.isArray(f.otherInstances) ? f.otherInstances : [])) {
+      const spot = parseInstance(ref)
+      if (!spot || taken.has(spot.file + ':' + spot.line)) {
+        continue
+      }
+      taken.add(spot.file + ':' + spot.line)
+      siblings.push(Object.assign({}, f, {
+        file: spot.file,
+        line: spot.line,
+        title: f.title + ' (same bug class at ' + spot.file + ':' + spot.line + ')',
+        description: 'Same bug class' + (f.bugClass ? ' "' + f.bugClass + '"' : '') + ' as '
+          + f.file + ':' + f.line + '. ' + f.description,
+        otherInstances: [],
+        instanceOf: f.title,
+      }))
+    }
+  }
+  return list.concat(siblings)
+}
+
+const allFindings = expandInstances(findings)
+
 const byFile = new Map()
-for (const f of findings) {
+for (const f of allFindings) {
   if (!byFile.has(f.file)) {
     byFile.set(f.file, [])
   }
@@ -109,7 +146,7 @@ const groups = Array.from(byFile.entries()).map(function(entry) {
   return { file: entry[0], findings: entry[1] }
 })
 
-log(`fixing ${findings.length} finding(s) across ${groups.length} file(s)`)
+log(`fixing ${allFindings.length} finding(s) (${findings.length} reported) across ${groups.length} file(s)`)
 
 // ---------------------------------------------------------------------------
 // Prompts
@@ -330,7 +367,7 @@ const groupsOut = results.filter(Boolean).map(function(state) {
   return {
     file:         state.file,
     findings:     state.findings.map(function(f) {
-      return { title: f.title, line: f.line, severity: f.severity }
+      return { title: f.title, line: f.line, severity: f.severity, instanceOf: f.instanceOf }
     }),
     results:      (state.fixResult && state.fixResult.results) || [],
     filesTouched: (state.fixResult && state.fixResult.filesTouched) || [],

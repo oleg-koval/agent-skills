@@ -101,6 +101,11 @@ downgrades a `good` verdict that arrives without verified evidence. Pass the ACs
 even when they look irrelevant to the finding: the finding's own rationale may
 be the thing that contradicts them.
 
+A finding may carry `bugClass` and `otherInstances` (`file:line` list). The
+workflow expands each other instance into a sibling finding (`instanceOf` set)
+in its own file's group, so one pass fixes the whole class. Report siblings in
+the Step 8 table under their own title.
+
 Pass `findings` as a real JSON array, not a stringified one. The workflow groups
 by file (one agent per file, so no two agents ever edit the same file), applies
 the fix, then runs a read-only fix-verifier over the actual `git diff`. A

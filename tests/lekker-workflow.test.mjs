@@ -636,3 +636,21 @@ test('artifact contract renders passed-proof counter-evidence', () => {
   assert.match(artifactPrompt, /downgraded the finding to Important/)
   assert.match(artifactPrompt, /do not present the\s+passing input as proof that every related input is safe/)
 })
+
+test('review schema requires bugClass and otherInstances, and merging unions instances', async () => {
+  const { calls } = await runScenario({
+    respond: ({ prompt, options }) => {
+      if (options.label === 'review:quality') {
+        assert.match(prompt, /BUG CLASS/)
+        return { findings: [
+          { ...baseFinding, severity: 'observation', bugClass: 'x-class', otherInstances: ['a.ts:1'] },
+          { ...baseFinding, severity: 'observation', line: 12, bugClass: 'x-class', otherInstances: ['b.ts:2'] },
+        ] }
+      }
+      return { findings: [] }
+    },
+  })
+  assert.ok(calls.includes('review:quality'))
+  const src = readFileSync(workflowPath, 'utf8')
+  assert.match(src, /required: \[[^\]]*'bugClass', 'otherInstances'\]/)
+})

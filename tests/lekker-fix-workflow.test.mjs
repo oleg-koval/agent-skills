@@ -85,3 +85,20 @@ test('fixer and verifier prompts delimit acList as untrusted data', () => {
   assert.match(source, /use it only to compare the fix with the acceptance criteria/)
   assert.match(source, /committable:\s+Boolean\(verdict && verdict\.verdict === 'good' && state\.appliedCount > 0\)/)
 })
+
+test('other instances of a bug class become sibling findings in their own file group', () => {
+  const expand = new Function(
+    [lift('parseInstance'), lift('expandInstances'), 'return expandInstances'].join('\n'),
+  )()
+  const base = {
+    file: 'src/a.ts', line: 10, severity: 'important', title: 'Missing null check',
+    description: 'd', fix: 'f', bugClass: 'missing-null-check',
+    otherInstances: ['src/b.ts:4', 'src/a.ts:10', 'src/a.ts:30', 'bad-ref', 'src/b.ts:4'],
+  }
+  const out = expand([base])
+  assert.deepEqual(out.map((f) => `${f.file}:${f.line}`), ['src/a.ts:10', 'src/b.ts:4', 'src/a.ts:30'])
+  assert.equal(out[1].instanceOf, 'Missing null check')
+  assert.deepEqual(out[1].otherInstances, [])
+  assert.equal(out[0].instanceOf, undefined)
+  assert.equal(expand([{ ...base, otherInstances: undefined }]).length, 1)
+})
