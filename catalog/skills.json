@@ -868,7 +868,7 @@
           "name": "self-critique",
           "lookupName": "olko:self-critique",
           "path": "plugins/olko-reflection/skills/self-critique",
-          "description": "Adversarially critique your own last answer: spawn a critic agent that verifies claims against live sources, finds the related issue or pattern you missed, then loop until satisfied and report where you were wrong, iterations-to-satisfy, the numeric improvement, and a final score.",
+          "description": "Adversarially critique your own last answer: a blind critic agent re-derives and verifies every claim against live sources, the score is computed from a labelled claim ledger, you revise under a ratchet, restate the corrected answer, and turn each caught error into a durable rule with a fire counter.",
           "tags": [
             "critical-thinking",
             "self-review",
