@@ -391,6 +391,13 @@ function normalizeProof(result) {
   }
 }
 
+// A prover that declines at its testability gate (no runner, not importable)
+// returns outcome 'not_attempted'. That is a skip, not a failed attempt, so it
+// must not inflate the proven/attempts ratio in the run ledger.
+function isProveAttempt(proof) {
+  return proof.attempted === true
+}
+
 // Run thunks in sequential batches, giving the per-finding stages a ceiling.
 //
 // The review stage is bounded by its dimension count, but verify, critic and
@@ -909,7 +916,6 @@ const budgetAtStart = budget.spent()
       await batched(capped.map(function(finding) {
         return async function() {
           agentCount++
-          proveAttemptCount++
           const result = await agent(proverPrompt(finding), {
             label:  'prove:' + finding.file + ':' + finding.line,
             phase:  'Prove',
@@ -920,12 +926,14 @@ const budgetAtStart = budget.spent()
 
           if (!result) {
             finding.proof = null
+            proveAttemptCount++
             log(`prove:${finding.file}:${finding.line}: agent returned null`)
             return
           }
 
           const proof = normalizeProof(result)
           finding.proof = proof
+          if (isProveAttempt(proof)) proveAttemptCount++
           if (proof.proven === true) {
             provenCount++
             finding.verificationStatus = 'proven'
