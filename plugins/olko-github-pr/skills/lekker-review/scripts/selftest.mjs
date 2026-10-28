@@ -53,13 +53,19 @@ const preamble = [
   // hardRuleCorroborated is likewise gone from the current file and kept in this
   // list for the same reason: an older workflow.js calls it from isHardRule.
   ...['titleTokens', 'sameIssue', 'nearbyLines', 'spanWithinWindow', 'hardRuleCorroborated',
-      'isHardRule', 'longest', 'mergeFindings', 'dedup', 'shouldVerify'].map(n => {
-        try { return lift(n) } catch { return `function ${n}() { throw new Error('${n} absent from this workflow.js') }` }
+      'isHardRule', 'longest', 'mergeFindings', 'dedup', 'shouldVerify', 'isProveAttempt', 'countProveAttempt'].map(n => {
+        // countProveAttempt is called directly by the checks, so its stub returns NaN and the
+        // checks FAIL with a diff instead of the run crashing on an older workflow.js.
+        try { return lift(n) } catch {
+          return n === 'countProveAttempt'
+            ? 'function countProveAttempt() { return NaN }'
+            : `function ${n}() { throw new Error('${n} absent from this workflow.js') }`
+        }
       }),
 ].join('\n')
 
-const { dedup, isHardRule, shouldVerify, sameIssue } =
-  new Function(preamble + '\nreturn { dedup, isHardRule, shouldVerify, sameIssue }')()
+const { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt } =
+  new Function(preamble + '\nreturn { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt }')()
 
 let failed = 0
 function check(name, actual, expected) {
@@ -675,6 +681,21 @@ console.log('\nprove: skipped without an installed test runner')
     [isolated.runner, isolated.dirs, /node_modules\/\.bin\/vitest missing/.test(isolated.reason)], [null, [], true])
   rmSync(tmp, { recursive: true, force: true })
 }
+
+console.log('\nprove ledger: a declined prover is a skip, not an attempt')
+// Observed: 6 critical findings, every prover answered attempted:false (no node_modules),
+// and the ledger recorded proven 0/6 as if six tests had run and not failed.
+check('not_attempted is not an attempt', isProveAttempt({ attempted: false, proven: false, outcome: 'not_attempted' }), false)
+check('inconclusive run is an attempt', isProveAttempt({ attempted: true, proven: false, outcome: 'inconclusive' }), true)
+check('proven run is an attempt', isProveAttempt({ attempted: true, proven: true, outcome: 'proven' }), true)
+// The counter path itself, not just the predicate: a declined prover must leave the count unchanged.
+check('ledger: null proof (prover failed or rejected) adds nothing', countProveAttempt(0, null), 0)
+check('ledger: declined prover adds nothing', countProveAttempt(2, { attempted: false, proven: false, outcome: 'not_attempted' }), 2)
+check('ledger: inconclusive prover adds one', countProveAttempt(2, { attempted: true, proven: false, outcome: 'inconclusive' }), 3)
+check('ledger: proven prover adds one', countProveAttempt(2, { attempted: true, proven: true, outcome: 'proven' }), 3)
+// Source guard: a bare increment would bypass the predicate, and no unit check above would notice.
+const bareWrites = src.split('\n').filter(l => /proveAttemptCount\s*(\+\+|\+=|=[^=])/.test(l) && !/countProveAttempt\(|let proveAttemptCount/.test(l))
+check('the attempt count is written only through countProveAttempt', bareWrites, [])
 
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)

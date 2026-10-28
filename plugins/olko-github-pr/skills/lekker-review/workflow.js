@@ -393,6 +393,19 @@ function normalizeProof(result) {
   }
 }
 
+// A prover that declines at its testability gate (no runner, not importable)
+// returns outcome 'not_attempted'. That is a skip, not a failed attempt, so it
+// must not inflate the proven/attempts ratio in the run ledger.
+function isProveAttempt(proof) {
+  return proof.attempted === true
+}
+
+// The only writer of the run ledger's attempt count. A null proof means the
+// prover agent failed or was rejected, so there is no evidence a test ran.
+function countProveAttempt(count, proof) {
+  return Boolean(proof) && isProveAttempt(proof) ? count + 1 : count
+}
+
 // Run thunks in sequential batches, giving the per-finding stages a ceiling.
 //
 // The review stage is bounded by its dimension count, but verify, critic and
@@ -951,7 +964,6 @@ const budgetAtStart = budget.spent()
       await batched(capped.map(function(finding) {
         return async function() {
           agentCount++
-          proveAttemptCount++
           const result = await agent(proverPrompt(finding), {
             label:  'prove:' + finding.file + ':' + finding.line,
             phase:  'Prove',
@@ -968,6 +980,7 @@ const budgetAtStart = budget.spent()
 
           const proof = normalizeProof(result)
           finding.proof = proof
+          proveAttemptCount = countProveAttempt(proveAttemptCount, proof)
           if (proof.proven === true) {
             provenCount++
             finding.verificationStatus = 'proven'
