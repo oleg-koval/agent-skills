@@ -123,6 +123,46 @@ else
     printf '%s\t%s\n' "$REPO_SLUG" "$REPO_ROOT" >> "$CACHE_FILE"
 fi
 
+collect_project_rules() {
+    local root="$1"
+    while IFS= read -r rules_md; do
+        printf '=== %s ===\n' "$rules_md"
+        cat "$rules_md"
+        printf '\n'
+    done < <(find "$root" -maxdepth 3 -type f \
+        \( -name 'CLAUDE.md' -o -name 'REVIEW.md' -o -name 'AGENTS.md' \) \
+        -not -path '*/node_modules/*' 2>/dev/null | sort)
+}
+
+# Scan depth needs PR-authored review guidance but skips expensive worktree
+# setup. Read the PR tree from an archive so no Git worktree or checkout is made.
+if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
+    if [[ -n "$LOCAL_REPO" ]]; then
+        RULES_REF="$PR_BRANCH"
+    else
+        if git -C "$REPO_ROOT" fetch origin "+refs/heads/${PR_BRANCH}:refs/remotes/origin/${PR_BRANCH}" 2>/dev/null; then
+            RULES_REF="origin/$PR_BRANCH"
+        elif git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null; then
+            RULES_REF=FETCH_HEAD
+        else
+            printf 'ERROR: could not fetch PR branch %s for rules-only scan\n' "$PR_BRANCH" >&2
+            exit 1
+        fi
+    fi
+    RULES_SOURCE="/tmp/lekker-rules-source-$$"
+    mkdir -p "$RULES_SOURCE"
+    git -C "$REPO_ROOT" archive "$RULES_REF" | tar -x -C "$RULES_SOURCE"
+    PROJECT_RULES="$(collect_project_rules "$RULES_SOURCE")"
+    python3 - "$OUT_JSON" "$PROJECT_RULES" <<'PYEOF'
+import json, sys
+with open(sys.argv[1], "w") as f:
+    json.dump({"projectRules": sys.argv[2]}, f, indent=2)
+PYEOF
+    rm -rf "$RULES_SOURCE"
+    printf 'OK %s\n' "$OUT_JSON"
+    exit 0
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Fetch + worktree
 # ---------------------------------------------------------------------------
@@ -427,17 +467,13 @@ wait "$TSC_PID" || true
 wait "$ESLINT_PID" || true
 
 # ---------------------------------------------------------------------------
-# 5. Collect PROJECT_RULES from CLAUDE.md files (depth <= 3, skip node_modules)
+# 5. Collect PROJECT_RULES from CLAUDE.md, REVIEW.md and AGENTS.md files
+#    (depth <= 3, skip node_modules). REVIEW.md is review-only guidance: what to
+#    always flag, paths to ignore, nit limit (see SKILL.md, "REVIEW.md").
 # ---------------------------------------------------------------------------
 PROJECT_RULES_FILE="/tmp/lekker-rules-$$.txt"
 printf '' > "$PROJECT_RULES_FILE"
-
-while IFS= read -r claude_md; do
-    printf '=== %s ===\n' "$claude_md" >> "$PROJECT_RULES_FILE"
-    cat "$claude_md" >> "$PROJECT_RULES_FILE"
-    printf '\n' >> "$PROJECT_RULES_FILE"
-done < <(find "$WORKTREE_PATH" -maxdepth 3 -name 'CLAUDE.md' \
-    -not -path '*/node_modules/*' 2>/dev/null)
+collect_project_rules "$WORKTREE_PATH" > "$PROJECT_RULES_FILE"
 
 # ---------------------------------------------------------------------------
 # 6. HEAD SHA

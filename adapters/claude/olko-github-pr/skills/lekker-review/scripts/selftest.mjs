@@ -223,16 +223,15 @@ console.log('\nrevmux adapter: fixture mapping')
   check('TS-1 rejected with no corroborating code stays dropped',
     adapted.findings.some(f => f.title.includes('Type safety concern in inventory handler')), false)
   check('prose without an extracted snippet leaves badCode empty',
-    adapted.findings.find(f => f.title.includes('no retry backoff'))?.badCode, '')
+    adapted.preExisting.find(f => f.title.includes('no retry backoff'))?.badCode, '')
   check('configured custom hard rule with quoted code is re-promoted',
     adapted.findings.find(f => f.title.includes('Session token is logged'))?.severity, 'critical')
   check('configured custom hard rule without quoted code stays dropped',
     adapted.findings.some(f => f.title.includes('Possible session concern')), false)
-  check('pre_existing becomes observation with Pre-existing: prefix',
-    (() => {
-      const f = adapted.findings.find(f => f.title.includes('no retry backoff'))
-      return f && f.severity === 'observation' && f.description.startsWith('Pre-existing:')
-    })(), true)
+  check('pre_existing is kept separate from findings',
+    adapted.findings.some(f => f.title.includes('no retry backoff')), false)
+  check('pre_existing is passed through without finding severity',
+    adapted.preExisting.some(f => f.title.includes('no retry backoff') && !f.severity), true)
   check('open_questions pass through as questions',
     adapted.questions.length, 1)
   check('degraded agent surfaced by name',
