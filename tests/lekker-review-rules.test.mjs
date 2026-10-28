@@ -5,6 +5,7 @@ import { applyReviewRules } from '../plugins/olko-github-pr/skills/lekker-review
 const projectRules = [
   '=== repo/REVIEW.md ===',
   '## Paths to IGNORE',
+  '',
   '- generated/**',
   '- docs/drafts',
   '',
@@ -16,6 +17,7 @@ test('ignore paths filter unchanged findings but retain changed files', () => {
       { file: 'generated/out.mjs' },
       { file: 'src/changed.mjs' },
       { file: 'docs/drafts/old.md' },
+      { file: 'generated/unsafe.ts', rule: 'TS-1', severity: 'critical' },
     ],
     preExisting: [{ file: 'generated/old.mjs' }],
   };
@@ -23,7 +25,11 @@ test('ignore paths filter unchanged findings but retain changed files', () => {
     projectRules,
     changedPaths: ['generated/out.mjs', 'src/changed.mjs'],
   }), {
-    findings: [{ file: 'generated/out.mjs' }, { file: 'src/changed.mjs' }],
+    findings: [
+      { file: 'generated/out.mjs' },
+      { file: 'src/changed.mjs' },
+      { file: 'generated/unsafe.ts', rule: 'TS-1', severity: 'critical' },
+    ],
     preExisting: [],
   });
 });

@@ -223,7 +223,7 @@ console.log('\nrevmux adapter: fixture mapping')
   check('TS-1 rejected with no corroborating code stays dropped',
     adapted.findings.some(f => f.title.includes('Type safety concern in inventory handler')), false)
   check('prose without an extracted snippet leaves badCode empty',
-    adapted.findings.find(f => f.title.includes('no retry backoff'))?.badCode, '')
+    adapted.preExisting.find(f => f.title.includes('no retry backoff'))?.badCode, '')
   check('configured custom hard rule with quoted code is re-promoted',
     adapted.findings.find(f => f.title.includes('Session token is logged'))?.severity, 'critical')
   check('configured custom hard rule without quoted code stays dropped',
