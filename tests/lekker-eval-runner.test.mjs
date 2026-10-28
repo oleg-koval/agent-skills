@@ -44,10 +44,16 @@ test('a malformed manifest is rejected', () => {
   assert.throws(() => validateManifest({}), /prs/)
 })
 
-test('a duplicate repo#pr entry is rejected, so no PR is weighted twice', () => {
-  const dup = { prs: [
-    { repo: 'o/r', pr: 1, expect: 'clean' },
-    { repo: 'o/r', pr: 1, expect: 'buggy', knownBug: 'src/a.ts:4 x' },
-  ] }
-  assert.throws(() => validateManifest(dup), /duplicate entry for o\/r#1/)
+test('spaced paths, line 0 and null lines', () => {
+  assert.deepEqual(parseKnownBug('src/my dir/a b.ts:42 desc'), { file: 'src/my dir/a b.ts', line: 42 })
+  assert.equal(parseKnownBug('src/a.ts:0 desc'), null)
+  assert.equal(isHit([{ file: 'src/a.ts', line: null }], 'src/a.ts:5 x'), false)
+  assert.equal(isHit([{ file: 'src/a.ts', line: 0 }], 'src/a.ts:5 x'), false)
+})
+
+test('duplicate keys, missing knownBug and line 0 are rejected', () => {
+  const dup = { prs: [{ repo: 'o/r', pr: 1, expect: 'clean' }, { repo: 'o/r', pr: 1, expect: 'clean' }] }
+  assert.throws(() => validateManifest(dup), /duplicate/)
+  assert.throws(() => validateManifest({ prs: [{ repo: 'o/r', pr: 1, expect: 'buggy' }] }), /knownBug/)
+  assert.throws(() => validateManifest({ prs: [{ repo: 'o/r', pr: 1, expect: 'buggy', knownBug: 'a.ts:0 x' }] }), /knownBug/)
 })
