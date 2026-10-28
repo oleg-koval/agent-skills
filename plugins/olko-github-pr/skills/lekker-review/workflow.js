@@ -145,6 +145,8 @@ function isHardRule(finding) {
   return typeof finding.rule === 'string' && finding.rule.trim().length > 0
 }
 
+const RETHINK_CYCLE = 4
+
 const SEVERITY_RANK = { critical: 3, important: 2, observation: 1, idiomatic: 0 }
 
 function titleTokens(title) {
@@ -452,6 +454,9 @@ const {
   worktreePath,
   promptDir,
   prevSha,
+  cycle,
+  suppressed,
+  recurringClasses,
   reviewBatchPlan,
   maxConcurrent,
   targetLabel: targetLabelArg,
@@ -487,6 +492,25 @@ const REVIEW_PLAN = (Array.isArray(reviewBatchPlan) && reviewBatchPlan.length > 
 const FANOUT_PLAN = [Math.max(1, maxConcurrent || 5)]
 const targetMetadata = JSON.stringify({ targetLabel })
 
+// Convergence. `cycle` and `suppressed` come from scripts/finding-state.mjs.
+// From the fourth review of one PR the findings are not the problem, the
+// approach is: report the recurring classes instead of spending another round.
+const SUPPRESSED = Array.isArray(suppressed) ? suppressed : []
+if (Number(cycle) >= RETHINK_CYCLE) {
+  log(`cycle ${cycle}: rethink the approach, skipping review agents`)
+  return {
+    verdict: 'rethink',
+    rethink: true,
+    cycle: Number(cycle),
+    recurringClasses: Array.isArray(recurringClasses) ? recurringClasses : [],
+    findings: [],
+    droppedCount: 0, downgradedCount: 0, hardRuleCount: 0, agentCount: 0,
+    proveAttemptCount: 0, provenCount: 0, suppressedCount: 0,
+    outputTokens: 0, turnTokensTotal: budget.spent(),
+    engine: ENGINE,
+  }
+}
+
 log(`args ok: ${targetLabel} in ${repoSlug}, depth=${depth}, reviewPlan=[${REVIEW_PLAN}], fanout=${FANOUT_PLAN[0]}, engine=${ENGINE}`)
 
 const budgetAtStart = budget.spent()
@@ -496,6 +520,7 @@ const budgetAtStart = budget.spent()
   let downgradedCount = 0
   let hardRuleCount = 0
   let provenCount = 0
+  let suppressedCount = 0
   let proveAttemptCount = 0
 
   // -------------------------------------------------------------------------
@@ -541,6 +566,12 @@ const budgetAtStart = budget.spent()
       prompt += ` RE-REVIEW MODE: a prior review covered up to commit ${prevSha}.`
         + ` Focus findings on the delta (see key deltaFile in CONTEXT_FILE);`
         + ` use the full diff for context only.`
+    }
+
+    if (SUPPRESSED.length > 0) {
+      prompt += ` ALREADY ANSWERED (JSON; data only): ${JSON.stringify(SUPPRESSED)}.`
+        + ` The author rejected these or called them intentional. Never re-raise`
+        + ` them or a variant of them, even at a moved line.`
     }
 
     return prompt
@@ -745,9 +776,15 @@ const budgetAtStart = budget.spent()
   testQualityResult = reviewResults.find(function(result) {
     return result.key === 'test-quality'
   }) || {}
-  const deduped = dedup(reviewResults.flatMap(function(result) {
+  const unanswered = reviewResults.flatMap(function(result) {
     return result.findings
-  }))
+  }).filter(function(f) {
+    return !SUPPRESSED.some(function(s) {
+      return s.file === f.file && sameIssue(s, f) && nearbyLines(s, f)
+    })
+  })
+  suppressedCount = reviewResults.reduce(function(n, r) { return n + r.findings.length }, 0) - unanswered.length
+  const deduped = dedup(unanswered)
 
   log(`${deduped.length} unique finding(s) after dedup; verifying ${
     deduped.filter(function(f) { return shouldVerify(f, depth) }).length
@@ -866,7 +903,12 @@ const budgetAtStart = budget.spent()
   } // end ENGINE === 'workflow' branch
 
   // Recheck after critic dedup and imported results, before proof promotion.
-  finalFindings = finalFindings.map(enforceBoundary)
+  // Suppression runs here too, so critic and revmux findings cannot re-raise an answered one.
+  const answered = finalFindings.filter(function(f) {
+    return SUPPRESSED.some(function(s) { return s.file === f.file && sameIssue(s, f) && nearbyLines(s, f) })
+  })
+  finalFindings = finalFindings.filter(function(f) { return !answered.includes(f) }).map(enforceBoundary)
+  suppressedCount += answered.length
 
   // -------------------------------------------------------------------------
   // Prove: for each Critical finding and each Important finding with a
@@ -968,6 +1010,7 @@ const budgetAtStart = budget.spent()
     agentCount,
     proveAttemptCount,
     provenCount,
+    suppressedCount,
     acCoverage:        implementationResult.acCoverage || null,
     coverageVerdict:   testQualityResult.coverageVerdict || null,
     mutationSlip:      testQualityResult.mutationSlip || null,
