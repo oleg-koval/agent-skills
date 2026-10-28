@@ -42,6 +42,41 @@ test('dismissal rate is reported per agent', () => {
   assert.equal(s.agents.find((a) => a.agent === 'implementation').dismissalRate, 0)
 })
 
+test('only affirmative author intent or dismissal language counts as dismissed', () => {
+  for (const [body, expected] of [
+    ['This is not intentional, it is a real bug', 'ignored'],
+    ['This was not at all intentional', 'ignored'],
+    ["I don't disagree with this", 'ignored'],
+    ['This is not a false positive', 'ignored'],
+    ['This is intentional', 'dismissed'],
+    ["not a bug, won't fix", 'dismissed'],
+    ['Not intentional but actually by design', 'dismissed'],
+    ['No change: intentional', 'dismissed'],
+    ['No change - disagree', 'dismissed'],
+  ]) {
+    const comments = [lekker('quality'), { author: 'ann', body }]
+    assert.equal(classifyLekkerThread(thread({ comments }), 'ann').outcome, expected, body)
+  }
+  const comments = [lekker('quality'), { author: 'ann', body: 'This is not intentional' }]
+  assert.equal(classifyLekkerThread(thread({ comments, isResolved: true }), 'ann').outcome, 'resolved')
+  assert.equal(classifyLekkerThread(thread({ comments, isOutdated: true }), 'ann').outcome, 'fixed')
+})
+
+test('agent counts ignore inherited properties and initialize new dimensions', () => {
+  const s = summarize([{ prAuthor: 'ann', threads: [
+    thread({ comments: [lekker('constructor')], isOutdated: true }),
+    thread({ comments: [lekker('constructor'), { author: 'ann', body: 'by design' }] }),
+    thread({ comments: [lekker('constructor')] }),
+    thread({ comments: [lekker('constructor')], isResolved: true }),
+    thread({ comments: [lekker('new-agent')] }),
+  ] }])
+  assert.equal(s.comments, 5)
+  assert.deepEqual(s.agents, [
+    { agent: 'constructor', total: 4, fixed: 1, dismissed: 1, ignored: 1, resolved: 1, dismissalRate: 1 / 3 },
+    { agent: 'new-agent', total: 1, fixed: 0, dismissed: 0, ignored: 1, resolved: 0, dismissalRate: 0 },
+  ])
+})
+
 test('fetchPr paginates all threads and all comments in each thread', () => {
   const calls = []
   const fake = (command, args, options) => {

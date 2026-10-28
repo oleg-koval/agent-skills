@@ -30,6 +30,16 @@ export const AGENTS = ['quality', 'implementation', 'simplification', 'conventio
 
 const INTENT = /\b(intentional(ly)?|by design|on purpose|deliberate(ly)?|as designed|expected behaviou?r)\b/i;
 const DISMISS = /\b(won'?t fix|wontfix|not a (bug|problem|concern)|false positive|disagree|n\/a|not applicable|out of scope|ignor(e|ing)|nit)\b/i;
+const NEGATOR = /\b(not|no|never|nor|isn'?t|aren'?t|wasn'?t|don'?t|doesn'?t|won'?t|cannot)\b/i;
+
+// Check only the three words before each keyword in its clause for negation.
+function mentions(pattern, text) {
+  return [...text.matchAll(new RegExp(pattern.source, 'gi'))]
+    .some((match) => {
+      const before = text.slice(0, match.index).split(/[.!?;:,\n-]/).pop();
+      return !NEGATOR.test(before.trim().split(/\s+/).slice(-3).join(' '));
+    });
+}
 
 // Self-contained on purpose: this script must not depend on other lekker scripts.
 export function classifyThread(thread, prAuthor) {
@@ -38,7 +48,7 @@ export function classifyThread(thread, prAuthor) {
     .map((r) => r.body)
     .join('\n');
   if (thread.isOutdated) return 'fixed';
-  if (INTENT.test(text) || DISMISS.test(text)) return 'dismissed';
+  if (mentions(INTENT, text) || mentions(DISMISS, text)) return 'dismissed';
   if (thread.isResolved) return 'resolved';
   return 'ignored';
 }
@@ -66,8 +76,9 @@ export function summarize(prs) {
     .filter(Boolean));
   const byAgent = rows.reduce((acc, r) => {
     const cur = acc[r.agent] || { fixed: 0, dismissed: 0, ignored: 0, resolved: 0 };
-    return { ...acc, [r.agent]: { ...cur, [r.outcome]: cur[r.outcome] + 1 } };
-  }, {});
+    acc[r.agent] = { ...cur, [r.outcome]: cur[r.outcome] + 1 };
+    return acc;
+  }, Object.create(null));
   const agents = Object.entries(byAgent).map(([agent, c]) => {
     const total = c.fixed + c.dismissed + c.ignored;
     const allComments = total + c.resolved;
