@@ -353,6 +353,33 @@ treat as a full review and leave PREV_SHA unset. Also grep the same file for
 - Step 3.5 reuses that exact URL or local path so the artifact stays a living
 page for this PR.
 
+**Convergence state (every PR, first review included):** the review file
+records only the last head sha, so finding status lives in
+`scripts/finding-state.mjs` (one JSON file per PR under
+`~/.local/state/lekker-review/findings/`). In `pr` mode, on a re-review, first
+fetch the PR's review threads into `<scratchpad>/threads.json` as
+`{ "prAuthor": <login>, "threads": [{ path, line, body, isResolved, isOutdated,
+replies: [{ author, body }] }] }` (`gh api graphql` over `reviewThreads`; `body`
+is the first comment, `replies` the later ones). Then run
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/finding-state.mjs" begin --repo <REPO_SLUG> --target <TARGET_SLUG> --run <RUN_ID> [--threads <scratchpad>/threads.json]`.
+`RUN_ID` is one id per review attempt, saved to `<scratchpad>/finding-run-id`
+and reused when that attempt is retried, so a retry does not count as a new
+cycle. In Codex, replace the quoted script path with the absolute path to
+`scripts/finding-state.mjs` beside the selected `SKILL.md`, as for run-log. Pass
+its `cycle`, `suppressed` and `recurringClasses` to the workflow. A
+finding is `fixed` when its thread is outdated, `intentional` when the author
+replied "by design" and nothing changed, `rejected` when the author dismissed it
+or the thread was resolved with no code change. The workflow never re-raises a
+`suppressed` (rejected or intentional) finding. From `cycle` 4 the workflow
+returns `verdict: "rethink"` with the recurring finding classes and runs no
+agents: skip Steps 2 to 4, render the verdict as `RETHINK THE APPROACH: this PR
+has been reviewed N times; the same classes keep coming back: <classes>`, and
+suggest the author and reviewer agree the approach before another round.
+Run `finding-state.mjs record --run <RUN_ID> --repo ... --target ... --findings <findings.json>`
+before the review is published or the artifact is updated, so a stop after
+publishing cannot lose what was raised. `--run` files the findings under this
+attempt's cycle even when another review of the PR started in the meantime.
+
 **Open the run log** once mode, depth and engine are settled (see
 `references/traces.md` for where every trace of a run lives):
 
@@ -688,6 +715,9 @@ args: {
   worktreePath: <null for scan, else from worktree.json>,
   promptDir:   "${SKILL_ROOT}/references/agents",
   prevSha:     <null unless re-review>,
+  cycle,             // finding-state.mjs begin output; omit when unknown
+  suppressed,        // rejected/intentional findings never to re-raise
+  recurringClasses,  // shown in the rethink verdict
   testRunner:  <worktree.json testRunner, null for scan>
 }
 ```
@@ -745,7 +775,7 @@ The workflow runs three phases:
   carries `proof: {attempted: false, reason: "no runnable test runner: ..."}`.
 
 Findings have schema:
-`{file, line, severity, title, description, badCode, fix, rule?, precedent?, agreedBy?, verificationStatus?, verifierReasoning?, proof?}`
+`{file, line, severity, title, description, badCode, fix, bugClass, otherInstances, rule?, precedent?, agreedBy?, verificationStatus?, verifierReasoning?, proof?}`
 `badCode` and `fix` are schema-required: an empty string is allowed only on
 `observation` / `idiomatic` findings.
 
@@ -1309,6 +1339,16 @@ of what the bots raised, how much the review had already found. Low precision
 is not failure, the review may find things the bots never would. `0 bot
 comment(s)` is ambiguous (nothing found, or the bots have not run yet); never
 turn it into a 100% claim. Store: `~/.cache/lekker-review/bot-precision.jsonl`.
+
+**Eval harness.** `evals/manifest.json` lists PRs with a known outcome (`expect:
+"buggy"` with `knownBug: "file:line description"`, or `"clean"`). Run lekker on
+each, save the `findings` arrays as `{"<repo>#<pr>": [...]}`, then
+`node "${SKILL_ROOT}/scripts/eval-runner.mjs" --manifest "${SKILL_ROOT}/evals/manifest.json" --results <results.json>`
+prints recall on buggy PRs and the false-positive count (critical or important
+findings) on clean ones. The shipped manifest holds two placeholders; choosing
+real PRs is a human job. A hit is location-only (same file, within 10 lines),
+so a nearby finding about a different problem still counts; read recall as an
+upper bound.
 
 If you maintain a persistent notes/memory system across reviews, launch ONE
 background Agent with `model: 'haiku'`, passing the review file path +

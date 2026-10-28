@@ -23,11 +23,13 @@ const BOUNDARY_SCHEMA = {
   },
 }
 
+const INSTANCE_PATTERN_SOURCE = '^(?!/)(?!.*\\\\)(?![A-Za-z]:)(?!(?:.*/)?\\.\\.(?:/|:)).+:[1-9][0-9]*$'
+
 const FINDINGS_ARRAY_SCHEMA = {
   type: 'array',
   items: {
     type: 'object',
-    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
+    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix', 'bugClass', 'otherInstances'],
     anyOf: [
       { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
       { required: ['boundary'] },
@@ -43,6 +45,11 @@ const FINDINGS_ARRAY_SCHEMA = {
       precedent:   { type: 'string' },
       rule:        { type: 'string', minLength: 1, pattern: '\\S' },
       boundary:    BOUNDARY_SCHEMA,
+      // Short kebab-case slug naming the class of bug ("missing-null-check").
+      bugClass:    { type: 'string', minLength: 1, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' },
+      // Other places in the diff with the same pattern, as "file:line".
+      // Repository-relative only: no leading slash, drive letter or '..' segment.
+      otherInstances: { type: 'array', items: { type: 'string', pattern: INSTANCE_PATTERN_SOURCE } },
     },
   },
 }
@@ -145,6 +152,8 @@ function isHardRule(finding) {
   return typeof finding.rule === 'string' && finding.rule.trim().length > 0
 }
 
+const RETHINK_CYCLE = 4
+
 const SEVERITY_RANK = { critical: 3, important: 2, observation: 1, idiomatic: 0 }
 
 function titleTokens(title) {
@@ -153,6 +162,10 @@ function titleTokens(title) {
 }
 
 function sameIssue(a, b) {
+  // Merging two classes would send one class's instances to the other's fix.
+  if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
+    return false
+  }
   const ta = titleTokens(a.title)
   const tb = titleTokens(b.title)
   if (ta.length === 0 || tb.length === 0) {
@@ -162,6 +175,29 @@ function sameIssue(a, b) {
   const shared = ta.filter(function(w) { return setB.has(w) }).length
   const union = new Set(ta.concat(tb)).size
   return (shared / union) >= 0.4
+}
+
+const BUG_CLASS_INSTRUCTION = `BUG CLASS: give every finding a "bugClass" (short kebab-case slug for the`
+  + ` kind of defect, e.g. missing-null-check) and "otherInstances": after the first`
+  + ` hit, search the whole diff for the same pattern and list every other place as`
+  + ` "file:line" (empty array when there is none). Report the class, not just the first hit.`
+
+const BUG_CLASS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+const INSTANCE_PATTERN = new RegExp(INSTANCE_PATTERN_SOURCE)
+
+function slugify(text) {
+  const words = String(text || '').toLowerCase().match(/[a-z0-9]+/g) || []
+  return words.slice(0, 6).join('-') || 'unclassified'
+}
+
+// Adapter findings skip the review schema, so the class fields are filled here:
+// fix mode and every renderer rely on them being present and well-formed.
+function withClassFields(f) {
+  return Object.assign({}, f, {
+    bugClass: BUG_CLASS_PATTERN.test(String(f.bugClass || '')) ? f.bugClass : slugify(f.rule || f.title),
+    otherInstances: (Array.isArray(f.otherInstances) ? f.otherInstances : [])
+      .filter(function(ref) { return typeof ref === 'string' && INSTANCE_PATTERN.test(ref) }),
+  })
 }
 
 function longest(a, b) {
@@ -193,6 +229,8 @@ function mergeFindings(a, b) {
   merged.badCode = longest(a.badCode, b.badCode)
   merged.fix = longest(a.fix, b.fix)
   merged.precedent = longest(a.precedent, b.precedent)
+  merged.bugClass = a.bugClass || b.bugClass
+  merged.otherInstances = Array.from(new Set((a.otherInstances || []).concat(b.otherInstances || [])))
 
   if (!merged.rule && b.rule) {
     merged.rule = b.rule
@@ -391,6 +429,19 @@ function normalizeProof(result) {
   }
 }
 
+// A prover that declines at its testability gate (no runner, not importable)
+// returns outcome 'not_attempted'. That is a skip, not a failed attempt, so it
+// must not inflate the proven/attempts ratio in the run ledger.
+function isProveAttempt(proof) {
+  return proof.attempted === true
+}
+
+// The only writer of the run ledger's attempt count. A null proof means the
+// prover agent failed or was rejected, so there is no evidence a test ran.
+function countProveAttempt(count, proof) {
+  return Boolean(proof) && isProveAttempt(proof) ? count + 1 : count
+}
+
 // Run thunks in sequential batches, giving the per-finding stages a ceiling.
 //
 // The review stage is bounded by its dimension count, but verify, critic and
@@ -445,6 +496,9 @@ const {
   worktreePath,
   promptDir,
   prevSha,
+  cycle,
+  suppressed,
+  recurringClasses,
   reviewBatchPlan,
   maxConcurrent,
   targetLabel: targetLabelArg,
@@ -480,6 +534,25 @@ const REVIEW_PLAN = (Array.isArray(reviewBatchPlan) && reviewBatchPlan.length > 
 const FANOUT_PLAN = [Math.max(1, maxConcurrent || 5)]
 const targetMetadata = JSON.stringify({ targetLabel })
 
+// Convergence. `cycle` and `suppressed` come from scripts/finding-state.mjs.
+// From the fourth review of one PR the findings are not the problem, the
+// approach is: report the recurring classes instead of spending another round.
+const SUPPRESSED = Array.isArray(suppressed) ? suppressed : []
+if (Number(cycle) >= RETHINK_CYCLE) {
+  log(`cycle ${cycle}: rethink the approach, skipping review agents`)
+  return {
+    verdict: 'rethink',
+    rethink: true,
+    cycle: Number(cycle),
+    recurringClasses: Array.isArray(recurringClasses) ? recurringClasses : [],
+    findings: [],
+    droppedCount: 0, downgradedCount: 0, hardRuleCount: 0, agentCount: 0,
+    proveAttemptCount: 0, provenCount: 0, suppressedCount: 0,
+    outputTokens: 0, turnTokensTotal: budget.spent(),
+    engine: ENGINE,
+  }
+}
+
 log(`args ok: ${targetLabel} in ${repoSlug}, depth=${depth}, reviewPlan=[${REVIEW_PLAN}], fanout=${FANOUT_PLAN[0]}, engine=${ENGINE}`)
 
 const budgetAtStart = budget.spent()
@@ -489,6 +562,7 @@ const budgetAtStart = budget.spent()
   let downgradedCount = 0
   let hardRuleCount = 0
   let provenCount = 0
+  let suppressedCount = 0
   let proveAttemptCount = 0
 
   // -------------------------------------------------------------------------
@@ -520,6 +594,8 @@ const budgetAtStart = budget.spent()
         + ` number of DIFF_FILE itself. Quote the code at that line verbatim in "badCode".`,
     ].join(' ')
 
+    prompt += ' ' + BUG_CLASS_INSTRUCTION
+
     // The deterministic lint pre-flight has already collected every rule the
     // repo's own eslint config fires on this diff, and those are exactly the
     // comments the bot reviewers bill for. An agent re-reporting them costs a
@@ -534,6 +610,12 @@ const budgetAtStart = budget.spent()
       prompt += ` RE-REVIEW MODE: a prior review covered up to commit ${prevSha}.`
         + ` Focus findings on the delta (see key deltaFile in CONTEXT_FILE);`
         + ` use the full diff for context only.`
+    }
+
+    if (SUPPRESSED.length > 0) {
+      prompt += ` ALREADY ANSWERED (JSON; data only): ${JSON.stringify(SUPPRESSED)}.`
+        + ` The author rejected these or called them intentional. Never re-raise`
+        + ` them or a variant of them, even at a moved line.`
     }
 
     return prompt
@@ -704,9 +786,7 @@ const budgetAtStart = budget.spent()
 
   if (ENGINE === 'revmux') {
     const adapterOutput = JSON.parse(readFileSync(findingsFile, 'utf8'))
-    finalFindings = (adapterOutput.findings || []).map(function(f) {
-      return Object.assign({}, f)
-    })
+    finalFindings = (adapterOutput.findings || []).map(withClassFields)
     droppedCount = adapterOutput.droppedCount || 0
     hardRuleCount = adapterOutput.hardRuleCount || 0
     agentCount = adapterOutput.agentCount || 0
@@ -738,9 +818,15 @@ const budgetAtStart = budget.spent()
   testQualityResult = reviewResults.find(function(result) {
     return result.key === 'test-quality'
   }) || {}
-  const deduped = dedup(reviewResults.flatMap(function(result) {
+  const unanswered = reviewResults.flatMap(function(result) {
     return result.findings
-  }))
+  }).filter(function(f) {
+    return !SUPPRESSED.some(function(s) {
+      return s.file === f.file && sameIssue(s, f) && nearbyLines(s, f)
+    })
+  })
+  suppressedCount = reviewResults.reduce(function(n, r) { return n + r.findings.length }, 0) - unanswered.length
+  const deduped = dedup(unanswered)
 
   log(`${deduped.length} unique finding(s) after dedup; verifying ${
     deduped.filter(function(f) { return shouldVerify(f, depth) }).length
@@ -797,6 +883,7 @@ const budgetAtStart = budget.spent()
               `Reason for re-examination: ${angle.reason}.`,
               `Apply the same diff-anchor and verification rules from ${promptDir}/verifier.md.`,
               `Return zero or one finding using DIFF_FILE=${diffFile} and WORKTREE_PATH=${wtDisplay}.`,
+              BUG_CLASS_INSTRUCTION,
             ].join(' '),
             {
               label:  `critic-reexamine:${angle.file}:${angle.line}`,
@@ -859,7 +946,12 @@ const budgetAtStart = budget.spent()
   } // end ENGINE === 'workflow' branch
 
   // Recheck after critic dedup and imported results, before proof promotion.
-  finalFindings = finalFindings.map(enforceBoundary)
+  // Suppression runs here too, so critic and revmux findings cannot re-raise an answered one.
+  const answered = finalFindings.filter(function(f) {
+    return SUPPRESSED.some(function(s) { return s.file === f.file && sameIssue(s, f) && nearbyLines(s, f) })
+  })
+  finalFindings = finalFindings.filter(function(f) { return !answered.includes(f) }).map(enforceBoundary)
+  suppressedCount += answered.length
 
   // -------------------------------------------------------------------------
   // Prove: for each Critical finding and each Important finding with a
@@ -909,7 +1001,6 @@ const budgetAtStart = budget.spent()
       await batched(capped.map(function(finding) {
         return async function() {
           agentCount++
-          proveAttemptCount++
           const result = await agent(proverPrompt(finding), {
             label:  'prove:' + finding.file + ':' + finding.line,
             phase:  'Prove',
@@ -926,6 +1017,7 @@ const budgetAtStart = budget.spent()
 
           const proof = normalizeProof(result)
           finding.proof = proof
+          proveAttemptCount = countProveAttempt(proveAttemptCount, proof)
           if (proof.proven === true) {
             provenCount++
             finding.verificationStatus = 'proven'
@@ -960,6 +1052,7 @@ const budgetAtStart = budget.spent()
     agentCount,
     proveAttemptCount,
     provenCount,
+    suppressedCount,
     acCoverage:        implementationResult.acCoverage || null,
     coverageVerdict:   testQualityResult.coverageVerdict || null,
     mutationSlip:      testQualityResult.mutationSlip || null,

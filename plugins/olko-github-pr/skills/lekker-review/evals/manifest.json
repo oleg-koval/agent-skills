@@ -1,0 +1,16 @@
+{
+  "note": "PLACEHOLDERS ONLY. Replace with real PRs chosen by a human: known-buggy PRs with the bug located, and clean PRs that merged without follow-up fixes.",
+  "prs": [
+    {
+      "repo": "example-org/example-repo",
+      "pr": 1,
+      "expect": "buggy",
+      "knownBug": "src/orders/sync.ts:42 off-by-one drops the last line item"
+    },
+    {
+      "repo": "example-org/example-repo",
+      "pr": 2,
+      "expect": "clean"
+    }
+  ]
+}
