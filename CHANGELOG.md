@@ -1,3 +1,10 @@
+# [1.64.0](https://github.com/oleg-koval/agent-skills/compare/v1.63.0...v1.64.0) (2026-10-28)
+
+
+### ✨ Features
+
+* **lekker-review:** report bug class and every instance, fix all in one pass ([#160](https://github.com/oleg-koval/agent-skills/issues/160)) ([c635b94](https://github.com/oleg-koval/agent-skills/commit/c635b945f1f1567e8e250e1926ccf10e6a025a5a))
+
 # [1.63.0](https://github.com/oleg-koval/agent-skills/compare/v1.62.1...v1.63.0) (2026-10-28)
 
 
