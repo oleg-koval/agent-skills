@@ -60,10 +60,13 @@ export function findingClass(f) {
 
 const NEGATOR = /\b(not|no|never|nor|isn'?t|aren'?t|wasn'?t|don'?t|doesn'?t|won'?t|cannot)\b/i;
 
-// A keyword counts only when its clause does not negate it, so "not intentional" is not an intent.
+// Check only the three words before each keyword in its clause for negation.
 function mentions(pattern, text) {
   return [...text.matchAll(new RegExp(pattern.source, 'gi'))]
-    .some((match) => !NEGATOR.test(text.slice(0, match.index).split(/[.!?;,\n]/).pop()));
+    .some((match) => {
+      const before = text.slice(0, match.index).split(/[.!?;:,\n-]/).pop();
+      return !NEGATOR.test(before.trim().split(/\s+/).slice(-3).join(' '));
+    });
 }
 
 export function classifyThread(thread, prAuthor) {

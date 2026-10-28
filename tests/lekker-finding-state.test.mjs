@@ -93,6 +93,9 @@ test('begin counts cycles, suppresses answered findings and reports recurring cl
   assert.equal(out.summary.rethink, true)
   assert.deepEqual(suppressedFindings(out.state.findings).map((f) => f.status), ['intentional'])
   assert.equal(begin({ cycle: 1, findings: [] }, [], null).summary.rethink, false)
+  const three = begin({ cycle: 2, findings: [] }, [], null)
+  assert.equal(three.summary.cycle, 3)
+  assert.equal(three.summary.rethink, false)
 })
 
 test('a reopened thread clears its stored dismissal', () => {
@@ -106,6 +109,22 @@ test('a negated keyword is not an intent or a dismissal', () => {
   assert.equal(classifyThread(thread({ replies: [{ author: 'ann', body: 'This is not intentional, it is a real bug' }] }), 'ann'), 'open')
   assert.equal(classifyThread(thread({ replies: [{ author: 'ann', body: "I don't disagree with this" }] }), 'ann'), 'open')
   assert.equal(classifyThread(thread({ replies: [{ author: 'ann', body: 'not a bug, won\'t fix' }] }), 'ann'), 'rejected')
+})
+
+test('negation applies only to the three words before each keyword in its clause', () => {
+  for (const [body, status] of [
+    ['This is not at all intentional', 'open'],
+    ['We do not at all disagree', 'open'],
+    ['No changes are needed by design', 'intentional'],
+    ['No changes are needed to fix this so we disagree', 'rejected'],
+    ['Not intentional but actually by design', 'intentional'],
+    ['No change: intentional', 'intentional'],
+    ['No change - by design', 'intentional'],
+    ["No change: won't fix", 'rejected'],
+    ['No change - disagree', 'rejected'],
+  ]) {
+    assert.equal(classifyThread(thread({ replies: [{ author: 'ann', body }] }), 'ann'), status, body)
+  }
 })
 
 test('a retried begin with the same run id keeps its cycle', () => {
