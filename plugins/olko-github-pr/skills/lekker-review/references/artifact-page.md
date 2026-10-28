@@ -22,6 +22,8 @@ All of the following are already in hand after Step 3 of SKILL.md:
   `otherInstances`, `rule?`, `precedent?`,
   `agreedBy?`, `verifierReasoning?`, `proof?` (proof = `{attempted, proven,
   outcome, reason, testCode?, testCommand?, redOutput?}`).
+- The root `preExisting` array, when present, contains awareness-only bugs with
+  `file`, `line`, `title`, `description`, `badCode`, and optional `dimension`.
 - The saved review file path: `~/code-reviews/YYYY-MM-DD-pr-N-repo.md`.
 - PR metadata: `REPO_SLUG`, `PR_NUMBER`, `PR_URL`, title, author, `headRefName`
   → `baseRefName`, head sha, depth, verdict, `isDraft`, `mergeStateStatus`, CI
@@ -174,6 +176,11 @@ Hard requirements for the HTML page:
 - **Test Quality + Review Cost sections**, mirrored from the review file,
   kept concise (verdict + gaps + cost table; no need to reproduce every
   sentence).
+- **Pre-existing section:** when the saved review has `## Pre-existing`, render
+  it as a separate, non-blocking section after Findings and before Test Quality.
+  Preserve each `file:line`, one-sentence description, and quoted source line.
+  Do not add these items to severity counts, finding totals, verdict badges,
+  inline-comment links, or proof panels. Omit the section when empty.
 - **Closer footer** (when the caller passes `CLOSER`): a small last card with
   the closer's title (or `alt`) as a link to its `url`. When
   `CLOSER_DATAURI_FILE` is set, read it and render

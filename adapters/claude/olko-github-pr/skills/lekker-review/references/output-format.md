@@ -214,6 +214,21 @@ if empty.)*
 
 ---
 
+## Pre-existing
+
+- `<file>:<line>`: <one sentence: the real bug that already existed>. `<quoted line>`
+
+Render this section from the structured `preExisting` array, separately from
+`findings`. These entries do not affect finding totals or the verdict, are not
+inline comments, and are never auto-fixed. Include the section only when the
+array is non-empty.
+
+*(Real bugs in code this diff does not change. Never counted in **Findings**,
+never affects the verdict, never an inline comment, never auto-fixed. Omit the
+section if empty.)*
+
+---
+
 ## 💰 Review Cost
 
 ```

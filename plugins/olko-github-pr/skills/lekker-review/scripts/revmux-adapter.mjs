@@ -171,20 +171,16 @@ for (const f of report.findings || []) {
 
 const reportFindings = findings.slice()
 
-for (const pe of report.pre_existing || []) {
-  findings.push({
+const preExisting = (report.pre_existing || []).map(function(pe) {
+  return {
     file: pe.file,
     line: pe.line,
-    severity: 'observation',
     title: pe.title,
-    description: `Pre-existing: ${pe.body}`,
+    description: pe.body,
     badCode: extractBadCode(pe.body),
-    fix: '',
-    bugClass: bugClassOf(null, pe.title),
-    otherInstances: [],
     dimension: pe.lenses || [],
-  })
-}
+  }
+})
 
 const questions = report.open_questions || []
 
@@ -249,6 +245,7 @@ const totalTokens = (report.stats && report.stats.tokens) || agentsIn.reduce(fun
 const output = {
   engine: 'revmux',
   findings,
+  preExisting,
   questions,
   droppedCount,
   downgradedCount: 0,
