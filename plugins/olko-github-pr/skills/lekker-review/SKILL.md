@@ -774,7 +774,7 @@ The workflow runs three phases:
   carries `proof: {attempted: false, reason: "no runnable test runner: ..."}`.
 
 Findings have schema:
-`{file, line, severity, title, description, badCode, fix, rule?, precedent?, agreedBy?, verificationStatus?, verifierReasoning?, proof?}`
+`{file, line, severity, title, description, badCode, fix, bugClass, otherInstances, rule?, precedent?, agreedBy?, verificationStatus?, verifierReasoning?, proof?}`
 `badCode` and `fix` are schema-required: an empty string is allowed only on
 `observation` / `idiomatic` findings.
 

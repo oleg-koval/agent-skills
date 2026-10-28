@@ -97,6 +97,13 @@ function extractRule(title) {
   return m && HARD_RULES.has(m[1]) ? m[1] : undefined
 }
 
+// revmux reports one location per finding and no class, so the class is derived
+// from the rule tag or title and no other instances are claimed.
+function bugClassOf(rule, title) {
+  const words = String(rule || title || '').toLowerCase().match(/[a-z0-9]+/g) || []
+  return words.slice(0, 6).join('-') || 'unclassified'
+}
+
 function mapSeverity(f) {
   if (f.severity === 'critical') return 'critical'
   if (f.severity === 'major') return 'important'
@@ -131,6 +138,8 @@ for (const f of report.findings || []) {
     description: f.body,
     badCode,
     fix: f.fix,
+    bugClass: bugClassOf(rule, f.title),
+    otherInstances: [],
     confidence: f.confidence,
     rule,
     dimension: f.lenses || [],
@@ -171,6 +180,8 @@ for (const pe of report.pre_existing || []) {
     description: `Pre-existing: ${pe.body}`,
     badCode: extractBadCode(pe.body),
     fix: '',
+    bugClass: bugClassOf(null, pe.title),
+    otherInstances: [],
     dimension: pe.lenses || [],
   })
 }

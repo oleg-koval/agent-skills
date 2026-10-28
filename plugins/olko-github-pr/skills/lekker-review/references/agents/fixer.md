@@ -74,6 +74,14 @@ outcome; a half-applied fix that breaks callers is the worst outcome.
 
 ---
 
+## Same-class instances
+
+A finding with `instanceOf` is another occurrence of a bug class already
+reported elsewhere. Treat it like any finding: confirm the pattern is really
+there at that spot, apply the same fix adapted to local names and types, and
+skip it (with the reason) when the code differs enough that the fix does not
+carry over. Its `title` is its own join key.
+
 ## Multiple findings in one file
 
 Apply them in file order, top to bottom, re-reading after each edit so later
