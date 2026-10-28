@@ -11,6 +11,16 @@ Axes to cover (Critical/Important only):
 - Scalability: N+1 queries, missing pagination, unbounded collections, missing rate-limit
 - Integration Contracts: Shopify API misuse, webhook idempotency not handled
 - Correctness: off-by-one, wrong operator, missing null guard
+- Rollout safety (external writes): when the diff changes what is WRITTEN to
+  another system (an API payload, field mapping, or a DB write into a system
+  this service does not own), state whether the PR has a feature flag
+  (Reflag / `getShopFlag` / `isEnabled` style check around the new write) or a
+  documented revert plan (PR body or code comment). Look in the diff and in the
+  PR body in CONTEXT_FILE. If it has neither, report an `important` finding:
+  `title` starts "No flag or revert plan for external write", `badCode` quotes
+  the changed write, `fix` names the flag guard to add. A pure UI/copy change or
+  a write that is trivially undone by deploying again is exempt. Quiet when the
+  flag or plan is present; do not report its presence.
 
 CI_STATUS: read key "ciStatus" from the JSON file CONTEXT_FILE.
 EXISTING_REVIEWS: read key "existingReviews" from CONTEXT_FILE (awareness only, skip findings at same file:line)
