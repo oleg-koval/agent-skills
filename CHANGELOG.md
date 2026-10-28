@@ -1,3 +1,24 @@
+# [1.63.0](https://github.com/oleg-koval/agent-skills/compare/v1.62.1...v1.63.0) (2026-10-28)
+
+
+### ✨ Features
+
+* **lekker-review:** eval runner for known-buggy and known-clean PRs ([#164](https://github.com/oleg-koval/agent-skills/issues/164)) ([07ac126](https://github.com/oleg-koval/agent-skills/commit/07ac1265859464da0d4e239b241ad0eb6536c033)), closes [repo#pr](https://github.com/repo/issues/pr)
+
+## [1.62.1](https://github.com/oleg-koval/agent-skills/compare/v1.62.0...v1.62.1) (2026-10-28)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** count only real prover attempts in the run ledger ([#165](https://github.com/oleg-koval/agent-skills/issues/165)) ([7c8182a](https://github.com/oleg-koval/agent-skills/commit/7c8182a3bba309e937ad0fd773ea7cfc27b00f2e))
+
+# [1.62.0](https://github.com/oleg-koval/agent-skills/compare/v1.61.0...v1.62.0) (2026-10-28)
+
+
+### ✨ Features
+
+* **lekker-review:** per-PR finding state store with cycle count ([#158](https://github.com/oleg-koval/agent-skills/issues/158)) ([48a82a1](https://github.com/oleg-koval/agent-skills/commit/48a82a16ce14744b847cb7cc182872a9a3af2f79)), closes [#159](https://github.com/oleg-koval/agent-skills/issues/159)
+
 # [1.61.0](https://github.com/oleg-koval/agent-skills/compare/v1.60.0...v1.61.0) (2026-10-27)
 
 
