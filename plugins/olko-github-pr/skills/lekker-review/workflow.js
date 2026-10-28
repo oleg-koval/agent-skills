@@ -23,11 +23,13 @@ const BOUNDARY_SCHEMA = {
   },
 }
 
+const INSTANCE_PATTERN_SOURCE = '^(?!/)(?!.*\\\\)(?![A-Za-z]:)(?!(?:.*/)?\\.\\.(?:/|:)).+:[1-9][0-9]*$'
+
 const FINDINGS_ARRAY_SCHEMA = {
   type: 'array',
   items: {
     type: 'object',
-    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix'],
+    required: ['file', 'line', 'severity', 'title', 'description', 'badCode', 'fix', 'bugClass', 'otherInstances'],
     anyOf: [
       { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
       { required: ['boundary'] },
@@ -43,6 +45,11 @@ const FINDINGS_ARRAY_SCHEMA = {
       precedent:   { type: 'string' },
       rule:        { type: 'string', minLength: 1, pattern: '\\S' },
       boundary:    BOUNDARY_SCHEMA,
+      // Short kebab-case slug naming the class of bug ("missing-null-check").
+      bugClass:    { type: 'string', minLength: 1, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' },
+      // Other places in the diff with the same pattern, as "file:line".
+      // Repository-relative only: no leading slash, drive letter or '..' segment.
+      otherInstances: { type: 'array', items: { type: 'string', pattern: INSTANCE_PATTERN_SOURCE } },
     },
   },
 }
@@ -155,6 +162,10 @@ function titleTokens(title) {
 }
 
 function sameIssue(a, b) {
+  // Merging two classes would send one class's instances to the other's fix.
+  if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
+    return false
+  }
   const ta = titleTokens(a.title)
   const tb = titleTokens(b.title)
   if (ta.length === 0 || tb.length === 0) {
@@ -164,6 +175,29 @@ function sameIssue(a, b) {
   const shared = ta.filter(function(w) { return setB.has(w) }).length
   const union = new Set(ta.concat(tb)).size
   return (shared / union) >= 0.4
+}
+
+const BUG_CLASS_INSTRUCTION = `BUG CLASS: give every finding a "bugClass" (short kebab-case slug for the`
+  + ` kind of defect, e.g. missing-null-check) and "otherInstances": after the first`
+  + ` hit, search the whole diff for the same pattern and list every other place as`
+  + ` "file:line" (empty array when there is none). Report the class, not just the first hit.`
+
+const BUG_CLASS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+const INSTANCE_PATTERN = new RegExp(INSTANCE_PATTERN_SOURCE)
+
+function slugify(text) {
+  const words = String(text || '').toLowerCase().match(/[a-z0-9]+/g) || []
+  return words.slice(0, 6).join('-') || 'unclassified'
+}
+
+// Adapter findings skip the review schema, so the class fields are filled here:
+// fix mode and every renderer rely on them being present and well-formed.
+function withClassFields(f) {
+  return Object.assign({}, f, {
+    bugClass: BUG_CLASS_PATTERN.test(String(f.bugClass || '')) ? f.bugClass : slugify(f.rule || f.title),
+    otherInstances: (Array.isArray(f.otherInstances) ? f.otherInstances : [])
+      .filter(function(ref) { return typeof ref === 'string' && INSTANCE_PATTERN.test(ref) }),
+  })
 }
 
 function longest(a, b) {
@@ -195,6 +229,8 @@ function mergeFindings(a, b) {
   merged.badCode = longest(a.badCode, b.badCode)
   merged.fix = longest(a.fix, b.fix)
   merged.precedent = longest(a.precedent, b.precedent)
+  merged.bugClass = a.bugClass || b.bugClass
+  merged.otherInstances = Array.from(new Set((a.otherInstances || []).concat(b.otherInstances || [])))
 
   if (!merged.rule && b.rule) {
     merged.rule = b.rule
@@ -558,6 +594,8 @@ const budgetAtStart = budget.spent()
         + ` number of DIFF_FILE itself. Quote the code at that line verbatim in "badCode".`,
     ].join(' ')
 
+    prompt += ' ' + BUG_CLASS_INSTRUCTION
+
     // The deterministic lint pre-flight has already collected every rule the
     // repo's own eslint config fires on this diff, and those are exactly the
     // comments the bot reviewers bill for. An agent re-reporting them costs a
@@ -748,9 +786,7 @@ const budgetAtStart = budget.spent()
 
   if (ENGINE === 'revmux') {
     const adapterOutput = JSON.parse(readFileSync(findingsFile, 'utf8'))
-    finalFindings = (adapterOutput.findings || []).map(function(f) {
-      return Object.assign({}, f)
-    })
+    finalFindings = (adapterOutput.findings || []).map(withClassFields)
     droppedCount = adapterOutput.droppedCount || 0
     hardRuleCount = adapterOutput.hardRuleCount || 0
     agentCount = adapterOutput.agentCount || 0
@@ -847,6 +883,7 @@ const budgetAtStart = budget.spent()
               `Reason for re-examination: ${angle.reason}.`,
               `Apply the same diff-anchor and verification rules from ${promptDir}/verifier.md.`,
               `Return zero or one finding using DIFF_FILE=${diffFile} and WORKTREE_PATH=${wtDisplay}.`,
+              BUG_CLASS_INSTRUCTION,
             ].join(' '),
             {
               label:  `critic-reexamine:${angle.file}:${angle.line}`,

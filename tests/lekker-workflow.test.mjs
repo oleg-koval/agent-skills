@@ -544,6 +544,22 @@ test('revmux adapter metadata and engine identity survive workflow aggregation',
     assert.match(result.mutationSlip, /retry guard/)
     assert.equal(result.mockSmells.length, 1)
     assert.ok(result.pricingMissing.includes('claude-sonnet-5'))
+    const adapted = JSON.parse(adapterOutput).findings
+    assert.ok(adapted.length > 0)
+    for (const f of adapted.concat(result.findings)) {
+      assert.match(f.bugClass, /^[a-z0-9]+(-[a-z0-9]+)*$/)
+      assert.deepEqual(f.otherInstances, [])
+    }
+
+    writeFileSync(findingsFile, JSON.stringify({ findings: [
+      { ...baseFinding, title: 'Bad Thing Here', bugClass: 'Not A Slug', otherInstances: ['src/b.ts:3', '/etc/passwd:1', 7] },
+    ] }))
+    const second = await runScenario({
+      extraArgs: { engine: 'revmux', findingsFile },
+      respond: ({ options }) => { throw new Error(`Unexpected agent call: ${options.label}`) },
+    })
+    assert.equal(second.result.findings[0].bugClass, 'bad-thing-here')
+    assert.deepEqual(second.result.findings[0].otherInstances, ['src/b.ts:3'])
   } finally {
     rmSync(tempDir, { recursive: true, force: true })
   }
@@ -635,6 +651,45 @@ test('artifact contract renders passed-proof counter-evidence', () => {
   assert.match(artifactPrompt, /`testCommand`/)
   assert.match(artifactPrompt, /downgraded the finding to Important/)
   assert.match(artifactPrompt, /do not present the\s+passing input as proof that every related input is safe/)
+})
+
+test('review schema requires bugClass and otherInstances, and merging unions instances', async () => {
+  const { calls, result } = await runScenario({
+    respond: ({ prompt, options }) => {
+      if (options.label === 'review:quality') {
+        assert.match(prompt, /BUG CLASS/)
+        return { findings: [
+          { ...baseFinding, severity: 'observation', bugClass: 'x-class', otherInstances: ['a.ts:1'] },
+          { ...baseFinding, severity: 'observation', line: 12, bugClass: 'x-class', otherInstances: ['b.ts:2'] },
+        ] }
+      }
+      return { findings: [] }
+    },
+  })
+  assert.ok(calls.includes('review:quality'))
+  const src = readFileSync(workflowPath, 'utf8')
+  assert.match(src, /required: \[[^\]]*'bugClass', 'otherInstances'\]/)
+  const merged = result.findings.filter((f) => f.bugClass === 'x-class')
+  assert.equal(merged.length, 1)
+  assert.deepEqual(merged[0].otherInstances, ['a.ts:1', 'b.ts:2'])
+})
+
+test('findings of different bug classes are never merged', async () => {
+  const { result } = await runScenario({
+    respond: ({ options }) => (options.label === 'review:quality'
+      ? { findings: [
+        { ...baseFinding, severity: 'observation', bugClass: 'x-class', otherInstances: ['a.ts:1'] },
+        { ...baseFinding, severity: 'observation', line: 12, bugClass: 'y-class', otherInstances: ['b.ts:2'] },
+      ] }
+      : { findings: [] }),
+  })
+  const byClass = Object.fromEntries(result.findings.map((f) => [f.bugClass, f.otherInstances]))
+  assert.deepEqual(byClass, { 'x-class': ['a.ts:1'], 'y-class': ['b.ts:2'] })
+})
+
+test('critic re-examination asks for the bug class and its other instances', () => {
+  const src = readFileSync(workflowPath, 'utf8')
+  assert.match(src, /Return zero or one finding using DIFF_FILE=\$\{diffFile\} and WORKTREE_PATH=\$\{wtDisplay\}\.`,\s+BUG_CLASS_INSTRUCTION,/)
 })
 
 test('cycle 4 returns a rethink verdict with recurring classes and runs no agents', async () => {
