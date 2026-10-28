@@ -5,8 +5,8 @@
 // is whether the author acted on a comment, so this reads lekker's own posted
 // inline comments and classifies each one:
 //   fixed      the thread is outdated: the code at that location changed after the comment
-//   dismissed  the PR author replied with a dismissal, or the thread was resolved
-//              with no code change
+//   dismissed  the PR author replied with a dismissal
+//   resolved   resolved, but no code outcome is known
 //   ignored    none of the above (no code change, no dismissal, still open)
 // and reports the dismissal rate per agent.
 //
@@ -38,7 +38,8 @@ export function classifyThread(thread, prAuthor) {
     .map((r) => r.body)
     .join('\n');
   if (thread.isOutdated) return 'fixed';
-  if (INTENT.test(text) || DISMISS.test(text) || thread.isResolved) return 'dismissed';
+  if (INTENT.test(text) || DISMISS.test(text)) return 'dismissed';
+  if (thread.isResolved) return 'resolved';
   return 'ignored';
 }
 
@@ -64,41 +65,104 @@ export function summarize(prs) {
     .map((t) => classifyLekkerThread(t, pr.prAuthor))
     .filter(Boolean));
   const byAgent = rows.reduce((acc, r) => {
-    const cur = acc[r.agent] || { fixed: 0, dismissed: 0, ignored: 0 };
+    const cur = acc[r.agent] || { fixed: 0, dismissed: 0, ignored: 0, resolved: 0 };
     return { ...acc, [r.agent]: { ...cur, [r.outcome]: cur[r.outcome] + 1 } };
   }, {});
   const agents = Object.entries(byAgent).map(([agent, c]) => {
     const total = c.fixed + c.dismissed + c.ignored;
-    return { agent, total, ...c, dismissalRate: total === 0 ? null : c.dismissed / total };
+    const allComments = total + c.resolved;
+    return {
+      agent,
+      total: allComments,
+      ...c,
+      dismissalRate: total === 0 ? null : c.dismissed / total,
+    };
   }).sort((a, b) => AGENTS.indexOf(a.agent) - AGENTS.indexOf(b.agent) || a.agent.localeCompare(b.agent));
   return { comments: rows.length, agents };
 }
 
-const QUERY = `query($owner:String!,$name:String!,$pr:Int!){repository(owner:$owner,name:$name){
-pullRequest(number:$pr){author{login} reviewThreads(first:100){nodes{isResolved isOutdated path line
-comments(first:50){nodes{author{login} body}}}}}}}`;
+const FETCH_TIMEOUT_MS = 30_000;
+const THREADS_QUERY = `query($owner:String!,$name:String!,$pr:Int!,$threadCursor:String){repository(owner:$owner,name:$name){
+pullRequest(number:$pr){author{login} reviewThreads(first:100,after:$threadCursor){nodes{id isResolved isOutdated path line
+comments(first:50){nodes{author{login} body} pageInfo{hasNextPage endCursor}}} pageInfo{hasNextPage endCursor}}}}}`;
+const COMMENTS_QUERY = `query($threadId:ID!,$commentCursor:String){node(id:$threadId){... on PullRequestReviewThread{
+comments(first:50,after:$commentCursor){nodes{author{login} body} pageInfo{hasNextPage endCursor}}}}}`;
+
+function graphql(repo, pr, query, cursors, run) {
+  const [owner, name] = repo.split('/');
+  const args = ['api', 'graphql', '-f', `query=${query}`, '-F', `owner=${owner}`,
+    '-F', `name=${name}`, '-F', `pr=${pr}`];
+  for (const [key, value] of Object.entries(cursors)) {
+    if (value !== undefined) args.push('-f', `${key}=${value}`);
+  }
+  let output;
+  try {
+    output = run('gh', args, { encoding: 'utf8', timeout: FETCH_TIMEOUT_MS });
+  } catch (error) {
+    if (error && typeof error === 'object' && error.code === 'ETIMEDOUT') {
+      throw new Error(`GitHub GraphQL fetch timed out after ${FETCH_TIMEOUT_MS / 1000}s for ${repo}#${pr}`, { cause: error });
+    }
+    throw error;
+  }
+  return JSON.parse(output).data;
+}
+
+function nextCursor(pageInfo, connection) {
+  if (!pageInfo.hasNextPage) return null;
+  if (!pageInfo.endCursor) throw new Error(`GitHub GraphQL ${connection} page has no end cursor`);
+  return pageInfo.endCursor;
+}
+
+function allComments(repo, pr, thread, run) {
+  const comments = thread.comments.nodes.map((c) => ({
+    author: c.author ? c.author.login : null,
+    body: c.body,
+  }));
+  let cursor = nextCursor(thread.comments.pageInfo, 'comments');
+  while (cursor) {
+    const data = graphql(repo, pr, COMMENTS_QUERY, { threadId: thread.id, commentCursor: cursor }, run);
+    const page = data.node.comments;
+    comments.push(...page.nodes.map((c) => ({
+      author: c.author ? c.author.login : null,
+      body: c.body,
+    })));
+    cursor = nextCursor(page.pageInfo, 'comments');
+  }
+  return comments;
+}
 
 export function fetchPr(repo, pr, run = execFileSync) {
-  const [owner, name] = repo.split('/');
-  const out = run('gh', ['api', 'graphql', '-f', `query=${QUERY}`, '-F', `owner=${owner}`,
-    '-F', `name=${name}`, '-F', `pr=${pr}`], { encoding: 'utf8' });
-  const node = JSON.parse(out).data.repository.pullRequest;
+  const threads = [];
+  let cursor;
+  let prAuthor = null;
+  do {
+    const data = graphql(repo, pr, THREADS_QUERY, { threadCursor: cursor }, run);
+    const pullRequest = data.repository.pullRequest;
+    if (pullRequest.author) prAuthor = pullRequest.author.login;
+    const page = pullRequest.reviewThreads;
+    threads.push(...page.nodes.map((thread) => ({
+      path: thread.path,
+      line: thread.line,
+      isResolved: thread.isResolved,
+      isOutdated: thread.isOutdated,
+      comments: allComments(repo, pr, thread, run),
+    })));
+    cursor = nextCursor(page.pageInfo, 'reviewThreads');
+  } while (cursor);
   return {
-    prAuthor: node.author ? node.author.login : null,
-    threads: node.reviewThreads.nodes.map((t) => ({
-      path: t.path,
-      line: t.line,
-      isResolved: t.isResolved,
-      isOutdated: t.isOutdated,
-      comments: t.comments.nodes.map((c) => ({ author: c.author ? c.author.login : null, body: c.body })),
-    })),
+    prAuthor,
+    threads,
   };
+}
+
+export function fetchPrs(repo, prNumbers, fetch = fetchPr) {
+  return Array.from(new Set(prNumbers), (pr) => fetch(repo, pr));
 }
 
 function render(s) {
   const pct = (r) => (r === null ? 'n/a' : `${Math.round(r * 100)}%`);
   const lines = s.agents.map((a) =>
-    `${a.agent.padEnd(15)} ${String(a.total).padStart(3)} comments  fixed ${a.fixed}  dismissed ${a.dismissed}  ignored ${a.ignored}  dismissal rate ${pct(a.dismissalRate)}`);
+    `${a.agent.padEnd(15)} ${String(a.total).padStart(3)} comments  fixed ${a.fixed}  dismissed ${a.dismissed}  ignored ${a.ignored}  resolved ${a.resolved}  dismissal rate ${pct(a.dismissalRate)}`);
   return [`lekker inline comments scored: ${s.comments}`, ...lines].join('\n');
 }
 
@@ -111,7 +175,7 @@ function main(argv) {
     console.error('usage: human-noise.mjs --repo <owner/repo> --pr <n> [--pr <n>...] | --from <threads.json> [--json]');
     process.exit(2);
   }
-  const prs = from ? JSON.parse(readFileSync(from, 'utf8')) : prNumbers.map((n) => fetchPr(repo, n));
+  const prs = from ? JSON.parse(readFileSync(from, 'utf8')) : fetchPrs(repo, prNumbers);
   const summary = summarize(prs);
   console.log(argv.includes('--json') ? JSON.stringify(summary) : render(summary));
 }

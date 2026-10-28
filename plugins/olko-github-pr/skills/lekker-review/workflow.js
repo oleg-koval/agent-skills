@@ -1040,9 +1040,22 @@ const budgetAtStart = budget.spent()
   // Expose the originating agent as `dimension` (critic angles collapse to
   // "critic"). The posted inline comment carries it as a marker so
   // scripts/human-noise.mjs can score each agent by what humans did with it.
+  const revmuxDimensions = {
+    'lekker-quality': 'quality',
+    'lekker-implementation': 'implementation',
+    'lekker-simplification': 'simplification',
+    'lekker-conventions': 'conventions',
+    'lekker-test-quality': 'test-quality',
+    tests: 'test-quality',
+  }
   const output = finalFindings.map(function(f) {
     const clean = Object.assign({}, f)
-    if (clean._dimension) {
+    const dimension = clean._dimension || clean.dimension
+    if (Array.isArray(dimension)) {
+      clean.dimension = dimension.map(function(lens) {
+        return revmuxDimensions[lens]
+      }).find(Boolean) || 'unknown'
+    } else if (clean._dimension) {
       clean.dimension = String(clean._dimension).split(':')[0]
     }
     delete clean._dimension
