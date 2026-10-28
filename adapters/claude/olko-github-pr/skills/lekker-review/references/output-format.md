@@ -24,6 +24,7 @@ Output the review as a markdown response (not via printf). No ANSI escapes.
 **Proofs:** <M proven / N attempted> *(include only when N > 0)*
 **CI:** <✅ All passing | ⚠️ N failing: check-name | ⏳ Pending | N/A>
 **Depth:** <📦 deps | ⚡ scan | 🔍 medium | 🔬 deep>
+**NEEDS HUMAN REVIEW:** <categories from risk-paths.mjs> *(only when `needsHumanReview` is true: a person must read these paths whatever the verdict)*
 **Engine:** <workflow | codex | revmux>
 
 ---
