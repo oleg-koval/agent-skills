@@ -1,3 +1,10 @@
+# [1.62.0](https://github.com/oleg-koval/agent-skills/compare/v1.61.0...v1.62.0) (2026-10-28)
+
+
+### ✨ Features
+
+* **lekker-review:** per-PR finding state store with cycle count ([#158](https://github.com/oleg-koval/agent-skills/issues/158)) ([48a82a1](https://github.com/oleg-koval/agent-skills/commit/48a82a16ce14744b847cb7cc182872a9a3af2f79)), closes [#159](https://github.com/oleg-koval/agent-skills/issues/159)
+
 # [1.61.0](https://github.com/oleg-koval/agent-skills/compare/v1.60.0...v1.61.0) (2026-10-27)
 
 
