@@ -440,6 +440,16 @@ Fire both tracks in the same turn.
 
 ### Track A - worktree setup (skip when depth=scan, unless `--fix`)
 
+At scan depth, collect review guidance without creating a worktree:
+
+```bash
+LEKKER_RULES_ONLY=1 ${SKILL_ROOT}/scripts/setup-worktree.sh \
+  <REPO_SLUG> <PR_BRANCH> <scratchpad>/rules.json
+```
+
+Read `projectRules` from `rules.json` into `context.json`. This archive-only
+mode reads the PR tree and does not run static checks.
+
 Run via Bash with `run_in_background`:
 
 ```bash
@@ -649,7 +659,8 @@ Write `<scratchpad>/context.json` with keys:
 ```json
 {
   "acList":          "<numbered ACs from your issue tracker, or empty>",
-  "projectRules":    "<worktree.json projectRules + any recalled review patterns appended under '## Recalled patterns'>",
+  "projectRules":    "<worktree.json or rules.json projectRules + any recalled review patterns appended under '## Recalled patterns'>",
+  "changedPaths":    "<PR files[].path list, or an exact matching worktree.json changedFiles list>",
   "sentrySignals":   "<monitoring issue summaries, or null>",
   "ciStatus":        "<passing | failing: <names> | pending | N/A>",
   "existingReviews": "<prior review summaries>",
@@ -863,16 +874,19 @@ anchors. Apply your own judgment to every finding.
 sits on the path the diff touches, is worth one line: list it under a separate
 `## Pre-existing` section (`file:line`, one sentence, the quoted line). Rules: it
 never counts toward the finding totals, never affects the verdict, is never
-posted as an inline comment, and is never auto-fixed by `--fix`. Style, debt and
+posted as an inline comment, and is never auto-fixed by `--fix`. Revmux adapters
+must return these in structured `preExisting`, separate from `findings`; preserve
+that field through synthesis and formatting. Style, debt and
 tsc/eslint noise are not pre-existing bugs: omit them. Omit the section when empty.
 
 **REVIEW.md.** A `REVIEW.md` at the repo root (or in a package, depth <= 3) is
 review-only guidance, collected into `projectRules` next to `CLAUDE.md` and
 `AGENTS.md`. Honour three kinds of line in it: what to ALWAYS flag (treat a
-match as at least Important), paths to IGNORE (drop findings in those paths),
+match as at least Important), paths to IGNORE (drop findings only in unchanged paths),
 and a nit limit (cap Observation and Idiomatic findings at that number, highest
-value first). `REVIEW.md` narrows what is reported; it never switches off a hard
-rule from `CLAUDE.md` or the house rules.
+value first). `REVIEW.md` ignore rules never suppress findings in changed paths. The workflow
+applies exclusions to agent and lint findings using `changedPaths`; if paths are
+unavailable, keep findings. It never switches off a hard rule from `CLAUDE.md` or the house rules.
 
 **Approval standard.** The verdict answers "does this definitely improve the
 codebase's health", not "is this how I would have written it". Perfect code does
@@ -964,7 +978,17 @@ never post it as an inline comment. With no worktree (scan), skip this and do
 not claim the lines were checked. Print the summary counts only when something
 was remapped or nulled.
 
-**Merge the lint pre-flight findings.** `preflight.json`'s `findings` array is
+**Merge the lint pre-flight findings.** Before merging, apply REVIEW.md path
+exclusions to both `<scratchpad>/findings.json` and `preflight.json`:
+
+```bash
+node ${SKILL_ROOT}/scripts/apply-review-rules.mjs \
+  <scratchpad>/findings.json <scratchpad>/context.json
+node ${SKILL_ROOT}/scripts/apply-review-rules.mjs \
+  <scratchpad>/preflight.json <scratchpad>/context.json
+```
+
+The helper preserves findings in changed paths. `preflight.json`'s `findings` array is
 part of the review's finding set, not a separate report. Concatenate it with the
 workflow's `findings` (after the line check above: lint lines come from eslint
 and need no remapping) BEFORE formatting, and:

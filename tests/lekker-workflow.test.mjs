@@ -546,6 +546,9 @@ test('revmux adapter metadata and engine identity survive workflow aggregation',
     assert.ok(result.pricingMissing.includes('claude-sonnet-5'))
     const adapted = JSON.parse(adapterOutput).findings
     assert.ok(adapted.length > 0)
+    assert.ok(Array.isArray(result.preExisting))
+    assert.ok(result.preExisting.every((finding) => finding.severity === undefined))
+    assert.ok(result.findings.every((finding) => !String(finding.description).startsWith('Pre-existing:')))
     assert.ok(result.findings.every((finding) => typeof finding.dimension === 'string'))
     assert.ok(result.findings.every((finding) => ['quality', 'implementation', 'simplification', 'conventions', 'test-quality', 'critic', 'unknown'].includes(finding.dimension)))
     for (const f of adapted.concat(result.findings)) {

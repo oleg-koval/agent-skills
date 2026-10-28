@@ -123,6 +123,42 @@ else
     printf '%s\t%s\n' "$REPO_SLUG" "$REPO_ROOT" >> "$CACHE_FILE"
 fi
 
+collect_project_rules() {
+    local root="$1"
+    while IFS= read -r rules_md; do
+        printf '=== %s ===\n' "$rules_md"
+        cat "$rules_md"
+        printf '\n'
+    done < <(find "$root" -maxdepth 3 -type f \
+        \( -name 'CLAUDE.md' -o -name 'REVIEW.md' -o -name 'AGENTS.md' \) \
+        -not -path '*/node_modules/*' 2>/dev/null | sort)
+}
+
+# Scan depth needs PR-authored review guidance but skips expensive worktree
+# setup. Read the PR tree from an archive so no Git worktree or checkout is made.
+if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
+    if [[ -n "$LOCAL_REPO" ]]; then
+        RULES_REF="$PR_BRANCH"
+    else
+        git -C "$REPO_ROOT" fetch origin "+refs/heads/${PR_BRANCH}:refs/remotes/origin/${PR_BRANCH}" 2>/dev/null \
+            || git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null
+        RULES_REF="origin/$PR_BRANCH"
+        git -C "$REPO_ROOT" rev-parse --verify "$RULES_REF" >/dev/null 2>&1 || RULES_REF=FETCH_HEAD
+    fi
+    RULES_SOURCE="/tmp/lekker-rules-source-$$"
+    mkdir -p "$RULES_SOURCE"
+    git -C "$REPO_ROOT" archive "$RULES_REF" | tar -x -C "$RULES_SOURCE"
+    PROJECT_RULES="$(collect_project_rules "$RULES_SOURCE")"
+    python3 - "$OUT_JSON" "$PROJECT_RULES" <<'PYEOF'
+import json, sys
+with open(sys.argv[1], "w") as f:
+    json.dump({"projectRules": sys.argv[2]}, f, indent=2)
+PYEOF
+    rm -rf "$RULES_SOURCE"
+    printf 'OK %s\n' "$OUT_JSON"
+    exit 0
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Fetch + worktree
 # ---------------------------------------------------------------------------
@@ -433,14 +469,7 @@ wait "$ESLINT_PID" || true
 # ---------------------------------------------------------------------------
 PROJECT_RULES_FILE="/tmp/lekker-rules-$$.txt"
 printf '' > "$PROJECT_RULES_FILE"
-
-while IFS= read -r rules_md; do
-    printf '=== %s ===\n' "$rules_md" >> "$PROJECT_RULES_FILE"
-    cat "$rules_md" >> "$PROJECT_RULES_FILE"
-    printf '\n' >> "$PROJECT_RULES_FILE"
-done < <(find "$WORKTREE_PATH" -maxdepth 3 \
-    \( -name 'CLAUDE.md' -o -name 'REVIEW.md' -o -name 'AGENTS.md' \) \
-    -not -path '*/node_modules/*' 2>/dev/null | sort)
+collect_project_rules "$WORKTREE_PATH" > "$PROJECT_RULES_FILE"
 
 # ---------------------------------------------------------------------------
 # 6. HEAD SHA
