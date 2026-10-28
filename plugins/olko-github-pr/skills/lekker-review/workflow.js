@@ -489,7 +489,7 @@ const targetMetadata = JSON.stringify({ targetLabel })
 // From the fourth review of one PR the findings are not the problem, the
 // approach is: report the recurring classes instead of spending another round.
 const SUPPRESSED = Array.isArray(suppressed) ? suppressed : []
-if (ENGINE !== 'revmux' && Number(cycle) >= RETHINK_CYCLE) {
+if (Number(cycle) >= RETHINK_CYCLE) {
   log(`cycle ${cycle}: rethink the approach, skipping review agents`)
   return {
     verdict: 'rethink',
@@ -896,7 +896,12 @@ const budgetAtStart = budget.spent()
   } // end ENGINE === 'workflow' branch
 
   // Recheck after critic dedup and imported results, before proof promotion.
-  finalFindings = finalFindings.map(enforceBoundary)
+  // Suppression runs here too, so critic and revmux findings cannot re-raise an answered one.
+  const answered = finalFindings.filter(function(f) {
+    return SUPPRESSED.some(function(s) { return s.file === f.file && sameIssue(s, f) && nearbyLines(s, f) })
+  })
+  finalFindings = finalFindings.filter(function(f) { return !answered.includes(f) }).map(enforceBoundary)
+  suppressedCount += answered.length
 
   // -------------------------------------------------------------------------
   // Prove: for each Critical finding and each Important finding with a
