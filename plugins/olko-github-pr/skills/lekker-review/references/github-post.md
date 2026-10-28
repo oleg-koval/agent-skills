@@ -33,6 +33,12 @@ Rules:
   determine commentability). A finding with `line: null` (set by
   `scripts/validate-lines.mjs` when its quoted code is not in the file) is
   never an inline comment: list it in the review body instead.
+- **End every inline comment body with the marker** `<!-- lekker:<dimension> -->`
+  on its own last line, using the finding's `dimension` (`quality`,
+  `implementation`, `simplification`, `conventions`, `test-quality`, `critic`;
+  `unknown` when absent). It is invisible on GitHub, and is the only way
+  `scripts/human-noise.mjs` can tell lekker's comments from the author's own,
+  because the pending review is posted under the requesting user's account.
 - **Keep every comment body to 2-4 sentences and under ~700 characters**
   (excluding any suggestion block). Inline comments are read one at a time in a
   narrow column; a long one does not get read, so length actively costs you the

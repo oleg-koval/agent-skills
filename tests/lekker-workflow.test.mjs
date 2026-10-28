@@ -546,6 +546,8 @@ test('revmux adapter metadata and engine identity survive workflow aggregation',
     assert.ok(result.pricingMissing.includes('claude-sonnet-5'))
     const adapted = JSON.parse(adapterOutput).findings
     assert.ok(adapted.length > 0)
+    assert.ok(result.findings.every((finding) => typeof finding.dimension === 'string'))
+    assert.ok(result.findings.every((finding) => ['quality', 'implementation', 'simplification', 'conventions', 'test-quality', 'critic', 'unknown'].includes(finding.dimension)))
     for (const f of adapted.concat(result.findings)) {
       assert.match(f.bugClass, /^[a-z0-9]+(-[a-z0-9]+)*$/)
       assert.deepEqual(f.otherInstances, [])
@@ -560,6 +562,15 @@ test('revmux adapter metadata and engine identity survive workflow aggregation',
     })
     assert.equal(second.result.findings[0].bugClass, 'bad-thing-here')
     assert.deepEqual(second.result.findings[0].otherInstances, ['src/b.ts:3'])
+
+    writeFileSync(findingsFile, JSON.stringify({ findings: [
+      { ...baseFinding, dimension: ['lekker-quality', 'lekker-implementation'] },
+    ] }))
+    const third = await runScenario({
+      extraArgs: { engine: 'revmux', findingsFile },
+      respond: ({ options }) => { throw new Error(`Unexpected agent call: ${options.label}`) },
+    })
+    assert.equal(third.result.findings[0].dimension, 'quality')
   } finally {
     rmSync(tempDir, { recursive: true, force: true })
   }
@@ -651,6 +662,16 @@ test('artifact contract renders passed-proof counter-evidence', () => {
   assert.match(artifactPrompt, /`testCommand`/)
   assert.match(artifactPrompt, /downgraded the finding to Important/)
   assert.match(artifactPrompt, /do not present the\s+passing input as proof that every related input is safe/)
+})
+
+test('findings expose their originating agent as dimension, not _dimension', async () => {
+  const { result } = await runScenario({
+    respond: ({ options }) => (options.label === 'review:conventions'
+      ? { findings: [{ ...baseFinding, severity: 'observation' }] }
+      : { findings: [] }),
+  })
+  assert.equal(result.findings[0].dimension, 'conventions')
+  assert.equal(result.findings[0]._dimension, undefined)
 })
 
 test('review schema requires bugClass and otherInstances, and merging unions instances', async () => {
