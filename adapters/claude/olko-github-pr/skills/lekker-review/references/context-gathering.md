@@ -142,6 +142,9 @@ Collect into `EXISTING_REVIEWS`. Purpose:
 - **Deduplication**: if an existing review already raised a finding at a
   specific `file:line`, skip that finding in your output and note
   `(already raised by <reviewer>)` internally in your deduplication pass.
+- **Answered findings**: file:line dedup is not enough across re-reviews. A finding the
+  author rejected or called intentional is carried in `suppressed` from
+  `scripts/finding-state.mjs` (SKILL.md, Convergence state) and is never re-raised.
 - **Design decisions**: if the author replied to a review comment explaining
   an intentional choice, that context informs whether a pattern is a bug or
   a deliberate trade-off.
