@@ -91,6 +91,7 @@ const groupFindings = new Function(
     lift('safeRelativePath'),
     lift('changedFilesFromDiff'),
     lift('parseInstance'),
+    lift('isGeneratedPath'),
     lift('classKey'),
     lift('expandInstances'),
     lift('groupFindings'),
@@ -135,6 +136,13 @@ test('instances outside the diff or with unsafe paths never reach a fixer', () =
   assert.deepEqual(locations(groups), [['src/a.ts', [10]]])
   assert.equal(all.length, 1)
   assert.equal(groupFindings.groupFindings([{ ...base, otherInstances: ['src/b.ts:4'] }], new Set()).all.length, 1)
+})
+
+test('instances in generated files are skipped like generated primaries', () => {
+  const generated = ['package-lock.json', 'web/yarn.lock', 'src/generated/q.ts', 'src/__snapshots__/a.test.ts.snap']
+  const changed = groupFindings.changedFilesFromDiff(['+++ b/src/a.ts', ...generated.map((f) => `+++ b/${f}`)].join('\n'))
+  const { all } = groupFindings.groupFindings([{ ...base, otherInstances: generated.map((f) => `${f}:1`) }], changed)
+  assert.deepEqual(all.map((f) => f.file), ['src/a.ts'])
 })
 
 test('path spellings of one file share a group and a claimed spot only blocks its own class', () => {
