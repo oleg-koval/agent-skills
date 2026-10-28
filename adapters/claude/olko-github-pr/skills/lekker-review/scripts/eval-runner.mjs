@@ -10,7 +10,9 @@
 //                reported as unscored, never as zero findings.
 //
 // A buggy PR is HIT when some finding is on the knownBug file within LINE_WINDOW lines
-// of the knownBug line. Recall = hits / scored buggy PRs. On a clean PR every
+// of the knownBug line. Known limitation: the match is by location only, so a
+// same-file finding near the line counts even if it describes a different problem;
+// judging "same bug" needs an LLM or a description match and is not attempted. Recall = hits / scored buggy PRs. On a clean PR every
 // verdict-affecting finding (critical or important) is a false positive.
 
 import { readFileSync } from 'node:fs';
@@ -20,14 +22,20 @@ export const LINE_WINDOW = 10;
 const BLOCKING = new Set(['critical', 'important']);
 
 export function parseKnownBug(text) {
-  const m = /^(\S+?):(\d+)\b/.exec(String(text || '').trim());
-  return m ? { file: m[1], line: Number(m[2]) } : null;
+  // The file is everything before the last ":<digits>" that is followed by whitespace
+  // or the end, so paths containing spaces parse.
+  const m = /^(.+):(\d+)(?=\s|$)/.exec(String(text || '').trim());
+  if (!m) return null;
+  const line = Number(m[2]);
+  return line >= 1 ? { file: m[1], line } : null;
 }
 
 export function isHit(findings, knownBug) {
   const spot = parseKnownBug(knownBug);
   if (!spot) return false;
-  return findings.some((f) => f.file === spot.file && Math.abs(Number(f.line) - spot.line) <= LINE_WINDOW);
+  return findings.some((f) => f.file === spot.file
+    && Number.isInteger(f.line) && f.line > 0
+    && Math.abs(f.line - spot.line) <= LINE_WINDOW);
 }
 
 export function validateManifest(manifest) {
@@ -37,12 +45,12 @@ export function validateManifest(manifest) {
   prs.forEach((e, i) => {
     if (!e.repo || !Number.isInteger(e.pr)) throw new Error(`prs[${i}]: repo and integer pr are required`);
     if (e.expect !== 'buggy' && e.expect !== 'clean') throw new Error(`prs[${i}]: expect must be "buggy" or "clean"`);
-    if (e.expect === 'buggy' && e.knownBug !== undefined && !parseKnownBug(e.knownBug)) {
-      throw new Error(`prs[${i}]: knownBug must start with "file:line"`);
-    }
     const key = `${e.repo}#${e.pr}`;
-    if (seen.has(key)) throw new Error(`prs[${i}]: duplicate entry for ${key}`);
+    if (seen.has(key)) throw new Error(`prs[${i}]: duplicate entry ${key}`);
     seen.add(key);
+    if (e.expect === 'buggy' && !parseKnownBug(e.knownBug)) {
+      throw new Error(`prs[${i}]: a buggy entry needs knownBug starting with "file:line" (line >= 1)`);
+    }
   });
   return prs;
 }
