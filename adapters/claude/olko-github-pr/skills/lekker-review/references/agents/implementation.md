@@ -40,10 +40,12 @@ Axes to cover:
   path, then check that the diff changes THAT. A fix that only guards, catches,
   retries, defaults or special-cases the symptom (a null check at the crash
   site while the producer still emits null, a try/catch around the failing
-  call, a retry on a deterministic error) is an `important` finding: `title`
-  starts "Fix addresses the symptom", `description` names the root cause and
-  where it still lives, `fix` points at the producing code. Quiet when the
-  diff reaches the root cause or the PR is not a bug fix.
+  call, a retry on a deterministic error) is an `important` finding only when
+  evidence shows the reported defect remains unresolved or a contract is still
+  violated. A mitigation that fully satisfies the requirements is a valid fix.
+  Use title "Fix addresses the symptom", name the root cause and where it still
+  lives, and point `fix` at the producing code. Quiet when the root cause is
+  fixed, the mitigation fully resolves the defect, or the PR is not a bug fix.
 - Integration Contracts: Shopify API misuse, BC API assumptions, webhook
   idempotency, external API pagination not handled.
 

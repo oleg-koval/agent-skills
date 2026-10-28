@@ -27,9 +27,12 @@ Axes to cover:
   identifies a bug fix, trace the reported symptom through the code path to its
   producing cause and check that the diff changes that cause. A guard, catch,
   retry, default or special case that hides the symptom while leaving its cause
-  intact is an Important finding titled "Fix addresses the symptom". Name the
-  root cause and where it remains, and point the fix at the producing code. Stay
-  quiet when the diff reaches the root cause or the PR is not a bug fix.
+  intact is an Important finding titled "Fix addresses the symptom" only when
+  evidence shows the reported defect remains unresolved or a contract is still
+  violated. A mitigation that fully satisfies the requirements is a valid fix.
+  Name the root cause and where it remains, and point the fix at the producing
+  code. Stay quiet when the root cause is fixed, the mitigation fully resolves
+  the defect, or the PR is not a bug fix.
 - Binding scoping decisions: when `{{CONTEXT}}` names a resolved flag from the
   ticket's Dev Scoping Session, a diff that contradicts it is major (critical
   when it changes external behaviour or data shape); quote the decision text.

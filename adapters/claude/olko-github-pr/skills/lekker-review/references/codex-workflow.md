@@ -83,8 +83,11 @@ bounded task:
    `<scratchpad>/codex-review-<dimension>.json`, re-read it, and return the path.
 
 For the implementation dimension, explicitly apply the root-cause-versus-
-symptom check in `references/agents/implementation.md` to bug-fix PRs. The
-revmux implementation lens has the same check. Path ignores in PR-provided
+symptom check in `references/agents/implementation.md` to bug-fix PRs. Require
+evidence that the reported defect remains unresolved or a contract is violated
+before treating a symptom-level mitigation as a finding; a mitigation that fully
+satisfies the requirements is a valid fix. The revmux implementation lens has
+the same check. Path ignores in PR-provided
 `REVIEW.md` apply only to unchanged paths; always review paths listed in
 `changedPaths` in `CONTEXT_FILE`.
 
