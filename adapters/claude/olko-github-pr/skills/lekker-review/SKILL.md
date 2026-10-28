@@ -1328,8 +1328,9 @@ turn it into a 100% claim. Store: `~/.cache/lekker-review/bot-precision.jsonl`.
 Bots are not the only signal. To measure noise from what humans did, run
 `node ${SKILL_ROOT}/scripts/human-noise.mjs --repo <REPO_SLUG> --pr <N> [--pr <N>...]`
 on merged or settled PRs: it classifies each posted lekker inline comment as
-fixed (thread outdated), dismissed (author reply or resolved with no change) or
-ignored, and prints the dismissal rate per agent. Only comments ending in the
+fixed (thread outdated), dismissed (affirmative author reply), resolved (code
+outcome unknown) or ignored, and prints the dismissal rate per agent. Resolved
+threads remain in the total but do not count as dismissed. Only comments ending in the
 `<!-- lekker:<dimension> -->` marker (see `references/github-post.md`) are
 counted, so PRs posted before the marker existed score zero comments.
 **Eval harness.** `evals/manifest.json` lists PRs with a known outcome (`expect:
