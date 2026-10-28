@@ -1297,10 +1297,12 @@ turn it into a 100% claim. Store: `~/.cache/lekker-review/bot-precision.jsonl`.
 **Eval harness.** `evals/manifest.json` lists PRs with a known outcome (`expect:
 "buggy"` with `knownBug: "file:line description"`, or `"clean"`). Run lekker on
 each, save the `findings` arrays as `{"<repo>#<pr>": [...]}`, then
-`node ${SKILL_ROOT}/scripts/eval-runner.mjs --manifest ${SKILL_ROOT}/evals/manifest.json --results <results.json>`
+`node "${SKILL_ROOT}/scripts/eval-runner.mjs" --manifest "${SKILL_ROOT}/evals/manifest.json" --results <results.json>`
 prints recall on buggy PRs and the false-positive count (critical or important
 findings) on clean ones. The shipped manifest holds two placeholders; choosing
-real PRs is a human job.
+real PRs is a human job. A hit is location-only (same file, within 10 lines),
+so a nearby finding about a different problem still counts; read recall as an
+upper bound.
 
 If you maintain a persistent notes/memory system across reviews, launch ONE
 background Agent with `model: 'haiku'`, passing the review file path +
