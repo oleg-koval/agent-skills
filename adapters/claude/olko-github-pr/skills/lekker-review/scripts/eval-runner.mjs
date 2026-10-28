@@ -33,12 +33,16 @@ export function isHit(findings, knownBug) {
 export function validateManifest(manifest) {
   const prs = manifest && Array.isArray(manifest.prs) ? manifest.prs : null;
   if (!prs) throw new Error('manifest needs a "prs" array');
+  const seen = new Set();
   prs.forEach((e, i) => {
     if (!e.repo || !Number.isInteger(e.pr)) throw new Error(`prs[${i}]: repo and integer pr are required`);
     if (e.expect !== 'buggy' && e.expect !== 'clean') throw new Error(`prs[${i}]: expect must be "buggy" or "clean"`);
     if (e.expect === 'buggy' && e.knownBug !== undefined && !parseKnownBug(e.knownBug)) {
       throw new Error(`prs[${i}]: knownBug must start with "file:line"`);
     }
+    const key = `${e.repo}#${e.pr}`;
+    if (seen.has(key)) throw new Error(`prs[${i}]: duplicate entry for ${key}`);
+    seen.add(key);
   });
   return prs;
 }
