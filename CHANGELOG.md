@@ -1,3 +1,10 @@
+## [1.62.1](https://github.com/oleg-koval/agent-skills/compare/v1.62.0...v1.62.1) (2026-10-28)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** count only real prover attempts in the run ledger ([#165](https://github.com/oleg-koval/agent-skills/issues/165)) ([7c8182a](https://github.com/oleg-koval/agent-skills/commit/7c8182a3bba309e937ad0fd773ea7cfc27b00f2e))
+
 # [1.62.0](https://github.com/oleg-koval/agent-skills/compare/v1.61.0...v1.62.0) (2026-10-28)
 
 
