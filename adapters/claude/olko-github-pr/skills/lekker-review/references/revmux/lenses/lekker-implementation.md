@@ -23,6 +23,16 @@ Axes to cover:
       a `finally` block, a shutdown hook, or the tail of a long-running function.
   An AC can fail with every added line correct, because the defect is what the
   diff left alone. That is a finding, not an absence of one.
+- Root cause vs symptom (bug-fix PRs): when the PR title, body or linked ticket
+  identifies a bug fix, trace the reported symptom through the code path to its
+  producing cause and check that the diff changes that cause. A guard, catch,
+  retry, default or special case that hides the symptom while leaving its cause
+  intact is an Important finding titled "Fix addresses the symptom" only when
+  evidence shows the reported defect remains unresolved or a contract is still
+  violated. A mitigation that fully satisfies the requirements is a valid fix.
+  Name the root cause and where it remains, and point the fix at the producing
+  code. Stay quiet when the root cause is fixed, the mitigation fully resolves
+  the defect, or the PR is not a bug fix.
 - Binding scoping decisions: when `{{CONTEXT}}` names a resolved flag from the
   ticket's Dev Scoping Session, a diff that contradicts it is major (critical
   when it changes external behaviour or data shape); quote the decision text.
