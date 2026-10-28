@@ -58,12 +58,20 @@ export function findingClass(f) {
   return f.bugClass || titleTokens(f.title).slice(0, 4).sort().join('-') || 'unclassified';
 }
 
+const NEGATOR = /\b(not|no|never|nor|isn'?t|aren'?t|wasn'?t|don'?t|doesn'?t|won'?t|cannot)\b/i;
+
+// A keyword counts only when its clause does not negate it, so "not intentional" is not an intent.
+function mentions(pattern, text) {
+  return [...text.matchAll(new RegExp(pattern.source, 'gi'))]
+    .some((match) => !NEGATOR.test(text.slice(0, match.index).split(/[.!?;,\n]/).pop()));
+}
+
 export function classifyThread(thread, prAuthor) {
   const authorReplies = (thread.replies || []).filter((r) => r.author && r.author === prAuthor);
   const text = authorReplies.map((r) => r.body).join('\n');
   if (thread.isOutdated) return 'fixed';
-  if (INTENT.test(text)) return 'intentional';
-  if (DISMISS.test(text)) return 'rejected';
+  if (mentions(INTENT, text)) return 'intentional';
+  if (mentions(DISMISS, text)) return 'rejected';
   if (thread.isResolved && prAuthor) return 'rejected';
   return 'open';
 }
@@ -108,11 +116,14 @@ export function suppressedFindings(findings) {
     .map(({ file, line, title, status }) => ({ file, line, title, status }));
 }
 
-export function begin(state, threads, prAuthor) {
+// A run id makes begin idempotent: a retry of the same run reuses its cycle instead of inflating the count.
+export function begin(state, threads, prAuthor, run = null) {
   const findings = applyThreads(state.findings, threads, prAuthor);
-  const cycle = state.cycle + 1;
+  const known = run === null ? undefined : state.runs?.[run];
+  const cycle = known ?? state.cycle + 1;
+  const runs = run === null || known !== undefined ? state.runs : { ...state.runs, [run]: cycle };
   return {
-    state: { cycle, findings },
+    state: { ...state, cycle: Math.max(state.cycle, cycle), findings, ...(runs && { runs }) },
     summary: {
       cycle,
       rethink: cycle >= RETHINK_CYCLE,
@@ -140,6 +151,10 @@ function load(path) {
     || !Number.isSafeInteger(state.cycle) || state.cycle < 0 || !Array.isArray(state.findings)) {
     throw new Error(`Invalid finding state: ${path}`);
   }
+  if (state.runs !== undefined && (!state.runs || typeof state.runs !== 'object' || Array.isArray(state.runs)
+    || !Object.values(state.runs).every((c) => Number.isSafeInteger(c) && c >= 1))) {
+    throw new Error(`Invalid finding state runs: ${path}`);
+  }
   return state;
 }
 
@@ -166,14 +181,17 @@ function main(argv) {
     const raw = flag('threads') ? JSON.parse(readFileSync(flag('threads'), 'utf8')) : [];
     const threads = Array.isArray(raw) ? raw : raw.threads || [];
     const prAuthor = Array.isArray(raw) ? null : raw.prAuthor || null;
-    const next = begin(state, threads, prAuthor);
+    const next = begin(state, threads, prAuthor, flag('run') ?? null);
     save(path, next.state);
     console.log(JSON.stringify(next.summary));
   } else if (cmd === 'record') {
     const raw = JSON.parse(readFileSync(flag('findings'), 'utf8'));
     const found = Array.isArray(raw) ? raw : raw.findings || [];
-    const cycle = Math.max(state.cycle, 1);
-    save(path, { cycle, findings: mergeFindings(state.findings, found, cycle) });
+    const run = flag('run') ?? null;
+    // A late record for an earlier run keeps that run's cycle; the current cycle stays as it was.
+    const cycle = run === null ? Math.max(state.cycle, 1) : state.runs?.[run];
+    if (cycle === undefined) { console.log(JSON.stringify({ error: `unknown --run ${run}; call begin --run first` })); process.exit(2); }
+    save(path, { ...state, cycle: Math.max(state.cycle, 1), findings: mergeFindings(state.findings, found, cycle) });
     console.log(JSON.stringify({ recorded: found.length, cycle }));
   } else if (cmd === 'show') {
     console.log(JSON.stringify(state, null, 2));
