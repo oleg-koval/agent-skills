@@ -102,6 +102,37 @@ test('a reopened thread clears its stored dismissal', () => {
   assert.deepEqual(suppressedFindings(out.state.findings), [])
 })
 
+test('a negated keyword is not an intent or a dismissal', () => {
+  assert.equal(classifyThread(thread({ replies: [{ author: 'ann', body: 'This is not intentional, it is a real bug' }] }), 'ann'), 'open')
+  assert.equal(classifyThread(thread({ replies: [{ author: 'ann', body: "I don't disagree with this" }] }), 'ann'), 'open')
+  assert.equal(classifyThread(thread({ replies: [{ author: 'ann', body: 'not a bug, won\'t fix' }] }), 'ann'), 'rejected')
+})
+
+test('a retried begin with the same run id keeps its cycle', () => {
+  const first = begin({ cycle: 0, findings: [], runs: {} }, [], null, 'r1')
+  assert.equal(first.summary.cycle, 1)
+  const retry = begin(first.state, [], null, 'r1')
+  assert.equal(retry.summary.cycle, 1)
+  assert.equal(retry.state.cycle, 1)
+  assert.deepEqual(retry.state.runs, { r1: 1 })
+  assert.equal(begin(retry.state, [], null, 'r2').summary.cycle, 2)
+})
+
+test('cli record with a run id keeps findings in that run cycle', (t) => {
+  const { dir, run, stateFile } = stateFixture(t)
+  assert.equal(JSON.parse(run('begin', '--run', 'a').stdout).cycle, 1)
+  assert.equal(JSON.parse(run('begin', '--run', 'b').stdout).cycle, 2)
+  const found = join(dir, 'found.json')
+  writeFileSync(found, JSON.stringify({ findings: [{ file: 'a.ts', line: 5, title: 'Missing null check' }] }))
+  assert.deepEqual(JSON.parse(run('record', '--run', 'a', '--findings', found).stdout), { recorded: 1, cycle: 1 })
+  const shown = JSON.parse(readFileSync(stateFile(), 'utf8'))
+  assert.deepEqual(shown.findings[0].cycles, [1])
+  assert.equal(shown.cycle, 2)
+  const unknown = run('record', '--run', 'zz', '--findings', found)
+  assert.equal(unknown.status, 2)
+  assert.match(unknown.stdout, /unknown --run zz/)
+})
+
 test('cli persists state across begin and record', () => {
   const dir = mkdtempSync(join(tmpdir(), 'lekker-state-'))
   const env = { ...process.env, LEKKER_STATE_DIR: dir }
@@ -149,6 +180,7 @@ test('invalid state fails without writes from begin or record', (t) => {
     '{"cycle":1}', '{"findings":[]}', '{"cycle":"1","findings":[]}',
     '{"cycle":-1,"findings":[]}', '{"cycle":1.5,"findings":[]}',
     '{"cycle":1,"findings":null}', '{"cycle":1,"findings":{}}',
+    '{"cycle":1,"findings":[],"runs":[]}', '{"cycle":1,"findings":[],"runs":{"a":0}}',
   ]
   for (const raw of invalid) {
     writeFileSync(file, raw)
