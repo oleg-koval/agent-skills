@@ -43,12 +43,17 @@ path. The file is an object with a required `findings` array. Each finding is:
   "description": "failure mode and reachability",
   "badCode": "verbatim changed code",
   "fix": "minimal correction",
+  "bugClass": "kebab-case-defect-class",
+  "otherInstances": ["other/file.ts:17"],
   "rule": "optional house-rule tag",
   "precedent": "required for idiomatic findings"
 }
 ```
 
 `badCode` and `fix` may be empty only for Observation or Idiomatic findings.
+`bugClass` and `otherInstances` are required: after the first hit, search the
+whole diff for the same pattern and list every other place as a
+repository-relative `file:line` (empty array when there is none).
 Implementation additionally returns `acCoverage`. Test-quality additionally
 returns `coverageVerdict`, `mutationSlip`, and `mockSmells`.
 
@@ -95,6 +100,8 @@ findings before spending verifier agents:
 - candidates must name the same file;
 - their anchor lines must fit within a 30-line total span;
 - normalized title-token Jaccard similarity must be at least 0.4;
+- findings whose `bugClass` values differ never merge; merged findings union
+  their `otherInstances`;
 - keep the highest severity and longest `description`, `badCode`, `fix`, and
   `precedent` values;
 - union contributing dimensions into `agreedBy`;
@@ -202,8 +209,13 @@ to measurements the host actually exposes.
 Follow `references/fix-mode.md` for selection, preconditions, verification,
 commit, landing/push confirmation, and cleanup. Replace only its Workflow call:
 
-1. Group eligible findings by primary file. Resolve cross-file dependencies
-   before spawning; overlapping groups must be combined.
+1. Expand `otherInstances` first, as `fix-workflow.js` does: each entry that is
+   a validated repository-relative path (rules in item 5) naming a file changed
+   in the diff becomes a sibling finding with `instanceOf` set to the source
+   title, unless the same bug class already claims that `file:line`. Drop every
+   other entry and report it. Then group primary and sibling findings by
+   normalized file. Resolve cross-file dependencies before spawning;
+   overlapping groups must be combined.
 2. Spawn one `worker` fixer per disjoint group. Assign exact file ownership and
    state that other agents share the worktree; it must preserve their changes.
    The fixer reads `<SKILL_ROOT>/references/agents/fixer.md`, edits only its

@@ -28,7 +28,7 @@ const writeJson = (p, value) => {
   writeFileSync(p, JSON.stringify(value, null, 2) + '\n')
 }
 const copyResources = (skill, destDir) => {
-  for (const d of ['scripts', 'references', 'templates']) {
+  for (const d of ['scripts', 'references', 'templates', 'evals']) {
     const src = join(root, skill.path, d)
     if (!existsSync(src)) continue
     const dest = join(destDir, d)

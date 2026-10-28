@@ -18,7 +18,8 @@ without creating a new artifact identity.
 All of the following are already in hand after Step 3 of SKILL.md:
 
 - `findings.json` path (scratchpad) -- each finding carries: `file`, `line`,
-  `severity`, `title`, `description`, `badCode`, `fix`, `rule?`, `precedent?`,
+  `severity`, `title`, `description`, `badCode`, `fix`, `bugClass`,
+  `otherInstances`, `rule?`, `precedent?`,
   `agreedBy?`, `verifierReasoning?`, `proof?` (proof = `{attempted, proven,
   outcome, reason, testCode?, testCommand?, redOutput?}`).
 - The saved review file path: `~/code-reviews/YYYY-MM-DD-pr-N-repo.md`.
@@ -154,7 +155,10 @@ Hard requirements for the HTML page:
 - **Findings**, grouped Critical → Important → Observations → Idiomatic. Each
   finding is an expandable `<details>` block:
   - summary row: severity dot + title + `file:line`
-  - body: description, `badCode` in a `<pre>`, `fix` in a `<pre>`, a small
+  - body: description, `badCode` in a `<pre>`, `fix` in a `<pre>`, a
+    "Bug class: `bugClass`" line followed by "Also at:" and each
+    `otherInstances` entry as a `file:line` chip (omit "Also at:" when the
+    list is empty), a small
     hard-rule chip (e.g. "TS-1 · hard rule") when `rule` is set, `agreedBy`
     chips when 2+ dimensions agreed, `verifierReasoning` as a muted footnote.
 - **Proof block:** when `proof.proven === true`, render a visually distinct
