@@ -361,8 +361,12 @@ fetch the PR's review threads into `<scratchpad>/threads.json` as
 `{ "prAuthor": <login>, "threads": [{ path, line, body, isResolved, isOutdated,
 replies: [{ author, body }] }] }` (`gh api graphql` over `reviewThreads`; `body`
 is the first comment, `replies` the later ones). Then run
-`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/finding-state.mjs" begin --repo <REPO_SLUG> --target <TARGET_SLUG> [--threads <scratchpad>/threads.json]`
-and pass its `cycle`, `suppressed` and `recurringClasses` to the workflow. A
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/finding-state.mjs" begin --repo <REPO_SLUG> --target <TARGET_SLUG> --run <RUN_ID> [--threads <scratchpad>/threads.json]`.
+`RUN_ID` is one id per review attempt, saved to `<scratchpad>/finding-run-id`
+and reused when that attempt is retried, so a retry does not count as a new
+cycle. In Codex, replace the quoted script path with the absolute path to
+`scripts/finding-state.mjs` beside the selected `SKILL.md`, as for run-log. Pass
+its `cycle`, `suppressed` and `recurringClasses` to the workflow. A
 finding is `fixed` when its thread is outdated, `intentional` when the author
 replied "by design" and nothing changed, `rejected` when the author dismissed it
 or the thread was resolved with no code change. The workflow never re-raises a
@@ -371,8 +375,10 @@ returns `verdict: "rethink"` with the recurring finding classes and runs no
 agents: skip Steps 2 to 4, render the verdict as `RETHINK THE APPROACH: this PR
 has been reviewed N times; the same classes keep coming back: <classes>`, and
 suggest the author and reviewer agree the approach before another round.
-After the review, run `finding-state.mjs record ... --findings <findings.json>`
-so the next cycle knows what was raised.
+Run `finding-state.mjs record --run <RUN_ID> --repo ... --target ... --findings <findings.json>`
+before the review is published or the artifact is updated, so a stop after
+publishing cannot lose what was raised. `--run` files the findings under this
+attempt's cycle even when another review of the PR started in the meantime.
 
 **Open the run log** once mode, depth and engine are settled (see
 `references/traces.md` for where every trace of a run lives):
