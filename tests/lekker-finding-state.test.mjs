@@ -95,6 +95,13 @@ test('begin counts cycles, suppresses answered findings and reports recurring cl
   assert.equal(begin({ cycle: 1, findings: [] }, [], null).summary.rethink, false)
 })
 
+test('a reopened thread clears its stored dismissal', () => {
+  const prior = [{ file: 'a.ts', line: 5, title: 'Missing null check', status: 'rejected', cycles: [1] }]
+  const reopened = [thread({ replies: [{ author: 'ann', body: 'Actually this is a real bug' }] })]
+  const out = begin({ cycle: 1, findings: prior }, reopened, 'ann')
+  assert.deepEqual(suppressedFindings(out.state.findings), [])
+})
+
 test('cli persists state across begin and record', () => {
   const dir = mkdtempSync(join(tmpdir(), 'lekker-state-'))
   const env = { ...process.env, LEKKER_STATE_DIR: dir }

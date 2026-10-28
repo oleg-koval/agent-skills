@@ -77,7 +77,7 @@ export function applyThreads(findings, threads, prAuthor) {
     });
     if (!thread) return f;
     const status = classifyThread(thread, prAuthor);
-    return status === 'open' || f.status === status ? f : { ...f, status };
+    return f.status === status ? f : { ...f, status };
   });
 }
 
