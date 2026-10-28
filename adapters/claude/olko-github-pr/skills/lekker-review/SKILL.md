@@ -985,11 +985,13 @@ exclusions to both `<scratchpad>/findings.json` and `preflight.json`:
 ```bash
 node ${SKILL_ROOT}/scripts/apply-review-rules.mjs \
   <scratchpad>/findings.json <scratchpad>/context.json
-node ${SKILL_ROOT}/scripts/apply-review-rules.mjs \
-  <scratchpad>/preflight.json <scratchpad>/context.json
+if [ -f <scratchpad>/preflight.json ]; then
+  node ${SKILL_ROOT}/scripts/apply-review-rules.mjs \
+    <scratchpad>/preflight.json <scratchpad>/context.json
+fi
 ```
 
-The helper preserves findings in changed paths. `preflight.json`'s `findings` array is
+The helper preserves findings in changed paths and hard-rule findings. `preflight.json`'s `findings` array is
 part of the review's finding set, not a separate report. Concatenate it with the
 workflow's `findings` (after the line check above: lint lines come from eslint
 and need no remapping) BEFORE formatting, and:

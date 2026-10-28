@@ -11,6 +11,7 @@ function reviewRules(projectRules) {
       return { ...current, inReview: /(?:^|\/)REVIEW\.md$/i.test(header[1]), inIgnoreList: false };
     }
     if (!current.inReview) return current;
+    if (!line.trim()) return current;
 
     const heading = /^#{1,6}\s*(?:paths?\s+to\s+ignore|ignore paths)\s*:?[ \t]*$/i.test(line);
     if (heading) return { ...current, inIgnoreList: true };
@@ -45,7 +46,7 @@ function matchesGlob(file, pattern) {
 
 function shouldIgnore(item, patterns, changedPaths) {
   const file = normalizedPath(item.file);
-  if (!file || changedPaths.has(file)) return false;
+  if (!file || changedPaths.has(file) || item.rule) return false;
   return patterns.some((pattern) => matchesGlob(file, pattern));
 }
 
