@@ -1,3 +1,10 @@
+# [1.65.0](https://github.com/oleg-koval/agent-skills/compare/v1.64.0...v1.65.0) (2026-10-28)
+
+
+### ✨ Features
+
+* **lekker-review:** measure dismissal rate per agent from PR author reactions ([#163](https://github.com/oleg-koval/agent-skills/issues/163)) ([4a24f00](https://github.com/oleg-koval/agent-skills/commit/4a24f0034a8fc219d7b82dd332d0d51d2b64fb79))
+
 # [1.64.0](https://github.com/oleg-koval/agent-skills/compare/v1.63.0...v1.64.0) (2026-10-28)
 
 
