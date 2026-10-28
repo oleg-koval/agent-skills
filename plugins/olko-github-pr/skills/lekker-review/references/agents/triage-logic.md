@@ -16,7 +16,13 @@ Axes to cover (Critical/Important only):
   this service does not own), state whether the PR has a feature flag
   (Reflag / `getShopFlag` / `isEnabled` style check around the new write) or a
   documented revert plan (PR body or code comment). Look in the diff and in the
-  PR body in CONTEXT_FILE. If it has neither, report an `important` finding:
+  PR body in CONTEXT_FILE. When WORKTREE_PATH is available, trace the changed
+  write through unchanged callers and flag guards before deciding either is
+  absent. Without a worktree, absence from the diff is not proof: report a
+  missing rollout control only when the diff demonstrates that the changed
+  write bypasses a guard and the PR body provides no revert plan. Otherwise
+  mark rollout verification unavailable rather than inventing a finding.
+  If neither control exists on that evidence, report an `important` finding:
   `title` starts "No flag or revert plan for external write", `badCode` quotes
   the changed write, `fix` names the flag guard to add. A pure UI/copy change or
   a write that is trivially undone by deploying again is exempt. Quiet when the

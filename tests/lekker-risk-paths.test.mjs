@@ -39,7 +39,7 @@ test('cli reads file arguments', () => {
 })
 
 test('full-word and camel-case auth paths escalate without matching authors', () => {
-  for (const path of ['src/authentication/index.ts', 'src/authorization.ts', 'src/authService.ts', 'src/sessionStore.ts', 'src/permissionGuard.ts']) {
+  for (const path of ['src/authentication/index.ts', 'src/authorization.ts', 'src/authenticate.ts', 'src/authorize.ts', 'src/authService.ts', 'src/sessionStore.ts', 'src/permissionGuard.ts']) {
     assert.deepEqual(cats([path]), ['auth'], path)
   }
   assert.deepEqual(cats(['src/authors.ts']), [])

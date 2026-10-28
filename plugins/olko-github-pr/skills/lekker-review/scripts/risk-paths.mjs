@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 export const RISK_RULES = [
   { category: 'ci-workflow', test: (f) => /^\.github\/workflows\//.test(f) },
-  { category: 'auth', test: (f) => /(^|[/._-])(auth|authn|authz|authentication|authorization|oauth|session|sessions|permission|permissions|rbac|acl|jwt|login)([/._-]|$)/i.test(f.replace(/([a-z0-9])([A-Z])/g, '$1-$2')) },
+  { category: 'auth', test: (f) => /(^|[/._-])(auth|authn|authz|authenticate|authenticated|authentication|authorize|authorized|authorization|oauth|session|sessions|permission|permissions|rbac|acl|jwt|login)([/._-]|$)/i.test(f.replace(/([a-z0-9])([A-Z])/g, '$1-$2')) },
   { category: 'billing', test: (f) => /(billing|payment|payments|invoice|invoices|checkout|stripe|subscription)/i.test(f) },
   { category: 'installer', test: (f) => /(^|\/)(install|setup|bootstrap|preinstall|postinstall)(?:[^/.]*|[^/]*\.(sh|bash|zsh|ps1|js|mjs|cjs|ts|py|bat|cmd))$/i.test(f) },
   { category: 'p21', test: (f) => /p21/i.test(f) },
