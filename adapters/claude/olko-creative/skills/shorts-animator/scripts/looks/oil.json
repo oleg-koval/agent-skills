@@ -1,0 +1,7 @@
+{
+  "about": "Oil paint on canvas: swirling strokes, deep saturated colour, a slow shimmer. The painted-shorts look.",
+  "mode": "strokes", "brush": 11, "length": 2.8, "layers": 3, "swirl": 0.7, "flow": 160, "curve": 0.9,
+  "bristle": 0.75, "impasto": 0.6, "hueJitter": 0.2, "valueJitter": 0.22, "satJitter": 0.35, "respect": 0.85,
+  "boil": 0.5, "paper": 0.6, "grain": 0.5, "saturation": 1.18, "contrast": 1.06, "warmth": 0.2, "vignette": 0.35, "bloom": 0.3,
+  "captions": { "style": "box", "size": 44, "y": 0.775 }
+}
