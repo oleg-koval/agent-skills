@@ -1,3 +1,10 @@
+# [1.66.0](https://github.com/oleg-koval/agent-skills/compare/v1.65.0...v1.66.0) (2026-10-28)
+
+
+### ✨ Features
+
+* **lekker-review:** read REVIEW.md, report pre-existing bugs, check root cause ([#162](https://github.com/oleg-koval/agent-skills/issues/162)) ([4776f83](https://github.com/oleg-koval/agent-skills/commit/4776f831a098a91e66bbcf4e563905a426ee6499))
+
 # [1.65.0](https://github.com/oleg-koval/agent-skills/compare/v1.64.0...v1.65.0) (2026-10-28)
 
 
