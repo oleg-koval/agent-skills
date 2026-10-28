@@ -43,3 +43,11 @@ test('a malformed manifest is rejected', () => {
   assert.throws(() => validateManifest({ prs: [{ repo: 'o/r', pr: 1, expect: 'maybe' }] }), /expect/)
   assert.throws(() => validateManifest({}), /prs/)
 })
+
+test('a duplicate repo#pr entry is rejected, so no PR is weighted twice', () => {
+  const dup = { prs: [
+    { repo: 'o/r', pr: 1, expect: 'clean' },
+    { repo: 'o/r', pr: 1, expect: 'buggy', knownBug: 'src/a.ts:4 x' },
+  ] }
+  assert.throws(() => validateManifest(dup), /duplicate entry for o\/r#1/)
+})
