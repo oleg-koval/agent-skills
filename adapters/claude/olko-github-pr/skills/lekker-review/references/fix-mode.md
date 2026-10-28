@@ -103,7 +103,8 @@ be the thing that contradicts them.
 
 A finding may carry `bugClass` and `otherInstances` (`file:line` list). The
 workflow expands each other instance into a sibling finding (`instanceOf` set)
-in its own file's group, so one pass fixes the whole class. Report siblings in
+in its own file's group, so one pass fixes the whole class. An instance outside
+the diff's changed files, or with an absolute or `..` path, is dropped. Report siblings in
 the Step 8 table under their own title.
 
 Pass `findings` as a real JSON array, not a stringified one. The workflow groups
@@ -120,8 +121,12 @@ the whole turn's pool. Report the former on the `Fix agents:` cost line.
 
 If Claude's Workflow tool is unavailable, fall back to one Agent per file group
 with `<SKILL_ROOT>/references/agents/fixer.md`, then one read-only Agent per
-group with `<SKILL_ROOT>/references/agents/fix-verifier.md`. Same rules, same
-verdict handling. State the fallback in the report.
+group with `<SKILL_ROOT>/references/agents/fix-verifier.md`. Expand
+`otherInstances` into sibling findings before grouping, with the same rules as
+the workflow: only repository-relative paths (no leading `/`, drive letter,
+backslash or `..`) that name a file changed in the diff, normalized so
+`./src/a.ts` and `src/a.ts` form one group. Same rules, same verdict handling.
+State the fallback in the report.
 
 ---
 
