@@ -400,6 +400,12 @@ function isProveAttempt(proof) {
   return proof.attempted === true
 }
 
+// The only writer of the run ledger's attempt count. A null proof means the
+// prover agent failed or was rejected, so there is no evidence a test ran.
+function countProveAttempt(count, proof) {
+  return Boolean(proof) && isProveAttempt(proof) ? count + 1 : count
+}
+
 // Run thunks in sequential batches, giving the per-finding stages a ceiling.
 //
 // The review stage is bounded by its dimension count, but verify, critic and
@@ -968,14 +974,13 @@ const budgetAtStart = budget.spent()
 
           if (!result) {
             finding.proof = null
-            proveAttemptCount++
             log(`prove:${finding.file}:${finding.line}: agent returned null`)
             return
           }
 
           const proof = normalizeProof(result)
           finding.proof = proof
-          if (isProveAttempt(proof)) proveAttemptCount++
+          proveAttemptCount = countProveAttempt(proveAttemptCount, proof)
           if (proof.proven === true) {
             provenCount++
             finding.verificationStatus = 'proven'
