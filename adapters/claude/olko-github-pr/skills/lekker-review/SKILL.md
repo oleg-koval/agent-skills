@@ -285,23 +285,49 @@ Then:
 `LOCAL_BRANCH` is `main`, `master`, `develop`, `staging`, or `production`, stop
 and say so.
 
-**Depth:** explicit keyword `scan`, `medium`, `deep` or `deps` wins. If absent,
-get the per-file stat - in `pr` mode from
-`gh pr view <PR_NUMBER> --repo <REPO_SLUG> --json additions,deletions,changedFiles,files,baseRefName,state,mergeCommit`
-(keep `baseRefName` as `BASE_BRANCH` and `changedFiles` as `EXPECTED_FILES` for
-Track A; when `state` is `MERGED`, keep `mergeCommit.oid` as `MERGE_COMMIT`), in `branch` mode from `git diff --numstat <MERGE_BASE> HEAD` - and
-apply AUTO-DEPTH. Lockfiles (`package-lock.json`, `npm-shrinkwrap.json`,
-`yarn.lock`, `pnpm-lock.yaml`, `bun.lock`, `bun.lockb`) do NOT count toward
-additions+deletions: a regenerated lockfile is thousands of lines nobody reads.
-- `deps` (candidate) if every changed file is a lockfile or a `package.json`.
-  Confirmed after Track A by `scripts/deps-only.mjs` (see "Confirm deps depth");
-  until then run Track B as for `scan`.
-- `scan` if additions+deletions < 150 AND changedFiles <= 5
-- `deep` if additions+deletions > 800 OR changedFiles > 25 OR diff touches
-  `migrations/` or `*.sql`
-- `medium` otherwise
+**Depth:** record an explicit `scan`, `medium`, `deep` or `deps` request;
+otherwise select a provisional depth from the per-file stats. In `pr` mode use
+`gh pr view <PR_NUMBER> --repo <REPO_SLUG> --json additions,deletions,changedFiles,files,baseRefName,state,mergeCommit`.
+Keep `baseRefName` as `BASE_BRANCH`, `changedFiles` as `EXPECTED_FILES`, and
+`mergeCommit.oid` as `MERGE_COMMIT` when merged. In `branch` mode use
+`git diff --numstat <MERGE_BASE> HEAD`.
 
-State the chosen depth (and whether it was auto-selected) in the review header.
+**Mandatory risk check (every depth, including explicit requests):** after
+Track B has saved `pr.diff`, and before finalizing depth or starting Step 2,
+run `scripts/risk-paths.mjs` with that diff and the exact changed paths.
+Resolve the script beside the selected `SKILL.md`: in Codex use
+`<directory containing selected SKILL.md>/scripts/risk-paths.mjs`; in Claude
+use `${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/risk-paths.mjs`.
+Use a shell-free process API with separate arguments:
+`execFileSync('node', [riskScript, '--diff', diffFile, '--', ...changedPaths])`.
+Never interpolate PR-controlled paths into shell source. Alternatively pipe
+`git diff --name-only -z <MERGE_BASE> HEAD` into
+`node "<resolved riskScript>" --stdin0 --diff "<scratchpad>/pr.diff"`.
+Do not continue on classifier failure; report risk classification unavailable.
+
+The classifier detects configured path patterns for CI workflows, auth,
+billing, installers/setup, and P21, plus `p21` in added lines. These are path
+heuristics, not complete detection of auth/billing behavior in generic files;
+reviewers still inspect that behavior in the diff. Whenever
+`needsHumanReview: true`, always put `NEEDS HUMAN REVIEW: <categories>` in the
+review header, even for an explicit scan. A human must read those paths.
+
+Explicit depth wins, but never suppresses this marker. Without an explicit
+request, apply AUTO-DEPTH in this order after the risk check:
+- `deep` if the classifier returns `deep: true`, additions+deletions > 800,
+  changedFiles > 25, or the diff touches `migrations/` or `*.sql`.
+- `deps` (candidate) if every changed file is a lockfile or `package.json`.
+  Confirm after Track A with `scripts/deps-only.mjs`; until then run Track B
+  as for `scan`.
+- `scan` if additions+deletions < 150 AND changedFiles <= 5.
+- `medium` otherwise.
+
+Lockfiles (`package-lock.json`, `npm-shrinkwrap.json`, `yarn.lock`,
+`pnpm-lock.yaml`, `bun.lock`, `bun.lockb`) do not count toward additions+deletions.
+Step 0 depth is provisional: if the mandatory check upgrades scan, run Track A
+and gather the newly required Track B sources before Step 2. Branch mode uses
+Track A's merge-base diff. State final depth and whether auto-selected in the
+review header.
 
 **`--post` flag:** parse and store as `POST_REVIEW=true`.
 
@@ -673,7 +699,7 @@ Write `<scratchpad>/context.json` with keys:
   "botPatternsFile": "<BOT_PATTERNS_FILE, or null>",
   "depsReport":      "<deps-report.json contents at depth deps, else null>",
   "depsInstall":     "<worktree.json depsInstall>",
-  "prBody":          "<PR body at depth deps, else omit>"
+  "prBody":          "<full PR body at every depth; empty string in branch mode>"
 }
 ```
 
