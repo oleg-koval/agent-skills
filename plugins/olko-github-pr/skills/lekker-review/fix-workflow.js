@@ -133,6 +133,14 @@ function parseInstance(ref) {
   return file && Number.isInteger(line) && line > 0 ? { file, line } : null
 }
 
+// Step 2 of fix-mode.md skips generated primaries before the workflow runs, but
+// siblings are created here, after that filter, so the same rule applies again.
+function isGeneratedPath(file) {
+  return /(^|\/)generated\//.test(file)
+    || /\.snap$/.test(file)
+    || /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?)$/.test(file)
+}
+
 function classKey(f, file, line) {
   return (f.bugClass || f.title) + '|' + file + ':' + line
 }
@@ -145,7 +153,7 @@ function expandInstances(list, changedFiles) {
   for (const f of list) {
     for (const ref of (Array.isArray(f.otherInstances) ? f.otherInstances : [])) {
       const spot = parseInstance(ref)
-      if (!spot || !changedFiles.has(spot.file) || taken.has(classKey(f, spot.file, spot.line))) {
+      if (!spot || !changedFiles.has(spot.file) || isGeneratedPath(spot.file) || taken.has(classKey(f, spot.file, spot.line))) {
         continue
       }
       taken.add(classKey(f, spot.file, spot.line))

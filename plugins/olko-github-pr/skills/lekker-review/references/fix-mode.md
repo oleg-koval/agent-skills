@@ -104,7 +104,8 @@ be the thing that contradicts them.
 A finding may carry `bugClass` and `otherInstances` (`file:line` list). The
 workflow expands each other instance into a sibling finding (`instanceOf` set)
 in its own file's group, so one pass fixes the whole class. An instance outside
-the diff's changed files, or with an absolute or `..` path, is dropped. Report siblings in
+the diff's changed files, in a generated file (Step 2 rule), or with an absolute
+or `..` path, is dropped. Report siblings in
 the Step 8 table under their own title.
 
 Pass `findings` as a real JSON array, not a stringified one. The workflow groups
