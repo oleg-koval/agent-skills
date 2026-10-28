@@ -636,3 +636,42 @@ test('artifact contract renders passed-proof counter-evidence', () => {
   assert.match(artifactPrompt, /downgraded the finding to Important/)
   assert.match(artifactPrompt, /do not present the\s+passing input as proof that every related input is safe/)
 })
+
+test('cycle 4 returns a rethink verdict with recurring classes and runs no agents', async () => {
+  const recurring = [{ class: 'missing-null-check', cycles: 3 }]
+  const { calls, result } = await runScenario({
+    extraArgs: { cycle: 4, recurringClasses: recurring },
+    respond: ({ options }) => { throw new Error(`Unexpected agent call: ${options.label}`) },
+  })
+  assert.deepEqual(calls, [])
+  assert.equal(result.verdict, 'rethink')
+  assert.deepEqual(result.recurringClasses, recurring)
+  assert.deepEqual(result.findings, [])
+})
+
+test('cycle 3 still reviews', async () => {
+  const { calls } = await runScenario({
+    extraArgs: { cycle: 3 },
+    respond: ({ options }) => ({ findings: [] }),
+  })
+  assert.ok(calls.some((label) => label.startsWith('review:')))
+})
+
+test('rejected findings are never re-raised, even at a moved line', async () => {
+  const suppressed = [{ file: baseFinding.file, line: 12, title: 'Reachable failure', status: 'rejected' }]
+  const other = { ...baseFinding, file: 'src/other.ts', title: 'Unrelated race' }
+  const { calls, result } = await runScenario({
+    extraArgs: { cycle: 2, suppressed },
+    respond: ({ prompt, options }) => {
+      if (options.label === 'review:quality') {
+        assert.match(prompt, /ALREADY ANSWERED/)
+        return { findings: [{ ...baseFinding, severity: 'observation' }, { ...other, severity: 'observation' }] }
+      }
+      if (options.label.startsWith('review:')) return { findings: [] }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+  assert.ok(calls.includes('review:quality'))
+  assert.deepEqual(result.findings.map((f) => f.file), ['src/other.ts'])
+  assert.equal(result.suppressedCount, 1)
+})
