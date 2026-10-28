@@ -97,19 +97,124 @@ let retryCount = 0
 // same file concurrently.
 // ---------------------------------------------------------------------------
 
-const byFile = new Map()
-for (const f of findings) {
-  if (!byFile.has(f.file)) {
-    byFile.set(f.file, [])
+// Paths come from model output, so they are untrusted. Accept only a lexically
+// normalized repository-relative path; './src/a.ts' and 'src/a.ts' must land in
+// one file group, or two fixers edit the same file concurrently.
+function safeRelativePath(raw) {
+  const text = String(raw == null ? '' : raw)
+  if (!text || /[\\\u0000-\u001f]/.test(text) || text.startsWith('/') || /^[A-Za-z]:/.test(text)) {
+    return null
   }
-  byFile.get(f.file).push(f)
+  const parts = text.split('/').filter(function(part) { return part !== '' && part !== '.' })
+  if (parts.length === 0 || parts.includes('..')) {
+    return null
+  }
+  return parts.join('/')
 }
 
-const groups = Array.from(byFile.entries()).map(function(entry) {
-  return { file: entry[0], findings: entry[1] }
-})
+function changedFilesFromDiff(diffText) {
+  const files = new Set()
+  for (const match of String(diffText || '').matchAll(/^\+\+\+ b\/(.+)$/gm)) {
+    const file = safeRelativePath(match[1])
+    if (file) {
+      files.add(file)
+    }
+  }
+  return files
+}
 
-log(`fixing ${findings.length} finding(s) across ${groups.length} file(s)`)
+// A finding names its bug class and the other places the same pattern occurs.
+// Each other instance becomes a sibling finding in ITS file's group, so the whole
+// class is fixed in one pass and the one-agent-per-file rule still holds.
+function parseInstance(ref) {
+  const at = String(ref).lastIndexOf(':')
+  const line = Number(String(ref).slice(at + 1))
+  const file = at > 0 ? safeRelativePath(String(ref).slice(0, at)) : null
+  return file && Number.isInteger(line) && line > 0 ? { file, line } : null
+}
+
+// Step 2 of fix-mode.md skips generated primaries before the workflow runs, but
+// siblings are created here, after that filter, so the same rule applies again.
+function isGeneratedPath(file) {
+  return /(^|\/)generated\//.test(file)
+    || /\.snap$/.test(file)
+    || /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?)$/.test(file)
+}
+
+function classKey(f, file, line) {
+  return (f.bugClass || f.title) + '|' + file + ':' + line
+}
+
+// A sibling must point at a file the diff changed: an instance outside the diff
+// would let a fixer edit, and commit, unrelated code.
+function expandInstances(list, changedFiles) {
+  const taken = new Set(list.map(function(f) { return classKey(f, f.file, f.line) }))
+  const siblings = []
+  for (const f of list) {
+    for (const ref of (Array.isArray(f.otherInstances) ? f.otherInstances : [])) {
+      const spot = parseInstance(ref)
+      if (!spot || !changedFiles.has(spot.file) || isGeneratedPath(spot.file) || taken.has(classKey(f, spot.file, spot.line))) {
+        continue
+      }
+      taken.add(classKey(f, spot.file, spot.line))
+      siblings.push(Object.assign({}, f, {
+        file: spot.file,
+        line: spot.line,
+        title: f.title + ' (same bug class at ' + spot.file + ':' + spot.line + ')',
+        description: 'Same bug class' + (f.bugClass ? ' "' + f.bugClass + '"' : '') + ' as '
+          + f.file + ':' + f.line + '. ' + f.description,
+        otherInstances: [],
+        instanceOf: f.title,
+      }))
+    }
+  }
+  return list.concat(siblings)
+}
+
+function groupFindings(list, changedFiles) {
+  const primaries = list
+    .map(function(f) { return Object.assign({}, f, { file: safeRelativePath(f.file) }) })
+    .filter(function(f) { return f.file })
+  const all = expandInstances(primaries, changedFiles)
+  const byFile = new Map()
+  for (const f of all) {
+    if (!byFile.has(f.file)) {
+      byFile.set(f.file, [])
+    }
+    byFile.get(f.file).push(f)
+  }
+  return {
+    all,
+    rejected: list.length - primaries.length,
+    groups: Array.from(byFile.entries()).map(function(entry) {
+      return { file: entry[0], findings: entry[1] }
+    }),
+  }
+}
+
+function readChangedFiles() {
+  if (!diffFile) {
+    return new Set()
+  }
+  try {
+    return changedFilesFromDiff(readFileSync(diffFile, 'utf8'))
+  } catch (_) {
+    return new Set()
+  }
+}
+
+const changedFiles = readChangedFiles()
+if (changedFiles.size === 0) {
+  log('no changed-file list from diffFile; same-class instances are not expanded')
+}
+const grouped = groupFindings(findings, changedFiles)
+const allFindings = grouped.all
+const groups = grouped.groups
+if (grouped.rejected > 0) {
+  log(`rejected ${grouped.rejected} finding(s) with an absolute or traversing file path`)
+}
+
+log(`fixing ${allFindings.length} finding(s) (${findings.length} reported) across ${groups.length} file(s)`)
 
 // ---------------------------------------------------------------------------
 // Prompts
@@ -330,7 +435,7 @@ const groupsOut = results.filter(Boolean).map(function(state) {
   return {
     file:         state.file,
     findings:     state.findings.map(function(f) {
-      return { title: f.title, line: f.line, severity: f.severity }
+      return { title: f.title, line: f.line, severity: f.severity, instanceOf: f.instanceOf }
     }),
     results:      (state.fixResult && state.fixResult.results) || [],
     filesTouched: (state.fixResult && state.fixResult.filesTouched) || [],

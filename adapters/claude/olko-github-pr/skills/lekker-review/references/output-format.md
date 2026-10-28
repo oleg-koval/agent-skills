@@ -118,6 +118,8 @@ proof inline.>
 <corrected version: exact drop-in replacement or minimal diff>
 \```
 
+**Bug class:** `<bugClass>` *(always shown)* · **Also at:** `<file:line>`, `<file:line>` *(from `otherInstances`; omit the clause when the list is empty)*
+
 **Proof (ran in the worktree):** *(include only when the finding carries a `proof` with `proven: true`)*
 \```
 <redOutput, verbatim>
