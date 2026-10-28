@@ -1,3 +1,10 @@
+# [1.67.0](https://github.com/oleg-koval/agent-skills/compare/v1.66.0...v1.67.0) (2026-10-28)
+
+
+### ✨ Features
+
+* **lekker-review:** escalate depth on risk paths and require a flag or revert plan ([#161](https://github.com/oleg-koval/agent-skills/issues/161)) ([c70fadc](https://github.com/oleg-koval/agent-skills/commit/c70fadc2b09d418649273b21d3605098779a8bcb))
+
 # [1.66.0](https://github.com/oleg-koval/agent-skills/compare/v1.65.0...v1.66.0) (2026-10-28)
 
 
