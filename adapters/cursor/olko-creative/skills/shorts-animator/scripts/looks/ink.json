@@ -1,0 +1,6 @@
+{
+  "about": "Ink and wash, like a graphic novel: wobbly hand-inked outlines that boil, flat washes of colour, paper.",
+  "mode": "wash", "wash": 0.5, "bleed": 0.3, "outline": 0.95, "ink": "#1b1712", "paper": 0.7, "paperColor": "#f4efe3",
+  "grain": 0.3, "boil": 1, "posterize": 0, "saturation": 0.85, "contrast": 1.05, "warmth": 0.1, "vignette": 0.1, "bloom": 0,
+  "captions": { "style": "box", "size": 44, "box": "rgba(27,23,18,0.8)" }
+}

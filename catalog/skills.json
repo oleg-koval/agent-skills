@@ -1300,6 +1300,52 @@
             "hermes",
             "pi"
           ]
+        },
+        {
+          "name": "shorts-animator",
+          "lookupName": "olko:shorts-animator",
+          "path": "plugins/olko-creative/skills/shorts-animator",
+          "description": "Make narrated, painted animated shorts (TikTok, Reels, YouTube Shorts) from a script and a look described in words: scenes drawn in code, GPU-painted, voiced locally, captioned and scored into an MP4.",
+          "tags": [
+            "video",
+            "animation",
+            "shorts",
+            "narration",
+            "canvas"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes"
+          ]
+        },
+        {
+          "name": "carousel-maker",
+          "lookupName": "olko:carousel-maker",
+          "path": "plugins/olko-creative/skills/carousel-maker",
+          "description": "Make Instagram or LinkedIn carousel slides from a topic or pasted copy: a brand template sets the text, and a reusable library of hand-drawn illustrations, drawn once in code per brand, supplies the pictures.",
+          "tags": [
+            "instagram",
+            "carousel",
+            "social",
+            "design",
+            "slides"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes"
+          ]
         }
       ]
     },
