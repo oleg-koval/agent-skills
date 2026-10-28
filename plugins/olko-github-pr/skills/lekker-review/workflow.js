@@ -603,9 +603,12 @@ const budgetAtStart = budget.spent()
       prompt += ` ROOT CAUSE CHECK: when PR title, body, or linked ticket identifies a bug fix,`
         + ` trace the defect from the stated symptom to its producing cause and check the`
         + ` diff changes that cause. A guard, catch, retry, default, or special case that`
-        + ` leaves the cause in place is an Important "Fix addresses the symptom" finding.`
-        + ` Report its producing code as the fix. Stay quiet if the root cause is fixed or`
-        + ` this is not a bug-fix PR.`
+        + ` leaves the cause in place is Important only when evidence shows the reported`
+        + ` defect remains unresolved or a contract is still violated. A mitigation that`
+        + ` fully satisfies the requirements is a valid fix. Title the finding "Fix addresses`
+        + ` the symptom", name the root cause and where it remains, and point to its producer.`
+        + ` Stay quiet if the cause is fixed, mitigation resolves the defect, or this is not`
+        + ` a bug-fix PR.`
     }
 
     prompt += ' ' + BUG_CLASS_INSTRUCTION

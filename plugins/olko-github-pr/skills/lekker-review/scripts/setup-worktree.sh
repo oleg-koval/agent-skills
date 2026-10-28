@@ -140,10 +140,14 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
     if [[ -n "$LOCAL_REPO" ]]; then
         RULES_REF="$PR_BRANCH"
     else
-        git -C "$REPO_ROOT" fetch origin "+refs/heads/${PR_BRANCH}:refs/remotes/origin/${PR_BRANCH}" 2>/dev/null \
-            || git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null
-        RULES_REF="origin/$PR_BRANCH"
-        git -C "$REPO_ROOT" rev-parse --verify "$RULES_REF" >/dev/null 2>&1 || RULES_REF=FETCH_HEAD
+        if git -C "$REPO_ROOT" fetch origin "+refs/heads/${PR_BRANCH}:refs/remotes/origin/${PR_BRANCH}" 2>/dev/null; then
+            RULES_REF="origin/$PR_BRANCH"
+        elif git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null; then
+            RULES_REF=FETCH_HEAD
+        else
+            printf 'ERROR: could not fetch PR branch %s for rules-only scan\n' "$PR_BRANCH" >&2
+            exit 1
+        fi
     fi
     RULES_SOURCE="/tmp/lekker-rules-source-$$"
     mkdir -p "$RULES_SOURCE"
