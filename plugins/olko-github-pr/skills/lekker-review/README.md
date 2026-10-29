@@ -60,3 +60,13 @@ the diff touches migrations or `*.sql`, `medium` otherwise.
 
 The posters are self-contained HTML in `assets/`. Open either file in a browser
 at a 1280x720 viewport and screenshot it to regenerate the PNG.
+
+## Pre-push review label
+
+Branch-mode reviews can apply `reviewed-before-push` after pushing and opening
+or locating the PR. A comment records the reviewed commit, engine, depth, and
+result; unresolved Critical/Important findings prevent labeling. Install the
+[cleanup workflow](references/reviewed-before-push.yml) on the target repo's
+default branch first so new, unreviewed commits lose the label. See the
+[receipt and setup procedure](references/reviewed-before-push.md). This label
+provides visibility and does not replace required remote review or CI.
