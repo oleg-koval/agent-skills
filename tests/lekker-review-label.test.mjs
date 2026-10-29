@@ -53,7 +53,8 @@ test('does not publish or label a stale receipt or invalid target', () => {
   const { calls, run } = fakeGh(['c'.repeat(40)]);
   assert.throws(() => publishReview({ repo: 'owner/repo', pr: 12, receipt: receipt() }, run), /head differs/);
   assert.equal(calls.length, 1);
-  assert.throws(() => publishReview({ repo: '--evil', pr: 12, receipt: receipt() }, run));
+  assert.throws(() => publishReview({ repo: '--evil', pr: 12, receipt: receipt() }, run), /Expected --repo/);
+  assert.equal(calls.length, 1);
 });
 
 test('withholds label when the head moves before labeling and removes it if it moves afterwards', () => {
@@ -96,6 +97,34 @@ async function reconcile(comments, head = 'a'.repeat(40)) {
   await new AsyncFunction('github', 'context', script)(github, context);
   return removed;
 }
+
+test('publisher and cleanup require valid UTC ISO review timestamps', async () => {
+  for (const reviewedAt of [
+    '2026-10-29T09:00:00Z', '2026-10-29T09:00:00.123Z',
+    '2026-10-29T09:00:00.1Z', '2026-10-29T09:00:00.123456Z',
+    '2024-02-29T23:59:59Z',
+  ]) {
+    const valid = receipt({ reviewedAt });
+    assert.doesNotThrow(() => validateReceipt(valid), reviewedAt);
+    assert.equal((await reconcile([{ author_association: 'OWNER', body: reviewComment(valid) }])).length, 0, reviewedAt);
+  }
+  for (const reviewedAt of [
+    undefined, null, 0, 2026, [], {}, '', 'unknown', '2026-10-29',
+    'Thu, 29 Oct 2026 09:00:00 GMT', '2026-10-29 09:00:00Z',
+    '2026-10-29T09:00:00', '2026-10-29T09:00:00+00:00',
+    '2026-10-29T10:00:00+01:00', '2026-10-29T09:00Z',
+    '2026-10-29T24:00:00Z', '2026-10-29T09:60:00Z', '2026-10-29T09:00:60Z',
+    '2026-02-29T09:00:00Z', '2026-04-31T09:00:00Z', '2026-13-01T09:00:00Z',
+    '2026-10-29T09:00:00Z\n',
+  ]) {
+    const invalid = receipt({ reviewedAt });
+    const { calls, run } = fakeGh();
+    assert.throws(() => publishReview({ repo: 'owner/repo', pr: 12, receipt: invalid }, run), /Invalid branch-review receipt/);
+    assert.equal(calls.length, 0);
+    const body = `<!-- lekker:reviewed-before-push ${JSON.stringify(invalid)} -->`;
+    assert.equal((await reconcile([{ author_association: 'OWNER', body }])).length, 1, String(reviewedAt));
+  }
+});
 
 test('workflow preserves matching evidence and removes stale, malformed or untrusted evidence', async () => {
   const comment = { author_association: 'COLLABORATOR', body: reviewComment(receipt()) };

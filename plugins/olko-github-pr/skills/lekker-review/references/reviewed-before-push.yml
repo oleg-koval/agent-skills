@@ -23,6 +23,13 @@ jobs:
         with:
           script: |
             const label = 'reviewed-before-push';
+            function isUtcTimestamp(value) {
+              const match = typeof value === 'string' && value.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?Z$/);
+              if (!match || match[0] !== value) return false;
+              const time = Date.parse(value);
+              const canonical = `${match[1]}.${(match[2] || '').padEnd(3, '0').slice(0, 3)}Z`;
+              return Number.isFinite(time) && new Date(time).toISOString() === canonical;
+            }
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request?.number || context.payload.issue.number;
             const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
@@ -38,7 +45,7 @@ jobs:
                   && r.headSha === pr.head.sha && /^[a-f0-9]{40}$/.test(r.baseSha)
                   && ['workflow', 'codex', 'revmux'].includes(r.engine)
                   && ['scan', 'medium', 'deep', 'deps'].includes(r.depth)
-                  && Number.isFinite(Date.parse(r.reviewedAt));
+                  && isUtcTimestamp(r.reviewedAt);
               } catch { return false; }
             });
             if (!valid) {

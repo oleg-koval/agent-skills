@@ -8,12 +8,20 @@ export const LABEL = 'reviewed-before-push';
 export const PREFIX = '<!-- lekker:reviewed-before-push ';
 const SHA = /^[a-f0-9]{40}$/;
 
+function isUtcTimestamp(value) {
+  const match = typeof value === 'string' && value.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?Z$/);
+  if (!match || match[0] !== value) return false;
+  const time = Date.parse(value);
+  const canonical = `${match[1]}.${(match[2] || '').padEnd(3, '0').slice(0, 3)}Z`;
+  return Number.isFinite(time) && new Date(time).toISOString() === canonical;
+}
+
 export function validateReceipt(receipt) {
   if (receipt?.version !== 1 || receipt.mode !== 'branch' || receipt.result !== 'passed'
       || !SHA.test(receipt.headSha) || !SHA.test(receipt.baseSha)
       || !['workflow', 'codex', 'revmux'].includes(receipt.engine)
       || !['scan', 'medium', 'deep', 'deps'].includes(receipt.depth)
-      || !Number.isFinite(Date.parse(receipt.reviewedAt))
+      || !isUtcTimestamp(receipt.reviewedAt)
       || !Array.isArray(receipt.findings)) {
     throw new Error('Invalid branch-review receipt');
   }

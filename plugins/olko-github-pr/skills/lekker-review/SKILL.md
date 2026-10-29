@@ -1322,7 +1322,9 @@ Ask once, via AskUserQuestion:
 
 Rules for each answer:
 
-- **Yes:** push with `git push -u origin "$local_branch"`, then create the PR
+- **Yes:** set `PREDICTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)` before pushing
+  or publishing, including when a PR already exists. Then push with
+  `git push -u origin "$local_branch"` and create or locate the PR. Create it
   with `gh pr create --repo "$repo_slug" --base "$base_ref" --head
   "$local_branch" --title "$pr_title" --body-file "$pr_body_file"`. Derive the title
   from the commit log (the recommended prefix plus a summary of the change) and
@@ -1334,20 +1336,20 @@ Rules for each answer:
   If cleanup is not installed, omit the label and report the setup requirement;
   do not undo the successful PR creation. For an existing PR found after a
   branch-mode push, use the same helper and head check. Then record the prediction
-  against the new PR number - a branch-mode review is the ideal case for this, because the
-  prediction provably predates every bot comment. Record only the findings fix
+  against the created or existing PR number using the saved `PREDICTED_AT`;
+  scoring uses it to include bot comments triggered by the push or PR creation,
+  even if they arrive before the record step. Record only the findings fix
   mode did NOT apply (every row of the fixes table that is not `✅ applied`):
   an applied fix is gone from the code the bots read, so they cannot raise it,
   and recording it would sink precision for doing exactly what branch mode is
   for. Build `<scratchpad>/unfixed.json` (a bare array is fine) from the merged
   `findings.json` minus the findings fix mode applied; when fix mode did not
-  run or applied nothing, it is the whole merged set. Take
-  `PREDICTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)` just BEFORE `gh pr create`, so
-  a bot comment that lands before the record step still counts:
+  run or applied nothing, it is the whole merged set. Keep the timestamp captured
+  before the push; do not replace it at the record step:
 
   ```bash
   node ${SKILL_ROOT}/scripts/bot-precision.mjs record \
-    --repo "$repo_slug" --pr <NEW_PR_NUMBER> --predicted <scratchpad>/unfixed.json \
+    --repo "$repo_slug" --pr <PR_NUMBER> --predicted <scratchpad>/unfixed.json \
     --at "$PREDICTED_AT"
   ```
 

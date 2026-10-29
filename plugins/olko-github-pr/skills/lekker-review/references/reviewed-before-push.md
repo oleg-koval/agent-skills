@@ -64,6 +64,11 @@ idiomatic suggestions. Rebuttals require specific evidence too. Set engine and
 depth to the values actually used. Keep the saved full review locally; finding
 text, evidence text, and local paths are not uploaded by the helper.
 
+`reviewedAt` must be a valid UTC ISO timestamp in `YYYY-MM-DDTHH:mm:ssZ`
+format, optionally with fractional seconds before `Z` (for example,
+`2026-10-29T09:00:00.123Z`). Date-only strings, timezone offsets, and invalid
+calendar dates are rejected by the publisher and cleanup workflow.
+
 After fixes, the receipt must describe the final SHA: fix verification and
 relevant tests must pass, and the only intervening edits must be those verified
 fixes. Any unrelated edit requires a fresh review. Never copy a receipt to a
