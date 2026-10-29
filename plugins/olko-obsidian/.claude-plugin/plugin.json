@@ -1,7 +1,7 @@
 {
   "name": "olko-obsidian",
   "description": "Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routine.",
-  "version": "1.67.0",
+  "version": "1.68.0",
   "author": {
     "name": "Oleg Koval"
   },
