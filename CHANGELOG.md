@@ -1,3 +1,10 @@
+# [1.68.0](https://github.com/oleg-koval/agent-skills/compare/v1.67.0...v1.68.0) (2026-10-29)
+
+
+### ✨ Features
+
+* **lekker-review:** label PRs reviewed before push ([#167](https://github.com/oleg-koval/agent-skills/issues/167)) ([237b62f](https://github.com/oleg-koval/agent-skills/commit/237b62f2f1958f2a546315ac475ccfdf8f7f6391))
+
 # [1.67.0](https://github.com/oleg-koval/agent-skills/compare/v1.66.0...v1.67.0) (2026-10-28)
 
 

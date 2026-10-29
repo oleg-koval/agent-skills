@@ -1,7 +1,7 @@
 {
   "name": "olko-web-ops",
   "description": "Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.",
-  "version": "1.67.0",
+  "version": "1.68.0",
   "author": {
     "name": "Oleg Koval"
   },
