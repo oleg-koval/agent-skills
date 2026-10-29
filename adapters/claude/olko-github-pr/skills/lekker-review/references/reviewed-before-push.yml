@@ -1,0 +1,50 @@
+# Install this file on the target repository's default branch as
+# .github/workflows/reviewed-before-push.yml before publishing review labels.
+name: Reviewed before push
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, labeled]
+  issue_comment:
+    types: [created, edited, deleted]
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+concurrency:
+  group: reviewed-before-push-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    if: github.event.pull_request || github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      # No checkout: never execute code from the PR with this write token.
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const label = 'reviewed-before-push';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request?.number || context.payload.issue.number;
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+            if (!pr.labels.some(item => item.name === label)) return;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const valid = comments.some(comment => {
+              if (!['OWNER', 'MEMBER', 'COLLABORATOR'].includes(comment.author_association)) return false;
+              const match = comment.body?.match(/<!-- lekker:reviewed-before-push (\{[^\n]*\}) -->/);
+              if (!match) return false;
+              try {
+                const r = JSON.parse(match[1]);
+                return r.version === 1 && r.mode === 'branch' && r.result === 'passed'
+                  && r.headSha === pr.head.sha && /^[a-f0-9]{40}$/.test(r.baseSha)
+                  && ['workflow', 'codex', 'revmux'].includes(r.engine)
+                  && ['scan', 'medium', 'deep', 'deps'].includes(r.depth)
+                  && Number.isFinite(Date.parse(r.reviewedAt));
+              } catch { return false; }
+            });
+            if (!valid) {
+              try {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+            }

@@ -1139,8 +1139,17 @@ printf '%s\n' "$REVIEW_FILE" > ~/.cache/lekker-review/reviewed/<headSha>
 ```
 
 Write it against the sha that was actually reviewed. When fix mode later adds
-commits, write a marker for the NEW head sha too - a gate keys on the tip
-that is about to be pushed, and a marker for a superseded sha would be a lie.
+commits, write a marker for the new head only after fix verification and
+relevant tests pass. Any unrelated edits require a fresh review; never copy a
+marker to an unreviewed SHA.
+
+**PR label for branch reviews:** follow `references/reviewed-before-push.md`.
+After a complete, non-degraded local review and settling all Critical/Important
+findings, save the final-head receipt as `<scratchpad>/pre-push-review.json`
+BEFORE pushing. That reference defines the receipt schema and one-time cleanup
+workflow setup. The label is exactly `reviewed-before-push` (no AI prefix).
+A legacy SHA/path marker alone does not qualify. PR-mode reviews cannot earn
+this label.
 
 **Close the run log** right after the receipt, then print the review:
 
@@ -1319,8 +1328,14 @@ Rules for each answer:
   "$local_branch" --title "$pr_title" --body-file "$pr_body_file"`. Derive the title
   from the commit log (the recommended prefix plus a summary of the change) and
   the body from a short summary of what the branch does - do not leave either
-  as a placeholder. Report the PR url. Then record the prediction against the
-  new PR number - a branch-mode review is the ideal case for this, because the
+  as a placeholder. Report the PR url. If an eligible pre-push receipt was
+  saved, publish it using `scripts/review-label.mjs` as described in
+  `references/reviewed-before-push.md`. This posts the commit/engine/depth/result
+  evidence and applies `reviewed-before-push` only to the matching live head.
+  If cleanup is not installed, omit the label and report the setup requirement;
+  do not undo the successful PR creation. For an existing PR found after a
+  branch-mode push, use the same helper and head check. Then record the prediction
+  against the new PR number - a branch-mode review is the ideal case for this, because the
   prediction provably predates every bot comment. Record only the findings fix
   mode did NOT apply (every row of the fixes table that is not `✅ applied`):
   an applied fix is gone from the code the bots read, so they cannot raise it,
@@ -1340,7 +1355,8 @@ Rules for each answer:
   The review is already saved locally; offer `--post` on the new PR number only if the user asks - findings that fix
   mode already applied must never be posted as review comments.
 - **Push only:** `git push -u origin "$local_branch"` and stop. Say in one line
-  that no PR was created.
+  that no PR was created. Keep any eligible pre-push receipt for publication
+  when a matching PR is later created; no PR means no label yet.
 - **No:** stop. Print the branch name and the review file path.
 
 **Unattended runs never ask and never create a PR** (see the operating contract
