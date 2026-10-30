@@ -857,6 +857,28 @@
             "claude",
             "hermes"
           ]
+        },
+        {
+          "name": "agterm-team",
+          "lookupName": "olko:agterm-team",
+          "path": "plugins/olko-skill-meta/skills/agterm-team",
+          "description": "Coordinate Codex agents in project agterm workspaces with readable session names, acknowledged handoffs, failure recovery, and lead-owned acceptance.",
+          "tags": [
+            "agterm",
+            "codex",
+            "agents",
+            "orchestration"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes"
+          ]
         }
       ]
     },
