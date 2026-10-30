@@ -1,5 +1,11 @@
 # Agent instructions
 
+## Shared team workflows
+
+Read [.agents/shared/olko/roles/olko-team.md](.agents/shared/olko/roles/olko-team.md)
+for role routing and the linked delivery, review, and Charter pipelines. Apply
+those workflows subject to this repository's instructions below.
+
 
 ## Review findings
 
