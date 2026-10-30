@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-59-2563eb" alt="59 skills">
+    <img src="https://img.shields.io/badge/skills-60-2563eb" alt="60 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -279,12 +279,13 @@ Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/U
 | [ingest-publication-slice](plugins/olko-product/skills/ingest-publication-slice/SKILL.md) | Builds a test-first ingest-to-publication path with atomic persistence, read fallback, and static artifact precedence | Publishing validated ingested data before a static artifact exists |
 | [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, or package for public launch ("prep for Product Hunt", "write the launch post", "make this shareable"); for building the thing itself use mvp-oneshot or product-builder |
 
-### olko-skill-meta (8)
+### olko-skill-meta (9)
 
 Author and maintain agent skills and the AI toolchain itself.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
+| [agterm-team](plugins/olko-skill-meta/skills/agterm-team/SKILL.md) | Creates named Codex sessions in project agterm workspaces and coordinates acknowledged tasks with lead-owned verification | A lead delegates work across agterm sessions and remains accountable for failures |
 | [context-repo](plugins/olko-skill-meta/skills/context-repo/SKILL.md) | Resolves a single durable, private GitHub repository other skills use to persist context they produce, retro snapshots and shared-knowledge notes among them, searching the account for a store that already exists before ever asking to create one | A skill needs a durable, cross-machine store for content it generates, rather than a local scratch directory that does not survive across machines or repos |
 | [add-to-my-skills](plugins/olko-skill-meta/skills/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
 | [skill-budget-audit](plugins/olko-skill-meta/skills/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow, identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |
