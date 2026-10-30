@@ -11,7 +11,7 @@ trap cleanup EXIT
 
 HERMES_HOME="$TMP/profile with spaces" sh ./scripts/install-hermes-symlinks.sh >/dev/null
 skills_dir="$TMP/profile with spaces/skills/olko-agent-skills"
-expected=59
+expected=60
 catalog_total="$(node --input-type=module -e 'import {loadCatalog} from "./scripts/lib/catalog.mjs"; console.log(loadCatalog().skills.length)')"
 hermes_total="$(node --input-type=module -e 'import {loadCatalog} from "./scripts/lib/catalog.mjs"; console.log(loadCatalog().skills.filter(s => s.adapters.includes("hermes")).length)')"
 if test "$catalog_total" != "$expected" || test "$hermes_total" != "$catalog_total"; then
