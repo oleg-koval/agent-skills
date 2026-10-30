@@ -1,3 +1,10 @@
+## [1.69.1](https://github.com/oleg-koval/agent-skills/compare/v1.69.0...v1.69.1) (2026-10-30)
+
+
+### ♻️ Chores
+
+* sync shared repo config ([#168](https://github.com/oleg-koval/agent-skills/issues/168)) ([5008cf6](https://github.com/oleg-koval/agent-skills/commit/5008cf6a6cb7ec4a0d94bdf35fb045bad34c6bd6))
+
 # [1.69.0](https://github.com/oleg-koval/agent-skills/compare/v1.68.0...v1.69.0) (2026-10-30)
 
 
