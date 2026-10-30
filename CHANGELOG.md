@@ -1,3 +1,10 @@
+# [1.69.0](https://github.com/oleg-koval/agent-skills/compare/v1.68.0...v1.69.0) (2026-10-30)
+
+
+### ✨ Features
+
+* **agterm-team:** coordinate named Codex sessions with lead acceptance ([#169](https://github.com/oleg-koval/agent-skills/issues/169)) ([07b1533](https://github.com/oleg-koval/agent-skills/commit/07b15334b1ce106cd321da188a145b5d76943d38))
+
 # [1.68.0](https://github.com/oleg-koval/agent-skills/compare/v1.67.0...v1.68.0) (2026-10-29)
 
 
