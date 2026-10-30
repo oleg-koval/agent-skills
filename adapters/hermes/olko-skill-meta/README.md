@@ -13,3 +13,4 @@ into the active Hermes profile. The canonical packages are:
 - `plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md`
 - `plugins/olko-skill-meta/skills/relay/SKILL.md`
 - `plugins/olko-skill-meta/skills/shared-knowledge-artifact/SKILL.md`
+- `plugins/olko-skill-meta/skills/agterm-team/SKILL.md`
