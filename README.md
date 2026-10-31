@@ -318,7 +318,7 @@ Keep an Obsidian vault in sync with work: PR sync, task rollover, morning routin
 | [obsidian-task-rollover](plugins/olko-obsidian/skills/obsidian-task-rollover/SKILL.md) | Migrates unchecked tasks from today's Obsidian daily note to the next workday under `## Carried over` | End-of-day bullet-journal task migration |
 | [morning-routine](plugins/olko-obsidian/skills/morning-routine/SKILL.md) | Runs the complete start-of-day setup in one pass: rolls over unfinished Obsidian tasks, syncs open GitHub PRs into today's daily note, and sweeps safe Dependabot patch bumps | Starting the workday by chaining obsidian-task-rollover, obsidian-pr-sync, and dependabot-triage in sequence |
 
-### olko-apple-kit (2)
+### olko-apple-kit (3)
 
 Build and ship Apple platform apps: macOS menubar apps, App Store submissions.
 
