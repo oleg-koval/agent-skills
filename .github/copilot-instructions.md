@@ -53,6 +53,7 @@ Available reusable prompt files:
 - obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
 - obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
 - morning-routine: .github/prompts/morning-routine.prompt.md
+- app-store-regional-pricing: .github/prompts/app-store-regional-pricing.prompt.md
 - apple-store-submit: .github/prompts/apple-store-submit.prompt.md
 - macos-menubar-app: .github/prompts/macos-menubar-app.prompt.md
 - garmin-watchface: .github/prompts/garmin-watchface.prompt.md
