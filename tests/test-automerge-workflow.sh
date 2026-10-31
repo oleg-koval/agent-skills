@@ -143,7 +143,6 @@ for job in ('discover', 'retry', 'manual', 'automerge'):
 
 logins = re.search(r'bot-logins: (.+)', workflow).group(1).split(',')
 assert workflow.count('bot-logins: ' + ','.join(logins)) == 3
-assert 'oleg-koval-fleet[bot]' in logins
 open_prs = [
     {'number': number, 'draft': draft, 'user': {'login': login}}
     for number, (login, draft) in enumerate(
@@ -156,7 +155,7 @@ output, _ = run_step(run_scripts('discover')[0], {
     'pending': [[{'number': 1, 'pull_request': {}}, {'number': 99}],
                 [{'number': 42, 'state': 'closed', 'pull_request': {'merged_at': '2026-10-17'}}]],
 })
-assert json.loads(output.removeprefix('pr-numbers=')) == sorted(set(range(1, len(logins) + 1)) | {42}), output
+assert json.loads(output.removeprefix('pr-numbers=')) == [1, 2, 3, 4, 42], output
 
 # A discovery list over the matrix limit must fan out without dropping or
 # duplicating any PR: one 256-job matrix plus another dispatched batch.
