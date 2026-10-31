@@ -37,7 +37,7 @@ export const PLUGIN_ASSIGNMENT = {
   },
   'olko-apple-kit': {
     description: 'Build and ship Apple platform apps: macOS menubar apps, App Store submissions.',
-    skills: ['apple-store-submit', 'macos-menubar-app'],
+    skills: ['apple-store-submit', 'app-store-regional-pricing', 'macos-menubar-app'],
   },
   'olko-garmin-kit': {
     description: 'Build, test and publish Garmin Connect IQ watch faces.',

@@ -4,5 +4,6 @@
 
 Use the canonical skills directly:
 
+- `plugins/olko-apple-kit/skills/app-store-regional-pricing/SKILL.md`
 - `plugins/olko-apple-kit/skills/apple-store-submit/SKILL.md`
 - `plugins/olko-apple-kit/skills/macos-menubar-app/SKILL.md`
