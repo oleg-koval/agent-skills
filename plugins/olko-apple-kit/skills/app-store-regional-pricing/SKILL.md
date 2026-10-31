@@ -1,0 +1,18 @@
+---
+name: app-store-regional-pricing
+description: Research and configure App Store and in-app purchase prices by storefront using affordability evidence and available Apple price points.
+license: MIT
+---
+
+# App Store regional pricing
+
+Use for storefront pricing that reflects local affordability, including one-time purchases and subscriptions. Do not confuse the app download price with a separate in-app purchase.
+
+1. Identify the exact app, product ID, purchase type, base storefront, current schedule, availability, effective dates, and any existing custom prices. Inspect the live schedule before proposing changes; never assume exchange-rate equalization is purchasing-power pricing.
+2. Establish the user's base price and commercial constraints. Research current, dated primary sources for affordability (for example World Bank income or GDP per capita and PPP data), taxes, applicable Apple rules, and relevant market evidence. GDP per capita is a rough proxy, not a measure of every customer's income. Record missing or stale data and avoid unsupported precision.
+3. Propose a transparent, reproducible price ladder and country assignments, with the actual Apple storefront currency and allowed price point for each. Account for tax treatment, Apple proceeds, minimum viable revenue, and commercial judgment; distinguish observed figures from proposed estimates. Review outliers, dollar-denominated storefronts, and availability. Do not claim a price is objectively fair or promise a currency the storefront does not support.
+4. Follow the user's authorized scope for changes. Preserve the base and unrelated existing prices unless requested. For material unresolved business choices, present concrete options before applying them. Do not buy, submit for review, or release the app as a side effect.
+5. Use the existing project workflow, CLI, or connected UI to configure custom storefront prices. Check effective dates, current and future schedules, and whether the change replaces existing overrides. Apple states manually managed regions are not automatically updated for exchange rate or tax changes; identify the monitoring owner and review cadence.
+6. Reopen the saved schedule and verify the exact product, dates, storefronts, amounts, currencies, and unaffected base. Report applied versus proposed prices and remaining coverage. If sandbox or storefront purchase testing is unavailable, say so. Note that the customer's Apple account storefront determines the price, not necessarily physical location.
+
+Primary references: [Set a price for an In-App Purchase](https://developer.apple.com/help/app-store-connect/manage-in-app-purchases/set-a-price-for-an-in-app-purchase), [Apple pricing](https://developer.apple.com/in-app-purchase/), [World Bank data](https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.CD). Check current documentation for product-specific behavior before making changes.

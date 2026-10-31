@@ -325,6 +325,7 @@ Build and ship Apple platform apps: macOS menubar apps, App Store submissions.
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [apple-store-submit](plugins/olko-apple-kit/skills/apple-store-submit/SKILL.md) | Handles App Store rejection emails end-to-end, parses rejection reasons, creates a fix plan, implements code changes, and prepares resubmission | Responding to App Store rejections for privacy strings, entitlements, or guideline violations |
+| [app-store-regional-pricing](plugins/olko-apple-kit/skills/app-store-regional-pricing/SKILL.md) | Researches affordability and configures storefront-specific App Store prices | Pricing apps and in-app purchases for different markets |
 | [macos-menubar-app](plugins/olko-apple-kit/skills/macos-menubar-app/SKILL.md) | Builds a production-quality macOS menubar or notch app in SwiftUI, MenuBarExtra setup, sandbox entitlements, keyboard shortcuts, sound effects | Building a native macOS utility that lives in the menu bar or Dynamic Island notch |
 
 ### olko-garmin-kit (1)

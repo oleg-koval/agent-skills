@@ -5,5 +5,6 @@
 Run `./scripts/install-hermes-symlinks.sh` from the repository root to link these skills
 into the active Hermes profile. The canonical packages are:
 
+- `plugins/olko-apple-kit/skills/app-store-regional-pricing/SKILL.md`
 - `plugins/olko-apple-kit/skills/apple-store-submit/SKILL.md`
 - `plugins/olko-apple-kit/skills/macos-menubar-app/SKILL.md`
