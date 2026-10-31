@@ -32,9 +32,7 @@ Recommendation: <one next action and why>
 Draft or artifact: <local path or none>
 Human decision: <exact decision needed, or none>
 Agent recommendation: <existing role or candidate with evidence>
-Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Status: READY_FOR_HUMAN | BLOCKED | DONE
 ```
-
-Use `DONE` for a completed brief with no outstanding concerns, `DONE_WITH_CONCERNS` when the brief is complete but a human decision or follow-up remains, and `BLOCKED` when missing evidence or access prevents completion.
 
 Keep project-specific domain rules in the project's own specialist skill. This shared role supplies the cross-project operating method.
