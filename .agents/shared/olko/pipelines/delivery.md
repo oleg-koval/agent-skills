@@ -4,7 +4,7 @@
 1. **Frame.** Product names the actor, observed problem, outcome, evidence, and acceptance checks. A user-approved outcome can proceed with stated uncertainty.
 2. **Design when needed.** Architect resolves ownership, boundaries, failure paths, and compatibility before implementation.
 3. **Build.** Engineer uses an isolated workspace and changes the smallest complete slice. Preserve unrelated work.
-4. **Prove.** Inspect contributor-controlled checks and their dependencies before execution. When safety is not established, run them only in isolation without credentials, secrets, sensitive files, host mounts, or ambient access; otherwise report the checks as unavailable. Run trusted target-repo checks locally. QA independently checks the behavior and the exact artifact. Add Security when trust, privacy, or supply chain changes materially.
+4. **Prove.** Run target-repo checks locally. QA independently checks the behavior and the exact artifact. Add Security when trust, privacy, or supply chain changes materially.
 5. **Deliver.** Review the final diff, then create the branch, push, or PR only under the target repo's rules. Use the [review pipeline](review.md) for PR evidence.
 6. **Close.** Re-read the authoritative source after each write. Report local correctness, commit, remote SHA, checks, deployment, and human acceptance as separate gates. Name anything incomplete.
 
