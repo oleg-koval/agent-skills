@@ -43,6 +43,8 @@ Use this as a proportional end-of-task audit. Preserve pre-existing work and do 
 - Check the diff and untracked files for keys, tokens, passwords, private keys, connection strings, cookies, personal data, and credentials in logs or examples. Report locations without printing values; recommend environment variables or a secret manager where relevant.
 - Decide from the actual change whether README, architecture or API docs, OpenAPI, CHANGELOG, CONTRIBUTING, `.env.example`, ADRs, or runbooks need an update. Name the exact change needed. Skip documentation for trivial internal changes unless it helps future maintenance.
 
+Before cleanup, when a completed task used a team and its applicable checks are green, invoke `olko:team-retrospective` to collect each agent’s report and safely dismiss task-owned agents. If unavailable, report the limitation; do not claim closeout ran.
+
 ## 4. Prepare safe cleanup
 
 - Propose cleanup commands only. Do not remove any file, branch, or worktree automatically, including generated or temporary files. Never propose deletion of an unknown untracked file, broad directory, or unresolved glob.
