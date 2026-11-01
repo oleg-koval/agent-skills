@@ -11,3 +11,4 @@ into the active Hermes profile. The canonical packages are:
 - `plugins/olko-reflection/skills/agent-ops-retro/SKILL.md`
 - `plugins/olko-reflection/skills/crash-course/SKILL.md`
 - `plugins/olko-reflection/skills/wrap-up/SKILL.md`
+- `plugins/olko-reflection/skills/team-retrospective/SKILL.md`

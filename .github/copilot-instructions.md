@@ -50,6 +50,7 @@ Available reusable prompt files:
 - agent-ops-retro: .github/prompts/agent-ops-retro.prompt.md
 - crash-course: .github/prompts/crash-course.prompt.md
 - wrap-up: .github/prompts/wrap-up.prompt.md
+- team-retrospective: .github/prompts/team-retrospective.prompt.md
 - obsidian-pr-sync: .github/prompts/obsidian-pr-sync.prompt.md
 - obsidian-task-rollover: .github/prompts/obsidian-task-rollover.prompt.md
 - morning-routine: .github/prompts/morning-routine.prompt.md
