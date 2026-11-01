@@ -1029,6 +1029,28 @@
             "grok",
             "hermes"
           ]
+        },
+        {
+          "name": "team-retrospective",
+          "lookupName": "olko:team-retrospective",
+          "path": "plugins/olko-reflection/skills/team-retrospective",
+          "description": "Collect each task agent\u2019s factual retrospective and safely dismiss the team after successful work.",
+          "tags": [
+            "agents",
+            "retrospective",
+            "delegation",
+            "cleanup"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes"
+          ]
         }
       ]
     },
@@ -1125,8 +1147,22 @@
           "lookupName": "olko:app-store-regional-pricing",
           "path": "plugins/olko-apple-kit/skills/app-store-regional-pricing",
           "description": "Research, propose, and verify App Store and in-app purchase prices by storefront using affordability evidence and Apple price points.",
-          "tags": ["apple", "app-store", "pricing", "localization"],
-          "adapters": ["codex", "claude", "cursor", "copilot", "windsurf", "kiro", "grok", "hermes"]
+          "tags": [
+            "apple",
+            "app-store",
+            "pricing",
+            "localization"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes"
+          ]
         },
         {
           "name": "apple-store-submit",
