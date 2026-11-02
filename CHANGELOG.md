@@ -1,3 +1,15 @@
+# [1.70.0](https://github.com/oleg-koval/agent-skills/compare/v1.69.4...v1.70.0) (2026-11-02)
+
+
+### ✨ Features
+
+* add team retrospective closeout skill ([#174](https://github.com/oleg-koval/agent-skills/issues/174)) ([1b9c8c4](https://github.com/oleg-koval/agent-skills/commit/1b9c8c469b0ff2805aa80c22d083da66dae5ef73))
+
+
+### 🛠 Builds
+
+* **deps:** bump actions/setup-go ([#175](https://github.com/oleg-koval/agent-skills/issues/175)) ([d84c22a](https://github.com/oleg-koval/agent-skills/commit/d84c22a059c58bfb467dbe7ec09813ff9eaaae78))
+
 ## [1.69.4](https://github.com/oleg-koval/agent-skills/compare/v1.69.3...v1.69.4) (2026-10-31)
 
 
