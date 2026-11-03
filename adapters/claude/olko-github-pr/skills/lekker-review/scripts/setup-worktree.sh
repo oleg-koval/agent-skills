@@ -137,12 +137,15 @@ collect_project_rules() {
 # Hard rules must come from a tree the PR author does not control: a PR that
 # deletes a rule and then breaks it would otherwise leave nothing to enforce.
 collect_project_rules_at_ref() {
-    local repo="$1" ref="$2" dir
+    local repo="$1" ref="$2" dir status=0
     dir="$(mktemp -d "/tmp/lekker-base-rules-XXXXXX")"
     if git -C "$repo" archive "$ref" 2>/dev/null | tar -x -C "$dir" 2>/dev/null; then
         collect_project_rules "$dir"
+    else
+        status=1
     fi
     rm -rf "$dir"
+    return "$status"
 }
 
 # Scan depth needs PR-authored review guidance but skips expensive worktree
@@ -167,8 +170,12 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
     BASE_PROJECT_RULES=""
     HAVE_BASE_RULES=0
     if [[ -n "${LEKKER_BASE_REF:-}" ]] && git -C "$REPO_ROOT" rev-parse --verify -q "${LEKKER_BASE_REF}^{commit}" >/dev/null; then
-        BASE_PROJECT_RULES="$(collect_project_rules_at_ref "$REPO_ROOT" "$LEKKER_BASE_REF")"
-        HAVE_BASE_RULES=1
+        if BASE_PROJECT_RULES="$(collect_project_rules_at_ref "$REPO_ROOT" "$LEKKER_BASE_REF")"; then
+            HAVE_BASE_RULES=1
+        else
+            BASE_PROJECT_RULES=""
+            NOTES="${NOTES}base-rules-unavailable;"
+        fi
     fi
     python3 - "$OUT_JSON" "$PROJECT_RULES" "$BASE_PROJECT_RULES" "$HAVE_BASE_RULES" <<'PYEOF'
 import json, sys
@@ -499,8 +506,11 @@ BASE_RULES_STATE="absent"
 printf '' > "$BASE_RULES_FILE"
 if [[ -n "$MERGE_BASE_NOTE" && "$MERGE_BASE_NOTE" != "unknown" ]] \
     && git -C "$REPO_ROOT" rev-parse --verify -q "${MERGE_BASE_NOTE}^{commit}" >/dev/null; then
-    collect_project_rules_at_ref "$REPO_ROOT" "$MERGE_BASE_NOTE" > "$BASE_RULES_FILE"
-    BASE_RULES_STATE="present"
+    if collect_project_rules_at_ref "$REPO_ROOT" "$MERGE_BASE_NOTE" > "$BASE_RULES_FILE"; then
+        BASE_RULES_STATE="present"
+    else
+        NOTES="${NOTES}base-rules-unavailable;"
+    fi
 else
     NOTES="${NOTES}base-rules-unavailable;"
 fi

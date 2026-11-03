@@ -739,6 +739,11 @@ check('accepts a quote above the recalled patterns heading',
   validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER eval anywhere in src.'), withRecalled).ok, true)
 check('rejects a quote that appears only under recalled patterns',
   validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in tests.'), withRecalled).ok, false)
+const twoRecalled = 'NEVER eval anywhere in src.\n## Recalled patterns\nNEVER use var in src.\n## Recalled patterns\nNEVER call console.log in tests.'
+check('accepts a quote between two recalled patterns headings',
+  validateProjectRuleFinding(prFinding('PROJECT:no-var', 'NEVER use var in src.'), twoRecalled).ok, true)
+check('rejects a quote after the last recalled patterns heading when the heading appears twice',
+  validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in tests.'), twoRecalled).ok, false)
 console.log('\nworkflow: a house-rule finding and a PROJECT finding on one line are never one issue')
 const houseF = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'TS-1' }
 const projectF = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'PROJECT:no-null-total', ruleQuote: 'NEVER skip the null check on total.' }
@@ -746,6 +751,10 @@ check('a house-rule finding and a PROJECT finding with similar titles are not sa
 check('isProjectRuleTag accepts a kebab slug and rejects an empty one',
   [isProjectRuleTag('PROJECT:a-b'), isProjectRuleTag('PROJECT:')], [true, false])
 check('a PROJECT tag is a hard rule', isHardRule({ rule: 'PROJECT:no-console-log' }), true)
+const quoteA = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'PROJECT:no-null-total', ruleQuote: 'NEVER skip the null check on total.' }
+const quoteB = { ...quoteA, ruleQuote: 'ALWAYS validate total before use.' }
+check('two different quotes of one PROJECT rule are not sameIssue', sameIssue(quoteA, quoteB), false)
+check('the same quote of one PROJECT rule is still sameIssue', sameIssue(quoteA, { ...quoteA }), true)
 
 // Prompt guard: every lens that reads projectRules is told to raise the tag.
 const lensFiles = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']

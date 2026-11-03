@@ -35,13 +35,15 @@ export function normalizeQuote(text) {
     .toLowerCase()
 }
 
-const RECALLED_PATTERNS_HEADING = /^\s{0,3}#{1,6}\s+recalled patterns\s*$/im
+const RECALLED_PATTERNS_HEADING = /^\s{0,3}#{1,6}\s+recalled patterns\s*$/gim
 
-// Recalled patterns are memory, not the project's rules, so nothing below that heading is a valid quote source.
+// Recalled patterns are memory, not the project's rules, so nothing below the last such heading is a valid quote source.
+// SKILL.md appends that heading at the end; an earlier one inside a rules file must not drop the rules after it.
 export function stripRecalledPatterns(text) {
   const source = String(text ?? '')
-  const match = RECALLED_PATTERNS_HEADING.exec(source)
-  return match ? source.slice(0, match.index) : source
+  let cut = -1
+  for (const match of source.matchAll(RECALLED_PATTERNS_HEADING)) cut = match.index
+  return cut === -1 ? source : source.slice(0, cut)
 }
 
 export function quoteAppearsIn(quote, projectRules) {

@@ -171,6 +171,13 @@ function sameIssue(a, b) {
       && (a.rule.startsWith('PROJECT:') || b.rule.startsWith('PROJECT:'))) {
     return false
   }
+  // Two quotes of one PROJECT rule that differ are two different rule passages, not one issue.
+  if (typeof a.rule === 'string' && a.rule === b.rule && a.rule.startsWith('PROJECT:')
+      && typeof a.ruleQuote === 'string' && a.ruleQuote.trim() !== ''
+      && typeof b.ruleQuote === 'string' && b.ruleQuote.trim() !== ''
+      && a.ruleQuote !== b.ruleQuote) {
+    return false
+  }
   // Merging two classes would send one class's instances to the other's fix.
   if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
     return false
@@ -746,8 +753,9 @@ const budgetAtStart = budget.spent()
   // A model verdict cannot replace the required production boundary map.
   function enforceBoundary(finding) {
     if (!shouldVerify(finding, depth)) return finding
-    // A project rule is violated by the line itself; it needs no production entry point.
-    if (typeof finding.rule === 'string' && finding.rule.startsWith('PROJECT:')) return finding
+    // A project rule or a weakened project rule is violated by the line itself; it needs no production entry point.
+    if (typeof finding.rule === 'string'
+        && (finding.rule.startsWith('PROJECT:') || finding.rule === 'weakens-project-rule')) return finding
     const boundary = finding.boundary
     const hasText = function(value) {
       return typeof value === 'string' && value.trim().length > 0
@@ -806,7 +814,7 @@ const budgetAtStart = budget.spent()
 
         if (verdict.validatorUnavailable === true) {
           validatorUnavailableCount++
-          log(`PROJECT-rule validator unavailable for ${finding.file}:${finding.line}; finding kept`)
+          log(`PROJECT-rule validator unavailable for ${finding.file}:${finding.line}; ${verdict.verdict === 'dropped' ? 'finding dropped' : 'finding kept'}`)
         }
 
         if (verdict.verdict === 'dropped') {

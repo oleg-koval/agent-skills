@@ -686,6 +686,7 @@ Write `<scratchpad>/context.json` with keys:
 {
   "acList":          "<numbered ACs from your issue tracker, or empty>",
   "projectRules":    "<worktree.json or rules.json projectRules + any recalled review patterns appended under '## Recalled patterns'>",
+  "baseProjectRules": "<worktree.json or rules.json baseProjectRules, copied unchanged (no recalled patterns); null when absent>",
   "changedPaths":    "<PR files[].path list, or an exact matching worktree.json changedFiles list>",
   "sentrySignals":   "<monitoring issue summaries, or null>",
   "ciStatus":        "<passing | failing: <names> | pending | N/A>",
