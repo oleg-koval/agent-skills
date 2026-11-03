@@ -41,9 +41,8 @@ const RECALLED_PATTERNS_HEADING = /^\s{0,3}#{1,6}\s+recalled patterns\s*$/gim
 // SKILL.md appends that heading at the end; an earlier one inside a rules file must not drop the rules after it.
 export function stripRecalledPatterns(text) {
   const source = String(text ?? '')
-  let cut = -1
-  for (const match of source.matchAll(RECALLED_PATTERNS_HEADING)) cut = match.index
-  return cut === -1 ? source : source.slice(0, cut)
+  const last = [...source.matchAll(RECALLED_PATTERNS_HEADING)].at(-1)
+  return last ? source.slice(0, last.index) : source
 }
 
 export function quoteAppearsIn(quote, projectRules) {
@@ -71,18 +70,63 @@ export function validateProjectRuleFinding(finding, projectRules) {
   return { ok: true, reason: 'quote found in projectRules' }
 }
 
-export function validateWeakenedProjectRuleFinding(finding, baseProjectRules) {
+// Still present means the whole rule block is unchanged; any wording change in the block
+// counts as possibly weakened and is left to the verifier.
+const LIST_MARKER = /^\s*([-+*]|\d+[.)])\s+/
+
+const indentOf = line => line.length - line.trimStart().length
+
+// A deeper marker or indented text belongs to its parent bullet, even after a blank line (loose list),
+// so an exception there must change the parent block.
+const isHeading = line => /^\s{0,3}#{1,6}\s/.test(line)
+const isListItem = line => LIST_MARKER.test(line)
+
+function startsNewBlock(line, current) {
+  if (isHeading(line)) return true
+  const [first] = current
+  if (first === undefined) return true
+  if (current[current.length - 1] === '') return !(isListItem(first) && indentOf(line) > indentOf(first))
+  if (!isListItem(line)) return false
+  if (isListItem(first)) return indentOf(line) <= indentOf(first)
+  return true
+}
+
+function ruleBlocks(text) {
+  const groups = stripRecalledPatterns(text).split(/\r?\n/).reduce((acc, line) => {
+    const current = acc[acc.length - 1]
+    if (line.trim() === '') return current === undefined || current.length === 0 ? acc : [...acc.slice(0, -1), [...current, '']]
+    if (current === undefined || startsNewBlock(line, current)) return [...acc, [line]]
+    return [...acc.slice(0, -1), [...current, line]]
+  }, [])
+  return groups
+    .map(lines => lines.map((line, i) => normalizeQuote(i === 0 ? line.replace(LIST_MARKER, '') : line)).filter(line => line !== '').join(' '))
+    .filter(block => block !== '')
+}
+
+export function ruleLineStillPresent(quote, baseProjectRules, projectRules) {
+  const needle = normalizeQuote(quote)
+  const baseHits = needle ? ruleBlocks(baseProjectRules).filter(block => block.includes(needle)) : []
+  if (baseHits.length === 0) return false
+  const prBlocks = new Set(ruleBlocks(projectRules))
+  return baseHits.some(block => prBlocks.has(block))
+}
+
+// `unavailable` marks a missing input, not a judgement on the finding: the CLI maps it to exit 2.
+export function validateWeakenedProjectRuleFinding(finding, baseProjectRules, projectRules) {
   if (finding?.rule !== 'weakens-project-rule') {
     return { ok: true, reason: 'not a weakened project rule' }
   }
   if (typeof baseProjectRules !== 'string') {
-    return { ok: false, reason: 'baseProjectRules unavailable' }
+    return { ok: false, unavailable: true, reason: 'baseProjectRules unavailable' }
   }
   if (typeof finding.ruleQuote !== 'string' || finding.ruleQuote.trim() === '') {
     return { ok: false, reason: 'missing ruleQuote: quote the removed project rule' }
   }
   if (!quoteAppearsIn(finding.ruleQuote, baseProjectRules)) {
     return { ok: false, reason: 'ruleQuote not found in baseProjectRules' }
+  }
+  if (typeof projectRules === 'string' && ruleLineStillPresent(finding.ruleQuote, baseProjectRules, projectRules)) {
+    return { ok: false, reason: 'rule still present in projectRules' }
   }
   return { ok: true, reason: 'quote found in baseProjectRules' }
 }
@@ -97,8 +141,9 @@ function main(argv) {
     const finding = JSON.parse(readFileSync(findingPath, 'utf8'))
     const context = JSON.parse(readFileSync(contextPath, 'utf8'))
     if (finding?.rule === 'weakens-project-rule') {
-      const result = validateWeakenedProjectRuleFinding(finding, context.baseProjectRules)
+      const result = validateWeakenedProjectRuleFinding(finding, context.baseProjectRules, context.projectRules)
       console.log(JSON.stringify(result))
+      if (result.unavailable) return 2
       return result.ok ? 0 : 1
     }
     // Base-branch rules are authoritative; PR-tree rules only when no base was resolved.
