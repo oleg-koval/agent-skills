@@ -33,6 +33,7 @@ const FINDINGS_ARRAY_SCHEMA = {
     anyOf: [
       { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
       { required: ['boundary'] },
+      { required: ['rule'], properties: { rule: { pattern: '^(PROJECT:[a-z0-9]+(-[a-z0-9]+)*|weakens-project-rule)$' } } },
     ],
     properties: {
       file:        { type: 'string' },
