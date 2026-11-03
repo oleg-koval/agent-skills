@@ -11,7 +11,7 @@
 //
 // Exit 0 when valid or when the finding is not a PROJECT rule, 1 when rejected,
 // 2 when the validator itself could not run (usage error, unreadable or malformed input).
-import { readFileSync } from 'node:fs'
+import { readFileSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const TAG_PATTERN = /^PROJECT:[a-z0-9]+(-[a-z0-9]+)*$/
@@ -25,7 +25,10 @@ export function isProjectRuleTag(tag) {
 // rules file and a model's copy of it; the words must not.
 export function normalizeQuote(text) {
   return String(text ?? '')
-    .replace(/[*_`>#]/g, ' ')
+    .replace(/(^|\n)\s{0,3}#{1,6}\s+/g, '$1')
+    .replace(/(^|\n)\s{0,3}>\s?/g, '$1')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/(^|[\s([{])(\*{1,2}|_{1,2})(\S(?:.*?\S)?)\2(?=$|[\s.,;:!?)}\]])/g, '$1$3')
     .replace(/^\s*[-+]\s+/gm, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -34,7 +37,9 @@ export function normalizeQuote(text) {
 
 export function quoteAppearsIn(quote, projectRules) {
   const needle = normalizeQuote(quote)
-  return needle.length >= MIN_QUOTE_LENGTH && normalizeQuote(projectRules).includes(needle)
+  if (!needle) return false
+  if (needle.length >= MIN_QUOTE_LENGTH && normalizeQuote(projectRules).includes(needle)) return true
+  return String(projectRules ?? '').split(/\r?\n/).some(line => normalizeQuote(line) === needle)
 }
 
 export function validateProjectRuleFinding(finding, projectRules) {
@@ -73,6 +78,10 @@ function main(argv) {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+function isMain() {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)) } catch { return false }
+}
+
+if (isMain()) {
   process.exit(main(process.argv.slice(2)))
 }

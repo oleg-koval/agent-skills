@@ -698,7 +698,7 @@ check('the attempt count is written only through countProveAttempt', bareWrites,
 
 console.log('\nproject rules: PROJECT:<slug> findings must quote a rule that exists')
 const { spawnSync: spawnPr } = await import('node:child_process')
-const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr, writeFileSync: wfPr } = await import('node:fs')
+const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr, symlinkSync: syPr, writeFileSync: wfPr } = await import('node:fs')
 const { tmpdir: tmpPr } = await import('node:os')
 const { validateProjectRuleFinding, isProjectRuleTag } = await import('./project-rule-findings.mjs')
 
@@ -722,6 +722,12 @@ check('accepts PROJECT:no-console-log with a matching quote',
   validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in src/.'), planted).ok, true)
 check('accepts a quote that differs only in case and spacing',
   validateProjectRuleFinding(prFinding('PROJECT:no-mutation', 'never  mutate   function arguments'), planted).ok, true)
+check('accepts exact short project rules',
+  validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER eval.'), '- NEVER eval.').ok, true)
+check('rejects altered identifiers in project rule quotes',
+  validateProjectRuleFinding(prFinding('PROJECT:no-unsafe', 'NEVER call unsafe().'), 'NEVER call `_unsafe()`.').ok, false)
+check('rejects altered operators in project rule quotes',
+  validateProjectRuleFinding(prFinding('PROJECT:nonnegative', 'MUST validate n = 0.'), 'MUST validate n >= 0.').ok, false)
 check('rejects a quote that is absent from projectRules',
   validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER call eval anywhere in the codebase'), planted).ok, false)
 check('rejects a PROJECT tag with no quote',
@@ -762,10 +768,15 @@ console.log('\nproject rules: dedup keeps the tag and its quote together')
 const { dedup: dedupPr } = new Function(preamble + '\nreturn { dedup }')()
 const plainF = { file: 'src/a.js', line: 2, severity: 'important', title: 'console.log left in src', bugClass: 'console-log', description: 'x', badCode: 'console.log(1)', fix: 'f', otherInstances: [] }
 const taggedF = { ...plainF, severity: 'critical', rule: 'PROJECT:no-console-log', ruleQuote: 'NEVER call console.log in src/.' }
+const taggedWithoutQuote = { ...taggedF }
+delete taggedWithoutQuote.ruleQuote
 for (const [label, pair] of [['plain first', [plainF, taggedF]], ['tagged first', [taggedF, plainF]]]) {
   const [m] = dedupPr(pair)
   check(`merge keeps rule and ruleQuote (${label})`, [m.rule, m.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
 }
+const [mergedQuote] = dedupPr([taggedWithoutQuote, taggedF])
+check('merge fills missing quote for the same project rule',
+  [mergedQuote.rule, mergedQuote.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
 
 console.log('\nproject rules: validator crash is exit 2, rejection is exit 1')
 const crashDir = mkPr(join(tmpPr(), 'lekker-crash-'))
@@ -777,6 +788,10 @@ const runV = (f, c) => spawnPr('node', [join(SKILL, 'scripts', 'project-rule-fin
 check('exit 0 on a valid finding', runV(fnd, okCtx), 0)
 wfPr(join(crashDir, 'rej.json'), JSON.stringify({ rule: 'PROJECT:no-eval', ruleQuote: 'NEVER call eval anywhere in code' }))
 check('exit 1 on a rejected finding', runV(join(crashDir, 'rej.json'), okCtx), 1)
+const symlinkValidator = join(crashDir, 'project-rule-findings.mjs')
+syPr(join(SKILL, 'scripts', 'project-rule-findings.mjs'), symlinkValidator)
+check('exit 1 on a rejected finding through a symlink',
+  spawnPr('node', [symlinkValidator, join(crashDir, 'rej.json'), okCtx], { encoding: 'utf8' }).status, 1)
 check('exit 2 on a missing context file', runV(fnd, join(crashDir, 'nope.json')), 2)
 check('exit 2 on a malformed context file', runV(fnd, badJson), 2)
 check('exit 2 on a malformed finding file', runV(badJson, okCtx), 2)
