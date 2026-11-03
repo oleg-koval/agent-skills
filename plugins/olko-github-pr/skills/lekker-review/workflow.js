@@ -695,7 +695,7 @@ const budgetAtStart = budget.spent()
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${wtDisplay}.`,
       `HOUSE_RULES_FILE: read key "houseRulesFile" from CONTEXT_FILE, then read that exact path before validating a hard rule.`,
-      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then check by hand that the exact quote appears in projectRules (drop if it does not), keep the finding only if it does, set validatorUnavailable true, and judge applicability.`,
+      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then check by hand that the exact quote appears in baseProjectRules when it is a string, otherwise projectRules (drop if it does not), keep the finding only if it does, set validatorUnavailable true, and judge applicability.`,
     ].join(' ')
   }
 
