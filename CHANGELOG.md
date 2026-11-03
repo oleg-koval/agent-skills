@@ -1,3 +1,10 @@
+## [1.71.1](https://github.com/oleg-koval/agent-skills/compare/v1.71.0...v1.71.1) (2026-11-03)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** catch weakened project rules reliably ([#177](https://github.com/oleg-koval/agent-skills/issues/177)) ([730770c](https://github.com/oleg-koval/agent-skills/commit/730770c03404cb774b973ad21c5f00b25f52acaf))
+
 # [1.71.0](https://github.com/oleg-koval/agent-skills/compare/v1.70.0...v1.71.0) (2026-11-03)
 
 
