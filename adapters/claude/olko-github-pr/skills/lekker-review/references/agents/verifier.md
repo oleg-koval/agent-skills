@@ -28,14 +28,28 @@ unless Step 0 validates it through the house hard-rule path.
 
 ## Step 0 -- Hard-rule validation (check this FIRST)
 
-If the FINDING JSON has any non-empty `rule` field, including built-in tags
-such as `TS-1`, `TS-2`, `GQL-1`, or `PR-1`, do NOT run the five adversarial
+If the FINDING JSON has any non-empty `rule` field, do NOT run the five adversarial
 challenges below. They ask
 runtime-failure questions that a standards violation can never answer, and
 answering them honestly would drop a finding that house-rules policy declares
 Critical on standards grounds rather than on runtime behaviour.
 
-Instead run exactly two checks:
+For `rule: "weakens-project-rule"`, use this dedicated path:
+
+1. **Removed-line anchor**: confirm the quoted rule appears on a `-` line in
+   `DIFF_FILE` for the finding's file. Ignore `---` file headers. This anchor is
+   valid for both a deletion and a replacement; do not require a matching `+`
+   line or downgrade the finding because it has no production-code `+` line.
+2. **Base-rule validation**: write the FINDING JSON to a unique temp file and run
+   `node <this prompt's directory>/../../scripts/project-rule-findings.mjs <finding.json> <CONTEXT_FILE>`.
+   The validator requires the exact quote to exist in `baseProjectRules`; a
+   missing base copy or rejected quote fails this check. Do not validate against
+   `projectRules`, which may already reflect the PR's weakened rules.
+
+Both checks pass -> `confirmed` at the finding's Important severity. Either
+check fails -> `dropped`. Do not downgrade a confirmed weakening.
+
+For all other non-empty `rule` tags, run exactly two checks:
 
 1. **Anchor**: the flagged code genuinely appears on a `+` line of
    `DIFF_FILE` (for PR-1, the PR title genuinely lacks a ticket present in
@@ -54,6 +68,17 @@ Outcome: both checks pass -> `confirmed` at Critical, with `reasoning` naming
 the rule and quoting the violating snippet. Either check fails -> `dropped`,
 with `reasoning` naming which check failed. There is no `downgraded` outcome
 for a hard rule: it either violates the rule or it does not.
+
+For a `rule` starting with `PROJECT:`, the rule text lives in `baseProjectRules` of
+`CONTEXT_FILE` when that key is a string (the base branch's copy, which the PR cannot
+edit), otherwise in `projectRules`, not in `HOUSE_RULES_FILE`. Write the FINDING JSON to a unique temp file
+(create it with `mktemp`, never a fixed name, because verifiers run in parallel) and run `node <this prompt's directory>/../../scripts/project-rule-findings.mjs <finding.json> <CONTEXT_FILE>`.
+Exit 1 means the quoted rule is not in `projectRules` (or the tag is malformed):
+`dropped`, with that output as `reasoning`. Any other non-zero exit means the validator
+could not run: read that same key yourself and confirm the exact quoted sentence is in it.
+If it is not, `dropped`. If it is, keep the finding at its severity, say in `reasoning` that
+the validator was unavailable, set `validatorUnavailable: true`, and judge applicability as below. On exit 0, judge applicability
+against the quoted rule as the second check.
 
 Then **stop** -- do not continue to Step 1 or the five challenges.
 

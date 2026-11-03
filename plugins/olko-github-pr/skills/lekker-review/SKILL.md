@@ -469,12 +469,13 @@ Fire both tracks in the same turn.
 At scan depth, collect review guidance without creating a worktree:
 
 ```bash
-LEKKER_RULES_ONLY=1 ${SKILL_ROOT}/scripts/setup-worktree.sh \
+LEKKER_RULES_ONLY=1 LEKKER_BASE_REF=origin/<BASE_BRANCH> \
+  ${SKILL_ROOT}/scripts/setup-worktree.sh \
   <REPO_SLUG> <PR_BRANCH> <scratchpad>/rules.json
 ```
 
 Read `projectRules` from `rules.json` into `context.json`. This archive-only
-mode reads the PR tree and does not run static checks.
+mode fetches the PR base for `baseProjectRules` and does not run static checks.
 
 Run via Bash with `run_in_background`:
 
@@ -686,6 +687,7 @@ Write `<scratchpad>/context.json` with keys:
 {
   "acList":          "<numbered ACs from your issue tracker, or empty>",
   "projectRules":    "<worktree.json or rules.json projectRules + any recalled review patterns appended under '## Recalled patterns'>",
+  "baseProjectRules": "<worktree.json or rules.json baseProjectRules, copied unchanged (no recalled patterns); null when absent>",
   "changedPaths":    "<PR files[].path list, or an exact matching worktree.json changedFiles list>",
   "sentrySignals":   "<monitoring issue summaries, or null>",
   "ciStatus":        "<passing | failing: <names> | pending | N/A>",
@@ -913,6 +915,13 @@ and a nit limit (cap Observation and Idiomatic findings at that number, highest
 value first). `REVIEW.md` ignore rules never suppress findings in changed paths. The workflow
 applies exclusions to agent and lint findings using `changedPaths`; if paths are
 unavailable, keep findings. It never switches off a hard rule from `CLAUDE.md` or the house rules.
+
+**Project rules are hard rules.** A prohibition or obligation in `projectRules`
+(NEVER, MUST, ALWAYS, DO NOT or plain-English equivalent) that a changed line
+violates is raised as Critical with `rule: "PROJECT:<slug>"` and a verbatim
+`ruleQuote`. The verifier runs `scripts/project-rule-findings.mjs`, which drops
+a finding whose quote is not found in `projectRules`; otherwise it takes the
+hard-rule path (anchor and applicability, no runtime challenges).
 
 **Approval standard.** The verdict answers "does this definitely improve the
 codebase's health", not "is this how I would have written it". Perfect code does

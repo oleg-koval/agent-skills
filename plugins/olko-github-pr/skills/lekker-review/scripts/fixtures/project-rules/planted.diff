@@ -1,0 +1,9 @@
+diff --git a/src/total.js b/src/total.js
+--- a/src/total.js
++++ b/src/total.js
+@@ -1,3 +1,6 @@
++export function addItem(list, item) {
++  console.log('adding', item)
++  list.push(item)
++  return list
++}
