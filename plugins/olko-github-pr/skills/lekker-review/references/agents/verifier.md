@@ -44,7 +44,13 @@ For `rule: "weakens-project-rule"`, use this dedicated path:
    `node <this prompt's directory>/../../scripts/project-rule-findings.mjs <finding.json> <CONTEXT_FILE>`.
    The validator requires the exact quote to exist in `baseProjectRules`; a
    missing base copy or rejected quote fails this check. Do not validate against
-   `projectRules`, which may already reflect the PR's weakened rules.
+   `projectRules`, which may already reflect the PR's weakened rules. The validator also
+   rejects a rule line that is still present unchanged in `projectRules` (the rule line was neither removed nor changed).
+   Exit 1 means `dropped`. Exit 2 means the validator could not run (for example
+   `baseProjectRules` is missing): check by hand that the exact quote appears in
+   `baseProjectRules` ONLY, never in `projectRules`; if `baseProjectRules` is not a string
+   or the quote is absent there, `dropped`. Otherwise keep the finding, say in `reasoning`
+   that the validator was unavailable, and set `validatorUnavailable: true`.
 
 Both checks pass -> `confirmed` at the finding's Important severity. Either
 check fails -> `dropped`. Do not downgrade a confirmed weakening.
