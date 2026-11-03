@@ -72,24 +72,34 @@ export function validateProjectRuleFinding(finding, projectRules) {
 
 // Still present means the whole rule block is unchanged; any wording change in the block
 // counts as possibly weakened and is left to the verifier.
-const BLOCK_START = /^\s{0,3}#{1,6}\s|^\s*([-+*]|\d+[.)])\s+/
 const LIST_MARKER = /^\s*([-+*]|\d+[.)])\s+/
+
+const indentOf = line => line.length - line.trimStart().length
+
+// A deeper list marker belongs to its parent bullet: a sub-bullet exception or a narrowed
+// parent must change the parent block, so only a marker at or above the parent's indent opens a new one.
+function startsNewBlock(line, current) {
+  if (/^\s{0,3}#{1,6}\s/.test(line)) return true
+  if (!LIST_MARKER.test(line)) return false
+  const [first] = current
+  return first === undefined || !LIST_MARKER.test(first) || indentOf(line) <= indentOf(first)
+}
 
 function ruleBlocks(text) {
   const groups = stripRecalledPatterns(text).split(/\r?\n/).reduce((acc, line) => {
     if (line.trim() === '') return [...acc, []]
-    if (BLOCK_START.test(line) || acc.length === 0) return [...acc, [line]]
+    if (acc.length === 0 || startsNewBlock(line, acc[acc.length - 1])) return [...acc, [line]]
     return [...acc.slice(0, -1), [...acc[acc.length - 1], line]]
   }, [])
   return groups
-    .map(lines => normalizeQuote(lines.map((line, i) => (i === 0 ? line.replace(LIST_MARKER, '') : line)).join(' ')))
+    .map(lines => lines.map((line, i) => normalizeQuote(i === 0 ? line.replace(LIST_MARKER, '') : line)).filter(line => line !== '').join(' '))
     .filter(block => block !== '')
 }
 
 export function ruleLineStillPresent(quote, baseProjectRules, projectRules) {
   const needle = normalizeQuote(quote)
   const baseHits = needle ? ruleBlocks(baseProjectRules).filter(block => block.includes(needle)) : []
-  if (baseHits.length === 0) return quoteAppearsIn(quote, projectRules)
+  if (baseHits.length === 0) return false
   const prBlocks = new Set(ruleBlocks(projectRules))
   return baseHits.some(block => prBlocks.has(block))
 }

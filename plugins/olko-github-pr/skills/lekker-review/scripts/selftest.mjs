@@ -776,6 +776,16 @@ check('rejects a single-line rule re-wrapped over two lines',
   validateWeakenedProjectRuleFinding(wrappedFinding, '- After ANY catalog change, run build and commit the result', wrappedBase).reason, 'rule still present in projectRules')
 check('rejects a rule moved to another section unchanged',
   validateWeakenedProjectRuleFinding(evalFinding, '# A\n' + evalBase + '\n# B\n- x', '# B\n- x\n# A\n' + evalBase).reason, 'rule still present in projectRules')
+check('accepts an exception appended to a two-line blockquote rule',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push to main or release branches.'), '> NEVER force-push to main\n> or release branches.', '> NEVER force-push to main\n> or release branches. Exception: your own branch.').ok, true)
+check('accepts an exception added as an indented sub-bullet',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n  - except on your own branch').ok, true)
+check('accepts a parent bullet narrowed above an unchanged sub-bullet',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER call eval'), '- In src:\n  - NEVER call eval', '- In src/legacy only:\n  - NEVER call eval').ok, true)
+check('accepts a quote spanning two base bullets when the second gains an exception',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push\n- NEVER delete main'), '- NEVER force-push\n- NEVER delete main', '- NEVER force-push\n- NEVER delete main unless asked').ok, true)
+check('rejects an unchanged rule with an unchanged nested sub-bullet',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n  - on shared branches', '- NEVER force-push\n  - on shared branches').reason, 'rule still present in projectRules')
 check('rejects a weakened rule with no quote',
   validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
 const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
