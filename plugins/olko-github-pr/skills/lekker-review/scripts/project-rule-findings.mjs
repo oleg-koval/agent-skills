@@ -35,11 +35,21 @@ export function normalizeQuote(text) {
     .toLowerCase()
 }
 
+const RECALLED_PATTERNS_HEADING = /^\s{0,3}#{1,6}\s+recalled patterns\s*$/im
+
+// Recalled patterns are memory, not the project's rules, so nothing below that heading is a valid quote source.
+export function stripRecalledPatterns(text) {
+  const source = String(text ?? '')
+  const match = RECALLED_PATTERNS_HEADING.exec(source)
+  return match ? source.slice(0, match.index) : source
+}
+
 export function quoteAppearsIn(quote, projectRules) {
   const needle = normalizeQuote(quote)
   if (!needle) return false
-  if (needle.length >= MIN_QUOTE_LENGTH && normalizeQuote(projectRules).includes(needle)) return true
-  return String(projectRules ?? '').split(/\r?\n/).some(line => normalizeQuote(line) === needle)
+  const rules = stripRecalledPatterns(projectRules)
+  if (needle.length >= MIN_QUOTE_LENGTH && normalizeQuote(rules).includes(needle)) return true
+  return rules.split(/\r?\n/).some(line => normalizeQuote(line) === needle)
 }
 
 export function validateProjectRuleFinding(finding, projectRules) {

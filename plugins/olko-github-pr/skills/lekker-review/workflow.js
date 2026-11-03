@@ -166,9 +166,9 @@ function titleTokens(title) {
 }
 
 function sameIssue(a, b) {
-  // Two different project rules are two violations, never one issue.
+  // A project rule is never merged with a different rule: each is its own violation.
   if (typeof a.rule === 'string' && typeof b.rule === 'string' && a.rule !== b.rule
-      && a.rule.startsWith('PROJECT:') && b.rule.startsWith('PROJECT:')) {
+      && (a.rule.startsWith('PROJECT:') || b.rule.startsWith('PROJECT:'))) {
     return false
   }
   // Merging two classes would send one class's instances to the other's fix.

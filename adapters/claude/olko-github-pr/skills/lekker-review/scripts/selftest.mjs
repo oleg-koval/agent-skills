@@ -734,6 +734,15 @@ check('rejects a PROJECT tag with no quote',
   validateProjectRuleFinding({ rule: 'PROJECT:no-console-log' }, planted).ok, false)
 check('rejects a malformed slug', validateProjectRuleFinding(prFinding('PROJECT:No Console', 'NEVER call console.log in src/.'), planted).ok, false)
 check('a built-in tag is left to the house-rule path', validateProjectRuleFinding({ rule: 'TS-1' }, planted).ok, true)
+const withRecalled = 'NEVER eval anywhere in src.\n## Recalled patterns\nNEVER call console.log in tests.'
+check('accepts a quote above the recalled patterns heading',
+  validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER eval anywhere in src.'), withRecalled).ok, true)
+check('rejects a quote that appears only under recalled patterns',
+  validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in tests.'), withRecalled).ok, false)
+console.log('\nworkflow: a house-rule finding and a PROJECT finding on one line are never one issue')
+const houseF = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'TS-1' }
+const projectF = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'PROJECT:no-null-total', ruleQuote: 'NEVER skip the null check on total.' }
+check('a house-rule finding and a PROJECT finding with similar titles are not sameIssue', sameIssue(houseF, projectF), false)
 check('isProjectRuleTag accepts a kebab slug and rejects an empty one',
   [isProjectRuleTag('PROJECT:a-b'), isProjectRuleTag('PROJECT:')], [true, false])
 check('a PROJECT tag is a hard rule', isHardRule({ rule: 'PROJECT:no-console-log' }), true)
