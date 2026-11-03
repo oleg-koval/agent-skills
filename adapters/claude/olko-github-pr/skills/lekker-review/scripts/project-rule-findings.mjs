@@ -77,11 +77,9 @@ const LIST_MARKER = /^\s*([-+*]|\d+[.)])\s+/
 const indentOf = line => line.length - line.trimStart().length
 
 // A deeper marker or indented text belongs to its parent bullet, even after a blank line (loose list),
-// so an exception there must change the parent block. A bullet right after a paragraph rule is that
-// rule's exception unless the paragraph is a lead-in ending in a colon.
+// so an exception there must change the parent block.
 const isHeading = line => /^\s{0,3}#{1,6}\s/.test(line)
 const isListItem = line => LIST_MARKER.test(line)
-const lastTextOf = current => current.filter(line => line !== '').slice(-1)[0] ?? ''
 
 function startsNewBlock(line, current) {
   if (isHeading(line)) return true
@@ -90,8 +88,7 @@ function startsNewBlock(line, current) {
   if (current[current.length - 1] === '') return !(isListItem(first) && indentOf(line) > indentOf(first))
   if (!isListItem(line)) return false
   if (isListItem(first)) return indentOf(line) <= indentOf(first)
-  if (isHeading(first)) return true
-  return lastTextOf(current).trimEnd().endsWith(':')
+  return true
 }
 
 function ruleBlocks(text) {

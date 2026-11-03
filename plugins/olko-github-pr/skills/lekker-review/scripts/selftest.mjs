@@ -790,8 +790,11 @@ check('accepts an exception sub-bullet added after a blank line in a loose list'
   validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n\n  - except on your own branch').ok, true)
 check('accepts an indented exception paragraph added after a blank line',
   validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n\n  Except on your own branch.').ok, true)
-check('accepts an exception bullet added directly under a paragraph rule',
-  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push.'), 'NEVER force-push.', 'NEVER force-push.\n- Exception: your own branch.').ok, true)
+const introBase = 'These apply everywhere.\n- In domain code:\n  - NEVER mutate state'
+check('accepts a narrowed parent bullet under an intro paragraph',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER mutate state'), introBase, 'These apply everywhere.\n- In domain code, except scripts:\n  - NEVER mutate state').ok, true)
+check('accepts an exception sibling added under a parent bullet below an intro paragraph',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER mutate state'), introBase, introBase + '\n  - Mutation is fine in reducers').ok, true)
 check('rejects an unchanged loose-list rule with an unchanged indented paragraph',
   validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n\n  on shared branches', '- NEVER force-push\n\n  on shared branches').reason, 'rule still present in projectRules')
 check('rejects unchanged blank-separated sibling bullets when another bullet is edited',
