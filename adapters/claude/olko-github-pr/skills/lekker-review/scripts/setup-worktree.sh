@@ -178,6 +178,12 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
         if [[ "$BASE_FETCH_OK" == "1" ]] \
             && git -C "$REPO_ROOT" rev-parse --verify -q "${LEKKER_BASE_REF}^{commit}" >/dev/null; then
             RULES_BASE_SHA="$(git -C "$REPO_ROOT" merge-base "$LEKKER_BASE_REF" "$RULES_REF" 2>/dev/null || true)"
+            # A fork older than the shallow clone depth has no common ancestor until history is deepened.
+            if [[ -z "$RULES_BASE_SHA" ]] \
+                && [[ "$(git -C "$REPO_ROOT" rev-parse --is-shallow-repository 2>/dev/null)" == "true" ]]; then
+                git -C "$REPO_ROOT" fetch -q --deepen=200 origin 2>/dev/null || true
+                RULES_BASE_SHA="$(git -C "$REPO_ROOT" merge-base "$LEKKER_BASE_REF" "$RULES_REF" 2>/dev/null || true)"
+            fi
         fi
     fi
     RULES_SOURCE="/tmp/lekker-rules-source-$$"

@@ -82,4 +82,27 @@ if (!data.projectRules.includes('review-rule')) throw new Error('projectRules lo
 if (data.baseProjectRules !== null) throw new Error('baseProjectRules should be null')
 if (!data.notes.includes('base-rules-unavailable')) throw new Error('notes lacks base-rules-unavailable')
 NODE
+# A fork older than a depth-100 clone still finds its merge-base after the deepen retry.
+git init -q -b main "$T/origin"
+G="git -C $T/origin -c user.email=t@example.com -c user.name=t -c commit.gpgsign=false"
+echo "deep-base-rule" > "$T/origin/REVIEW.md"
+$G add -A
+$G commit -q -m c0
+$G branch pr
+i=1
+while [ "$i" -le 150 ]; do $G commit -q --allow-empty -m "m$i"; i=$((i + 1)); done
+$G checkout -q pr
+echo "deep-pr-rule" >> "$T/origin/REVIEW.md"
+$G commit -q -am "pr change"
+git clone -q --depth=100 --no-single-branch "file://$T/origin" "$T/shallow"
+HOME="$T/home" LEKKER_LOCAL_REPO="$T/shallow" LEKKER_RULES_ONLY=1 \
+  LEKKER_BASE_REF=origin/main \
+  bash "$ROOT/plugins/olko-github-pr/skills/lekker-review/scripts/setup-worktree.sh" \
+  o/r origin/pr "$T/rules-deep.json" >/dev/null
+node - "$T/rules-deep.json" <<'NODE'
+const fs = require('node:fs')
+const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+if (typeof data.baseProjectRules !== 'string') throw new Error('shallow fork base rules null')
+if (data.baseProjectRules.includes('deep-pr-rule')) throw new Error('base rules came from PR tree')
+NODE
 echo "PASS: test-lekker-project-rules"
