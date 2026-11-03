@@ -260,7 +260,8 @@ function mergeFindings(a, b) {
     } else {
       delete merged.ruleQuote
     }
-  } else if (merged.rule && merged.rule === b.rule && !merged.ruleQuote && b.ruleQuote) {
+  } else if (merged.rule && merged.rule === b.rule && !merged.ruleQuote
+      && typeof b.ruleQuote === 'string' && b.ruleQuote.trim()) {
     merged.ruleQuote = b.ruleQuote
   }
 
