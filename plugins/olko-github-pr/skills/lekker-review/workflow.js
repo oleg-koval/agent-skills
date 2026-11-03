@@ -33,6 +33,7 @@ const FINDINGS_ARRAY_SCHEMA = {
     anyOf: [
       { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
       { required: ['boundary'] },
+      { required: ['rule'], properties: { rule: { pattern: '^(PROJECT:[a-z0-9]+(-[a-z0-9]+)*|weakens-project-rule)$' } } },
     ],
     properties: {
       file:        { type: 'string' },
@@ -44,6 +45,8 @@ const FINDINGS_ARRAY_SCHEMA = {
       fix:         { type: 'string' },
       precedent:   { type: 'string' },
       rule:        { type: 'string', minLength: 1, pattern: '\\S' },
+      // Verbatim project rule a PROJECT:<slug> finding enforces.
+      ruleQuote:   { type: 'string' },
       boundary:    BOUNDARY_SCHEMA,
       // Short kebab-case slug naming the class of bug ("missing-null-check").
       bugClass:    { type: 'string', minLength: 1, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' },
@@ -107,6 +110,8 @@ const VERDICT_SCHEMA = {
     verdict:     { enum: ['confirmed', 'downgraded', 'dropped'] },
     newSeverity: { enum: ['important', 'observation'] },
     reasoning:   { type: 'string' },
+    // True when the PROJECT-rule validator could not run (exit other than 0 or 1).
+    validatorUnavailable: { type: 'boolean' },
   },
 }
 
@@ -162,6 +167,23 @@ function titleTokens(title) {
 }
 
 function sameIssue(a, b) {
+  // Lens-generated slugs can differ even when they identify the same project rule.
+  const sameProjectQuote = typeof a.rule === 'string' && a.rule.startsWith('PROJECT:')
+    && typeof b.rule === 'string' && b.rule.startsWith('PROJECT:')
+    && typeof a.ruleQuote === 'string' && a.ruleQuote.trim() !== ''
+    && a.ruleQuote === b.ruleQuote
+  if (typeof a.rule === 'string' && typeof b.rule === 'string' && a.rule !== b.rule
+      && (a.rule.startsWith('PROJECT:') || b.rule.startsWith('PROJECT:'))
+      && !sameProjectQuote) {
+    return false
+  }
+  // Two quotes of one PROJECT rule that differ are two different rule passages, not one issue.
+  if (typeof a.rule === 'string' && a.rule === b.rule && a.rule.startsWith('PROJECT:')
+      && typeof a.ruleQuote === 'string' && a.ruleQuote.trim() !== ''
+      && typeof b.ruleQuote === 'string' && b.ruleQuote.trim() !== ''
+      && a.ruleQuote !== b.ruleQuote) {
+    return false
+  }
   // Merging two classes would send one class's instances to the other's fix.
   if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
     return false
@@ -181,6 +203,22 @@ const BUG_CLASS_INSTRUCTION = `BUG CLASS: give every finding a "bugClass" (short
   + ` kind of defect, e.g. missing-null-check) and "otherInstances": after the first`
   + ` hit, search the whole diff for the same pattern and list every other place as`
   + ` "file:line" (empty array when there is none). Report the class, not just the first hit.`
+
+const PROJECT_RULE_DIMENSIONS = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality',
+  'triage-quality', 'triage-logic']
+
+const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRules" from CONTEXT_FILE.`
+  + ` When a changed line violates a project rule written as a prohibition or an obligation`
+  + ` (NEVER, MUST, MUST NOT, ALWAYS, DO NOT, or a plain-English equivalent), raise a Critical`
+  + ` finding with "rule" set to "PROJECT:<short-kebab-slug>", "ruleQuote" set to the exact`
+  + ` sentence from the rules (use "baseProjectRules" when it is a string: it is the base`
+  + ` branch's copy, which the PR author cannot edit; otherwise "projectRules"), and file:line`
+  + ` on the violating line. When the diff deletes or weakens a rule line that is in`
+  + ` baseProjectRules, raise an Important finding with rule "weakens-project-rule" quoting`
+  + ` the removed line. One finding per rule,`
+  + ` with every other violating site in "otherInstances". Never quote a rule that is not in`
+  + ` the authoritative source ("baseProjectRules" when it is a string, otherwise "projectRules"). Preferences and suggestions are not hard rules: report them as ordinary`
+  + ` findings. A REVIEW.md ignore entry narrows where you look, it never disables a rule.`
 
 const BUG_CLASS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const INSTANCE_PATTERN = new RegExp(INSTANCE_PATTERN_SOURCE)
@@ -234,6 +272,14 @@ function mergeFindings(a, b) {
 
   if (!merged.rule && b.rule) {
     merged.rule = b.rule
+    if (Object.prototype.hasOwnProperty.call(b, 'ruleQuote')) {
+      merged.ruleQuote = b.ruleQuote
+    } else {
+      delete merged.ruleQuote
+    }
+  } else if (merged.rule && merged.rule === b.rule && !merged.ruleQuote
+      && typeof b.ruleQuote === 'string' && b.ruleQuote.trim()) {
+    merged.ruleQuote = b.ruleQuote
   }
 
   const agreedBy = []
@@ -547,7 +593,7 @@ if (Number(cycle) >= RETHINK_CYCLE) {
     recurringClasses: Array.isArray(recurringClasses) ? recurringClasses : [],
     findings: [],
     preExisting: [],
-    droppedCount: 0, downgradedCount: 0, hardRuleCount: 0, agentCount: 0,
+    droppedCount: 0, downgradedCount: 0, hardRuleCount: 0, validatorUnavailableCount: 0, agentCount: 0,
     proveAttemptCount: 0, provenCount: 0, suppressedCount: 0,
     outputTokens: 0, turnTokensTotal: budget.spent(),
     engine: ENGINE,
@@ -562,6 +608,7 @@ const budgetAtStart = budget.spent()
   let droppedCount = 0
   let downgradedCount = 0
   let hardRuleCount = 0
+  let validatorUnavailableCount = 0
   let provenCount = 0
   let suppressedCount = 0
   let proveAttemptCount = 0
@@ -613,6 +660,10 @@ const budgetAtStart = budget.spent()
 
     prompt += ' ' + BUG_CLASS_INSTRUCTION
 
+    if (PROJECT_RULE_DIMENSIONS.includes(dim.key)) {
+      prompt += ' ' + PROJECT_RULE_INSTRUCTION
+    }
+
     // The deterministic lint pre-flight has already collected every rule the
     // repo's own eslint config fires on this diff, and those are exactly the
     // comments the bot reviewers bill for. An agent re-reporting them costs a
@@ -650,7 +701,7 @@ const budgetAtStart = budget.spent()
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${wtDisplay}.`,
       `HOUSE_RULES_FILE: read key "houseRulesFile" from CONTEXT_FILE, then read that exact path before validating a hard rule.`,
-      `Default to dropping when uncertain.`,
+      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then check by hand that the exact quote appears in baseProjectRules when it is a string, otherwise projectRules (drop if it does not), keep the finding only if it does, set validatorUnavailable true, and judge applicability.`,
     ].join(' ')
   }
 
@@ -708,6 +759,9 @@ const budgetAtStart = budget.spent()
   // A model verdict cannot replace the required production boundary map.
   function enforceBoundary(finding) {
     if (!shouldVerify(finding, depth)) return finding
+    // A project rule or a weakened project rule is violated by the line itself; it needs no production entry point.
+    if (typeof finding.rule === 'string'
+        && (finding.rule.startsWith('PROJECT:') || finding.rule === 'weakens-project-rule')) return finding
     const boundary = finding.boundary
     const hasText = function(value) {
       return typeof value === 'string' && value.trim().length > 0
@@ -762,6 +816,11 @@ const budgetAtStart = budget.spent()
           kept.verificationStatus = 'unavailable'
           kept.verifierReasoning = 'verifier agent returned no usable result; downgraded to non-blocking'
           return kept
+        }
+
+        if (verdict.validatorUnavailable === true) {
+          validatorUnavailableCount++
+          log(`PROJECT-rule validator unavailable for ${finding.file}:${finding.line}; ${verdict.verdict === 'dropped' ? 'finding dropped' : 'finding kept'}`)
         }
 
         if (verdict.verdict === 'dropped') {
@@ -1087,6 +1146,7 @@ const budgetAtStart = budget.spent()
     droppedCount,
     downgradedCount,
     hardRuleCount,
+    validatorUnavailableCount,
     agentCount,
     proveAttemptCount,
     provenCount,

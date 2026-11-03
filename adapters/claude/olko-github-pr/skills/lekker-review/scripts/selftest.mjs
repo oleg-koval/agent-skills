@@ -696,5 +696,165 @@ check('ledger: proven prover adds one', countProveAttempt(2, { attempted: true, 
 const bareWrites = src.split('\n').filter(l => /proveAttemptCount\s*(\+\+|\+=|=[^=])/.test(l) && !/countProveAttempt\(|let proveAttemptCount/.test(l))
 check('the attempt count is written only through countProveAttempt', bareWrites, [])
 
+console.log('\nproject rules: PROJECT:<slug> findings must quote a rule that exists')
+const { spawnSync: spawnPr } = await import('node:child_process')
+const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr, symlinkSync: syPr, writeFileSync: wfPr } = await import('node:fs')
+const { tmpdir: tmpPr } = await import('node:os')
+const { validateProjectRuleFinding, validateWeakenedProjectRuleFinding, isProjectRuleTag } =
+  await import('./project-rule-findings.mjs')
+
+const fixtureDir = join(SKILL, 'scripts', 'fixtures', 'project-rules')
+const prRepo = mkPr(join(tmpPr(), 'lekker-pr-'))
+cpPr(join(fixtureDir, 'CLAUDE.md'), join(prRepo, 'CLAUDE.md'))
+const prGit = (...a) => spawnPr('git', ['-C', prRepo, '-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { encoding: 'utf8' })
+prGit('init', '-q', '-b', 'main'); prGit('add', '.'); prGit('commit', '-qm', 'rules')
+const prOut = join(prRepo, 'rules.json')
+const collected = spawnPr('bash', [join(SKILL, 'scripts', 'setup-worktree.sh'), 'o/r', 'main', prOut], {
+  encoding: 'utf8', env: { ...process.env, LEKKER_RULES_ONLY: '1', LEKKER_LOCAL_REPO: prRepo },
+})
+const planted = collected.status === 0 ? JSON.parse(rdPr(prOut, 'utf8')).projectRules : ''
+check('rules collection exits 0 on the planted fixture', collected.status, 0)
+check('projectRules carries both planted rules',
+  [planted.includes('NEVER call console.log in src/.'), planted.includes('NEVER mutate function arguments.')], [true, true])
+rmPr(prRepo, { recursive: true, force: true })
+
+const prFinding = (rule, ruleQuote) => ({ rule, ruleQuote, file: 'src/total.js', line: 2, title: 't' })
+check('accepts PROJECT:no-console-log with a matching quote',
+  validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in src/.'), planted).ok, true)
+check('accepts a quote that differs only in case and spacing',
+  validateProjectRuleFinding(prFinding('PROJECT:no-mutation', 'never  mutate   function arguments'), planted).ok, true)
+check('accepts exact short project rules',
+  validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER eval.'), '- NEVER eval.').ok, true)
+check('rejects altered identifiers in project rule quotes',
+  validateProjectRuleFinding(prFinding('PROJECT:no-unsafe', 'NEVER call unsafe().'), 'NEVER call `_unsafe()`.').ok, false)
+check('rejects altered operators in project rule quotes',
+  validateProjectRuleFinding(prFinding('PROJECT:nonnegative', 'MUST validate n = 0.'), 'MUST validate n >= 0.').ok, false)
+check('rejects a quote that is absent from projectRules',
+  validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER call eval anywhere in the codebase'), planted).ok, false)
+check('rejects a PROJECT tag with no quote',
+  validateProjectRuleFinding({ rule: 'PROJECT:no-console-log' }, planted).ok, false)
+const weakenedFinding = prFinding('weakens-project-rule', 'NEVER call console.log in src/.')
+check('accepts a weakened rule quoted from baseProjectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, planted).ok, true)
+check('rejects a weakened rule quote absent from baseProjectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, 'NEVER call eval.').ok, false)
+check('rejects a weakened rule when baseProjectRules is unavailable',
+  validateWeakenedProjectRuleFinding(weakenedFinding, undefined).ok, false)
+check('rejects a weakened rule with no quote',
+  validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
+const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
+check('verifier has a dedicated weakened-project-rule path',
+  verifierInstructions.includes('For `rule: "weakens-project-rule"`, use this dedicated path:'), true)
+check('verifier accepts deleted and replacement-line anchors',
+  verifierInstructions.includes('valid for both a deletion and a replacement'), true)
+check('verifier confirms valid weakened rules at Important severity',
+  verifierInstructions.includes("`confirmed` at the finding's Important severity"), true)
+check('rejects a malformed slug', validateProjectRuleFinding(prFinding('PROJECT:No Console', 'NEVER call console.log in src/.'), planted).ok, false)
+check('a built-in tag is left to the house-rule path', validateProjectRuleFinding({ rule: 'TS-1' }, planted).ok, true)
+const withRecalled = 'NEVER eval anywhere in src.\n## Recalled patterns\nNEVER call console.log in tests.'
+check('accepts a quote above the recalled patterns heading',
+  validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER eval anywhere in src.'), withRecalled).ok, true)
+check('rejects a quote that appears only under recalled patterns',
+  validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in tests.'), withRecalled).ok, false)
+const twoRecalled = 'NEVER eval anywhere in src.\n## Recalled patterns\nNEVER use var in src.\n## Recalled patterns\nNEVER call console.log in tests.'
+check('accepts a quote between two recalled patterns headings',
+  validateProjectRuleFinding(prFinding('PROJECT:no-var', 'NEVER use var in src.'), twoRecalled).ok, true)
+check('rejects a quote after the last recalled patterns heading when the heading appears twice',
+  validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in tests.'), twoRecalled).ok, false)
+console.log('\nworkflow: a house-rule finding and a PROJECT finding on one line are never one issue')
+const houseF = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'TS-1' }
+const projectF = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'PROJECT:no-null-total', ruleQuote: 'NEVER skip the null check on total.' }
+check('a house-rule finding and a PROJECT finding with similar titles are not sameIssue', sameIssue(houseF, projectF), false)
+check('isProjectRuleTag accepts a kebab slug and rejects an empty one',
+  [isProjectRuleTag('PROJECT:a-b'), isProjectRuleTag('PROJECT:')], [true, false])
+check('a PROJECT tag is a hard rule', isHardRule({ rule: 'PROJECT:no-console-log' }), true)
+const quoteA = { file: 'src/total.js', line: 2, title: 'Missing null check on total', rule: 'PROJECT:no-null-total', ruleQuote: 'NEVER skip the null check on total.' }
+const quoteB = { ...quoteA, ruleQuote: 'ALWAYS validate total before use.' }
+check('two different quotes of one PROJECT rule are not sameIssue', sameIssue(quoteA, quoteB), false)
+check('the same quote of one PROJECT rule is still sameIssue', sameIssue(quoteA, { ...quoteA }), true)
+
+// Prompt guard: every lens that reads projectRules is told to raise the tag.
+const lensFiles = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
+check('every lens file that reads projectRules carries the PROJECT instruction',
+  lensFiles.filter(n => {
+    const t = rdPr(join(SKILL, 'references', 'agents', `${n}.md`), 'utf8')
+    return t.includes('"projectRules"') && !t.includes('PROJECT:<slug>')
+  }), [])
+// Behavioural: lift the real reviewPrompt and build prompts with it. Removing the
+// append in reviewPrompt makes the listed-lens check fail.
+function liftBlock(name) {
+  const m = new RegExp(`^const ${name} = [\\s\\S]*?\\n\\n`, 'm').exec(src)
+  if (!m) throw new Error(`selftest: const ${name} not found in workflow.js`)
+  return m[0]
+}
+const buildPrompt = new Function(
+  'dim', 'SUPPRESSED', 'prevSha',
+  [liftBlock('PROJECT_RULE_DIMENSIONS'), liftBlock('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
+    `const targetMetadata = '{}', promptDir = 'p', repoSlug = 'o/r', prNumber = 1, prUrl = 'u',
+       diffFile = 'd', contextFile = 'c', wtDisplay = 'w'`,
+    lift('reviewPrompt'), 'return reviewPrompt(dim)'].join('\n'),
+)
+const promptFor = key => buildPrompt({ key, file: `${key}.md` }, [], null)
+check('a listed lens prompt carries the PROJECT instruction',
+  lensFiles.map(n => promptFor(n).includes('"PROJECT:<short-kebab-slug>"')), lensFiles.map(() => true))
+check('an unlisted lens prompt does not', promptFor('deps').includes('PROJECT:<short-kebab-slug>'), false)
+
+console.log('\nproject rules: dedup keeps the tag and its quote together')
+const { dedup: dedupPr } = new Function(preamble + '\nreturn { dedup }')()
+const plainF = { file: 'src/a.js', line: 2, severity: 'important', title: 'console.log left in src', bugClass: 'console-log', description: 'x', badCode: 'console.log(1)', fix: 'f', otherInstances: [] }
+const taggedF = { ...plainF, severity: 'critical', rule: 'PROJECT:no-console-log', ruleQuote: 'NEVER call console.log in src/.' }
+const taggedWithoutQuote = { ...taggedF }
+delete taggedWithoutQuote.ruleQuote
+for (const [label, pair] of [['plain first', [plainF, taggedF]], ['tagged first', [taggedF, plainF]]]) {
+  const [m] = dedupPr(pair)
+  check(`merge keeps rule and ruleQuote (${label})`, [m.rule, m.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
+}
+const [mergedQuote] = dedupPr([taggedWithoutQuote, taggedF])
+check('merge fills missing quote for the same project rule',
+  [mergedQuote.rule, mergedQuote.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
+
+const strayQuote = { ...plainF, ruleQuote: 'stale quote that belongs to no rule' }
+const [mergedStray] = dedupPr([strayQuote, taggedF])
+check('a stray quote on an untagged side does not survive the merge',
+  [mergedStray.rule, mergedStray.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
+const [mergedLate] = dedupPr([{ ...plainF, rule: 'PROJECT:no-console-log' }, taggedF])
+check('a quote from a later finding fills a quote-less same rule', mergedLate.ruleQuote, 'NEVER call console.log in src/.')
+const otherRule = { ...taggedF, rule: 'PROJECT:no-mutation', ruleQuote: 'NEVER mutate function arguments.' }
+check('two different PROJECT rules stay separate through dedup', dedupPr([taggedF, otherRule]).length, 2)
+const [mergedNoQuote] = dedupPr([strayQuote, { ...taggedF, ruleQuote: undefined }])
+check('a tagged side without a quote leaves no stray quote behind', mergedNoQuote.ruleQuote, undefined)
+
+console.log('\nproject rules: validator crash is exit 2, rejection is exit 1')
+const crashDir = mkPr(join(tmpPr(), 'lekker-crash-'))
+const okCtx = join(crashDir, 'ctx.json'), badJson = join(crashDir, 'bad.json'), fnd = join(crashDir, 'f.json')
+wfPr(okCtx, JSON.stringify({ projectRules: 'NEVER call console.log in src/.' }))
+wfPr(badJson, '{not json')
+wfPr(fnd, JSON.stringify({ rule: 'PROJECT:no-console-log', ruleQuote: 'NEVER call console.log in src/.' }))
+const runV = (f, c) => spawnPr('node', [join(SKILL, 'scripts', 'project-rule-findings.mjs'), f, c], { encoding: 'utf8' }).status
+check('exit 0 on a valid finding', runV(fnd, okCtx), 0)
+// A PR that deletes the rule must not make its own violation pass: base rules win.
+const spoofCtx = join(crashDir, 'spoof.json')
+wfPr(spoofCtx, JSON.stringify({ projectRules: 'nothing here', baseProjectRules: 'NEVER call console.log in src/.' }))
+check('quote found in base rules is accepted even when the PR tree dropped it', runV(fnd, spoofCtx), 0)
+const addedCtx = join(crashDir, 'added.json')
+wfPr(addedCtx, JSON.stringify({ projectRules: 'NEVER call console.log in src/.', baseProjectRules: '' }))
+check('a rule only the PR tree contains is rejected when base rules exist', runV(fnd, addedCtx), 1)
+const weakenedFile = join(crashDir, 'weakened.json')
+wfPr(weakenedFile, JSON.stringify(weakenedFinding))
+check('validator accepts a weakened-rule quote found in baseProjectRules',
+  runV(weakenedFile, spoofCtx), 0)
+check('validator rejects a weakened-rule quote found only in projectRules',
+  runV(weakenedFile, addedCtx), 1)
+wfPr(join(crashDir, 'rej.json'), JSON.stringify({ rule: 'PROJECT:no-eval', ruleQuote: 'NEVER call eval anywhere in code' }))
+check('exit 1 on a rejected finding', runV(join(crashDir, 'rej.json'), okCtx), 1)
+const symlinkValidator = join(crashDir, 'project-rule-findings.mjs')
+syPr(join(SKILL, 'scripts', 'project-rule-findings.mjs'), symlinkValidator)
+check('exit 1 on a rejected finding through a symlink',
+  spawnPr('node', [symlinkValidator, join(crashDir, 'rej.json'), okCtx], { encoding: 'utf8' }).status, 1)
+check('exit 2 on a missing context file', runV(fnd, join(crashDir, 'nope.json')), 2)
+check('exit 2 on a malformed context file', runV(fnd, badJson), 2)
+check('exit 2 on a malformed finding file', runV(badJson, okCtx), 2)
+rmPr(crashDir, { recursive: true, force: true })
+
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)
