@@ -652,7 +652,12 @@ test('dimension schemas enforce structured metadata contracts', async () => {
   assert.deepEqual(findingSchema.anyOf, [
     { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
     { required: ['boundary'] },
+    { required: ['rule'], properties: { rule: { pattern: '^(PROJECT:[a-z0-9]+(-[a-z0-9]+)*|weakens-project-rule)$' } } },
   ])
+  const ruleBoundaryException = findingSchema.anyOf[2].properties.rule.pattern
+  assert.match('PROJECT:no-console-log', new RegExp(ruleBoundaryException))
+  assert.match('weakens-project-rule', new RegExp(ruleBoundaryException))
+  assert.doesNotMatch('missing-null-check', new RegExp(ruleBoundaryException))
 })
 
 test('artifact contract renders passed-proof counter-evidence', () => {

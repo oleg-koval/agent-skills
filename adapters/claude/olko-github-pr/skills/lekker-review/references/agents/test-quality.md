@@ -169,6 +169,9 @@ Return the review summary through these structured fields in addition to
 EXISTING_REVIEWS: read key "existingReviews" from CONTEXT_FILE (awareness only, skip findings already raised)
 
 PROJECT_RULES to verify: read key "projectRules" from CONTEXT_FILE.
+A changed line that violates a prohibition or obligation in PROJECT_RULES is a Critical
+finding tagged `rule: "PROJECT:<slug>"` with `ruleQuote` set to the exact rule sentence
+(see PROJECT RULES AS HARD RULES in the task message).
 Diff: read DIFF_FILE. List every test file/spec
 Worktree: WORKTREE_PATH is given in your task message (null in scan mode, diff only).
 
