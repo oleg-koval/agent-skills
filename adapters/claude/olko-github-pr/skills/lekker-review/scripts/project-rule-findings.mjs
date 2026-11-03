@@ -70,16 +70,31 @@ export function validateProjectRuleFinding(finding, projectRules) {
   return { ok: true, reason: 'quote found in projectRules' }
 }
 
-// Still present means the same rule line survives unchanged: a PR that appends an exception to the line
-// leaves the old quote as a substring, so substring matching would hide a real weakening.
-// A quote spanning several lines has no single containing line, so it falls back to the substring check.
+// Still present means the quoted rule survives and still ends its line: text added after
+// the quote (an exception) is a weakening, while a changed list marker, indent or wrapping is not.
+// Lines are joined so a rule wrapped across lines still matches as one run of words.
+function joinRuleLines(text) {
+  const lines = stripRecalledPatterns(text).split(/\r?\n/).map(normalizeQuote).filter(line => line !== '')
+  const lineEnds = lines.reduce((ends, line, i) => [...ends, (i === 0 ? 0 : ends[i - 1] + 1) + line.length], [])
+  return { text: lines.join(' '), lineEnds }
+}
+
+function occurrences(haystack, needle, from = 0) {
+  const at = haystack.indexOf(needle, from)
+  return at === -1 ? [] : [at, ...occurrences(haystack, needle, at + 1)]
+}
+
 export function ruleLineStillPresent(quote, baseProjectRules, projectRules) {
   const needle = normalizeQuote(quote)
-  const normalizedLines = text => stripRecalledPatterns(text).split(/\r?\n/).map(normalizeQuote).filter(line => line !== '')
-  const baseLines = normalizedLines(baseProjectRules).filter(line => line.includes(needle))
-  if (baseLines.length === 0) return quoteAppearsIn(quote, projectRules)
-  const prLines = new Set(normalizedLines(projectRules))
-  return baseLines.some(line => prLines.has(line))
+  const base = joinRuleLines(baseProjectRules)
+  const starts = needle ? occurrences(base.text, needle) : []
+  if (starts.length === 0) return quoteAppearsIn(quote, projectRules)
+  const pr = joinRuleLines(projectRules)
+  return starts.some(start => {
+    const lineEnd = base.lineEnds.find(end => end >= start + needle.length)
+    const anchored = base.text.slice(start, lineEnd)
+    return occurrences(pr.text, anchored).some(at => pr.lineEnds.includes(at + anchored.length))
+  })
 }
 
 // `unavailable` marks a missing input, not a judgement on the finding: the CLI maps it to exit 2.

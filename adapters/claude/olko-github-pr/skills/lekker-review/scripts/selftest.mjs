@@ -754,6 +754,20 @@ check('accepts a weakening that adds a period and an Exception sentence on the s
   validateWeakenedProjectRuleFinding(evalFinding, evalBase, '- NEVER call eval in src. Exception: trusted input.').ok, true)
 check('rejects a weakened rule whose line is unchanged among other lines',
   validateWeakenedProjectRuleFinding(evalFinding, evalBase, '# Rules\n- NEVER call eval in src\n- Be kind').reason, 'rule still present in projectRules')
+const wrappedBase = '- After ANY catalog change, run build and commit\n  the result'
+const wrappedFinding = prFinding('weakens-project-rule', 'After ANY catalog change, run build and commit the result')
+check('accepts a weakening appended to the last line of a wrapped rule',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase, '- After ANY catalog change, run build and commit\n  the result, except docs-only changes').ok, true)
+check('rejects an unchanged wrapped rule',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase, wrappedBase).reason, 'rule still present in projectRules')
+check('rejects a wrapped rule re-wrapped at a different column',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase, '- After ANY catalog change, run build\n  and commit the result').reason, 'rule still present in projectRules')
+check('rejects a rule whose bullet marker changed to an asterisk',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '* NEVER call eval in src').reason, 'rule still present in projectRules')
+check('rejects a rule whose bullet marker changed to a number',
+  validateWeakenedProjectRuleFinding(evalFinding, '1. NEVER call eval in src', '1. NEVER call eval in src').reason, 'rule still present in projectRules')
+check('rejects a bullet rule renumbered in the PR',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '1. NEVER call eval in src').reason, 'rule still present in projectRules')
 check('rejects a weakened rule with no quote',
   validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
 const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
@@ -797,7 +811,7 @@ check('different-slug same-quote findings merge into one finding that keeps rule
 check('different-slug different-quote findings stay separate',
   sameIssue(quoteA, { ...slugB, ruleQuote: 'ALWAYS validate total before use.' }), false)
 const quoteSamples = ['NEVER call `console.log` in src/.', '> **Never** skip\n  the   check', '- Use _early_ returns', '## Heading rule text']
-check('workflow normalizeRuleQuote agrees with the validator normalizeQuote ',
+check('workflow normalizeRuleQuote agrees with the validator normalizeQuote',
   quoteSamples.map(q => normalizeRuleQuote(q)), quoteSamples.map(q => normalizeQuote(q)))
 check('quotes differing only by trailing punctuation are not sameIssue',
   sameIssue(quoteA, { ...quoteA, ruleQuote: 'NEVER skip the null check on total' }), false)
