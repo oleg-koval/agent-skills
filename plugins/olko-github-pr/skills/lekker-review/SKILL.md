@@ -469,12 +469,13 @@ Fire both tracks in the same turn.
 At scan depth, collect review guidance without creating a worktree:
 
 ```bash
-LEKKER_RULES_ONLY=1 ${SKILL_ROOT}/scripts/setup-worktree.sh \
+LEKKER_RULES_ONLY=1 LEKKER_BASE_REF=origin/<BASE_BRANCH> \
+  ${SKILL_ROOT}/scripts/setup-worktree.sh \
   <REPO_SLUG> <PR_BRANCH> <scratchpad>/rules.json
 ```
 
 Read `projectRules` from `rules.json` into `context.json`. This archive-only
-mode reads the PR tree and does not run static checks.
+mode fetches the PR base for `baseProjectRules` and does not run static checks.
 
 Run via Bash with `run_in_background`:
 

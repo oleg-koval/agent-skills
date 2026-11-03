@@ -163,13 +163,27 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
             exit 1
         fi
     fi
+    if [[ -n "${LEKKER_BASE_REF:-}" ]]; then
+        if [[ -z "$LOCAL_REPO" && "$LEKKER_BASE_REF" == origin/* ]]; then
+            BASE_BRANCH="${LEKKER_BASE_REF#origin/}"
+            if ! git -C "$REPO_ROOT" fetch origin \
+                "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}" 2>/dev/null; then
+                printf 'ERROR: could not fetch base ref %s for rules-only scan\n' "$LEKKER_BASE_REF" >&2
+                exit 1
+            fi
+        fi
+        if ! git -C "$REPO_ROOT" rev-parse --verify -q "${LEKKER_BASE_REF}^{commit}" >/dev/null; then
+            printf 'ERROR: base ref %s does not resolve for rules-only scan\n' "$LEKKER_BASE_REF" >&2
+            exit 1
+        fi
+    fi
     RULES_SOURCE="/tmp/lekker-rules-source-$$"
     mkdir -p "$RULES_SOURCE"
     git -C "$REPO_ROOT" archive "$RULES_REF" | tar -x -C "$RULES_SOURCE"
     PROJECT_RULES="$(collect_project_rules "$RULES_SOURCE")"
     BASE_PROJECT_RULES=""
     HAVE_BASE_RULES=0
-    if [[ -n "${LEKKER_BASE_REF:-}" ]] && git -C "$REPO_ROOT" rev-parse --verify -q "${LEKKER_BASE_REF}^{commit}" >/dev/null; then
+    if [[ -n "${LEKKER_BASE_REF:-}" ]]; then
         if BASE_PROJECT_RULES="$(collect_project_rules_at_ref "$REPO_ROOT" "$LEKKER_BASE_REF")"; then
             HAVE_BASE_RULES=1
         else

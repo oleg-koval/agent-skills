@@ -19,6 +19,10 @@ ln -s "$T/missing-rules" "$T/repo/leak/AGENTS.md"
 git -C "$T/repo" add -A
 git -C "$T/repo" -c user.email=t@example.com -c user.name=t -c commit.gpgsign=false \
   commit -q -m init
+git -C "$T/repo" branch base
+echo "pr-only-rule" >> "$T/repo/REVIEW.md"
+git -C "$T/repo" -c user.email=t@example.com -c user.name=t -c commit.gpgsign=false \
+  commit -q -am "PR-specific rule"
 mkdir "$T/home"
 
 HOME="$T/home" LEKKER_LOCAL_REPO="$T/repo" \
@@ -39,6 +43,7 @@ if printf '%s' "$rules" | grep -q ignored-rule; then
 fi
 # Scan mode archives guidance without creating a worktree.
 HOME="$T/home" LEKKER_LOCAL_REPO="$T/repo" LEKKER_RULES_ONLY=1 \
+  LEKKER_BASE_REF=refs/heads/base \
   bash "$ROOT/plugins/olko-github-pr/skills/lekker-review/scripts/setup-worktree.sh" \
   o/r HEAD "$T/rules-only.json" >/dev/null
 node - "$T/rules-only.json" <<'NODE'
@@ -46,5 +51,7 @@ const fs = require('node:fs')
 const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
 if (!data.projectRules.includes('review-rule')) throw new Error('scan guidance missing')
 if (data.projectRules.includes('external-secret-sentinel') || data.projectRules.includes('leak/AGENTS.md')) throw new Error('symlink guidance leaked')
+if (!data.baseProjectRules || !data.baseProjectRules.includes('review-rule')) throw new Error('base scan guidance missing')
+if (data.baseProjectRules.includes('pr-only-rule')) throw new Error('base scan guidance came from PR tree')
 NODE
 echo "PASS: test-lekker-project-rules"
