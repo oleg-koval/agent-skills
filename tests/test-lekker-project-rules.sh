@@ -54,4 +54,32 @@ if (data.projectRules.includes('external-secret-sentinel') || data.projectRules.
 if (!data.baseProjectRules || !data.baseProjectRules.includes('review-rule')) throw new Error('base scan guidance missing')
 if (data.baseProjectRules.includes('pr-only-rule')) throw new Error('base scan guidance came from PR tree')
 NODE
+# Rules added to the base after the fork are not the PR's base rules.
+git -C "$T/repo" checkout -q base
+echo "base-later-rule" >> "$T/repo/REVIEW.md"
+git -C "$T/repo" -c user.email=t@example.com -c user.name=t -c commit.gpgsign=false \
+  commit -q -am "base gains a rule after the fork"
+git -C "$T/repo" checkout -q -
+HOME="$T/home" LEKKER_LOCAL_REPO="$T/repo" LEKKER_RULES_ONLY=1 \
+  LEKKER_BASE_REF=refs/heads/base \
+  bash "$ROOT/plugins/olko-github-pr/skills/lekker-review/scripts/setup-worktree.sh" \
+  o/r HEAD "$T/rules-fork.json" >/dev/null
+node - "$T/rules-fork.json" <<'NODE'
+const fs = require('node:fs')
+const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+if (!data.baseProjectRules || !data.baseProjectRules.includes('review-rule')) throw new Error('fork base rules missing')
+if (data.baseProjectRules.includes('base-later-rule')) throw new Error('base tip rule leaked into baseProjectRules')
+NODE
+# An unresolvable base degrades instead of aborting the scan.
+HOME="$T/home" LEKKER_LOCAL_REPO="$T/repo" LEKKER_RULES_ONLY=1 \
+  LEKKER_BASE_REF=refs/heads/does-not-exist \
+  bash "$ROOT/plugins/olko-github-pr/skills/lekker-review/scripts/setup-worktree.sh" \
+  o/r HEAD "$T/rules-nobase.json" >/dev/null
+node - "$T/rules-nobase.json" <<'NODE'
+const fs = require('node:fs')
+const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+if (!data.projectRules.includes('review-rule')) throw new Error('projectRules lost on base failure')
+if (data.baseProjectRules !== null) throw new Error('baseProjectRules should be null')
+if (!data.notes.includes('base-rules-unavailable')) throw new Error('notes lacks base-rules-unavailable')
+NODE
 echo "PASS: test-lekker-project-rules"

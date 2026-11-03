@@ -476,7 +476,7 @@ LEKKER_RULES_ONLY=1 LEKKER_BASE_REF=origin/<BASE_BRANCH> \
 ```
 
 Read `projectRules` from `rules.json` into `context.json`. This archive-only
-mode fetches the PR base for `baseProjectRules` and does not run static checks.
+mode fetches the PR base and reads `baseProjectRules` at the merge base with the PR branch (as full mode does), not at the base tip. If the base cannot be fetched, resolved or merge-based, `baseProjectRules` is `null` and `notes` carries `base-rules-unavailable`; the scan still succeeds. It does not run static checks.
 
 Run via Bash with `run_in_background`:
 

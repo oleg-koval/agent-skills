@@ -41,9 +41,8 @@ const RECALLED_PATTERNS_HEADING = /^\s{0,3}#{1,6}\s+recalled patterns\s*$/gim
 // SKILL.md appends that heading at the end; an earlier one inside a rules file must not drop the rules after it.
 export function stripRecalledPatterns(text) {
   const source = String(text ?? '')
-  let cut = -1
-  for (const match of source.matchAll(RECALLED_PATTERNS_HEADING)) cut = match.index
-  return cut === -1 ? source : source.slice(0, cut)
+  const last = [...source.matchAll(RECALLED_PATTERNS_HEADING)].at(-1)
+  return last ? source.slice(0, last.index) : source
 }
 
 export function quoteAppearsIn(quote, projectRules) {
@@ -71,18 +70,22 @@ export function validateProjectRuleFinding(finding, projectRules) {
   return { ok: true, reason: 'quote found in projectRules' }
 }
 
-export function validateWeakenedProjectRuleFinding(finding, baseProjectRules) {
+// `unavailable` marks a missing input, not a judgement on the finding: the CLI maps it to exit 2.
+export function validateWeakenedProjectRuleFinding(finding, baseProjectRules, projectRules) {
   if (finding?.rule !== 'weakens-project-rule') {
     return { ok: true, reason: 'not a weakened project rule' }
   }
   if (typeof baseProjectRules !== 'string') {
-    return { ok: false, reason: 'baseProjectRules unavailable' }
+    return { ok: false, unavailable: true, reason: 'baseProjectRules unavailable' }
   }
   if (typeof finding.ruleQuote !== 'string' || finding.ruleQuote.trim() === '') {
     return { ok: false, reason: 'missing ruleQuote: quote the removed project rule' }
   }
   if (!quoteAppearsIn(finding.ruleQuote, baseProjectRules)) {
     return { ok: false, reason: 'ruleQuote not found in baseProjectRules' }
+  }
+  if (typeof projectRules === 'string' && quoteAppearsIn(finding.ruleQuote, projectRules)) {
+    return { ok: false, reason: 'rule still present in projectRules' }
   }
   return { ok: true, reason: 'quote found in baseProjectRules' }
 }
@@ -97,8 +100,9 @@ function main(argv) {
     const finding = JSON.parse(readFileSync(findingPath, 'utf8'))
     const context = JSON.parse(readFileSync(contextPath, 'utf8'))
     if (finding?.rule === 'weakens-project-rule') {
-      const result = validateWeakenedProjectRuleFinding(finding, context.baseProjectRules)
+      const result = validateWeakenedProjectRuleFinding(finding, context.baseProjectRules, context.projectRules)
       console.log(JSON.stringify(result))
+      if (result.unavailable) return 2
       return result.ok ? 0 : 1
     }
     // Base-branch rules are authoritative; PR-tree rules only when no base was resolved.

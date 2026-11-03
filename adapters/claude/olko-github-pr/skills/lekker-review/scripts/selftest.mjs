@@ -52,11 +52,13 @@ const preamble = [
   "const SEVERITY_RANK = { observation: 0, idiomatic: 1, important: 2, critical: 3 }",
   // hardRuleCorroborated is likewise gone from the current file and kept in this
   // list for the same reason: an older workflow.js calls it from isHardRule.
-  ...['titleTokens', 'sameIssue', 'nearbyLines', 'spanWithinWindow', 'hardRuleCorroborated',
+  ...['titleTokens', 'normalizeRuleQuote', 'weakenedRuleSeverity', 'sameIssue', 'nearbyLines', 'spanWithinWindow', 'hardRuleCorroborated',
       'isHardRule', 'longest', 'mergeFindings', 'dedup', 'shouldVerify', 'isProveAttempt', 'countProveAttempt'].map(n => {
         // countProveAttempt is called directly by the checks, so its stub returns NaN and the
         // checks FAIL with a diff instead of the run crashing on an older workflow.js.
         try { return lift(n) } catch {
+          if (n === 'normalizeRuleQuote') return "function normalizeRuleQuote() { return 'absent from this workflow.js' }"
+          if (n === 'weakenedRuleSeverity') return "function weakenedRuleSeverity() { return 'absent from this workflow.js' }"
           return n === 'countProveAttempt'
             ? 'function countProveAttempt() { return NaN }'
             : `function ${n}() { throw new Error('${n} absent from this workflow.js') }`
@@ -64,8 +66,8 @@ const preamble = [
       }),
 ].join('\n')
 
-const { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt } =
-  new Function(preamble + '\nreturn { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt }')()
+const { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt, normalizeRuleQuote, weakenedRuleSeverity } =
+  new Function(preamble + '\nreturn { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt, normalizeRuleQuote, weakenedRuleSeverity }')()
 
 let failed = 0
 function check(name, actual, expected) {
@@ -700,7 +702,7 @@ console.log('\nproject rules: PROJECT:<slug> findings must quote a rule that exi
 const { spawnSync: spawnPr } = await import('node:child_process')
 const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr, symlinkSync: syPr, writeFileSync: wfPr } = await import('node:fs')
 const { tmpdir: tmpPr } = await import('node:os')
-const { validateProjectRuleFinding, validateWeakenedProjectRuleFinding, isProjectRuleTag } =
+const { validateProjectRuleFinding, validateWeakenedProjectRuleFinding, isProjectRuleTag, normalizeQuote } =
   await import('./project-rule-findings.mjs')
 
 const fixtureDir = join(SKILL, 'scripts', 'fixtures', 'project-rules')
@@ -740,6 +742,10 @@ check('rejects a weakened rule quote absent from baseProjectRules',
   validateWeakenedProjectRuleFinding(weakenedFinding, 'NEVER call eval.').ok, false)
 check('rejects a weakened rule when baseProjectRules is unavailable',
   validateWeakenedProjectRuleFinding(weakenedFinding, undefined).ok, false)
+check('rejects a weakened rule whose quote is still in projectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, planted, planted).ok, false)
+check('accepts a weakened rule whose quote is gone from projectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, planted, 'nothing here').ok, true)
 check('rejects a weakened rule with no quote',
   validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
 const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
@@ -772,6 +778,23 @@ const quoteA = { file: 'src/total.js', line: 2, title: 'Missing null check on to
 const quoteB = { ...quoteA, ruleQuote: 'ALWAYS validate total before use.' }
 check('two different quotes of one PROJECT rule are not sameIssue', sameIssue(quoteA, quoteB), false)
 check('the same quote of one PROJECT rule is still sameIssue', sameIssue(quoteA, { ...quoteA }), true)
+check('the same slug with quotes equal after normalisation is sameIssue',
+  sameIssue(quoteA, { ...quoteA, ruleQuote: '  never   SKIP the null check on total  ' }), true)
+const slugB = { ...quoteA, rule: 'PROJECT:null-total-guard', ruleQuote: '**Never skip** the null check on total' }
+check('two PROJECT slugs with one quote modulo case, whitespace and punctuation are sameIssue', sameIssue(quoteA, slugB), true)
+const [mergedSlugs] = dedup([{ ...quoteA, severity: 'important' }, { ...slugB, severity: 'important' }])
+check('different-slug same-quote findings merge into one finding that keeps rule and quote',
+  [dedup([{ ...quoteA, severity: 'important' }, { ...slugB, severity: 'important' }]).length, mergedSlugs.rule, typeof mergedSlugs.ruleQuote],
+  [1, 'PROJECT:no-null-total', 'string'])
+check('different-slug different-quote findings stay separate',
+  sameIssue(quoteA, { ...slugB, ruleQuote: 'ALWAYS validate total before use.' }), false)
+const quoteSamples = ['NEVER call `console.log` in src/.', '> **Never** skip\n  the   check', '- Use _early_ returns', '## Heading rule text']
+check('workflow normalizeRuleQuote agrees with the validator normalizeQuote (modulo trailing punctuation)',
+  quoteSamples.map(q => normalizeRuleQuote(q)), quoteSamples.map(q => normalizeQuote(q).replace(/[.,;:!?]+$/, '')))
+console.log('\nworkflow: a confirmed weakened-rule finding is always Important')
+check('critical from the lens becomes important for weakens-project-rule',
+  weakenedRuleSeverity({ rule: 'weakens-project-rule' }, 'critical'), 'important')
+check('other rules keep the severity', weakenedRuleSeverity({ rule: 'TS-1' }, 'critical'), 'critical')
 
 // Prompt guard: every lens that reads projectRules is told to raise the tag.
 const lensFiles = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
@@ -787,9 +810,11 @@ function liftBlock(name) {
   if (!m) throw new Error(`selftest: const ${name} not found in workflow.js`)
   return m[0]
 }
+// An older workflow.js lacks these constants; fall back so the checks FAIL instead of the suite crashing.
+const liftBlockOr = name => { try { return liftBlock(name) } catch { return `const ${name} = ''\n` } }
 const buildPrompt = new Function(
   'dim', 'SUPPRESSED', 'prevSha',
-  [liftBlock('PROJECT_RULE_DIMENSIONS'), liftBlock('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
+  [liftBlockOr('PROJECT_RULE_DIMENSIONS'), liftBlockOr('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
     `const targetMetadata = '{}', promptDir = 'p', repoSlug = 'o/r', prNumber = 1, prUrl = 'u',
        diffFile = 'd', contextFile = 'c', wtDisplay = 'w'`,
     lift('reviewPrompt'), 'return reviewPrompt(dim)'].join('\n'),
@@ -846,6 +871,12 @@ check('validator accepts a weakened-rule quote found in baseProjectRules',
 check('validator rejects a weakened-rule quote found only in projectRules',
   runV(weakenedFile, addedCtx), 1)
 wfPr(join(crashDir, 'rej.json'), JSON.stringify({ rule: 'PROJECT:no-eval', ruleQuote: 'NEVER call eval anywhere in code' }))
+const noBaseCtx = join(crashDir, 'nobase.json')
+wfPr(noBaseCtx, JSON.stringify({ projectRules: 'nothing here' }))
+check('exit 2 on a weakened finding when baseProjectRules is missing', runV(weakenedFile, noBaseCtx), 2)
+const stillCtx = join(crashDir, 'still.json')
+wfPr(stillCtx, JSON.stringify({ projectRules: 'NEVER call console.log in src/.', baseProjectRules: 'NEVER call console.log in src/.' }))
+check('exit 1 on a weakened finding whose rule is still in projectRules', runV(weakenedFile, stillCtx), 1)
 check('exit 1 on a rejected finding', runV(join(crashDir, 'rej.json'), okCtx), 1)
 const symlinkValidator = join(crashDir, 'project-rule-findings.mjs')
 syPr(join(SKILL, 'scripts', 'project-rule-findings.mjs'), symlinkValidator)

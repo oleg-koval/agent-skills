@@ -166,12 +166,32 @@ function titleTokens(title) {
   return words.filter(function(w) { return w.length > 2 })
 }
 
+// Same normalisation as normalizeQuote in scripts/project-rule-findings.mjs; workflow.js cannot import it.
+// The selftest asserts the two agree. Trailing punctuation is also ignored here: a lens may end a quote differently.
+function normalizeRuleQuote(text) {
+  return String(text == null ? '' : text)
+    .replace(/(^|\n)\s{0,3}#{1,6}\s+/g, '$1')
+    .replace(/(^|\n)\s{0,3}>\s?/g, '$1')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/(^|[\s([{])(\*{1,2}|_{1,2})(\S(?:.*?\S)?)\2(?=$|[\s.,;:!?)}\]])/g, '$1$3')
+    .replace(/^\s*[-+]\s+/gm, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/[.,;:!?]+$/, '')
+}
+
+function weakenedRuleSeverity(finding, severity) {
+  return finding.rule === 'weakens-project-rule' ? 'important' : severity
+}
+
 function sameIssue(a, b) {
+  const qa = normalizeRuleQuote(a.ruleQuote)
+  const qb = normalizeRuleQuote(b.ruleQuote)
   // Lens-generated slugs can differ even when they identify the same project rule.
   const sameProjectQuote = typeof a.rule === 'string' && a.rule.startsWith('PROJECT:')
     && typeof b.rule === 'string' && b.rule.startsWith('PROJECT:')
-    && typeof a.ruleQuote === 'string' && a.ruleQuote.trim() !== ''
-    && a.ruleQuote === b.ruleQuote
+    && qa !== '' && qa === qb
   if (typeof a.rule === 'string' && typeof b.rule === 'string' && a.rule !== b.rule
       && (a.rule.startsWith('PROJECT:') || b.rule.startsWith('PROJECT:'))
       && !sameProjectQuote) {
@@ -179,9 +199,7 @@ function sameIssue(a, b) {
   }
   // Two quotes of one PROJECT rule that differ are two different rule passages, not one issue.
   if (typeof a.rule === 'string' && a.rule === b.rule && a.rule.startsWith('PROJECT:')
-      && typeof a.ruleQuote === 'string' && a.ruleQuote.trim() !== ''
-      && typeof b.ruleQuote === 'string' && b.ruleQuote.trim() !== ''
-      && a.ruleQuote !== b.ruleQuote) {
+      && qa !== '' && qb !== '' && qa !== qb) {
     return false
   }
   // Merging two classes would send one class's instances to the other's fix.
@@ -701,7 +719,7 @@ const budgetAtStart = budget.spent()
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${wtDisplay}.`,
       `HOUSE_RULES_FILE: read key "houseRulesFile" from CONTEXT_FILE, then read that exact path before validating a hard rule.`,
-      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then check by hand that the exact quote appears in baseProjectRules when it is a string, otherwise projectRules (drop if it does not), keep the finding only if it does, set validatorUnavailable true, and judge applicability.`,
+      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then check by hand that the exact quote appears in baseProjectRules when it is a string, otherwise projectRules (drop if it does not), keep the finding only if it does, set validatorUnavailable true, and judge applicability. For rule "weakens-project-rule" check baseProjectRules ONLY: drop it when baseProjectRules is not a string or the quote is absent there, and never consult projectRules.`,
     ].join(' ')
   }
 
@@ -839,6 +857,7 @@ const budgetAtStart = budget.spent()
 
         // confirmed
         const confirmed = Object.assign({}, finding)
+        confirmed.severity = weakenedRuleSeverity(finding, confirmed.severity)
         confirmed.verificationStatus = isHardRule(finding) ? 'hard-rule-confirmed' : 'confirmed'
         confirmed.verifierReasoning = verdict.reasoning
         return confirmed

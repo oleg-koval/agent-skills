@@ -163,18 +163,20 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
             exit 1
         fi
     fi
+    # Base rules are best effort: a failure here keeps projectRules and nulls baseProjectRules,
+    # because the base copy only hardens validation and must not abort the scan.
+    RULES_BASE_SHA=""
     if [[ -n "${LEKKER_BASE_REF:-}" ]]; then
+        BASE_FETCH_OK=1
         if [[ -z "$LOCAL_REPO" && "$LEKKER_BASE_REF" == origin/* ]]; then
             BASE_BRANCH="${LEKKER_BASE_REF#origin/}"
-            if ! git -C "$REPO_ROOT" fetch origin \
-                "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}" 2>/dev/null; then
-                printf 'ERROR: could not fetch base ref %s for rules-only scan\n' "$LEKKER_BASE_REF" >&2
-                exit 1
-            fi
+            git -C "$REPO_ROOT" fetch origin \
+                "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}" 2>/dev/null || BASE_FETCH_OK=0
         fi
-        if ! git -C "$REPO_ROOT" rev-parse --verify -q "${LEKKER_BASE_REF}^{commit}" >/dev/null; then
-            printf 'ERROR: base ref %s does not resolve for rules-only scan\n' "$LEKKER_BASE_REF" >&2
-            exit 1
+        # Fork point, as in full mode: the base tip may carry rules added after the PR branched.
+        if [[ "$BASE_FETCH_OK" == "1" ]] \
+            && git -C "$REPO_ROOT" rev-parse --verify -q "${LEKKER_BASE_REF}^{commit}" >/dev/null; then
+            RULES_BASE_SHA="$(git -C "$REPO_ROOT" merge-base "$LEKKER_BASE_REF" "$RULES_REF" 2>/dev/null || true)"
         fi
     fi
     RULES_SOURCE="/tmp/lekker-rules-source-$$"
@@ -184,17 +186,19 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
     BASE_PROJECT_RULES=""
     HAVE_BASE_RULES=0
     if [[ -n "${LEKKER_BASE_REF:-}" ]]; then
-        if BASE_PROJECT_RULES="$(collect_project_rules_at_ref "$REPO_ROOT" "$LEKKER_BASE_REF")"; then
+        if [[ -n "$RULES_BASE_SHA" ]] \
+            && BASE_PROJECT_RULES="$(collect_project_rules_at_ref "$REPO_ROOT" "$RULES_BASE_SHA")"; then
             HAVE_BASE_RULES=1
         else
             BASE_PROJECT_RULES=""
             NOTES="${NOTES}base-rules-unavailable;"
         fi
     fi
-    python3 - "$OUT_JSON" "$PROJECT_RULES" "$BASE_PROJECT_RULES" "$HAVE_BASE_RULES" <<'PYEOF'
+    python3 - "$OUT_JSON" "$PROJECT_RULES" "$BASE_PROJECT_RULES" "$HAVE_BASE_RULES" "$NOTES" <<'PYEOF'
 import json, sys
 out = {"projectRules": sys.argv[2]}
 out["baseProjectRules"] = sys.argv[3] if sys.argv[4] == "1" else None
+out["notes"] = sys.argv[5]
 with open(sys.argv[1], "w") as f:
     json.dump(out, f, indent=2)
 PYEOF
