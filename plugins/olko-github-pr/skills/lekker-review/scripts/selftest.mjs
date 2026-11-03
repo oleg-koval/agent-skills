@@ -764,10 +764,18 @@ check('rejects a wrapped rule re-wrapped at a different column',
   validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase, '- After ANY catalog change, run build\n  and commit the result').reason, 'rule still present in projectRules')
 check('rejects a rule whose bullet marker changed to an asterisk',
   validateWeakenedProjectRuleFinding(evalFinding, evalBase, '* NEVER call eval in src').reason, 'rule still present in projectRules')
-check('rejects a rule whose bullet marker changed to a number',
+check('rejects an unchanged numbered rule',
   validateWeakenedProjectRuleFinding(evalFinding, '1. NEVER call eval in src', '1. NEVER call eval in src').reason, 'rule still present in projectRules')
 check('rejects a bullet rule renumbered in the PR',
   validateWeakenedProjectRuleFinding(evalFinding, evalBase, '1. NEVER call eval in src').reason, 'rule still present in projectRules')
+check('accepts a weakening that adds a prefix qualifier before the quote',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- Except on your own branch, NEVER force-push').ok, true)
+check('accepts a weakening added on a new continuation line of the same bullet',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase + '.', wrappedBase + '.\n  Docs-only changes are exempt.').ok, true)
+check('rejects a single-line rule re-wrapped over two lines',
+  validateWeakenedProjectRuleFinding(wrappedFinding, '- After ANY catalog change, run build and commit the result', wrappedBase).reason, 'rule still present in projectRules')
+check('rejects a rule moved to another section unchanged',
+  validateWeakenedProjectRuleFinding(evalFinding, '# A\n' + evalBase + '\n# B\n- x', '# B\n- x\n# A\n' + evalBase).reason, 'rule still present in projectRules')
 check('rejects a weakened rule with no quote',
   validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
 const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
