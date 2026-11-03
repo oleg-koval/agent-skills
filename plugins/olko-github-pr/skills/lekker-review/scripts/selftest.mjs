@@ -746,6 +746,14 @@ check('rejects a weakened rule whose quote is still in projectRules',
   validateWeakenedProjectRuleFinding(weakenedFinding, planted, planted).ok, false)
 check('accepts a weakened rule whose quote is gone from projectRules',
   validateWeakenedProjectRuleFinding(weakenedFinding, planted, 'nothing here').ok, true)
+const evalBase = '- NEVER call eval in src'
+const evalFinding = prFinding('weakens-project-rule', 'NEVER call eval in src')
+check('accepts a weakening that appends an exception to the rule line',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '- NEVER call eval in src unless input is trusted').ok, true)
+check('accepts a weakening that adds a period and an Exception sentence on the same line',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '- NEVER call eval in src. Exception: trusted input.').ok, true)
+check('rejects a weakened rule whose line is unchanged among other lines',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '# Rules\n- NEVER call eval in src\n- Be kind').reason, 'rule still present in projectRules')
 check('rejects a weakened rule with no quote',
   validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
 const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
@@ -779,9 +787,9 @@ const quoteB = { ...quoteA, ruleQuote: 'ALWAYS validate total before use.' }
 check('two different quotes of one PROJECT rule are not sameIssue', sameIssue(quoteA, quoteB), false)
 check('the same quote of one PROJECT rule is still sameIssue', sameIssue(quoteA, { ...quoteA }), true)
 check('the same slug with quotes equal after normalisation is sameIssue',
-  sameIssue(quoteA, { ...quoteA, ruleQuote: '  never   SKIP the null check on total  ' }), true)
-const slugB = { ...quoteA, rule: 'PROJECT:null-total-guard', ruleQuote: '**Never skip** the null check on total' }
-check('two PROJECT slugs with one quote modulo case, whitespace and punctuation are sameIssue', sameIssue(quoteA, slugB), true)
+  sameIssue(quoteA, { ...quoteA, ruleQuote: '  never   SKIP the null check on total.  ' }), true)
+const slugB = { ...quoteA, rule: 'PROJECT:null-total-guard', ruleQuote: '**Never skip** the null check on total.' }
+check('two PROJECT slugs with one quote modulo case, whitespace and emphasis are sameIssue', sameIssue(quoteA, slugB), true)
 const [mergedSlugs] = dedup([{ ...quoteA, severity: 'important' }, { ...slugB, severity: 'important' }])
 check('different-slug same-quote findings merge into one finding that keeps rule and quote',
   [dedup([{ ...quoteA, severity: 'important' }, { ...slugB, severity: 'important' }]).length, mergedSlugs.rule, typeof mergedSlugs.ruleQuote],
@@ -789,8 +797,10 @@ check('different-slug same-quote findings merge into one finding that keeps rule
 check('different-slug different-quote findings stay separate',
   sameIssue(quoteA, { ...slugB, ruleQuote: 'ALWAYS validate total before use.' }), false)
 const quoteSamples = ['NEVER call `console.log` in src/.', '> **Never** skip\n  the   check', '- Use _early_ returns', '## Heading rule text']
-check('workflow normalizeRuleQuote agrees with the validator normalizeQuote (modulo trailing punctuation)',
-  quoteSamples.map(q => normalizeRuleQuote(q)), quoteSamples.map(q => normalizeQuote(q).replace(/[.,;:!?]+$/, '')))
+check('workflow normalizeRuleQuote agrees with the validator normalizeQuote ',
+  quoteSamples.map(q => normalizeRuleQuote(q)), quoteSamples.map(q => normalizeQuote(q)))
+check('quotes differing only by trailing punctuation are not sameIssue',
+  sameIssue(quoteA, { ...quoteA, ruleQuote: 'NEVER skip the null check on total' }), false)
 console.log('\nworkflow: a confirmed weakened-rule finding is always Important')
 check('critical from the lens becomes important for weakens-project-rule',
   weakenedRuleSeverity({ rule: 'weakens-project-rule' }, 'critical'), 'important')

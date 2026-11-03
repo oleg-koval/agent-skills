@@ -167,7 +167,7 @@ function titleTokens(title) {
 }
 
 // Same normalisation as normalizeQuote in scripts/project-rule-findings.mjs; workflow.js cannot import it.
-// The selftest asserts the two agree. Trailing punctuation is also ignored here: a lens may end a quote differently.
+// The selftest asserts the two agree.
 function normalizeRuleQuote(text) {
   return String(text == null ? '' : text)
     .replace(/(^|\n)\s{0,3}#{1,6}\s+/g, '$1')
@@ -178,7 +178,6 @@ function normalizeRuleQuote(text) {
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase()
-    .replace(/[.,;:!?]+$/, '')
 }
 
 function weakenedRuleSeverity(finding, severity) {

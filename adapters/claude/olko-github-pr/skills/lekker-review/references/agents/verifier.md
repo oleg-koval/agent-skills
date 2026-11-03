@@ -45,7 +45,7 @@ For `rule: "weakens-project-rule"`, use this dedicated path:
    The validator requires the exact quote to exist in `baseProjectRules`; a
    missing base copy or rejected quote fails this check. Do not validate against
    `projectRules`, which may already reflect the PR's weakened rules. The validator also
-   rejects a quote that is still present in `projectRules` (the rule was not removed).
+   rejects a rule line that is still present unchanged in `projectRules` (the rule line was neither removed nor changed).
    Exit 1 means `dropped`. Exit 2 means the validator could not run (for example
    `baseProjectRules` is missing): check by hand that the exact quote appears in
    `baseProjectRules` ONLY, never in `projectRules`; if `baseProjectRules` is not a string

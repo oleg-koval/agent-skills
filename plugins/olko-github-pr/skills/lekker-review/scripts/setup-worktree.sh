@@ -157,7 +157,8 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
         if git -C "$REPO_ROOT" fetch origin "+refs/heads/${PR_BRANCH}:refs/remotes/origin/${PR_BRANCH}" 2>/dev/null; then
             RULES_REF="origin/$PR_BRANCH"
         elif git -C "$REPO_ROOT" fetch origin "$PR_BRANCH" 2>/dev/null; then
-            RULES_REF=FETCH_HEAD
+            # The base fetch below overwrites FETCH_HEAD, so pin the PR tip now.
+            RULES_REF="$(git -C "$REPO_ROOT" rev-parse FETCH_HEAD)"
         else
             printf 'ERROR: could not fetch PR branch %s for rules-only scan\n' "$PR_BRANCH" >&2
             exit 1
