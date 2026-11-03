@@ -771,6 +771,10 @@ const strayQuote = { ...plainF, ruleQuote: 'stale quote that belongs to no rule'
 const [mergedStray] = dedupPr([strayQuote, taggedF])
 check('a stray quote on an untagged side does not survive the merge',
   [mergedStray.rule, mergedStray.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
+const [mergedLate] = dedupPr([{ ...plainF, rule: 'PROJECT:no-console-log' }, taggedF])
+check('a quote from a later finding fills a quote-less same rule', mergedLate.ruleQuote, 'NEVER call console.log in src/.')
+const otherRule = { ...taggedF, rule: 'PROJECT:no-mutation', ruleQuote: 'NEVER mutate function arguments.' }
+check('two different PROJECT rules stay separate through dedup', dedupPr([taggedF, otherRule]).length, 2)
 const [mergedNoQuote] = dedupPr([strayQuote, { ...taggedF, ruleQuote: undefined }])
 check('a tagged side without a quote leaves no stray quote behind', mergedNoQuote.ruleQuote, undefined)
 

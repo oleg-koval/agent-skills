@@ -166,6 +166,11 @@ function titleTokens(title) {
 }
 
 function sameIssue(a, b) {
+  // Two different project rules are two violations, never one issue.
+  if (typeof a.rule === 'string' && typeof b.rule === 'string' && a.rule !== b.rule
+      && a.rule.startsWith('PROJECT:') && b.rule.startsWith('PROJECT:')) {
+    return false
+  }
   // Merging two classes would send one class's instances to the other's fix.
   if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
     return false
@@ -186,7 +191,8 @@ const BUG_CLASS_INSTRUCTION = `BUG CLASS: give every finding a "bugClass" (short
   + ` hit, search the whole diff for the same pattern and list every other place as`
   + ` "file:line" (empty array when there is none). Report the class, not just the first hit.`
 
-const PROJECT_RULE_DIMENSIONS = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
+const PROJECT_RULE_DIMENSIONS = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality',
+  'triage-quality', 'triage-logic']
 
 const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRules" from CONTEXT_FILE.`
   + ` When a changed line violates a project rule written as a prohibition or an obligation`
@@ -254,6 +260,8 @@ function mergeFindings(a, b) {
     } else {
       delete merged.ruleQuote
     }
+  } else if (merged.rule && merged.rule === b.rule && !merged.ruleQuote && b.ruleQuote) {
+    merged.ruleQuote = b.ruleQuote
   }
 
   const agreedBy = []
@@ -675,7 +683,7 @@ const budgetAtStart = budget.spent()
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${wtDisplay}.`,
       `HOUSE_RULES_FILE: read key "houseRulesFile" from CONTEXT_FILE, then read that exact path before validating a hard rule.`,
-      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then keep the finding, set validatorUnavailable true, and judge applicability.`,
+      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then check by hand that the exact quote appears in projectRules (drop if it does not), keep the finding only if it does, set validatorUnavailable true, and judge applicability.`,
     ].join(' ')
   }
 
@@ -733,6 +741,8 @@ const budgetAtStart = budget.spent()
   // A model verdict cannot replace the required production boundary map.
   function enforceBoundary(finding) {
     if (!shouldVerify(finding, depth)) return finding
+    // A project rule is violated by the line itself; it needs no production entry point.
+    if (typeof finding.rule === 'string' && finding.rule.startsWith('PROJECT:')) return finding
     const boundary = finding.boundary
     const hasText = function(value) {
       return typeof value === 'string' && value.trim().length > 0
