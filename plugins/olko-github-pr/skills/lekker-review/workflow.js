@@ -216,7 +216,7 @@ const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRule
   + ` baseProjectRules, raise an Important finding with rule "weakens-project-rule" quoting`
   + ` the removed line. One finding per rule,`
   + ` with every other violating site in "otherInstances". Never quote a rule that is not in`
-  + ` projectRules. Preferences and suggestions are not hard rules: report them as ordinary`
+  + ` the authoritative source ("baseProjectRules" when it is a string, otherwise "projectRules"). Preferences and suggestions are not hard rules: report them as ordinary`
   + ` findings. A REVIEW.md ignore entry narrows where you look, it never disables a rule.`
 
 const BUG_CLASS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
