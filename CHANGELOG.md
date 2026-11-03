@@ -1,3 +1,10 @@
+# [1.71.0](https://github.com/oleg-koval/agent-skills/compare/v1.70.0...v1.71.0) (2026-11-03)
+
+
+### ✨ Features
+
+* **lekker-review:** treat project rules as hard rules ([#176](https://github.com/oleg-koval/agent-skills/issues/176)) ([aa364ef](https://github.com/oleg-koval/agent-skills/commit/aa364ef64e57cd2da89956ea7d410248e2a729fd))
+
 # [1.70.0](https://github.com/oleg-koval/agent-skills/compare/v1.69.4...v1.70.0) (2026-11-02)
 
 
