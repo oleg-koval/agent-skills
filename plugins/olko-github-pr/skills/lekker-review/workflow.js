@@ -166,9 +166,14 @@ function titleTokens(title) {
 }
 
 function sameIssue(a, b) {
-  // A project rule is never merged with a different rule: each is its own violation.
+  // Lens-generated slugs can differ even when they identify the same project rule.
+  const sameProjectQuote = typeof a.rule === 'string' && a.rule.startsWith('PROJECT:')
+    && typeof b.rule === 'string' && b.rule.startsWith('PROJECT:')
+    && typeof a.ruleQuote === 'string' && a.ruleQuote.trim() !== ''
+    && a.ruleQuote === b.ruleQuote
   if (typeof a.rule === 'string' && typeof b.rule === 'string' && a.rule !== b.rule
-      && (a.rule.startsWith('PROJECT:') || b.rule.startsWith('PROJECT:'))) {
+      && (a.rule.startsWith('PROJECT:') || b.rule.startsWith('PROJECT:'))
+      && !sameProjectQuote) {
     return false
   }
   // Two quotes of one PROJECT rule that differ are two different rule passages, not one issue.
