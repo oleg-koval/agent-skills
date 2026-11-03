@@ -76,20 +76,30 @@ const LIST_MARKER = /^\s*([-+*]|\d+[.)])\s+/
 
 const indentOf = line => line.length - line.trimStart().length
 
-// A deeper list marker belongs to its parent bullet: a sub-bullet exception or a narrowed
-// parent must change the parent block, so only a marker at or above the parent's indent opens a new one.
+// A deeper marker or indented text belongs to its parent bullet, even after a blank line (loose list),
+// so an exception there must change the parent block. A bullet right after a paragraph rule is that
+// rule's exception unless the paragraph is a lead-in ending in a colon.
+const isHeading = line => /^\s{0,3}#{1,6}\s/.test(line)
+const isListItem = line => LIST_MARKER.test(line)
+const lastTextOf = current => current.filter(line => line !== '').slice(-1)[0] ?? ''
+
 function startsNewBlock(line, current) {
-  if (/^\s{0,3}#{1,6}\s/.test(line)) return true
-  if (!LIST_MARKER.test(line)) return false
+  if (isHeading(line)) return true
   const [first] = current
-  return first === undefined || !LIST_MARKER.test(first) || indentOf(line) <= indentOf(first)
+  if (first === undefined) return true
+  if (current[current.length - 1] === '') return !(isListItem(first) && indentOf(line) > indentOf(first))
+  if (!isListItem(line)) return false
+  if (isListItem(first)) return indentOf(line) <= indentOf(first)
+  if (isHeading(first)) return true
+  return lastTextOf(current).trimEnd().endsWith(':')
 }
 
 function ruleBlocks(text) {
   const groups = stripRecalledPatterns(text).split(/\r?\n/).reduce((acc, line) => {
-    if (line.trim() === '') return [...acc, []]
-    if (acc.length === 0 || startsNewBlock(line, acc[acc.length - 1])) return [...acc, [line]]
-    return [...acc.slice(0, -1), [...acc[acc.length - 1], line]]
+    const current = acc[acc.length - 1]
+    if (line.trim() === '') return current === undefined || current.length === 0 ? acc : [...acc.slice(0, -1), [...current, '']]
+    if (current === undefined || startsNewBlock(line, current)) return [...acc, [line]]
+    return [...acc.slice(0, -1), [...current, line]]
   }, [])
   return groups
     .map(lines => lines.map((line, i) => normalizeQuote(i === 0 ? line.replace(LIST_MARKER, '') : line)).filter(line => line !== '').join(' '))

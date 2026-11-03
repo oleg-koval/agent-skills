@@ -786,6 +786,18 @@ check('accepts a quote spanning two base bullets when the second gains an except
   validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push\n- NEVER delete main'), '- NEVER force-push\n- NEVER delete main', '- NEVER force-push\n- NEVER delete main unless asked').ok, true)
 check('rejects an unchanged rule with an unchanged nested sub-bullet',
   validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n  - on shared branches', '- NEVER force-push\n  - on shared branches').reason, 'rule still present in projectRules')
+check('accepts an exception sub-bullet added after a blank line in a loose list',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n\n  - except on your own branch').ok, true)
+check('accepts an indented exception paragraph added after a blank line',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n\n  Except on your own branch.').ok, true)
+check('accepts an exception bullet added directly under a paragraph rule',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push.'), 'NEVER force-push.', 'NEVER force-push.\n- Exception: your own branch.').ok, true)
+check('rejects an unchanged loose-list rule with an unchanged indented paragraph',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n\n  on shared branches', '- NEVER force-push\n\n  on shared branches').reason, 'rule still present in projectRules')
+check('rejects unchanged blank-separated sibling bullets when another bullet is edited',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n\n- NEVER call eval', '- NEVER force-push\n\n- NEVER call eval in src').reason, 'rule still present in projectRules')
+check('rejects an unchanged bullet under a lead-in when a sibling is edited',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), 'Rules:\n- NEVER force-push\n- NEVER call eval', 'Rules:\n- NEVER force-push\n- NEVER call eval, except tests').reason, 'rule still present in projectRules')
 check('rejects a weakened rule with no quote',
   validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
 const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
