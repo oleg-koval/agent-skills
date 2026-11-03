@@ -55,12 +55,13 @@ the rule and quoting the violating snippet. Either check fails -> `dropped`,
 with `reasoning` naming which check failed. There is no `downgraded` outcome
 for a hard rule: it either violates the rule or it does not.
 
-For a `rule` starting with `PROJECT:`, the rule text lives in `projectRules` of
-`CONTEXT_FILE`, not in `HOUSE_RULES_FILE`. Write the FINDING JSON to a unique temp file
+For a `rule` starting with `PROJECT:`, the rule text lives in `baseProjectRules` of
+`CONTEXT_FILE` when that key is a string (the base branch's copy, which the PR cannot
+edit), otherwise in `projectRules`, not in `HOUSE_RULES_FILE`. Write the FINDING JSON to a unique temp file
 (create it with `mktemp`, never a fixed name, because verifiers run in parallel) and run `node <this prompt's directory>/../../scripts/project-rule-findings.mjs <finding.json> <CONTEXT_FILE>`.
 Exit 1 means the quoted rule is not in `projectRules` (or the tag is malformed):
 `dropped`, with that output as `reasoning`. Any other non-zero exit means the validator
-could not run: read `projectRules` yourself and confirm the exact quoted sentence is in it.
+could not run: read that same key yourself and confirm the exact quoted sentence is in it.
 If it is not, `dropped`. If it is, keep the finding at its severity, say in `reasoning` that
 the validator was unavailable, set `validatorUnavailable: true`, and judge applicability as below. On exit 0, judge applicability
 against the quoted rule as the second check.

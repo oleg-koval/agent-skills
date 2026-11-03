@@ -134,6 +134,17 @@ collect_project_rules() {
         -not -path '*/node_modules/*' 2>/dev/null | sort)
 }
 
+# Hard rules must come from a tree the PR author does not control: a PR that
+# deletes a rule and then breaks it would otherwise leave nothing to enforce.
+collect_project_rules_at_ref() {
+    local repo="$1" ref="$2" dir
+    dir="$(mktemp -d "/tmp/lekker-base-rules-XXXXXX")"
+    if git -C "$repo" archive "$ref" 2>/dev/null | tar -x -C "$dir" 2>/dev/null; then
+        collect_project_rules "$dir"
+    fi
+    rm -rf "$dir"
+}
+
 # Scan depth needs PR-authored review guidance but skips expensive worktree
 # setup. Read the PR tree from an archive so no Git worktree or checkout is made.
 if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
@@ -153,10 +164,18 @@ if [[ "${LEKKER_RULES_ONLY:-}" == "1" ]]; then
     mkdir -p "$RULES_SOURCE"
     git -C "$REPO_ROOT" archive "$RULES_REF" | tar -x -C "$RULES_SOURCE"
     PROJECT_RULES="$(collect_project_rules "$RULES_SOURCE")"
-    python3 - "$OUT_JSON" "$PROJECT_RULES" <<'PYEOF'
+    BASE_PROJECT_RULES=""
+    HAVE_BASE_RULES=0
+    if [[ -n "${LEKKER_BASE_REF:-}" ]] && git -C "$REPO_ROOT" rev-parse --verify -q "${LEKKER_BASE_REF}^{commit}" >/dev/null; then
+        BASE_PROJECT_RULES="$(collect_project_rules_at_ref "$REPO_ROOT" "$LEKKER_BASE_REF")"
+        HAVE_BASE_RULES=1
+    fi
+    python3 - "$OUT_JSON" "$PROJECT_RULES" "$BASE_PROJECT_RULES" "$HAVE_BASE_RULES" <<'PYEOF'
 import json, sys
+out = {"projectRules": sys.argv[2]}
+out["baseProjectRules"] = sys.argv[3] if sys.argv[4] == "1" else None
 with open(sys.argv[1], "w") as f:
-    json.dump({"projectRules": sys.argv[2]}, f, indent=2)
+    json.dump(out, f, indent=2)
 PYEOF
     rm -rf "$RULES_SOURCE"
     printf 'OK %s\n' "$OUT_JSON"
@@ -475,6 +494,17 @@ PROJECT_RULES_FILE="/tmp/lekker-rules-$$.txt"
 printf '' > "$PROJECT_RULES_FILE"
 collect_project_rules "$WORKTREE_PATH" > "$PROJECT_RULES_FILE"
 
+BASE_RULES_FILE="/tmp/lekker-base-rules-$$.txt"
+BASE_RULES_STATE="absent"
+printf '' > "$BASE_RULES_FILE"
+if [[ -n "$MERGE_BASE_NOTE" && "$MERGE_BASE_NOTE" != "unknown" ]] \
+    && git -C "$REPO_ROOT" rev-parse --verify -q "${MERGE_BASE_NOTE}^{commit}" >/dev/null; then
+    collect_project_rules_at_ref "$REPO_ROOT" "$MERGE_BASE_NOTE" > "$BASE_RULES_FILE"
+    BASE_RULES_STATE="present"
+else
+    NOTES="${NOTES}base-rules-unavailable;"
+fi
+
 # ---------------------------------------------------------------------------
 # 6. HEAD SHA
 # ---------------------------------------------------------------------------
@@ -518,14 +548,17 @@ python3 - \
     "$DEPS_INSTALL_FILE" \
     "$ESLINT_JSON_FILE" \
     "$TEST_RUNNER_JSON" \
-    "$OUT_JSON" <<'PYEOF'
+    "$OUT_JSON" \
+    "$BASE_RULES_FILE" \
+    "$BASE_RULES_STATE" <<'PYEOF'
 import json, sys, os
 
 (worktree_path, repo_root, head_sha, head_sha_short,
  tsc_file, eslint_file, rules_file, delta_file, notes,
  changed_files_file, base_ref_val, eslint_scope_file,
  tsc_changed_file, tsc_count_file, merge_base_val,
- deps_install_file, eslint_json_file, test_runner_json, out_json) = sys.argv[1:20]
+ deps_install_file, eslint_json_file, test_runner_json, out_json,
+ base_rules_file, base_rules_state) = sys.argv[1:22]
 
 def parse_runner(raw):
     try:
@@ -581,6 +614,7 @@ data = {
     "tscTail":        read_file(tsc_file),
     "eslintTail":     read_file(eslint_file),
     "projectRules":   read_file(rules_file),
+    "baseProjectRules": read_file(base_rules_file) if base_rules_state == "present" else None,
     "deltaFile":      None if delta_file == "null" else delta_file,
     "notes":          notes,
     "changedFiles":   changed_files,
@@ -598,7 +632,7 @@ data = {
     "eslintJson":     eslint_json_file if file_has_content(eslint_json_file) else None,
 }
 
-for p in (tsc_file, eslint_file, rules_file, changed_files_file,
+for p in (tsc_file, eslint_file, rules_file, base_rules_file, changed_files_file,
           eslint_scope_file, tsc_changed_file, tsc_count_file,
           deps_install_file):
     try:

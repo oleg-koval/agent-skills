@@ -797,6 +797,13 @@ wfPr(badJson, '{not json')
 wfPr(fnd, JSON.stringify({ rule: 'PROJECT:no-console-log', ruleQuote: 'NEVER call console.log in src/.' }))
 const runV = (f, c) => spawnPr('node', [join(SKILL, 'scripts', 'project-rule-findings.mjs'), f, c], { encoding: 'utf8' }).status
 check('exit 0 on a valid finding', runV(fnd, okCtx), 0)
+// A PR that deletes the rule must not make its own violation pass: base rules win.
+const spoofCtx = join(crashDir, 'spoof.json')
+wfPr(spoofCtx, JSON.stringify({ projectRules: 'nothing here', baseProjectRules: 'NEVER call console.log in src/.' }))
+check('quote found in base rules is accepted even when the PR tree dropped it', runV(fnd, spoofCtx), 0)
+const addedCtx = join(crashDir, 'added.json')
+wfPr(addedCtx, JSON.stringify({ projectRules: 'NEVER call console.log in src/.', baseProjectRules: '' }))
+check('a rule only the PR tree contains is rejected when base rules exist', runV(fnd, addedCtx), 1)
 wfPr(join(crashDir, 'rej.json'), JSON.stringify({ rule: 'PROJECT:no-eval', ruleQuote: 'NEVER call eval anywhere in code' }))
 check('exit 1 on a rejected finding', runV(join(crashDir, 'rej.json'), okCtx), 1)
 const symlinkValidator = join(crashDir, 'project-rule-findings.mjs')

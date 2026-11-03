@@ -68,7 +68,9 @@ function main(argv) {
   try {
     const finding = JSON.parse(readFileSync(findingPath, 'utf8'))
     const context = JSON.parse(readFileSync(contextPath, 'utf8'))
-    const result = validateProjectRuleFinding(finding, context.projectRules)
+    // Base-branch rules are authoritative; PR-tree rules only when no base was resolved.
+    const authoritative = typeof context.baseProjectRules === 'string' ? context.baseProjectRules : context.projectRules
+    const result = validateProjectRuleFinding(finding, authoritative)
     console.log(JSON.stringify(result))
     return result.ok ? 0 : 1
   } catch (error) {
