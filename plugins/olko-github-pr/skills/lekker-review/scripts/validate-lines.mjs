@@ -75,6 +75,8 @@ export function loadDedup(workflowPath = join(SKILL, 'workflow.js')) {
     liftConst('HARD_RULES', 'const HARD_RULES = new Set()'),
     liftConst('SAME_ISSUE_LINE_WINDOW', 'const SAME_ISSUE_LINE_WINDOW = 30'),
     liftConst('SEVERITY_RANK', 'const SEVERITY_RANK = { critical: 3, important: 2, observation: 1, idiomatic: 0 }'),
+    // Absent from an older workflow.js, whose sameIssue does not call it.
+    (() => { try { return lift('normalizeRuleQuote') } catch { return '' } })(),
     ...['titleTokens', 'sameIssue', 'nearbyLines', 'spanWithinWindow',
         'isHardRule', 'longest', 'mergeFindings', 'dedup'].map(lift),
   ].join('\n')

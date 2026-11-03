@@ -52,11 +52,13 @@ const preamble = [
   "const SEVERITY_RANK = { observation: 0, idiomatic: 1, important: 2, critical: 3 }",
   // hardRuleCorroborated is likewise gone from the current file and kept in this
   // list for the same reason: an older workflow.js calls it from isHardRule.
-  ...['titleTokens', 'sameIssue', 'nearbyLines', 'spanWithinWindow', 'hardRuleCorroborated',
+  ...['titleTokens', 'normalizeRuleQuote', 'weakenedRuleSeverity', 'sameIssue', 'nearbyLines', 'spanWithinWindow', 'hardRuleCorroborated',
       'isHardRule', 'longest', 'mergeFindings', 'dedup', 'shouldVerify', 'isProveAttempt', 'countProveAttempt'].map(n => {
         // countProveAttempt is called directly by the checks, so its stub returns NaN and the
         // checks FAIL with a diff instead of the run crashing on an older workflow.js.
         try { return lift(n) } catch {
+          if (n === 'normalizeRuleQuote') return "function normalizeRuleQuote() { return 'absent from this workflow.js' }"
+          if (n === 'weakenedRuleSeverity') return "function weakenedRuleSeverity() { return 'absent from this workflow.js' }"
           return n === 'countProveAttempt'
             ? 'function countProveAttempt() { return NaN }'
             : `function ${n}() { throw new Error('${n} absent from this workflow.js') }`
@@ -64,8 +66,8 @@ const preamble = [
       }),
 ].join('\n')
 
-const { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt } =
-  new Function(preamble + '\nreturn { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt }')()
+const { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt, normalizeRuleQuote, weakenedRuleSeverity } =
+  new Function(preamble + '\nreturn { dedup, isHardRule, shouldVerify, sameIssue, isProveAttempt, countProveAttempt, normalizeRuleQuote, weakenedRuleSeverity }')()
 
 let failed = 0
 function check(name, actual, expected) {
@@ -700,7 +702,7 @@ console.log('\nproject rules: PROJECT:<slug> findings must quote a rule that exi
 const { spawnSync: spawnPr } = await import('node:child_process')
 const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr, symlinkSync: syPr, writeFileSync: wfPr } = await import('node:fs')
 const { tmpdir: tmpPr } = await import('node:os')
-const { validateProjectRuleFinding, validateWeakenedProjectRuleFinding, isProjectRuleTag } =
+const { validateProjectRuleFinding, validateWeakenedProjectRuleFinding, isProjectRuleTag, normalizeQuote } =
   await import('./project-rule-findings.mjs')
 
 const fixtureDir = join(SKILL, 'scripts', 'fixtures', 'project-rules')
@@ -740,6 +742,65 @@ check('rejects a weakened rule quote absent from baseProjectRules',
   validateWeakenedProjectRuleFinding(weakenedFinding, 'NEVER call eval.').ok, false)
 check('rejects a weakened rule when baseProjectRules is unavailable',
   validateWeakenedProjectRuleFinding(weakenedFinding, undefined).ok, false)
+check('rejects a weakened rule whose quote is still in projectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, planted, planted).ok, false)
+check('accepts a weakened rule whose quote is gone from projectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, planted, 'nothing here').ok, true)
+const evalBase = '- NEVER call eval in src'
+const evalFinding = prFinding('weakens-project-rule', 'NEVER call eval in src')
+check('accepts a weakening that appends an exception to the rule line',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '- NEVER call eval in src unless input is trusted').ok, true)
+check('accepts a weakening that adds a period and an Exception sentence on the same line',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '- NEVER call eval in src. Exception: trusted input.').ok, true)
+check('rejects a weakened rule whose line is unchanged among other lines',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '# Rules\n- NEVER call eval in src\n- Be kind').reason, 'rule still present in projectRules')
+const wrappedBase = '- After ANY catalog change, run build and commit\n  the result'
+const wrappedFinding = prFinding('weakens-project-rule', 'After ANY catalog change, run build and commit the result')
+check('accepts a weakening appended to the last line of a wrapped rule',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase, '- After ANY catalog change, run build and commit\n  the result, except docs-only changes').ok, true)
+check('rejects an unchanged wrapped rule',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase, wrappedBase).reason, 'rule still present in projectRules')
+check('rejects a wrapped rule re-wrapped at a different column',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase, '- After ANY catalog change, run build\n  and commit the result').reason, 'rule still present in projectRules')
+check('rejects a rule whose bullet marker changed to an asterisk',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '* NEVER call eval in src').reason, 'rule still present in projectRules')
+check('rejects an unchanged numbered rule',
+  validateWeakenedProjectRuleFinding(evalFinding, '1. NEVER call eval in src', '1. NEVER call eval in src').reason, 'rule still present in projectRules')
+check('rejects a bullet rule renumbered in the PR',
+  validateWeakenedProjectRuleFinding(evalFinding, evalBase, '1. NEVER call eval in src').reason, 'rule still present in projectRules')
+check('accepts a weakening that adds a prefix qualifier before the quote',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- Except on your own branch, NEVER force-push').ok, true)
+check('accepts a weakening added on a new continuation line of the same bullet',
+  validateWeakenedProjectRuleFinding(wrappedFinding, wrappedBase + '.', wrappedBase + '.\n  Docs-only changes are exempt.').ok, true)
+check('rejects a single-line rule re-wrapped over two lines',
+  validateWeakenedProjectRuleFinding(wrappedFinding, '- After ANY catalog change, run build and commit the result', wrappedBase).reason, 'rule still present in projectRules')
+check('rejects a rule moved to another section unchanged',
+  validateWeakenedProjectRuleFinding(evalFinding, '# A\n' + evalBase + '\n# B\n- x', '# B\n- x\n# A\n' + evalBase).reason, 'rule still present in projectRules')
+check('accepts an exception appended to a two-line blockquote rule',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push to main or release branches.'), '> NEVER force-push to main\n> or release branches.', '> NEVER force-push to main\n> or release branches. Exception: your own branch.').ok, true)
+check('accepts an exception added as an indented sub-bullet',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n  - except on your own branch').ok, true)
+check('accepts a parent bullet narrowed above an unchanged sub-bullet',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER call eval'), '- In src:\n  - NEVER call eval', '- In src/legacy only:\n  - NEVER call eval').ok, true)
+check('accepts a quote spanning two base bullets when the second gains an exception',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push\n- NEVER delete main'), '- NEVER force-push\n- NEVER delete main', '- NEVER force-push\n- NEVER delete main unless asked').ok, true)
+check('rejects an unchanged rule with an unchanged nested sub-bullet',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n  - on shared branches', '- NEVER force-push\n  - on shared branches').reason, 'rule still present in projectRules')
+check('accepts an exception sub-bullet added after a blank line in a loose list',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n\n  - except on your own branch').ok, true)
+check('accepts an indented exception paragraph added after a blank line',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push', '- NEVER force-push\n\n  Except on your own branch.').ok, true)
+const introBase = 'These apply everywhere.\n- In domain code:\n  - NEVER mutate state'
+check('accepts a narrowed parent bullet under an intro paragraph',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER mutate state'), introBase, 'These apply everywhere.\n- In domain code, except scripts:\n  - NEVER mutate state').ok, true)
+check('accepts an exception sibling added under a parent bullet below an intro paragraph',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER mutate state'), introBase, introBase + '\n  - Mutation is fine in reducers').ok, true)
+check('rejects an unchanged loose-list rule with an unchanged indented paragraph',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n\n  on shared branches', '- NEVER force-push\n\n  on shared branches').reason, 'rule still present in projectRules')
+check('rejects unchanged blank-separated sibling bullets when another bullet is edited',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), '- NEVER force-push\n\n- NEVER call eval', '- NEVER force-push\n\n- NEVER call eval in src').reason, 'rule still present in projectRules')
+check('rejects an unchanged bullet under a lead-in when a sibling is edited',
+  validateWeakenedProjectRuleFinding(prFinding('weakens-project-rule', 'NEVER force-push'), 'Rules:\n- NEVER force-push\n- NEVER call eval', 'Rules:\n- NEVER force-push\n- NEVER call eval, except tests').reason, 'rule still present in projectRules')
 check('rejects a weakened rule with no quote',
   validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
 const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
@@ -772,6 +833,25 @@ const quoteA = { file: 'src/total.js', line: 2, title: 'Missing null check on to
 const quoteB = { ...quoteA, ruleQuote: 'ALWAYS validate total before use.' }
 check('two different quotes of one PROJECT rule are not sameIssue', sameIssue(quoteA, quoteB), false)
 check('the same quote of one PROJECT rule is still sameIssue', sameIssue(quoteA, { ...quoteA }), true)
+check('the same slug with quotes equal after normalisation is sameIssue',
+  sameIssue(quoteA, { ...quoteA, ruleQuote: '  never   SKIP the null check on total.  ' }), true)
+const slugB = { ...quoteA, rule: 'PROJECT:null-total-guard', ruleQuote: '**Never skip** the null check on total.' }
+check('two PROJECT slugs with one quote modulo case, whitespace and emphasis are sameIssue', sameIssue(quoteA, slugB), true)
+const [mergedSlugs] = dedup([{ ...quoteA, severity: 'important' }, { ...slugB, severity: 'important' }])
+check('different-slug same-quote findings merge into one finding that keeps rule and quote',
+  [dedup([{ ...quoteA, severity: 'important' }, { ...slugB, severity: 'important' }]).length, mergedSlugs.rule, typeof mergedSlugs.ruleQuote],
+  [1, 'PROJECT:no-null-total', 'string'])
+check('different-slug different-quote findings stay separate',
+  sameIssue(quoteA, { ...slugB, ruleQuote: 'ALWAYS validate total before use.' }), false)
+const quoteSamples = ['NEVER call `console.log` in src/.', '> **Never** skip\n  the   check', '- Use _early_ returns', '## Heading rule text']
+check('workflow normalizeRuleQuote agrees with the validator normalizeQuote',
+  quoteSamples.map(q => normalizeRuleQuote(q)), quoteSamples.map(q => normalizeQuote(q)))
+check('quotes differing only by trailing punctuation are not sameIssue',
+  sameIssue(quoteA, { ...quoteA, ruleQuote: 'NEVER skip the null check on total' }), false)
+console.log('\nworkflow: a confirmed weakened-rule finding is always Important')
+check('critical from the lens becomes important for weakens-project-rule',
+  weakenedRuleSeverity({ rule: 'weakens-project-rule' }, 'critical'), 'important')
+check('other rules keep the severity', weakenedRuleSeverity({ rule: 'TS-1' }, 'critical'), 'critical')
 
 // Prompt guard: every lens that reads projectRules is told to raise the tag.
 const lensFiles = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
@@ -787,9 +867,11 @@ function liftBlock(name) {
   if (!m) throw new Error(`selftest: const ${name} not found in workflow.js`)
   return m[0]
 }
+// An older workflow.js lacks these constants; fall back so the checks FAIL instead of the suite crashing.
+const liftBlockOr = name => { try { return liftBlock(name) } catch { return `const ${name} = ''\n` } }
 const buildPrompt = new Function(
   'dim', 'SUPPRESSED', 'prevSha',
-  [liftBlock('PROJECT_RULE_DIMENSIONS'), liftBlock('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
+  [liftBlockOr('PROJECT_RULE_DIMENSIONS'), liftBlockOr('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
     `const targetMetadata = '{}', promptDir = 'p', repoSlug = 'o/r', prNumber = 1, prUrl = 'u',
        diffFile = 'd', contextFile = 'c', wtDisplay = 'w'`,
     lift('reviewPrompt'), 'return reviewPrompt(dim)'].join('\n'),
@@ -846,6 +928,12 @@ check('validator accepts a weakened-rule quote found in baseProjectRules',
 check('validator rejects a weakened-rule quote found only in projectRules',
   runV(weakenedFile, addedCtx), 1)
 wfPr(join(crashDir, 'rej.json'), JSON.stringify({ rule: 'PROJECT:no-eval', ruleQuote: 'NEVER call eval anywhere in code' }))
+const noBaseCtx = join(crashDir, 'nobase.json')
+wfPr(noBaseCtx, JSON.stringify({ projectRules: 'nothing here' }))
+check('exit 2 on a weakened finding when baseProjectRules is missing', runV(weakenedFile, noBaseCtx), 2)
+const stillCtx = join(crashDir, 'still.json')
+wfPr(stillCtx, JSON.stringify({ projectRules: 'NEVER call console.log in src/.', baseProjectRules: 'NEVER call console.log in src/.' }))
+check('exit 1 on a weakened finding whose rule is still in projectRules', runV(weakenedFile, stillCtx), 1)
 check('exit 1 on a rejected finding', runV(join(crashDir, 'rej.json'), okCtx), 1)
 const symlinkValidator = join(crashDir, 'project-rule-findings.mjs')
 syPr(join(SKILL, 'scripts', 'project-rule-findings.mjs'), symlinkValidator)
