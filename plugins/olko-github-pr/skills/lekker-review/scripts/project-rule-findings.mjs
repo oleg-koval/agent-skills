@@ -71,6 +71,22 @@ export function validateProjectRuleFinding(finding, projectRules) {
   return { ok: true, reason: 'quote found in projectRules' }
 }
 
+export function validateWeakenedProjectRuleFinding(finding, baseProjectRules) {
+  if (finding?.rule !== 'weakens-project-rule') {
+    return { ok: true, reason: 'not a weakened project rule' }
+  }
+  if (typeof baseProjectRules !== 'string') {
+    return { ok: false, reason: 'baseProjectRules unavailable' }
+  }
+  if (typeof finding.ruleQuote !== 'string' || finding.ruleQuote.trim() === '') {
+    return { ok: false, reason: 'missing ruleQuote: quote the removed project rule' }
+  }
+  if (!quoteAppearsIn(finding.ruleQuote, baseProjectRules)) {
+    return { ok: false, reason: 'ruleQuote not found in baseProjectRules' }
+  }
+  return { ok: true, reason: 'quote found in baseProjectRules' }
+}
+
 function main(argv) {
   const [findingPath, contextPath] = argv
   if (!findingPath || !contextPath) {
@@ -80,6 +96,11 @@ function main(argv) {
   try {
     const finding = JSON.parse(readFileSync(findingPath, 'utf8'))
     const context = JSON.parse(readFileSync(contextPath, 'utf8'))
+    if (finding?.rule === 'weakens-project-rule') {
+      const result = validateWeakenedProjectRuleFinding(finding, context.baseProjectRules)
+      console.log(JSON.stringify(result))
+      return result.ok ? 0 : 1
+    }
     // Base-branch rules are authoritative; PR-tree rules only when no base was resolved.
     const authoritative = typeof context.baseProjectRules === 'string' ? context.baseProjectRules : context.projectRules
     const result = validateProjectRuleFinding(finding, authoritative)

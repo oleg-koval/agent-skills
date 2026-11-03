@@ -28,14 +28,28 @@ unless Step 0 validates it through the house hard-rule path.
 
 ## Step 0 -- Hard-rule validation (check this FIRST)
 
-If the FINDING JSON has any non-empty `rule` field, including built-in tags
-such as `TS-1`, `TS-2`, `GQL-1`, or `PR-1`, do NOT run the five adversarial
+If the FINDING JSON has any non-empty `rule` field, do NOT run the five adversarial
 challenges below. They ask
 runtime-failure questions that a standards violation can never answer, and
 answering them honestly would drop a finding that house-rules policy declares
 Critical on standards grounds rather than on runtime behaviour.
 
-Instead run exactly two checks:
+For `rule: "weakens-project-rule"`, use this dedicated path:
+
+1. **Removed-line anchor**: confirm the quoted rule appears on a `-` line in
+   `DIFF_FILE` for the finding's file. Ignore `---` file headers. This anchor is
+   valid for both a deletion and a replacement; do not require a matching `+`
+   line or downgrade the finding because it has no production-code `+` line.
+2. **Base-rule validation**: write the FINDING JSON to a unique temp file and run
+   `node <this prompt's directory>/../../scripts/project-rule-findings.mjs <finding.json> <CONTEXT_FILE>`.
+   The validator requires the exact quote to exist in `baseProjectRules`; a
+   missing base copy or rejected quote fails this check. Do not validate against
+   `projectRules`, which may already reflect the PR's weakened rules.
+
+Both checks pass -> `confirmed` at the finding's Important severity. Either
+check fails -> `dropped`. Do not downgrade a confirmed weakening.
+
+For all other non-empty `rule` tags, run exactly two checks:
 
 1. **Anchor**: the flagged code genuinely appears on a `+` line of
    `DIFF_FILE` (for PR-1, the PR title genuinely lacks a ticket present in

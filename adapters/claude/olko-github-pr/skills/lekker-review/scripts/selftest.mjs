@@ -700,7 +700,8 @@ console.log('\nproject rules: PROJECT:<slug> findings must quote a rule that exi
 const { spawnSync: spawnPr } = await import('node:child_process')
 const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr, symlinkSync: syPr, writeFileSync: wfPr } = await import('node:fs')
 const { tmpdir: tmpPr } = await import('node:os')
-const { validateProjectRuleFinding, isProjectRuleTag } = await import('./project-rule-findings.mjs')
+const { validateProjectRuleFinding, validateWeakenedProjectRuleFinding, isProjectRuleTag } =
+  await import('./project-rule-findings.mjs')
 
 const fixtureDir = join(SKILL, 'scripts', 'fixtures', 'project-rules')
 const prRepo = mkPr(join(tmpPr(), 'lekker-pr-'))
@@ -732,6 +733,22 @@ check('rejects a quote that is absent from projectRules',
   validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER call eval anywhere in the codebase'), planted).ok, false)
 check('rejects a PROJECT tag with no quote',
   validateProjectRuleFinding({ rule: 'PROJECT:no-console-log' }, planted).ok, false)
+const weakenedFinding = prFinding('weakens-project-rule', 'NEVER call console.log in src/.')
+check('accepts a weakened rule quoted from baseProjectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, planted).ok, true)
+check('rejects a weakened rule quote absent from baseProjectRules',
+  validateWeakenedProjectRuleFinding(weakenedFinding, 'NEVER call eval.').ok, false)
+check('rejects a weakened rule when baseProjectRules is unavailable',
+  validateWeakenedProjectRuleFinding(weakenedFinding, undefined).ok, false)
+check('rejects a weakened rule with no quote',
+  validateWeakenedProjectRuleFinding({ rule: 'weakens-project-rule' }, planted).ok, false)
+const verifierInstructions = rdPr(join(SKILL, 'references', 'agents', 'verifier.md'), 'utf8')
+check('verifier has a dedicated weakened-project-rule path',
+  verifierInstructions.includes('For `rule: "weakens-project-rule"`, use this dedicated path:'), true)
+check('verifier accepts deleted and replacement-line anchors',
+  verifierInstructions.includes('valid for both a deletion and a replacement'), true)
+check('verifier confirms valid weakened rules at Important severity',
+  verifierInstructions.includes("`confirmed` at the finding's Important severity"), true)
 check('rejects a malformed slug', validateProjectRuleFinding(prFinding('PROJECT:No Console', 'NEVER call console.log in src/.'), planted).ok, false)
 check('a built-in tag is left to the house-rule path', validateProjectRuleFinding({ rule: 'TS-1' }, planted).ok, true)
 const withRecalled = 'NEVER eval anywhere in src.\n## Recalled patterns\nNEVER call console.log in tests.'
@@ -822,6 +839,12 @@ check('quote found in base rules is accepted even when the PR tree dropped it', 
 const addedCtx = join(crashDir, 'added.json')
 wfPr(addedCtx, JSON.stringify({ projectRules: 'NEVER call console.log in src/.', baseProjectRules: '' }))
 check('a rule only the PR tree contains is rejected when base rules exist', runV(fnd, addedCtx), 1)
+const weakenedFile = join(crashDir, 'weakened.json')
+wfPr(weakenedFile, JSON.stringify(weakenedFinding))
+check('validator accepts a weakened-rule quote found in baseProjectRules',
+  runV(weakenedFile, spoofCtx), 0)
+check('validator rejects a weakened-rule quote found only in projectRules',
+  runV(weakenedFile, addedCtx), 1)
 wfPr(join(crashDir, 'rej.json'), JSON.stringify({ rule: 'PROJECT:no-eval', ruleQuote: 'NEVER call eval anywhere in code' }))
 check('exit 1 on a rejected finding', runV(join(crashDir, 'rej.json'), okCtx), 1)
 const symlinkValidator = join(crashDir, 'project-rule-findings.mjs')
