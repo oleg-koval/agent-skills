@@ -914,6 +914,13 @@ value first). `REVIEW.md` ignore rules never suppress findings in changed paths.
 applies exclusions to agent and lint findings using `changedPaths`; if paths are
 unavailable, keep findings. It never switches off a hard rule from `CLAUDE.md` or the house rules.
 
+**Project rules are hard rules.** A prohibition or obligation in `projectRules`
+(NEVER, MUST, ALWAYS, DO NOT or plain-English equivalent) that a changed line
+violates is raised as Critical with `rule: "PROJECT:<slug>"` and a verbatim
+`ruleQuote`. The verifier runs `scripts/project-rule-findings.mjs`, which drops
+a finding whose quote is not found in `projectRules`; otherwise it takes the
+hard-rule path (anchor and applicability, no runtime challenges).
+
 **Approval standard.** The verdict answers "does this definitely improve the
 codebase's health", not "is this how I would have written it". Perfect code does
 not exist. `✅ LGTM - ship it` is the right call for a change that improves

@@ -72,6 +72,9 @@ Note: awareness only. Do not anchor on prior reviews. Skip findings already
 raised at the same file:line by another reviewer.
 
 PROJECT_RULES to verify: read key "projectRules" from CONTEXT_FILE.
+A changed line that violates a prohibition or obligation in PROJECT_RULES is a Critical
+finding tagged `rule: "PROJECT:<slug>"` with `ruleQuote` set to the exact rule sentence
+(see PROJECT RULES AS HARD RULES in the task message).
 
 Diff: read the full unified PR diff from the file DIFF_FILE (absolute path given in your task message). Do NOT run gh pr diff.
 Worktree: WORKTREE_PATH is given in your task message (null in scan mode, diff only).

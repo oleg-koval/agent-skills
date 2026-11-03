@@ -55,6 +55,13 @@ the rule and quoting the violating snippet. Either check fails -> `dropped`,
 with `reasoning` naming which check failed. There is no `downgraded` outcome
 for a hard rule: it either violates the rule or it does not.
 
+For a `rule` starting with `PROJECT:`, the rule text lives in `projectRules` of
+`CONTEXT_FILE`, not in `HOUSE_RULES_FILE`. Write the FINDING JSON to a temp file
+and run `node <this prompt's directory>/../../scripts/project-rule-findings.mjs <finding.json> <CONTEXT_FILE>`.
+Exit 1 means the quoted rule is not in `projectRules` (or the tag is malformed):
+`dropped`, with that output as `reasoning`. On exit 0, judge applicability
+against the quoted rule as the second check.
+
 Then **stop** -- do not continue to Step 1 or the five challenges.
 
 ---

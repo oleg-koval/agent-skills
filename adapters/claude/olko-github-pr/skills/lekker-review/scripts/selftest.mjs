@@ -696,5 +696,51 @@ check('ledger: proven prover adds one', countProveAttempt(2, { attempted: true, 
 const bareWrites = src.split('\n').filter(l => /proveAttemptCount\s*(\+\+|\+=|=[^=])/.test(l) && !/countProveAttempt\(|let proveAttemptCount/.test(l))
 check('the attempt count is written only through countProveAttempt', bareWrites, [])
 
+console.log('\nproject rules: PROJECT:<slug> findings must quote a rule that exists')
+const { spawnSync: spawnPr } = await import('node:child_process')
+const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr } = await import('node:fs')
+const { tmpdir: tmpPr } = await import('node:os')
+const { validateProjectRuleFinding, isProjectRuleTag } = await import('./project-rule-findings.mjs')
+
+const fixtureDir = join(SKILL, 'scripts', 'fixtures', 'project-rules')
+const prRepo = mkPr(join(tmpPr(), 'lekker-pr-'))
+cpPr(join(fixtureDir, 'CLAUDE.md'), join(prRepo, 'CLAUDE.md'))
+const prGit = (...a) => spawnPr('git', ['-C', prRepo, '-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { encoding: 'utf8' })
+prGit('init', '-q', '-b', 'main'); prGit('add', '.'); prGit('commit', '-qm', 'rules')
+const prOut = join(prRepo, 'rules.json')
+const collected = spawnPr('bash', [join(SKILL, 'scripts', 'setup-worktree.sh'), 'o/r', 'main', prOut], {
+  encoding: 'utf8', env: { ...process.env, LEKKER_RULES_ONLY: '1', LEKKER_LOCAL_REPO: prRepo },
+})
+const planted = collected.status === 0 ? JSON.parse(rdPr(prOut, 'utf8')).projectRules : ''
+check('rules collection exits 0 on the planted fixture', collected.status, 0)
+check('projectRules carries both planted rules',
+  [planted.includes('NEVER call console.log in src/.'), planted.includes('NEVER mutate function arguments.')], [true, true])
+rmPr(prRepo, { recursive: true, force: true })
+
+const prFinding = (rule, ruleQuote) => ({ rule, ruleQuote, file: 'src/total.js', line: 2, title: 't' })
+check('accepts PROJECT:no-console-log with a matching quote',
+  validateProjectRuleFinding(prFinding('PROJECT:no-console-log', 'NEVER call console.log in src/.'), planted).ok, true)
+check('accepts a quote that differs only in case and spacing',
+  validateProjectRuleFinding(prFinding('PROJECT:no-mutation', 'never  mutate   function arguments'), planted).ok, true)
+check('rejects a quote that is absent from projectRules',
+  validateProjectRuleFinding(prFinding('PROJECT:no-eval', 'NEVER call eval anywhere in the codebase'), planted).ok, false)
+check('rejects a PROJECT tag with no quote',
+  validateProjectRuleFinding({ rule: 'PROJECT:no-console-log' }, planted).ok, false)
+check('rejects a malformed slug', validateProjectRuleFinding(prFinding('PROJECT:No Console', 'NEVER call console.log in src/.'), planted).ok, false)
+check('a built-in tag is left to the house-rule path', validateProjectRuleFinding({ rule: 'TS-1' }, planted).ok, true)
+check('isProjectRuleTag accepts a kebab slug and rejects an empty one',
+  [isProjectRuleTag('PROJECT:a-b'), isProjectRuleTag('PROJECT:')], [true, false])
+check('a PROJECT tag is a hard rule', isHardRule({ rule: 'PROJECT:no-console-log' }), true)
+
+// Prompt guard: every lens that reads projectRules is told to raise the tag.
+const lensFiles = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
+check('every lens file that reads projectRules carries the PROJECT instruction',
+  lensFiles.filter(n => {
+    const t = rdPr(join(SKILL, 'references', 'agents', `${n}.md`), 'utf8')
+    return t.includes('"projectRules"') && !t.includes('PROJECT:<slug>')
+  }), [])
+check('the workflow appends the shared block for exactly those lenses',
+  lensFiles.every(n => src.includes(`'${n}'`)) && src.includes('PROJECT_RULE_INSTRUCTION'), true)
+
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)

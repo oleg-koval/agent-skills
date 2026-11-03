@@ -44,6 +44,8 @@ const FINDINGS_ARRAY_SCHEMA = {
       fix:         { type: 'string' },
       precedent:   { type: 'string' },
       rule:        { type: 'string', minLength: 1, pattern: '\\S' },
+      // Verbatim project rule a PROJECT:<slug> finding enforces.
+      ruleQuote:   { type: 'string' },
       boundary:    BOUNDARY_SCHEMA,
       // Short kebab-case slug naming the class of bug ("missing-null-check").
       bugClass:    { type: 'string', minLength: 1, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' },
@@ -181,6 +183,17 @@ const BUG_CLASS_INSTRUCTION = `BUG CLASS: give every finding a "bugClass" (short
   + ` kind of defect, e.g. missing-null-check) and "otherInstances": after the first`
   + ` hit, search the whole diff for the same pattern and list every other place as`
   + ` "file:line" (empty array when there is none). Report the class, not just the first hit.`
+
+const PROJECT_RULE_DIMENSIONS = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
+
+const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRules" from CONTEXT_FILE.`
+  + ` When a changed line violates a project rule written as a prohibition or an obligation`
+  + ` (NEVER, MUST, MUST NOT, ALWAYS, DO NOT, or a plain-English equivalent), raise a Critical`
+  + ` finding with "rule" set to "PROJECT:<short-kebab-slug>", "ruleQuote" set to the exact`
+  + ` sentence from projectRules, and file:line on the violating line. One finding per rule,`
+  + ` with every other violating site in "otherInstances". Never quote a rule that is not in`
+  + ` projectRules. Preferences and suggestions are not hard rules: report them as ordinary`
+  + ` findings. A REVIEW.md ignore entry narrows where you look, it never disables a rule.`
 
 const BUG_CLASS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const INSTANCE_PATTERN = new RegExp(INSTANCE_PATTERN_SOURCE)
@@ -612,6 +625,10 @@ const budgetAtStart = budget.spent()
     }
 
     prompt += ' ' + BUG_CLASS_INSTRUCTION
+
+    if (PROJECT_RULE_DIMENSIONS.includes(dim.key)) {
+      prompt += ' ' + PROJECT_RULE_INSTRUCTION
+    }
 
     // The deterministic lint pre-flight has already collected every rule the
     // repo's own eslint config fires on this diff, and those are exactly the
