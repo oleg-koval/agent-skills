@@ -9,7 +9,8 @@
 //
 //   node project-rule-findings.mjs <finding.json> <context.json>
 //
-// Exit 0 when valid or when the finding is not a PROJECT rule, 1 when rejected.
+// Exit 0 when valid or when the finding is not a PROJECT rule, 1 when rejected,
+// 2 when the validator itself could not run (usage error, unreadable or malformed input).
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -53,15 +54,25 @@ export function validateProjectRuleFinding(finding, projectRules) {
   return { ok: true, reason: 'quote found in projectRules' }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const [findingPath, contextPath] = process.argv.slice(2)
+function main(argv) {
+  const [findingPath, contextPath] = argv
   if (!findingPath || !contextPath) {
     console.error('usage: project-rule-findings.mjs <finding.json> <context.json>')
-    process.exit(2)
+    return 2
   }
-  const finding = JSON.parse(readFileSync(findingPath, 'utf8'))
-  const context = JSON.parse(readFileSync(contextPath, 'utf8'))
-  const result = validateProjectRuleFinding(finding, context.projectRules)
-  console.log(JSON.stringify(result))
-  process.exit(result.ok ? 0 : 1)
+  try {
+    const finding = JSON.parse(readFileSync(findingPath, 'utf8'))
+    const context = JSON.parse(readFileSync(contextPath, 'utf8'))
+    const result = validateProjectRuleFinding(finding, context.projectRules)
+    console.log(JSON.stringify(result))
+    return result.ok ? 0 : 1
+  } catch (error) {
+    // Exit 1 is reserved for "rejected"; a tooling failure must not read as one.
+    console.error(`project-rule-findings: unavailable: ${error.message}`)
+    return 2
+  }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  process.exit(main(process.argv.slice(2)))
 }

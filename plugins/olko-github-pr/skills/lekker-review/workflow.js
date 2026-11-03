@@ -247,6 +247,9 @@ function mergeFindings(a, b) {
 
   if (!merged.rule && b.rule) {
     merged.rule = b.rule
+    if (Object.prototype.hasOwnProperty.call(b, 'ruleQuote')) {
+      merged.ruleQuote = b.ruleQuote
+    }
   }
 
   const agreedBy = []

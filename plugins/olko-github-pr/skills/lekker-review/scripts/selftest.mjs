@@ -698,7 +698,7 @@ check('the attempt count is written only through countProveAttempt', bareWrites,
 
 console.log('\nproject rules: PROJECT:<slug> findings must quote a rule that exists')
 const { spawnSync: spawnPr } = await import('node:child_process')
-const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr } = await import('node:fs')
+const { mkdtempSync: mkPr, cpSync: cpPr, readFileSync: rdPr, rmSync: rmPr, writeFileSync: wfPr } = await import('node:fs')
 const { tmpdir: tmpPr } = await import('node:os')
 const { validateProjectRuleFinding, isProjectRuleTag } = await import('./project-rule-findings.mjs')
 
@@ -739,8 +739,48 @@ check('every lens file that reads projectRules carries the PROJECT instruction',
     const t = rdPr(join(SKILL, 'references', 'agents', `${n}.md`), 'utf8')
     return t.includes('"projectRules"') && !t.includes('PROJECT:<slug>')
   }), [])
-check('the workflow appends the shared block for exactly those lenses',
-  lensFiles.every(n => src.includes(`'${n}'`)) && src.includes('PROJECT_RULE_INSTRUCTION'), true)
+// Behavioural: lift the real reviewPrompt and build prompts with it. Removing the
+// append in reviewPrompt makes the listed-lens check fail.
+function liftBlock(name) {
+  const m = new RegExp(`^const ${name} = [\\s\\S]*?\\n\\n`, 'm').exec(src)
+  if (!m) throw new Error(`selftest: const ${name} not found in workflow.js`)
+  return m[0]
+}
+const buildPrompt = new Function(
+  'dim', 'SUPPRESSED', 'prevSha',
+  [liftBlock('PROJECT_RULE_DIMENSIONS'), liftBlock('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
+    `const targetMetadata = '{}', promptDir = 'p', repoSlug = 'o/r', prNumber = 1, prUrl = 'u',
+       diffFile = 'd', contextFile = 'c', wtDisplay = 'w'`,
+    lift('reviewPrompt'), 'return reviewPrompt(dim)'].join('\n'),
+)
+const promptFor = key => buildPrompt({ key, file: `${key}.md` }, [], null)
+check('a listed lens prompt carries the PROJECT instruction',
+  lensFiles.map(n => promptFor(n).includes('"PROJECT:<short-kebab-slug>"')), lensFiles.map(() => true))
+check('an unlisted lens prompt does not', promptFor('deps').includes('PROJECT:<short-kebab-slug>'), false)
+
+console.log('\nproject rules: dedup keeps the tag and its quote together')
+const { dedup: dedupPr } = new Function(preamble + '\nreturn { dedup }')()
+const plainF = { file: 'src/a.js', line: 2, severity: 'important', title: 'console.log left in src', bugClass: 'console-log', description: 'x', badCode: 'console.log(1)', fix: 'f', otherInstances: [] }
+const taggedF = { ...plainF, severity: 'critical', rule: 'PROJECT:no-console-log', ruleQuote: 'NEVER call console.log in src/.' }
+for (const [label, pair] of [['plain first', [plainF, taggedF]], ['tagged first', [taggedF, plainF]]]) {
+  const [m] = dedupPr(pair)
+  check(`merge keeps rule and ruleQuote (${label})`, [m.rule, m.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
+}
+
+console.log('\nproject rules: validator crash is exit 2, rejection is exit 1')
+const crashDir = mkPr(join(tmpPr(), 'lekker-crash-'))
+const okCtx = join(crashDir, 'ctx.json'), badJson = join(crashDir, 'bad.json'), fnd = join(crashDir, 'f.json')
+wfPr(okCtx, JSON.stringify({ projectRules: 'NEVER call console.log in src/.' }))
+wfPr(badJson, '{not json')
+wfPr(fnd, JSON.stringify({ rule: 'PROJECT:no-console-log', ruleQuote: 'NEVER call console.log in src/.' }))
+const runV = (f, c) => spawnPr('node', [join(SKILL, 'scripts', 'project-rule-findings.mjs'), f, c], { encoding: 'utf8' }).status
+check('exit 0 on a valid finding', runV(fnd, okCtx), 0)
+wfPr(join(crashDir, 'rej.json'), JSON.stringify({ rule: 'PROJECT:no-eval', ruleQuote: 'NEVER call eval anywhere in code' }))
+check('exit 1 on a rejected finding', runV(join(crashDir, 'rej.json'), okCtx), 1)
+check('exit 2 on a missing context file', runV(fnd, join(crashDir, 'nope.json')), 2)
+check('exit 2 on a malformed context file', runV(fnd, badJson), 2)
+check('exit 2 on a malformed finding file', runV(badJson, okCtx), 2)
+rmPr(crashDir, { recursive: true, force: true })
 
 console.log(failed === 0 ? '\nall checks passed\n' : `\n${failed} check(s) FAILED\n`)
 process.exit(failed === 0 ? 0 : 1)
