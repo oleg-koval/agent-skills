@@ -61,7 +61,7 @@ and run `node <this prompt's directory>/../../scripts/project-rule-findings.mjs 
 Exit 1 means the quoted rule is not in `projectRules` (or the tag is malformed):
 `dropped`, with that output as `reasoning`. Any other non-zero exit means the validator
 could not run: do not drop; keep the finding at its severity, say in `reasoning` that
-the validator was unavailable, and judge applicability as below. On exit 0, judge applicability
+the validator was unavailable, set `validatorUnavailable: true`, and judge applicability as below. On exit 0, judge applicability
 against the quoted rule as the second check.
 
 Then **stop** -- do not continue to Step 1 or the five challenges.

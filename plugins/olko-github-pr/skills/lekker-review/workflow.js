@@ -109,6 +109,8 @@ const VERDICT_SCHEMA = {
     verdict:     { enum: ['confirmed', 'downgraded', 'dropped'] },
     newSeverity: { enum: ['important', 'observation'] },
     reasoning:   { type: 'string' },
+    // True when the PROJECT-rule validator could not run (exit other than 0 or 1).
+    validatorUnavailable: { type: 'boolean' },
   },
 }
 
@@ -249,6 +251,8 @@ function mergeFindings(a, b) {
     merged.rule = b.rule
     if (Object.prototype.hasOwnProperty.call(b, 'ruleQuote')) {
       merged.ruleQuote = b.ruleQuote
+    } else {
+      delete merged.ruleQuote
     }
   }
 
@@ -563,7 +567,7 @@ if (Number(cycle) >= RETHINK_CYCLE) {
     recurringClasses: Array.isArray(recurringClasses) ? recurringClasses : [],
     findings: [],
     preExisting: [],
-    droppedCount: 0, downgradedCount: 0, hardRuleCount: 0, agentCount: 0,
+    droppedCount: 0, downgradedCount: 0, hardRuleCount: 0, validatorUnavailableCount: 0, agentCount: 0,
     proveAttemptCount: 0, provenCount: 0, suppressedCount: 0,
     outputTokens: 0, turnTokensTotal: budget.spent(),
     engine: ENGINE,
@@ -578,6 +582,7 @@ const budgetAtStart = budget.spent()
   let droppedCount = 0
   let downgradedCount = 0
   let hardRuleCount = 0
+  let validatorUnavailableCount = 0
   let provenCount = 0
   let suppressedCount = 0
   let proveAttemptCount = 0
@@ -670,7 +675,7 @@ const budgetAtStart = budget.spent()
       `FINDING (JSON): ${JSON.stringify(finding)}.`,
       `DIFF_FILE=${diffFile}, CONTEXT_FILE=${contextFile}, WORKTREE_PATH=${wtDisplay}.`,
       `HOUSE_RULES_FILE: read key "houseRulesFile" from CONTEXT_FILE, then read that exact path before validating a hard rule.`,
-      `Default to dropping when uncertain.`,
+      `Default to dropping when uncertain, except when the PROJECT-rule validator was unavailable: then keep the finding, set validatorUnavailable true, and judge applicability.`,
     ].join(' ')
   }
 
@@ -782,6 +787,11 @@ const budgetAtStart = budget.spent()
           kept.verificationStatus = 'unavailable'
           kept.verifierReasoning = 'verifier agent returned no usable result; downgraded to non-blocking'
           return kept
+        }
+
+        if (verdict.validatorUnavailable === true) {
+          validatorUnavailableCount++
+          log(`PROJECT-rule validator unavailable for ${finding.file}:${finding.line}; finding kept`)
         }
 
         if (verdict.verdict === 'dropped') {
@@ -1107,6 +1117,7 @@ const budgetAtStart = budget.spent()
     droppedCount,
     downgradedCount,
     hardRuleCount,
+    validatorUnavailableCount,
     agentCount,
     proveAttemptCount,
     provenCount,

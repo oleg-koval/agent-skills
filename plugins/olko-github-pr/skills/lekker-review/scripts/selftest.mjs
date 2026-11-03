@@ -767,6 +767,13 @@ for (const [label, pair] of [['plain first', [plainF, taggedF]], ['tagged first'
   check(`merge keeps rule and ruleQuote (${label})`, [m.rule, m.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
 }
 
+const strayQuote = { ...plainF, ruleQuote: 'stale quote that belongs to no rule' }
+const [mergedStray] = dedupPr([strayQuote, taggedF])
+check('a stray quote on an untagged side does not survive the merge',
+  [mergedStray.rule, mergedStray.ruleQuote], ['PROJECT:no-console-log', 'NEVER call console.log in src/.'])
+const [mergedNoQuote] = dedupPr([strayQuote, { ...taggedF, ruleQuote: undefined }])
+check('a tagged side without a quote leaves no stray quote behind', mergedNoQuote.ruleQuote, undefined)
+
 console.log('\nproject rules: validator crash is exit 2, rejection is exit 1')
 const crashDir = mkPr(join(tmpPr(), 'lekker-crash-'))
 const okCtx = join(crashDir, 'ctx.json'), badJson = join(crashDir, 'bad.json'), fnd = join(crashDir, 'f.json')
