@@ -26,21 +26,29 @@ jobs:
   discover:
     permissions:
       pull-requests: read
-    # Private repos share the self-hosted queue across NAS and Mac Linux runners.
-    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted","Linux"]') || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    # Discovery has no write credentials and stays on the CI pool.
+    runs-on: ${{ github.event.repository.private && fromJSON('["Linux","fleet-ci"]') || 'ubuntu-latest' }}
     outputs:
       pr-numbers: ${{ steps.list.outputs.pr-numbers }}
     steps:
       - id: list
         env:
           GH_TOKEN: ${{ github.token }}
+          CODEX_REVIEWER: ${{ vars.FLEET_CODEX_REVIEW_LOGIN || '' }}
           EVENT_NAME: ${{ github.event_name }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          RELEASE_WORKFLOW: ${{ vars.FLEET_RELEASE_WORKFLOW || '' }}
           REQUESTED_PR_NUMBER: ${{ inputs.pr-number || '' }}
         run: |
           set -euo pipefail
           case "$EVENT_NAME" in
             schedule)
-              candidates="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" --jq '.[] | select(.head.repo.full_name == .base.repo.full_name and (.head.ref == "fleet/sync" or .user.login == "oleg-koval")) | .number' | jq -Rsc 'split("\n") | map(select(length > 0) | tonumber)')"
+              candidates="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" --jq '.[] | select(.head.repo.full_name == .base.repo.full_name and (.head.ref == "fleet/sync" or .user.login == "oleg-koval") and any(.labels[]; .name == "fleet-automerge")) | .number' | jq -Rsc 'split("\n") | map(select(length > 0) | tonumber)')"
+              if [[ "$RUN_ATTEMPT" -gt 1 && -n "$RELEASE_WORKFLOW" ]]; then
+                merged="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=closed&per_page=100" --jq '.[] | select(.merged_at != null and (.merged_by.login == "github-actions" or .merged_by.login == "github-actions[bot]") and .head.repo.full_name == .base.repo.full_name and (.head.ref == "fleet/sync" or .user.login == "oleg-koval") and any(.labels[]; .name == "fleet-automerge")) | .number' | jq -Rsc 'split("\n") | map(select(length > 0) | tonumber)')"
+                candidates="$(jq -cn --argjson open "$candidates" --argjson merged "$merged" '$open + $merged | unique')"
+              fi
               ;;
             workflow_dispatch)
               if [[ -n "$REQUESTED_PR_NUMBER" ]]; then
@@ -50,7 +58,11 @@ jobs:
                 fi
                 candidates="[$REQUESTED_PR_NUMBER]"
               else
-                candidates="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" --jq '.[] | select(.head.repo.full_name == .base.repo.full_name and (.head.ref == "fleet/sync" or .user.login == "oleg-koval")) | .number' | jq -Rsc 'split("\n") | map(select(length > 0) | tonumber)')"
+                candidates="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" --jq '.[] | select(.head.repo.full_name == .base.repo.full_name and (.head.ref == "fleet/sync" or .user.login == "oleg-koval") and any(.labels[]; .name == "fleet-automerge")) | .number' | jq -Rsc 'split("\n") | map(select(length > 0) | tonumber)')"
+                if [[ "$RUN_ATTEMPT" -gt 1 && -n "$RELEASE_WORKFLOW" ]]; then
+                  merged="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=closed&per_page=100" --jq '.[] | select(.merged_at != null and (.merged_by.login == "github-actions" or .merged_by.login == "github-actions[bot]") and .head.repo.full_name == .base.repo.full_name and (.head.ref == "fleet/sync" or .user.login == "oleg-koval") and any(.labels[]; .name == "fleet-automerge")) | .number' | jq -Rsc 'split("\n") | map(select(length > 0) | tonumber)')"
+                  candidates="$(jq -cn --argjson open "$candidates" --argjson merged "$merged" '$open + $merged | unique')"
+                fi
               fi
               ;;
             check_suite)
@@ -66,7 +78,16 @@ jobs:
           pr_numbers='[]'
           while IFS= read -r number; do
             [[ "$number" =~ ^[1-9][0-9]*$ ]] || continue
-            eligible="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" --jq '.head.repo.full_name == .base.repo.full_name and (.head.ref == "fleet/sync" or .user.login == "oleg-koval")')"
+            pull="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number")"
+            eligible="$(jq -r '(.head.repo.full_name == .base.repo.full_name) and (.head.ref == "fleet/sync" or .user.login == "oleg-koval") and any(.labels[]; .name == "fleet-automerge")' <<< "$pull")"
+            head_sha="$(jq -r '.head.sha' <<< "$pull")"
+            if [[ "$eligible" == "true" && -n "$CODEX_REVIEWER" ]]; then
+              reviews="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/$number/reviews?per_page=100")"
+              codex_positive="$(jq -r --arg head "$head_sha" --arg reviewer "${CODEX_REVIEWER,,}" 'add | map(select(.commit_id == $head and .user.type == "Bot" and (.user.login | ascii_downcase) == $reviewer)) | group_by(.user.login) | map(last) | any(.state == "APPROVED" or .state == "COMMENTED")' <<< "$reviews")"
+              [[ "$codex_positive" == "true" ]] || eligible=false
+            else
+              eligible=false
+            fi
             if [[ "$eligible" == "true" ]]; then
               pr_numbers="$(jq -c --argjson number "$number" '. + [$number]' <<< "$pr_numbers")"
             fi
@@ -83,37 +104,88 @@ jobs:
     needs: discover
     if: needs.discover.result == 'success' && needs.discover.outputs.pr-numbers != '[]'
     permissions:
-      actions: read
+      actions: write
       contents: write
       pull-requests: write
       issues: read
       checks: read
       statuses: read
-    # Private repos share the self-hosted queue across NAS and Mac Linux runners.
-    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted","Linux"]') || 'ubuntu-latest' }}
+    timeout-minutes: 10
+    # Write credentials only enter the isolated privileged pool.
+    runs-on: ${{ github.event.repository.private && fromJSON('["Linux","fleet-sync"]') || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         pr-number: ${{ fromJSON(needs.discover.outputs.pr-numbers) }}
     concurrency:
       group: fleet-automerge-${{ matrix.pr-number }}
       cancel-in-progress: false
     steps:
-      # Run the same pinned action without requiring Docker access on the runner.
+      - name: Validate immutable automerge source
+        env:
+          ACTION_SHA: ${{ vars.FLEET_AUTOMERGE_ACTION_SHA }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$ACTION_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "FLEET_AUTOMERGE_ACTION_SHA must identify a reviewed action commit" >&2
+            exit 1
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: oleg-koval/pr-automerge-github-action
-          ref: 4e12f963b26ab78adb5d9e7ee032bcc2089be094
+          ref: ${{ vars.FLEET_AUTOMERGE_ACTION_SHA }}
           path: .fleet-automerge-action
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version: '1.27.x'
           cache: false
       - name: Build pinned automerge action
         env:
           CGO_ENABLED: '0'
-        run: go build -C .fleet-automerge-action -o "$RUNNER_TEMP/fleet-automerge" ./cmd/pr-automerge-action
+        run: |
+          set -euo pipefail
+          # Refuse old action versions that conflate suppression and eligibility.
+          grep -q '^  suppress-comments:' .fleet-automerge-action/action.yml
+          grep -q '^  required-reviewer-logins:' .fleet-automerge-action/action.yml
+          grep -q '^  expected-head-sha:' .fleet-automerge-action/action.yml
+          go build -C .fleet-automerge-action -o "$RUNNER_TEMP/fleet-automerge" ./cmd/pr-automerge-action
+      - name: Recheck current-head Codex review
+        id: reviewed-head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEX_REVIEWER: ${{ vars.FLEET_CODEX_REVIEW_LOGIN || '' }}
+          PR_NUMBER: ${{ matrix.pr-number }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CODEX_REVIEWER" ]; then
+            echo "FLEET_CODEX_REVIEW_LOGIN is not configured; refusing to merge" >&2
+            exit 1
+          fi
+          pull="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+          head_sha="$(jq -r '.head.sha' <<< "$pull")"
+          if ! jq -e '(.head.repo.full_name == .base.repo.full_name) and (.head.ref == "fleet/sync" or .user.login == "oleg-koval") and any(.labels[]; .name == "fleet-automerge")' <<< "$pull" >/dev/null; then
+            echo "PR is no longer same-repository, eligible, and opted in" >&2
+            exit 1
+          fi
+          reviews="$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews?per_page=100")"
+          if ! jq -e --arg head "$head_sha" --arg reviewer "${CODEX_REVIEWER,,}" 'add | map(select(.commit_id == $head and .user.type == "Bot" and (.user.login | ascii_downcase) == $reviewer)) | group_by(.user.login) | map(last) | any(.state == "APPROVED" or .state == "COMMENTED")' <<< "$reviews" >/dev/null; then
+            echo "No completed Codex review for current head $head_sha" >&2
+            exit 1
+          fi
+          printf 'expected-head-sha=%s\n' "$head_sha" >> "$GITHUB_OUTPUT"
+      - name: Check whether PR was already merged
+        id: premerge
+        if: vars.FLEET_RELEASE_WORKFLOW != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr-number }}
+        run: |
+          set -euo pipefail
+          pull="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json mergedAt)"
+          already_merged="$(jq -r 'if .mergedAt == null then "false" else "true" end' <<< "$pull")"
+          printf 'already-merged=%s\n' "$already_merged" >> "$GITHUB_OUTPUT"
       - name: Run pinned automerge action
         env:
           INPUT_GITHUB_TOKEN: ${{ github.token }}
@@ -121,6 +193,40 @@ jobs:
           INPUT_MAINTAINER_HANDLES: oleg-koval
           INPUT_IGNORED_CHECK_NAMES: automerge,automerge (${{ matrix.pr-number }})
           INPUT_AUTOMERGE_WORKFLOW_PATH: .github/workflows/fleet-automerge.yml
+          INPUT_NO_PR_COMMENTS: 'false'
           INPUT_SUPPRESS_COMMENTS: 'true'
+          INPUT_REQUIRED_REVIEWER_LOGINS: ${{ vars.FLEET_CODEX_REVIEW_LOGIN }}
+          INPUT_EXPECTED_HEAD_SHA: ${{ steps.reviewed-head.outputs.expected-head-sha }}
+          INPUT_WAIT_TIMEOUT: 0s
           INPUT_PR_NUMBER: ${{ matrix.pr-number }}
         run: '"$RUNNER_TEMP/fleet-automerge"'
+      - name: Start release workflow after merge
+        # A re-run after a failed dispatch sees the PR already merged; the run-name dedupe below prevents a second release.
+        if: vars.FLEET_RELEASE_WORKFLOW != '' && (steps.premerge.outputs.already-merged == 'false' || github.run_attempt != '1')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr-number }}
+          RELEASE_WORKFLOW: ${{ vars.FLEET_RELEASE_WORKFLOW }}
+        run: |
+          set -euo pipefail
+          pull="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,mergedAt,mergeCommit,mergedBy)"
+          if ! jq -e '.mergedAt != null' <<< "$pull" >/dev/null; then
+            echo "PR #$PR_NUMBER was not merged"
+            exit 0
+          fi
+          base_ref="$(jq -r '.baseRefName' <<< "$pull")"
+          merge_sha="$(jq -r '.mergeCommit.oid' <<< "$pull")"
+          merged_at="$(jq -r '.mergedAt' <<< "$pull")"
+          merged_by="$(jq -r '.mergedBy.login // ""' <<< "$pull")"
+          merged_by="${merged_by#app/}"
+          if [[ "$merged_by" != "github-actions" && "$merged_by" != "github-actions[bot]" ]]; then
+            echo "PR #$PR_NUMBER was merged by $merged_by; push workflows handle human merges"
+            exit 0
+          fi
+          runs="$(gh api --method GET --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/workflows/$RELEASE_WORKFLOW/runs" -f event=workflow_dispatch -f branch="$base_ref" -f created=">=$merged_at" -F per_page=100)"
+          if jq -e --arg merge_sha "$merge_sha" '[.[].workflow_runs[]? | select((.display_title // "") | contains($merge_sha))] | length > 0' <<< "$runs" >/dev/null; then
+            echo "Release workflow already has a run for merge $merge_sha"
+            exit 0
+          fi
+          gh workflow run "$RELEASE_WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref "$base_ref" -f "release-key=$merge_sha"
+        shell: bash

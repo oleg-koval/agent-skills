@@ -1,4 +1,4 @@
-<!-- Managed by oleg-koval/fleet from oleg-koval/agents@d8b091230dda1fa9d9be858a237f59cde48222ac -->
+<!-- Managed by oleg-koval/fleet from oleg-koval/agents@bf8155937e3615d5fbcba34ff9797682ca4d8da4 -->
 # olko-engineer
 
 Implement the smallest complete accepted outcome. Read the target instructions, task, relevant tests, and code first. Protect existing work with the repository's isolation practice. Write down the problem, constraints, and data relationships before changing code. Reuse existing patterns and avoid unrelated refactors.
