@@ -66,9 +66,9 @@ unavailable; do not infer what it meant from prose.
 Select dimensions exactly as the Claude workflow does:
 
 - deps: `deps` (single checklist agent; no verifier, no prover)
-- scan: `triage-quality`, `triage-logic`
+- scan: `triage-quality`, `triage-logic`, `project-rules`
 - medium/deep: `quality`, `implementation`, `simplification`, `conventions`,
-  `test-quality`
+  `test-quality`, `project-rules`
 
 For each dimension, spawn a `default` read-only agent with the following
 bounded task:

@@ -201,6 +201,11 @@ function sameIssue(a, b) {
       && qa !== '' && qb !== '' && qa !== qb) {
     return false
   }
+  // One authoritative rule quote is one breach, whatever each reviewer titled it or
+  // classed it. Location is still gated by the caller's file bucket and line window.
+  if (sameProjectQuote) {
+    return true
+  }
   // Merging two classes would send one class's instances to the other's fix.
   if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
     return false
@@ -222,9 +227,9 @@ const BUG_CLASS_INSTRUCTION = `BUG CLASS: give every finding a "bugClass" (short
   + ` "file:line" (empty array when there is none). Report the class, not just the first hit.`
 
 const PROJECT_RULE_DIMENSIONS = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality',
-  'triage-quality', 'triage-logic']
+  'triage-quality', 'triage-logic', 'project-rules']
 
-const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRules" from CONTEXT_FILE.`
+const PROJECT_RULE_CORE = `PROJECT RULES AS HARD RULES: read "projectRules" from CONTEXT_FILE.`
   + ` When a changed line violates a project rule written as a prohibition or an obligation`
   + ` (NEVER, MUST, MUST NOT, ALWAYS, DO NOT, or a plain-English equivalent), raise a Critical`
   + ` finding with "rule" set to "PROJECT:<short-kebab-slug>", "ruleQuote" set to the exact`
@@ -234,8 +239,18 @@ const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRule
   + ` baseProjectRules, raise an Important finding with rule "weakens-project-rule" quoting`
   + ` the removed line. One finding per rule,`
   + ` with every other violating site in "otherInstances". Never quote a rule that is not in`
-  + ` the authoritative source ("baseProjectRules" when it is a string, otherwise "projectRules"). Preferences and suggestions are not hard rules: report them as ordinary`
-  + ` findings. A REVIEW.md ignore entry narrows where you look, it never disables a rule.`
+  + ` the authoritative source ("baseProjectRules" when it is a string, otherwise "projectRules").`
+
+const IGNORE_ENTRY_NOTE = ` A REVIEW.md ignore entry narrows where you look, it never disables a rule.`
+
+const PROJECT_RULE_INSTRUCTION = PROJECT_RULE_CORE
+  + ` Preferences and suggestions are not hard rules: report them as ordinary findings.`
+  + IGNORE_ENTRY_NOTE
+
+// The dedicated reviewer owns hard rules only, so it must not be told to emit preference findings.
+const PROJECT_RULE_ONLY_INSTRUCTION = PROJECT_RULE_CORE
+  + ` Preferences and suggestions are out of scope for you: do not report them.`
+  + IGNORE_ENTRY_NOTE
 
 const BUG_CLASS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const INSTANCE_PATTERN = new RegExp(INSTANCE_PATTERN_SOURCE)
@@ -397,7 +412,10 @@ function shouldVerify(finding, depth) {
 // Which reviewers run at each depth. `deps` is a PR whose only changes are
 // lockfiles and the dependency keys of package.json: five specialists would
 // produce a couple of notes that a single checklist agent covers, so it gets
-// exactly one.
+// exactly one. `project-rules` runs at every other depth: a rule sentence inside
+// a large rules file was missed when the check was only a side duty of generalist
+// agents. It always runs because the script cannot cheaply tell whether the
+// context holds rules; its prompt returns no findings when they are absent.
 function dimensionsFor(depth, MODEL) {
   if (depth === 'deps') {
     return [{ key: 'deps', file: 'deps.md', model: MODEL.review }]
@@ -406,6 +424,7 @@ function dimensionsFor(depth, MODEL) {
     return [
       { key: 'triage-quality', file: 'triage-quality.md', model: MODEL.triage },
       { key: 'triage-logic',   file: 'triage-logic.md',   model: MODEL.triage },
+      { key: 'project-rules',  file: 'project-rules.md',  model: MODEL.review },
     ]
   }
   return [
@@ -414,6 +433,7 @@ function dimensionsFor(depth, MODEL) {
     { key: 'simplification', file: 'simplification.md', model: MODEL.review },
     { key: 'conventions',    file: 'conventions.md',    model: MODEL.review },
     { key: 'test-quality',   file: 'test-quality.md',   model: MODEL.review },
+    { key: 'project-rules',  file: 'project-rules.md',  model: MODEL.review },
   ]
 }
 
@@ -586,14 +606,14 @@ if (ENGINE === 'revmux' && !findingsFile) {
   throw new Error('lekker-review workflow: engine "revmux" requires findingsFile (adapter output)')
 }
 
-// Concurrency. The review stage is self-limiting: five dimensions means five
+// Concurrency. The review stage is self-limiting: six dimensions means six
 // agents, so it runs them all at once. The other stages are not. Verify,
 // critic and prove spawn one agent PER FINDING, so a finding-heavy PR would
 // fan out far wider than the review that produced it, with no ceiling. Those
 // are capped at the review stage's own width.
 const REVIEW_PLAN = (Array.isArray(reviewBatchPlan) && reviewBatchPlan.length > 0)
   ? reviewBatchPlan
-  : [5]
+  : [6]
 const FANOUT_PLAN = [Math.max(1, maxConcurrent || 5)]
 const targetMetadata = JSON.stringify({ targetLabel })
 
@@ -678,7 +698,7 @@ const budgetAtStart = budget.spent()
     prompt += ' ' + BUG_CLASS_INSTRUCTION
 
     if (PROJECT_RULE_DIMENSIONS.includes(dim.key)) {
-      prompt += ' ' + PROJECT_RULE_INSTRUCTION
+      prompt += ' ' + (dim.key === 'project-rules' ? PROJECT_RULE_ONLY_INSTRUCTION : PROJECT_RULE_INSTRUCTION)
     }
 
     // The deterministic lint pre-flight has already collected every rule the
