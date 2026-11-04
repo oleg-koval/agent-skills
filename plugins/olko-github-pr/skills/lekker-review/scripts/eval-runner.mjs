@@ -4,15 +4,20 @@
 // Usage:
 //   node eval-runner.mjs --manifest evals/manifest.json --results <results.json> [--json]
 //
-// manifest.json: { prs: [{ repo, pr, expect: "buggy"|"clean", knownBug?: "file:line + description" }] }
-// results.json:  { "<repo>#<pr>": [ <finding>, ... ] }  the findings of one lekker run per PR
-//                (the `findings` array the workflow returns). A PR missing from results is
+// manifest.json: { prs: [{ repo, pr, expect: "buggy"|"clean", knownBug?: "file:line + description", id?, sha? }] }
+//                The case key is `id` when present, else "<repo>#<pr>@<sha>" when `sha` is
+//                present, else "<repo>#<pr>". Use id or sha to list one PR at two commits.
+// results.json:  { "<case key>": [ <finding>, ... ] }  the findings of one lekker run per case
+//                (the `findings` array the workflow returns), or an array of such arrays for
+//                repeated runs, which adds per-case hitRate and per-run counts to separate
+//                model noise from a real difference. A case missing from results is
 //                reported as unscored, never as zero findings.
 //
 // A buggy PR is HIT when some finding is on the knownBug file within LINE_WINDOW lines
 // of the knownBug line. Known limitation: the match is by location only, so a
 // same-file finding near the line counts even if it describes a different problem;
-// judging "same bug" needs an LLM or a description match and is not attempted. Recall = hits / scored buggy PRs. On a clean PR every
+// judging "same bug" needs an LLM or a description match and is not attempted. Recall = hits /
+// scored buggy runs (one run per case unless a case has repeated runs). On a clean PR every
 // verdict-affecting finding (critical or important) is a false positive.
 
 import { readFileSync } from 'node:fs';
@@ -38,6 +43,15 @@ export function isHit(findings, knownBug) {
     && Math.abs(f.line - spot.line) <= LINE_WINDOW);
 }
 
+export function caseKey(e) {
+  if (typeof e.id === 'string' && e.id) return e.id;
+  return typeof e.sha === 'string' && e.sha ? `${e.repo}#${e.pr}@${e.sha}` : `${e.repo}#${e.pr}`;
+}
+
+const SHA = /^[0-9a-f]{7,40}$/i;
+
+const isMultiRun = (v) => Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
+
 export function validateManifest(manifest) {
   const prs = manifest && Array.isArray(manifest.prs) ? manifest.prs : null;
   if (!prs) throw new Error('manifest needs a "prs" array');
@@ -45,7 +59,9 @@ export function validateManifest(manifest) {
   prs.forEach((e, i) => {
     if (!e.repo || !Number.isInteger(e.pr)) throw new Error(`prs[${i}]: repo and integer pr are required`);
     if (e.expect !== 'buggy' && e.expect !== 'clean') throw new Error(`prs[${i}]: expect must be "buggy" or "clean"`);
-    const key = `${e.repo}#${e.pr}`;
+    if ('id' in e && (typeof e.id !== 'string' || !e.id)) throw new Error(`prs[${i}]: id must be a non-empty string`);
+    if ('sha' in e && (typeof e.sha !== 'string' || !SHA.test(e.sha))) throw new Error(`prs[${i}]: sha must be 7 to 40 hex characters`);
+    const key = caseKey(e);
     if (seen.has(key)) throw new Error(`prs[${i}]: duplicate entry ${key}`);
     seen.add(key);
     if (e.expect === 'buggy' && !parseKnownBug(e.knownBug)) {
@@ -57,25 +73,42 @@ export function validateManifest(manifest) {
 
 export function score(manifest, results) {
   const rows = validateManifest(manifest).map((e) => {
-    const key = `${e.repo}#${e.pr}`;
-    const findings = results[key];
-    if (!Array.isArray(findings)) return { key, expect: e.expect, scored: false };
-    if (e.expect === 'buggy') return { key, expect: 'buggy', scored: true, hit: isHit(findings, e.knownBug) };
+    const key = caseKey(e);
+    const value = results[key];
+    if (!Array.isArray(value)) return { key, expect: e.expect, scored: false };
+    const runs = isMultiRun(value) ? value : null;
+    if (e.expect === 'buggy') {
+      if (!runs) return { key, expect: 'buggy', scored: true, hit: isHit(value, e.knownBug) };
+      const hits = runs.filter((r) => isHit(r, e.knownBug)).length;
+      return { key, expect: 'buggy', scored: true, hit: hits > 0, runs: runs.length, hits, hitRate: hits / runs.length };
+    }
+    const fp = (r) => r.filter((f) => BLOCKING.has(f.severity)).length;
+    if (!runs) return { key, expect: 'clean', scored: true, falsePositives: fp(value) };
+    const perRun = runs.map(fp);
     return {
-      key, expect: 'clean', scored: true,
-      falsePositives: findings.filter((f) => BLOCKING.has(f.severity)).length,
+      key, expect: 'clean', scored: true, falsePositives: perRun.reduce((n, x) => n + x, 0),
+      runs: runs.length, falsePositivesPerRun: perRun,
     };
   });
   const buggy = rows.filter((r) => r.expect === 'buggy' && r.scored);
   const clean = rows.filter((r) => r.expect === 'clean' && r.scored);
-  return {
-    recall: buggy.length === 0 ? null : buggy.filter((r) => r.hit).length / buggy.length,
+  const buggyRuns = buggy.reduce((n, r) => n + (r.runs || 1), 0);
+  const cleanRuns = clean.reduce((n, r) => n + (r.runs || 1), 0);
+  const falsePositives = clean.reduce((n, r) => n + r.falsePositives, 0);
+  const out = {
+    recall: buggyRuns === 0 ? null : buggy.reduce((n, r) => n + (r.runs ? r.hits : Number(r.hit)), 0) / buggyRuns,
     buggyScored: buggy.length,
-    falsePositives: clean.reduce((n, r) => n + r.falsePositives, 0),
+    falsePositives,
     cleanScored: clean.length,
     unscored: rows.filter((r) => !r.scored).map((r) => r.key),
     rows,
   };
+  if (rows.some((r) => r.runs)) {
+    Object.assign(out, {
+      buggyRuns, cleanRuns, falsePositivesPerCleanRun: cleanRuns === 0 ? null : falsePositives / cleanRuns,
+    });
+  }
+  return out;
 }
 
 function main(argv) {
@@ -86,8 +119,13 @@ function main(argv) {
   }
   const out = score(JSON.parse(readFileSync(flag('manifest'), 'utf8')), JSON.parse(readFileSync(flag('results'), 'utf8')));
   if (argv.includes('--json')) { console.log(JSON.stringify(out)); return; }
-  const pct = out.recall === null ? 'n/a' : `${Math.round(out.recall * 100)}%`;
-  console.log(`recall ${pct} (${out.buggyScored} buggy scored), false positives ${out.falsePositives} (${out.cleanScored} clean scored), unscored ${out.unscored.length}`);
+  const pct = (x) => (x === null ? 'n/a' : `${Math.round(x * 100)}%`);
+  if (out.buggyRuns === undefined) {
+    console.log(`recall ${pct(out.recall)} (${out.buggyScored} buggy scored), false positives ${out.falsePositives} (${out.cleanScored} clean scored), unscored ${out.unscored.length}`);
+    return;
+  }
+  const perRun = out.falsePositivesPerCleanRun === null ? 'n/a' : out.falsePositivesPerCleanRun.toFixed(2);
+  console.log(`recall ${pct(out.recall)} per run (${out.buggyRuns} runs over ${out.buggyScored} buggy cases), false positives ${out.falsePositives} (${out.cleanRuns} runs over ${out.cleanScored} clean cases, ${perRun} per run), unscored ${out.unscored.length}`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main(process.argv.slice(2));

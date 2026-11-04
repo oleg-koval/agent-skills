@@ -1430,7 +1430,9 @@ threads remain in the total but do not count as dismissed. Only comments ending 
 counted, so PRs posted before the marker existed score zero comments.
 **Eval harness.** `evals/manifest.json` lists PRs with a known outcome (`expect:
 "buggy"` with `knownBug: "file:line description"`, or `"clean"`). Run lekker on
-each, save the `findings` arrays as `{"<repo>#<pr>": [...]}`, then
+each, save the `findings` arrays under each case's key (`id`, else
+`<repo>#<pr>@<sha>` when the entry has `sha`, else `<repo>#<pr>`), for example
+`{"<repo>#<pr>": [...]}`; a value may be an array of runs to get a hit rate, then
 `node "${SKILL_ROOT}/scripts/eval-runner.mjs" --manifest "${SKILL_ROOT}/evals/manifest.json" --results <results.json>`
 prints recall on buggy PRs and the false-positive count (critical or important
 findings) on clean ones. The shipped manifest holds two placeholders; choosing
