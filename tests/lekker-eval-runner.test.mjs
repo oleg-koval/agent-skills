@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 
 import { isHit, parseKnownBug, score, validateManifest } from '../plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs'
@@ -60,12 +63,12 @@ test('duplicate keys, missing knownBug and line 0 are rejected', () => {
 
 test('the same PR at two shas is accepted and keyed separately', () => {
   const m = { prs: [
-    { repo: 'o/r', pr: 9, sha: 'aaa', expect: 'buggy', knownBug: 'src/a.ts:5 x' },
-    { repo: 'o/r', pr: 9, sha: 'bbb', expect: 'clean' },
+    { repo: 'o/r', pr: 9, sha: 'aaaaaaa', expect: 'buggy', knownBug: 'src/a.ts:5 x' },
+    { repo: 'o/r', pr: 9, sha: 'bbbbbbb', expect: 'clean' },
   ] }
   assert.equal(validateManifest(m).length, 2)
-  const out = score(m, { 'o/r#9@aaa': [{ file: 'src/a.ts', line: 5 }], 'o/r#9@bbb': [] })
-  assert.deepEqual(out.rows.map((r) => r.key), ['o/r#9@aaa', 'o/r#9@bbb'])
+  const out = score(m, { 'o/r#9@aaaaaaa': [{ file: 'src/a.ts', line: 5 }], 'o/r#9@bbbbbbb': [] })
+  assert.deepEqual(out.rows.map((r) => r.key), ['o/r#9@aaaaaaa', 'o/r#9@bbbbbbb'])
   assert.equal(out.recall, 1)
 })
 
@@ -121,4 +124,27 @@ test('a mixed results file scores single and multi cases together', () => {
   assert.equal(out.falsePositives, 1)
   assert.equal(out.rows[1].hit, true)
   assert.equal(out.rows[1].runs, undefined)
+})
+
+test('an unusable id or sha is rejected instead of falling back to repo#pr', () => {
+  const one = (extra) => ({ prs: [{ repo: 'o/r', pr: 1, expect: 'clean', ...extra }] })
+  assert.throws(() => validateManifest(one({ id: 7 })), /id must be/)
+  assert.throws(() => validateManifest(one({ id: '' })), /id must be/)
+  assert.throws(() => validateManifest(one({ sha: 'main' })), /sha must be/)
+  assert.throws(() => validateManifest(one({ sha: 'abc' })), /sha must be/)
+  assert.equal(validateManifest(one({ sha: 'ABCDEF0' })).length, 1)
+})
+
+test('the CLI summary names run counts when a case has repeated runs', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lekker-eval-'))
+  const write = (name, value) => { const p = join(dir, name); writeFileSync(p, JSON.stringify(value)); return p }
+  const run = (results) => execFileSync('node', [
+    'plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs',
+    '--manifest', write('m.json', manifest), '--results', write('r.json', results),
+  ], { encoding: 'utf8' }).trim()
+  const hit = [{ file: 'src/a.ts', line: 42 }]
+  assert.equal(run({ 'o/r#1': hit, 'o/r#3': [] }),
+    'recall 100% (1 buggy scored), false positives 0 (1 clean scored), unscored 2')
+  assert.equal(run({ 'o/r#1': [hit, []], 'o/r#3': [[{ severity: 'critical' }], []] }),
+    'recall 50% per run (2 runs over 1 buggy cases), false positives 1 (2 runs over 1 clean cases, 0.50 per run), unscored 2')
 })

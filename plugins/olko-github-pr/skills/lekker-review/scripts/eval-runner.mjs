@@ -16,7 +16,8 @@
 // A buggy PR is HIT when some finding is on the knownBug file within LINE_WINDOW lines
 // of the knownBug line. Known limitation: the match is by location only, so a
 // same-file finding near the line counts even if it describes a different problem;
-// judging "same bug" needs an LLM or a description match and is not attempted. Recall = hits / scored buggy PRs. On a clean PR every
+// judging "same bug" needs an LLM or a description match and is not attempted. Recall = hits /
+// scored buggy runs (one run per case unless a case has repeated runs). On a clean PR every
 // verdict-affecting finding (critical or important) is a false positive.
 
 import { readFileSync } from 'node:fs';
@@ -47,6 +48,8 @@ export function caseKey(e) {
   return typeof e.sha === 'string' && e.sha ? `${e.repo}#${e.pr}@${e.sha}` : `${e.repo}#${e.pr}`;
 }
 
+const SHA = /^[0-9a-f]{7,40}$/i;
+
 const isMultiRun = (v) => Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
 
 export function validateManifest(manifest) {
@@ -56,6 +59,8 @@ export function validateManifest(manifest) {
   prs.forEach((e, i) => {
     if (!e.repo || !Number.isInteger(e.pr)) throw new Error(`prs[${i}]: repo and integer pr are required`);
     if (e.expect !== 'buggy' && e.expect !== 'clean') throw new Error(`prs[${i}]: expect must be "buggy" or "clean"`);
+    if ('id' in e && (typeof e.id !== 'string' || !e.id)) throw new Error(`prs[${i}]: id must be a non-empty string`);
+    if ('sha' in e && (typeof e.sha !== 'string' || !SHA.test(e.sha))) throw new Error(`prs[${i}]: sha must be 7 to 40 hex characters`);
     const key = caseKey(e);
     if (seen.has(key)) throw new Error(`prs[${i}]: duplicate entry ${key}`);
     seen.add(key);
@@ -114,8 +119,13 @@ function main(argv) {
   }
   const out = score(JSON.parse(readFileSync(flag('manifest'), 'utf8')), JSON.parse(readFileSync(flag('results'), 'utf8')));
   if (argv.includes('--json')) { console.log(JSON.stringify(out)); return; }
-  const pct = out.recall === null ? 'n/a' : `${Math.round(out.recall * 100)}%`;
-  console.log(`recall ${pct} (${out.buggyScored} buggy scored), false positives ${out.falsePositives} (${out.cleanScored} clean scored), unscored ${out.unscored.length}`);
+  const pct = (x) => (x === null ? 'n/a' : `${Math.round(x * 100)}%`);
+  if (out.buggyRuns === undefined) {
+    console.log(`recall ${pct(out.recall)} (${out.buggyScored} buggy scored), false positives ${out.falsePositives} (${out.cleanScored} clean scored), unscored ${out.unscored.length}`);
+    return;
+  }
+  const perRun = out.falsePositivesPerCleanRun === null ? 'n/a' : out.falsePositivesPerCleanRun.toFixed(2);
+  console.log(`recall ${pct(out.recall)} per run (${out.buggyRuns} runs over ${out.buggyScored} buggy cases), false positives ${out.falsePositives} (${out.cleanRuns} runs over ${out.cleanScored} clean cases, ${perRun} per run), unscored ${out.unscored.length}`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
