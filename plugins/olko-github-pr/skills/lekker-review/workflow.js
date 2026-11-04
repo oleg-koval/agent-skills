@@ -201,6 +201,11 @@ function sameIssue(a, b) {
       && qa !== '' && qb !== '' && qa !== qb) {
     return false
   }
+  // One authoritative rule quote is one breach, whatever each reviewer titled it or
+  // classed it. Location is still gated by the caller's file bucket and line window.
+  if (sameProjectQuote) {
+    return true
+  }
   // Merging two classes would send one class's instances to the other's fix.
   if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
     return false
@@ -224,7 +229,7 @@ const BUG_CLASS_INSTRUCTION = `BUG CLASS: give every finding a "bugClass" (short
 const PROJECT_RULE_DIMENSIONS = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality',
   'triage-quality', 'triage-logic', 'project-rules']
 
-const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRules" from CONTEXT_FILE.`
+const PROJECT_RULE_CORE = `PROJECT RULES AS HARD RULES: read "projectRules" from CONTEXT_FILE.`
   + ` When a changed line violates a project rule written as a prohibition or an obligation`
   + ` (NEVER, MUST, MUST NOT, ALWAYS, DO NOT, or a plain-English equivalent), raise a Critical`
   + ` finding with "rule" set to "PROJECT:<short-kebab-slug>", "ruleQuote" set to the exact`
@@ -234,8 +239,18 @@ const PROJECT_RULE_INSTRUCTION = `PROJECT RULES AS HARD RULES: read "projectRule
   + ` baseProjectRules, raise an Important finding with rule "weakens-project-rule" quoting`
   + ` the removed line. One finding per rule,`
   + ` with every other violating site in "otherInstances". Never quote a rule that is not in`
-  + ` the authoritative source ("baseProjectRules" when it is a string, otherwise "projectRules"). Preferences and suggestions are not hard rules: report them as ordinary`
-  + ` findings. A REVIEW.md ignore entry narrows where you look, it never disables a rule.`
+  + ` the authoritative source ("baseProjectRules" when it is a string, otherwise "projectRules").`
+
+const IGNORE_ENTRY_NOTE = ` A REVIEW.md ignore entry narrows where you look, it never disables a rule.`
+
+const PROJECT_RULE_INSTRUCTION = PROJECT_RULE_CORE
+  + ` Preferences and suggestions are not hard rules: report them as ordinary findings.`
+  + IGNORE_ENTRY_NOTE
+
+// The dedicated reviewer owns hard rules only, so it must not be told to emit preference findings.
+const PROJECT_RULE_ONLY_INSTRUCTION = PROJECT_RULE_CORE
+  + ` Preferences and suggestions are out of scope for you: do not report them.`
+  + IGNORE_ENTRY_NOTE
 
 const BUG_CLASS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const INSTANCE_PATTERN = new RegExp(INSTANCE_PATTERN_SOURCE)
@@ -683,7 +698,7 @@ const budgetAtStart = budget.spent()
     prompt += ' ' + BUG_CLASS_INSTRUCTION
 
     if (PROJECT_RULE_DIMENSIONS.includes(dim.key)) {
-      prompt += ' ' + PROJECT_RULE_INSTRUCTION
+      prompt += ' ' + (dim.key === 'project-rules' ? PROJECT_RULE_ONLY_INSTRUCTION : PROJECT_RULE_INSTRUCTION)
     }
 
     // The deterministic lint pre-flight has already collected every rule the

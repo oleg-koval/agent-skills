@@ -871,7 +871,8 @@ function liftBlock(name) {
 const liftBlockOr = name => { try { return liftBlock(name) } catch { return `const ${name} = ''\n` } }
 const buildPrompt = new Function(
   'dim', 'SUPPRESSED', 'prevSha',
-  [liftBlockOr('PROJECT_RULE_DIMENSIONS'), liftBlockOr('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
+  [liftBlockOr('PROJECT_RULE_DIMENSIONS'), liftBlockOr('PROJECT_RULE_CORE'), liftBlockOr('IGNORE_ENTRY_NOTE'),
+    liftBlockOr('PROJECT_RULE_INSTRUCTION'), liftBlockOr('PROJECT_RULE_ONLY_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
     `const targetMetadata = '{}', promptDir = 'p', repoSlug = 'o/r', prNumber = 1, prUrl = 'u',
        diffFile = 'd', contextFile = 'c', wtDisplay = 'w'`,
     lift('reviewPrompt'), 'return reviewPrompt(dim)'].join('\n'),

@@ -21,16 +21,25 @@ Procedure:
    name, import, file pattern, naming pattern, template-literal shape), derive
    the pattern and search the diff for it (grep or Bash is allowed) instead of
    relying on reading. Check added file paths in the diff headers too.
-5. A rule is broken only by a `+` line (or an added file). Unchanged code is out
-   of scope.
+5. A rule is broken by a `+` line (or an added file). Unchanged code is out of
+   scope.
+6. Separately, when "baseProjectRules" is a string, check every `-` line in
+   DIFF_FILE against its rule lines (including the rules files themselves, such
+   as CLAUDE.md or AGENTS.md). A rule line that is removed, or reworded so it
+   forbids or requires less (a NEVER softened to a preference, a dropped
+   exception list, a narrowed scope), is a breach even when no `+` line violates
+   anything. The PR's own copy cannot clear it: compare against the base copy.
 
 Reporting contract (same as the PROJECT RULES AS HARD RULES instruction below):
 - One finding per broken rule, Critical, `rule` set to `PROJECT:<short-kebab-slug>`,
   `ruleQuote` set to the exact sentence from the authoritative source, file:line on
   the first violating line, every other violating site in `otherInstances`.
-- When the diff deletes or weakens a rule line that is in "baseProjectRules",
-  report an Important finding with `rule` "weakens-project-rule" quoting the
-  removed line.
+- When the diff deletes or weakens a rule line that is in "baseProjectRules"
+  (procedure step 6), report an Important finding with `rule`
+  "weakens-project-rule", `ruleQuote` set to the exact base-branch sentence,
+  file:line on the removed or reworded line, and `badCode` set to the verbatim
+  `-` line (plus the replacing `+` line when there is one). `fix` is to restore
+  the rule or to state why the project dropped it.
 - Never quote a rule that is not in the authoritative source.
 - `badCode` is REQUIRED: the verbatim violating line copied from the diff. `fix`
   is REQUIRED: a concrete drop-in replacement that follows the rule. If you cannot
