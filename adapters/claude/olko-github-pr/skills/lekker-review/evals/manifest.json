@@ -1,5 +1,5 @@
 {
-  "note": "PLACEHOLDERS ONLY. Replace with real PRs chosen by a human: known-buggy PRs with the bug located, and clean PRs that merged without follow-up fixes.",
+  "note": "PLACEHOLDERS ONLY. Replace with real PRs chosen by a human: known-buggy PRs with the bug located, and clean PRs that merged without follow-up fixes. Add id or sha to an entry to list the same PR at two commits (buggy head, merged head); a results value may be an array of runs.",
   "prs": [
     {
       "repo": "example-org/example-repo",

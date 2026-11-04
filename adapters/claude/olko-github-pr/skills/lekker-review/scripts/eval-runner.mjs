@@ -4,9 +4,13 @@
 // Usage:
 //   node eval-runner.mjs --manifest evals/manifest.json --results <results.json> [--json]
 //
-// manifest.json: { prs: [{ repo, pr, expect: "buggy"|"clean", knownBug?: "file:line + description" }] }
-// results.json:  { "<repo>#<pr>": [ <finding>, ... ] }  the findings of one lekker run per PR
-//                (the `findings` array the workflow returns). A PR missing from results is
+// manifest.json: { prs: [{ repo, pr, expect: "buggy"|"clean", knownBug?: "file:line + description", id?, sha? }] }
+//                The case key is `id` when present, else "<repo>#<pr>@<sha>" when `sha` is
+//                present, else "<repo>#<pr>". Use id or sha to list one PR at two commits.
+// results.json:  { "<case key>": [ <finding>, ... ] }  the findings of one lekker run per case
+//                (the `findings` array the workflow returns), or an array of such arrays for
+//                repeated runs, which adds per-case hitRate and per-run counts to separate
+//                model noise from a real difference. A case missing from results is
 //                reported as unscored, never as zero findings.
 //
 // A buggy PR is HIT when some finding is on the knownBug file within LINE_WINDOW lines
@@ -38,6 +42,13 @@ export function isHit(findings, knownBug) {
     && Math.abs(f.line - spot.line) <= LINE_WINDOW);
 }
 
+export function caseKey(e) {
+  if (typeof e.id === 'string' && e.id) return e.id;
+  return typeof e.sha === 'string' && e.sha ? `${e.repo}#${e.pr}@${e.sha}` : `${e.repo}#${e.pr}`;
+}
+
+const isMultiRun = (v) => Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
+
 export function validateManifest(manifest) {
   const prs = manifest && Array.isArray(manifest.prs) ? manifest.prs : null;
   if (!prs) throw new Error('manifest needs a "prs" array');
@@ -45,7 +56,7 @@ export function validateManifest(manifest) {
   prs.forEach((e, i) => {
     if (!e.repo || !Number.isInteger(e.pr)) throw new Error(`prs[${i}]: repo and integer pr are required`);
     if (e.expect !== 'buggy' && e.expect !== 'clean') throw new Error(`prs[${i}]: expect must be "buggy" or "clean"`);
-    const key = `${e.repo}#${e.pr}`;
+    const key = caseKey(e);
     if (seen.has(key)) throw new Error(`prs[${i}]: duplicate entry ${key}`);
     seen.add(key);
     if (e.expect === 'buggy' && !parseKnownBug(e.knownBug)) {
@@ -57,25 +68,42 @@ export function validateManifest(manifest) {
 
 export function score(manifest, results) {
   const rows = validateManifest(manifest).map((e) => {
-    const key = `${e.repo}#${e.pr}`;
-    const findings = results[key];
-    if (!Array.isArray(findings)) return { key, expect: e.expect, scored: false };
-    if (e.expect === 'buggy') return { key, expect: 'buggy', scored: true, hit: isHit(findings, e.knownBug) };
+    const key = caseKey(e);
+    const value = results[key];
+    if (!Array.isArray(value)) return { key, expect: e.expect, scored: false };
+    const runs = isMultiRun(value) ? value : null;
+    if (e.expect === 'buggy') {
+      if (!runs) return { key, expect: 'buggy', scored: true, hit: isHit(value, e.knownBug) };
+      const hits = runs.filter((r) => isHit(r, e.knownBug)).length;
+      return { key, expect: 'buggy', scored: true, hit: hits > 0, runs: runs.length, hits, hitRate: hits / runs.length };
+    }
+    const fp = (r) => r.filter((f) => BLOCKING.has(f.severity)).length;
+    if (!runs) return { key, expect: 'clean', scored: true, falsePositives: fp(value) };
+    const perRun = runs.map(fp);
     return {
-      key, expect: 'clean', scored: true,
-      falsePositives: findings.filter((f) => BLOCKING.has(f.severity)).length,
+      key, expect: 'clean', scored: true, falsePositives: perRun.reduce((n, x) => n + x, 0),
+      runs: runs.length, falsePositivesPerRun: perRun,
     };
   });
   const buggy = rows.filter((r) => r.expect === 'buggy' && r.scored);
   const clean = rows.filter((r) => r.expect === 'clean' && r.scored);
-  return {
-    recall: buggy.length === 0 ? null : buggy.filter((r) => r.hit).length / buggy.length,
+  const buggyRuns = buggy.reduce((n, r) => n + (r.runs || 1), 0);
+  const cleanRuns = clean.reduce((n, r) => n + (r.runs || 1), 0);
+  const falsePositives = clean.reduce((n, r) => n + r.falsePositives, 0);
+  const out = {
+    recall: buggyRuns === 0 ? null : buggy.reduce((n, r) => n + (r.runs ? r.hits : Number(r.hit)), 0) / buggyRuns,
     buggyScored: buggy.length,
-    falsePositives: clean.reduce((n, r) => n + r.falsePositives, 0),
+    falsePositives,
     cleanScored: clean.length,
     unscored: rows.filter((r) => !r.scored).map((r) => r.key),
     rows,
   };
+  if (rows.some((r) => r.runs)) {
+    Object.assign(out, {
+      buggyRuns, cleanRuns, falsePositivesPerCleanRun: cleanRuns === 0 ? null : falsePositives / cleanRuns,
+    });
+  }
+  return out;
 }
 
 function main(argv) {

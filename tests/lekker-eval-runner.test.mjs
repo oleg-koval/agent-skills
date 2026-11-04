@@ -57,3 +57,68 @@ test('duplicate keys, missing knownBug and line 0 are rejected', () => {
   assert.throws(() => validateManifest({ prs: [{ repo: 'o/r', pr: 1, expect: 'buggy' }] }), /knownBug/)
   assert.throws(() => validateManifest({ prs: [{ repo: 'o/r', pr: 1, expect: 'buggy', knownBug: 'a.ts:0 x' }] }), /knownBug/)
 })
+
+test('the same PR at two shas is accepted and keyed separately', () => {
+  const m = { prs: [
+    { repo: 'o/r', pr: 9, sha: 'aaa', expect: 'buggy', knownBug: 'src/a.ts:5 x' },
+    { repo: 'o/r', pr: 9, sha: 'bbb', expect: 'clean' },
+  ] }
+  assert.equal(validateManifest(m).length, 2)
+  const out = score(m, { 'o/r#9@aaa': [{ file: 'src/a.ts', line: 5 }], 'o/r#9@bbb': [] })
+  assert.deepEqual(out.rows.map((r) => r.key), ['o/r#9@aaa', 'o/r#9@bbb'])
+  assert.equal(out.recall, 1)
+})
+
+test('a duplicate id is rejected, an id overrides the repo#pr key', () => {
+  const dup = { prs: [{ id: 'x', repo: 'o/r', pr: 1, expect: 'clean' }, { id: 'x', repo: 'o/r', pr: 2, expect: 'clean' }] }
+  assert.throws(() => validateManifest(dup), /duplicate/)
+  const out = score({ prs: [{ id: 'x', repo: 'o/r', pr: 1, expect: 'clean' }] }, { x: [] })
+  assert.equal(out.cleanScored, 1)
+})
+
+test('multi-run scoring gives hitRate and per-run false positives', () => {
+  const hit = [{ file: 'src/a.ts', line: 42 }]
+  const out = score(manifest, {
+    'o/r#1': [hit, hit, []],
+    'o/r#2': [[{ file: 'src/b.ts', line: 7 }]],
+    'o/r#3': [[{ severity: 'critical' }], [], [{ severity: 'important' }, { severity: 'important' }]],
+  })
+  const [r1, , r3] = out.rows
+  assert.deepEqual([r1.runs, r1.hits, r1.hitRate], [3, 2, 2 / 3])
+  assert.deepEqual(r3.falsePositivesPerRun, [1, 0, 2])
+  assert.equal(out.recall, 3 / 4)
+  assert.equal(out.buggyRuns, 4)
+  assert.equal(out.falsePositives, 3)
+  assert.equal(out.cleanRuns, 3)
+  assert.equal(out.falsePositivesPerCleanRun, 1)
+})
+
+test('single-run output keeps today\'s exact shape', () => {
+  const out = score(manifest, {
+    'o/r#1': [{ file: 'src/a.ts', line: 41, severity: 'critical' }],
+    'o/r#3': [{ severity: 'important' }],
+  })
+  assert.equal(JSON.stringify(out), JSON.stringify({
+    recall: 1, buggyScored: 1, falsePositives: 1, cleanScored: 1, unscored: ['o/r#2', 'o/r#4'],
+    rows: [
+      { key: 'o/r#1', expect: 'buggy', scored: true, hit: true },
+      { key: 'o/r#2', expect: 'buggy', scored: false },
+      { key: 'o/r#3', expect: 'clean', scored: true, falsePositives: 1 },
+      { key: 'o/r#4', expect: 'clean', scored: false },
+    ],
+  }))
+})
+
+test('a mixed results file scores single and multi cases together', () => {
+  const hit = [{ file: 'src/a.ts', line: 42 }]
+  const out = score(manifest, {
+    'o/r#1': [hit, []],
+    'o/r#2': [{ file: 'src/b.ts', line: 7 }],
+    'o/r#3': [{ severity: 'critical' }],
+  })
+  assert.equal(out.recall, 2 / 3)
+  assert.equal(out.buggyRuns, 3)
+  assert.equal(out.falsePositives, 1)
+  assert.equal(out.rows[1].hit, true)
+  assert.equal(out.rows[1].runs, undefined)
+})
