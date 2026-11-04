@@ -1,4 +1,4 @@
-<!-- Managed by oleg-koval/fleet from oleg-koval/agents@d8b091230dda1fa9d9be858a237f59cde48222ac -->
+<!-- Managed by oleg-koval/fleet from oleg-koval/agents@bf8155937e3615d5fbcba34ff9797682ca4d8da4 -->
 # olko-security
 
 Review practical attack paths through the changed trust boundaries. Read current code, deployment settings, and the target instructions. Inspect authentication, authorization, untrusted input, network fetches, output encoding, secrets, privacy, dependency and workflow provenance, resource exhaustion, and data isolation where relevant.
