@@ -1,3 +1,10 @@
+# [1.74.0](https://github.com/oleg-koval/agent-skills/compare/v1.73.0...v1.74.0) (2026-11-04)
+
+
+### ✨ Features
+
+* **lekker-review:** eval runner scores repeated runs and the same PR at two commits ([#181](https://github.com/oleg-koval/agent-skills/issues/181)) ([6e9fe8b](https://github.com/oleg-koval/agent-skills/commit/6e9fe8b5aa9c83dcc4954fe4382894324330d65c)), closes [repo#pr](https://github.com/repo/issues/pr) [repo#pr](https://github.com/repo/issues/pr) [repo#pr](https://github.com/repo/issues/pr)
+
 # [1.73.0](https://github.com/oleg-koval/agent-skills/compare/v1.72.0...v1.73.0) (2026-11-04)
 
 
