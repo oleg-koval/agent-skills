@@ -335,8 +335,8 @@ console.log('\ndeps depth: routing, classifier, line validation')
     const dimensionsFor = new Function(dimsSrc + '\nreturn dimensionsFor')()
     const M = { review: 'r', triage: 't' }
     check('deps runs exactly one agent', dimensionsFor('deps', M).map(d => d.file), ['deps.md'])
-    check('scan still runs the triage pair', dimensionsFor('scan', M).length, 2)
-    check('medium still runs five specialists', dimensionsFor('medium', M).length, 5)
+    check('scan runs the triage pair plus project-rules', dimensionsFor('scan', M).map(d => d.key), ['triage-quality', 'triage-logic', 'project-rules'])
+    check('medium runs five specialists plus project-rules', dimensionsFor('medium', M).length, 6)
     check('every dimension prompt file exists',
       ['deps', 'scan', 'medium'].flatMap(d => dimensionsFor(d, M)).every(d => existsSync(join(SKILL, 'references', 'agents', d.file))), true)
   }

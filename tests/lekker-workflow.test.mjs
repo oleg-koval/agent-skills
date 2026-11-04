@@ -761,3 +761,25 @@ test('rejected findings are never re-raised, even at a moved line', async () => 
   assert.deepEqual(result.findings.map((f) => f.file), ['src/other.ts'])
   assert.equal(result.suppressedCount, 1)
 })
+
+test('project-rules reviewer runs on the review model at every depth except deps', async () => {
+  for (const depth of ['scan', 'medium', 'deep', 'deps']) {
+    const models = {}
+    const { calls } = await runScenario({
+      depth,
+      respond: ({ options }) => {
+        if (options.label.startsWith('review:')) {
+          models[options.label] = options.model
+          return { findings: [] }
+        }
+        if (options.label === 'critic') return { angles: [] }
+        throw new Error(`Unexpected agent call: ${options.label}`)
+      },
+    })
+    if (depth === 'deps') {
+      assert.ok(!calls.includes('review:project-rules'))
+    } else {
+      assert.equal(models['review:project-rules'], 'sonnet')
+    }
+  }
+})

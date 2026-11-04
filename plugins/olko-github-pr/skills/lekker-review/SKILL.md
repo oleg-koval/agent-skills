@@ -433,7 +433,7 @@ skip the review because the log failed, just say `run log unavailable`.
 | Context: issue-tracker/CI/diff/existing-reviews | always | always | always | always |
 | Context: chat/docs/framework-docs/monitoring/prior-review-memory (optional, MCP-dependent) | skip | skip | included | included + broader recall |
 | Worktree + static checks    | included (`npm ci` per changed lockfile) | skip (WORKTREE_PATH=null) unless `--fix` | included | included          |
-| Review agents               | 1 deps checklist      | 2 triage (haiku)      | 5 specialists (sonnet) | 5 specialists (sonnet)  |
+| Review agents               | 1 deps checklist      | 2 triage (haiku) + project-rules (sonnet) | 5 specialists + project-rules (sonnet) | 5 specialists + project-rules (sonnet)  |
 | Per-finding verification    | none                  | Criticals + Importants | Criticals + Importants | Criticals + Importants |
 | Completeness critic         | skip                  | skip                  | skip                | included                   |
 | Proof-of-bug (failing test per Critical or composed-boundary Important) | skip | skip | included (max 5)    | included (max 5)           |
@@ -766,8 +766,8 @@ must pass it, or the workflow throws on its missing-args guard.
 
 Two optional args tune concurrency; omit both unless a run needs it:
 
-- `reviewBatchPlan` - batch sizes for the review dimensions, default `[5]`
-  (all five at once). The last entry repeats to cover any remainder, so
+- `reviewBatchPlan` - batch sizes for the review dimensions, default `[6]`
+  (all six at once). The last entry repeats to cover any remainder, so
   `[2]` would mean two at a time.
 - `maxConcurrent` - cap for the per-finding fan-outs (verify, critic, prove),
   default `5`.
@@ -779,8 +779,9 @@ The workflow runs three phases:
 
 - **Review:** deps uses the single `deps` checklist agent; scan uses `[triage-quality, triage-logic]` on `haiku`; medium/deep
   use 5 specialists (quality, implementation, simplification, conventions,
-  test-quality) on `sonnet`. Agents receive DIFF_FILE + CONTEXT_FILE by path.
-  All five run concurrently: the stage is self-limiting at one agent per
+  test-quality) on `sonnet`. Scan, medium and deep also run `project-rules`
+  (sonnet), which only checks the diff against each project rule. Agents receive DIFF_FILE + CONTEXT_FILE by path.
+  All run concurrently: the stage is self-limiting at one agent per
   dimension. All reviewers run to completion before verification starts.
   Override per run with the `reviewBatchPlan` arg (e.g. `[1]` runs them
   strictly one at a time on a constrained machine).
