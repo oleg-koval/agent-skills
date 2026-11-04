@@ -1,3 +1,10 @@
+# [1.72.0](https://github.com/oleg-koval/agent-skills/compare/v1.71.2...v1.72.0) (2026-11-04)
+
+
+### ✨ Features
+
+* **lekker-review:** add open-source footer with install steps to posted reviews ([#180](https://github.com/oleg-koval/agent-skills/issues/180)) ([c533720](https://github.com/oleg-koval/agent-skills/commit/c533720c4202ea84021afa5887e8fa51e8cda55b))
+
 ## [1.71.2](https://github.com/oleg-koval/agent-skills/compare/v1.71.1...v1.71.2) (2026-11-04)
 
 
