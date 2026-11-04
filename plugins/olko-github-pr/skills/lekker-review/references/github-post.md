@@ -108,11 +108,14 @@ Rules:
   below after the last section of the body and before the closer. Never add it
   to a private repo. Open source means the repo is public:
   `gh repo view <REPO_SLUG> --json isPrivate --jq '.isPrivate|not'`
-  must print `true`. Any other output (private, error) means no footer. Never add it to inline comments. It does not count toward the
+  must print `true`. Any other output (private, error) means no footer. Run
+  this check in the same command sequence that writes the payload, immediately
+  before posting, and build the footer from that result alone: never reuse an
+  earlier visibility answer. Never add it to inline comments. It does not count toward the
   ~2,500-character budget, and it carries no praise, so the no-praise rule below
   is not affected. Post it verbatim, with no em dashes:
 
-  ```markdown
+  ````markdown
   ---
   <sub>Reviewed with the [lekker-review skill](https://github.com/oleg-koval/agent-skills/tree/main/plugins/olko-github-pr/skills/lekker-review) · [skills.olegkoval.com](https://skills.olegkoval.com)</sub>
 
@@ -131,7 +134,7 @@ Rules:
   - Skill source: https://github.com/oleg-koval/agent-skills/tree/main/plugins/olko-github-pr/skills/lekker-review
   - Catalog and other install options: https://skills.olegkoval.com
   </details>
-  ```
+  ````
 
   **Closer:** when `CLOSER` is set (SKILL.md Step 3), append a blank line and
   `CLOSER.md_github` as the very last lines of the body. It does not count
@@ -230,7 +233,11 @@ If the user asks to shorten, reword, or re-scope the comments after posting:
 
 - The review-level `body` alone can be edited in place:
   `gh api repos/<REPO_SLUG>/pulls/<PR_NUMBER>/reviews/<REVIEW_ID> --method PUT --input <json with {"body": ...}>`
-  Inline comments survive this untouched.
+  Inline comments survive this untouched. A body-only PUT replaces the whole
+  body, so the replacement must carry the footer again: re-run the visibility
+  check from Step 1 and append the footer after the last section (before the
+  closer) when the repo is public, and leave it out when it is not. Never keep
+  the footer from the old body without rechecking.
 - **Inline comment bodies cannot be reliably edited on a pending review** --
   `PATCH /pulls/comments/{id}` targets submitted comments. To change them,
   DELETE the pending review and POST a fresh one:
