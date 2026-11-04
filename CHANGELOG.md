@@ -1,3 +1,10 @@
+# [1.73.0](https://github.com/oleg-koval/agent-skills/compare/v1.72.0...v1.73.0) (2026-11-04)
+
+
+### ✨ Features
+
+* **lekker-review:** dedicated project-rules reviewer at every depth ([#182](https://github.com/oleg-koval/agent-skills/issues/182)) ([a48849b](https://github.com/oleg-koval/agent-skills/commit/a48849bad2d60928b7b7f7bdfdc474eed28aee23))
+
 # [1.72.0](https://github.com/oleg-koval/agent-skills/compare/v1.71.2...v1.72.0) (2026-11-04)
 
 
