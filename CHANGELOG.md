@@ -1,3 +1,15 @@
+## [1.71.2](https://github.com/oleg-koval/agent-skills/compare/v1.71.1...v1.71.2) (2026-11-04)
+
+
+### ♻️ Chores
+
+* sync shared repo config ([#178](https://github.com/oleg-koval/agent-skills/issues/178)) ([d5aa9b2](https://github.com/oleg-koval/agent-skills/commit/d5aa9b2f18d95e7891e1684b7201e3be6815df2d))
+
+
+### ⚙️ Continuous Integrations
+
+* remove local automerge, Fleet automerge now starts releases ([#179](https://github.com/oleg-koval/agent-skills/issues/179)) ([7cd34ad](https://github.com/oleg-koval/agent-skills/commit/7cd34adf5f2dfee245d8ef91d3dd73abaebd95c9))
+
 ## [1.71.1](https://github.com/oleg-koval/agent-skills/compare/v1.71.0...v1.71.1) (2026-11-03)
 
 
