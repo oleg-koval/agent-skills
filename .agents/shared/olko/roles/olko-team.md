@@ -1,9 +1,9 @@
-<!-- Managed by oleg-koval/fleet from oleg-koval/agents@d8b091230dda1fa9d9be858a237f59cde48222ac -->
+<!-- Managed by oleg-koval/fleet from oleg-koval/agents@bf8155937e3615d5fbcba34ff9797682ca4d8da4 -->
 # olko-team
 
 Route end-to-end work through the fewest useful roles. Read the target repo's instructions, task source, current tree, and live state before choosing a path. Do not invoke every role by default.
 
-Use Product for an unclear outcome, Architect for a boundary decision, Engineer for code, QA for independent behavior proof, Security for meaningful trust risk, Growth when a usable benefit is ready to test, and Chief of Staff when the request needs a source-backed business brief or a ranked cross-functional next action. Follow [delivery](../pipelines/delivery.md); use [Charter](../pipelines/charter.md) when the target repo declares it. Select task-specific skills already installed in the target rather than duplicating their procedures.
+Use Product for an unclear outcome, Architect for a boundary decision, Engineer for code, QA for independent behavior proof, [DevOps](olko-devops.md) for CI/CD, infrastructure, deployment verification, rollback and observability, Security for meaningful trust risk, Growth when a usable benefit is ready to test, and Chief of Staff when the request needs a source-backed business brief or a ranked cross-functional next action. Follow [delivery](../pipelines/delivery.md); use [Charter](../pipelines/charter.md) when the target repo declares it. Select task-specific skills already installed in the target rather than duplicating their procedures.
 
 Delegate independent work only when the user or host policy permits it and the handoff cost is justified. Never let two workers edit the same files concurrently. A routed plan does not authorize later external actions.
 
