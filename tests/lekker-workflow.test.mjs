@@ -761,3 +761,62 @@ test('rejected findings are never re-raised, even at a moved line', async () => 
   assert.deepEqual(result.findings.map((f) => f.file), ['src/other.ts'])
   assert.equal(result.suppressedCount, 1)
 })
+
+test('project-rules reviewer runs on the review model at every depth except deps', async () => {
+  for (const depth of ['scan', 'medium', 'deep', 'deps']) {
+    const models = {}
+    const { calls } = await runScenario({
+      depth,
+      respond: ({ options }) => {
+        if (options.label.startsWith('review:')) {
+          models[options.label] = options.model
+          return { findings: [] }
+        }
+        if (options.label === 'critic') return { angles: [] }
+        throw new Error(`Unexpected agent call: ${options.label}`)
+      },
+    })
+    if (depth === 'deps') {
+      assert.ok(!calls.includes('review:project-rules'))
+    } else {
+      assert.equal(models['review:project-rules'], 'sonnet')
+    }
+  }
+})
+
+test('project-rules reviewer is told to skip preferences, generalists are not', async () => {
+  const prompts = {}
+  await runScenario({
+    respond: ({ prompt, options }) => {
+      prompts[options.label] = prompt
+      if (options.label.startsWith('review:')) return { findings: [] }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  assert.match(prompts['review:project-rules'], /do not report them/)
+  assert.doesNotMatch(prompts['review:project-rules'], /report them as ordinary findings/)
+  assert.match(prompts['review:quality'], /report them as ordinary findings/)
+})
+
+test('one project rule quote flagged by two reviewers is verified once', async () => {
+  const ruleQuote = 'NEVER cast: no `as X`.'
+  const fromGeneralist = {
+    ...baseFinding, rule: 'PROJECT:no-casts', ruleQuote, title: 'Type assertion used', bugClass: 'type-cast',
+  }
+  const fromRuleReviewer = {
+    ...baseFinding, line: 12, rule: 'PROJECT:never-cast', ruleQuote,
+    title: 'Cast breaks the engineering contract', bugClass: 'rule-violation',
+  }
+  const { calls } = await runScenario({
+    respond: ({ options }) => {
+      if (options.label === 'review:quality') return { findings: [fromGeneralist] }
+      if (options.label === 'review:project-rules') return { findings: [fromRuleReviewer] }
+      if (options.label.startsWith('review:')) return { findings: [] }
+      if (options.label.startsWith('verify:')) return { verdict: 'confirmed', reasoning: 'Cast on added line.' }
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  assert.equal(calls.filter((label) => label.startsWith('verify:')).length, 1)
+})

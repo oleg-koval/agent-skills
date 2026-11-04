@@ -335,8 +335,8 @@ console.log('\ndeps depth: routing, classifier, line validation')
     const dimensionsFor = new Function(dimsSrc + '\nreturn dimensionsFor')()
     const M = { review: 'r', triage: 't' }
     check('deps runs exactly one agent', dimensionsFor('deps', M).map(d => d.file), ['deps.md'])
-    check('scan still runs the triage pair', dimensionsFor('scan', M).length, 2)
-    check('medium still runs five specialists', dimensionsFor('medium', M).length, 5)
+    check('scan runs the triage pair plus project-rules', dimensionsFor('scan', M).map(d => d.key), ['triage-quality', 'triage-logic', 'project-rules'])
+    check('medium runs five specialists plus project-rules', dimensionsFor('medium', M).length, 6)
     check('every dimension prompt file exists',
       ['deps', 'scan', 'medium'].flatMap(d => dimensionsFor(d, M)).every(d => existsSync(join(SKILL, 'references', 'agents', d.file))), true)
   }
@@ -871,7 +871,8 @@ function liftBlock(name) {
 const liftBlockOr = name => { try { return liftBlock(name) } catch { return `const ${name} = ''\n` } }
 const buildPrompt = new Function(
   'dim', 'SUPPRESSED', 'prevSha',
-  [liftBlockOr('PROJECT_RULE_DIMENSIONS'), liftBlockOr('PROJECT_RULE_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
+  [liftBlockOr('PROJECT_RULE_DIMENSIONS'), liftBlockOr('PROJECT_RULE_CORE'), liftBlockOr('IGNORE_ENTRY_NOTE'),
+    liftBlockOr('PROJECT_RULE_INSTRUCTION'), liftBlockOr('PROJECT_RULE_ONLY_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
     `const targetMetadata = '{}', promptDir = 'p', repoSlug = 'o/r', prNumber = 1, prUrl = 'u',
        diffFile = 'd', contextFile = 'c', wtDisplay = 'w'`,
     lift('reviewPrompt'), 'return reviewPrompt(dim)'].join('\n'),
