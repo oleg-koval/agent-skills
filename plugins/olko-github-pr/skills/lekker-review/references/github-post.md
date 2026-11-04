@@ -104,6 +104,35 @@ Rules:
   Keep the body itself under ~2,500 characters. If it is longer, the asks are
   buried: cut prose, never cut the numbered asks.
 
+  **Open-source footer:** when the repo is open source, append the footer
+  below after the last section of the body and before the closer. Never add it
+  to a private repo. Open source means the repo is public:
+  `gh repo view <REPO_SLUG> --json isPrivate --jq '.isPrivate|not'`
+  must print `true`. Any other output (private, error) means no footer. Never add it to inline comments. It does not count toward the
+  ~2,500-character budget, and it carries no praise, so the no-praise rule below
+  is not affected. Post it verbatim, with no em dashes:
+
+  ```markdown
+  ---
+  <sub>Reviewed with the [lekker-review skill](https://github.com/oleg-koval/agent-skills/tree/main/plugins/olko-github-pr/skills/lekker-review) · [skills.olegkoval.com](https://skills.olegkoval.com)</sub>
+
+  <details>
+  <summary>Install the review skill</summary>
+
+  In Claude Code:
+
+  ```
+  /plugin marketplace add oleg-koval/agent-skills
+  /plugin install olko-github-pr@olko-agent-skills
+  ```
+
+  Then run `/olko-github-pr:lekker-review <PR url>`.
+
+  - Skill source: https://github.com/oleg-koval/agent-skills/tree/main/plugins/olko-github-pr/skills/lekker-review
+  - Catalog and other install options: https://skills.olegkoval.com
+  </details>
+  ```
+
   **Closer:** when `CLOSER` is set (SKILL.md Step 3), append a blank line and
   `CLOSER.md_github` as the very last lines of the body. It does not count
   toward the ~2,500-character budget and is exempt from the no-praise rule
