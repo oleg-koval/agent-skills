@@ -2,8 +2,8 @@
 
 FAANG-quality PR code review for GitHub. It gathers the context a human reviewer
 would gather and checks the branch out into an isolated worktree when the depth
-requires one. `scan` runs two triage agents. `medium` and
-`deep` run five specialists and attempt proofs for at most five non-rule
+requires one. `scan` runs two triage agents plus project-rules. `medium` and
+`deep` run five specialists plus project-rules and attempt proofs for at most five non-rule
 Critical findings.
 
 ![lekker-review at a glance](assets/poster-overview.png)
