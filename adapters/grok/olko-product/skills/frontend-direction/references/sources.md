@@ -34,3 +34,9 @@ Seed: [Aman Singh's resource post](https://x.com/amananimates/status/21118486758
 For each selected candidate, inspect its exact documentation and source, not only its homepage. Verify framework/version requirements, dependencies, responsive states, keyboard behavior, reduced-motion handling where relevant, and reuse terms. Paid sections and free sections may have different conditions.
 
 Use the source that answers the task. A native HTML app can implement an original CSS interaction; a chart library is unnecessary when a comparison table is clearer. If no candidate fits, retain local components and derive distinctiveness from composition, content and typography.
+
+Seed: [Benji Taylor's Stageshow post](https://x.com/benjitaylor/status/2116593247854453244), retrieved on 2026-11-05 through [FxTwitter](https://api.fxtwitter.com/status/2116593247854453244) after X returned 403. This entry is for marketing illustration, not for building a product screen. Its mock content is invented by design, so never use it in place of real product content. No license was detected on the repository; check the `stageshow/` folder's terms before installing or copying anything.
+
+| Source | Start here when exploring |
+| --- | --- |
+| [Stageshow](https://github.com/benjitaylor/skills/tree/main/stageshow) | A separate skill for faux product UI stills and animated cursor demos on landing-page heroes and feature cards |
