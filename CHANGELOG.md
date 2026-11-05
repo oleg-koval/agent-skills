@@ -1,3 +1,10 @@
+## [1.74.1](https://github.com/oleg-koval/agent-skills/compare/v1.74.0...v1.74.1) (2026-11-05)
+
+
+### 📚 Documentation
+
+* **frontend-direction:** add Stageshow to component sources ([#183](https://github.com/oleg-koval/agent-skills/issues/183)) ([df52366](https://github.com/oleg-koval/agent-skills/commit/df52366e8072d2093fd60b40fe80e297bbb61d50))
+
 # [1.74.0](https://github.com/oleg-koval/agent-skills/compare/v1.73.0...v1.74.0) (2026-11-04)
 
 
