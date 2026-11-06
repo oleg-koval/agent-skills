@@ -51,7 +51,7 @@ export const PLUGIN_ASSIGNMENT = {
   'olko-web-ops': {
     description: 'Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.',
     skills: ['cloudflare-block-countries', 'search-console-indexing-audit',
-             'docs-index-keeper', 'website-analytics-bootstrap'],
+             'docs-index-keeper', 'website-analytics-bootstrap', 'evidence-dashboards'],
   },
 }
 
