@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { isHit, parseKnownBug, score, validateManifest } from '../plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs'
+import { isHit, normalizeArchivedEvidence, parseKnownBug, score, validateArchiveRunIds, validateManifest } from '../plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs'
 
 const manifestPath = 'plugins/olko-github-pr/skills/lekker-review/evals/manifest.json'
 const manifest = {
@@ -147,4 +147,20 @@ test('the CLI summary names run counts when a case has repeated runs', () => {
     'recall 100% (1 buggy scored), false positives 0 (1 clean scored), unscored 2')
   assert.equal(run({ 'o/r#1': [hit, []], 'o/r#3': [[{ severity: 'critical' }], []] }),
     'recall 50% per run (2 runs over 1 buggy cases), false positives 1 (2 runs over 1 clean cases, 0.50 per run), unscored 2')
+})
+
+test('archive evidence normalization preserves only complete, matching evidence', () => {
+  const entry = { repo: 'o/r', pr: 9, sha: 'A'.repeat(40), runId: 'run', expect: 'clean' }
+  const run = { runId: 'run', status: 'ok', verdict: 'lgtm', repo: 'o/r', target: 'pr-9', review: { name: 'lekker-review-core', status: 'completed' } }
+  const worktree = { headSha: entry.sha.toLowerCase() }
+  const finding = { file: 'src/a.ts', line: null, severity: 'observation' }
+  assert.deepEqual(normalizeArchivedEvidence(entry, run, worktree, { findings: [finding] }), {
+    key: 'o/r#9@' + entry.sha, findings: [finding], reason: null,
+  })
+  assert.equal(normalizeArchivedEvidence(entry, { ...run, runId: 'other' }, worktree, { findings: [] }).reason, 'runId mismatch')
+  assert.equal(normalizeArchivedEvidence({ ...entry, sha: [entry.sha] }, run, worktree, { findings: [] }).reason, 'manifest needs a full 40-character sha')
+  assert.equal(normalizeArchivedEvidence(entry, run, worktree, { findings: [{ file: ' ', line: 0, severity: 'important' }] }).reason, 'findings.json contains a malformed finding')
+  const longId = 'r'.repeat(140)
+  assert.equal(normalizeArchivedEvidence({ ...entry, runId: longId }, { ...run, runId: longId }, worktree, []).reason, null)
+  assert.throws(() => validateArchiveRunIds([{ runId: 'same' }, { runId: 'same' }]), /reuses runId/)
 })
