@@ -49,6 +49,9 @@ export function caseKey(e) {
 }
 
 const SHA = /^[0-9a-f]{7,40}$/i;
+const FULL_SHA = /^[0-9a-f]{40}$/i;
+const RUN_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const SEVERITIES = new Set(['critical', 'important', 'observation', 'idiomatic']);
 
 const isMultiRun = (v) => Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
 
@@ -69,6 +72,37 @@ export function validateManifest(manifest) {
     }
   });
   return prs;
+}
+
+export function normalizeArchivedEvidence(entry, run, worktree, document) {
+  const key = caseKey(entry);
+  const unscored = (reason) => ({ key, reason });
+  if (typeof entry.runId !== 'string' || !RUN_ID.test(entry.runId)) return unscored('unsafe or missing runId');
+  if (typeof entry.sha !== 'string' || !FULL_SHA.test(entry.sha)) return unscored('manifest needs a full 40-character sha');
+  if (!run) return unscored('run.json missing or malformed');
+  if (run.runId !== entry.runId) return unscored('runId mismatch');
+  if (run.status !== 'ok') return unscored('run status is not ok');
+  if (!['lgtm', 'lgtm-with-changes', 'needs-work'].includes(run.verdict)) return unscored('run verdict is missing or invalid');
+  if (run.review?.name !== 'lekker-review-core' || run.review.status !== 'completed') return unscored('completed review record unavailable');
+  if (run.repo !== entry.repo || run.target !== `pr-${entry.pr}`) return unscored('run repo or target mismatch');
+  if (!worktree) return unscored('worktree.json missing or malformed');
+  if (typeof worktree.headSha !== 'string' || !FULL_SHA.test(worktree.headSha)) return unscored('worktree headSha is not a full SHA');
+  if (worktree.headSha.toLowerCase() !== entry.sha.toLowerCase()) return unscored('worktree headSha mismatch');
+  const findings = Array.isArray(document) ? document : document?.findings;
+  if (!Array.isArray(findings)) return unscored('findings.json missing or malformed');
+  if (findings.some((f) => !f || typeof f.file !== 'string' || !f.file.trim() || !SEVERITIES.has(f.severity)
+      || !(f.line === null || (Number.isInteger(f.line) && f.line > 0)))) {
+    return unscored('findings.json contains a malformed finding');
+  }
+  return { key, findings, reason: null };
+}
+
+// Validate archive references before reading any run directories.
+export function validateArchiveRunIds(entries) {
+  const duplicate = entries.find((entry, index) => entry.runId
+    && entries.slice(0, index).some(previous => previous.runId === entry.runId));
+  if (duplicate) throw new Error(`archive manifest reuses runId ${duplicate.runId}`);
+  return entries;
 }
 
 export function score(manifest, results) {
