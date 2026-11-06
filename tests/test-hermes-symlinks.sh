@@ -29,6 +29,16 @@ test "$(find "$skills_dir" -type l | wc -l | tr -d ' ')" = "$expected" || {
   echo "FAIL: rerun changed Hermes link count" >&2; exit 1; }
 test -f "$skills_dir/olko-reflection/wrap-up/SKILL.md" || {
   echo "FAIL: wrap-up link does not resolve" >&2; exit 1; }
+for skill in claim-evidence-regression shared-verification-window; do
+  case "$skill" in
+    claim-evidence-regression) expected_path=olko-product/skills/claim-evidence-regression; link="$skills_dir/olko-product/$skill" ;;
+    shared-verification-window) expected_path=olko-skill-meta/skills/shared-verification-window; link="$skills_dir/olko-skill-meta/$skill" ;;
+  esac
+  expected_target="$ROOT/plugins/$expected_path"
+  actual_target="$(readlink "$link")"
+  test "$actual_target" = "$expected_target" || {
+    echo "FAIL: $skill link targets $actual_target, expected $expected_target" >&2; exit 1; }
+done
 
 # Relative HERMES_HOME is resolved from the caller, before the installer changes directory.
 mkdir -p "$TMP/relative caller"

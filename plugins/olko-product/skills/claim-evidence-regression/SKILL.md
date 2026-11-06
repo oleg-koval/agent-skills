@@ -25,6 +25,7 @@ Before changing the matcher, reproduce the false acceptance through the existing
 - An explicitly negated relationship with the relevant entity still named.
 - Similar vocabulary describing a different relationship, such as delivery instead of acquisition.
 - A misleading example containing a positive verb earlier in the sentence.
+- A correct relationship attributed to a different actor, such as “Rival acquired Beta; Acme announced it.”
 - A valid affirmative relationship with the required object and entity.
 - A compound classification where each constituent claim needs its own supported evidence.
 
