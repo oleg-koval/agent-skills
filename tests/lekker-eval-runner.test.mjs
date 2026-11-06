@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
-import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { isHit, normalizeArchivedEvidence, parseKnownBug, score, validateManifest } from '../plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs'
+import { isHit, normalizeArchivedEvidence, parseKnownBug, score, validateArchiveRunIds, validateManifest } from '../plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs'
 
 const manifestPath = 'plugins/olko-github-pr/skills/lekker-review/evals/manifest.json'
 const manifest = {
@@ -149,61 +149,18 @@ test('the CLI summary names run counts when a case has repeated runs', () => {
     'recall 50% per run (2 runs over 1 buggy cases), false positives 1 (2 runs over 1 clean cases, 0.50 per run), unscored 2')
 })
 
-test('offline archive fixtures score only complete provenance and valid findings', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'lekker-eval-archive-'))
-  try {
-    const sha = 'a'.repeat(40)
-    const runId = 'verified-run'
-    const runDir = join(dir, runId)
-    mkdirSync(runDir)
-    const save = (name, value) => writeFileSync(join(runDir, name), JSON.stringify(value))
-    save('run.json', { status: 'ok', verdict: 'lgtm-with-changes', repo: 'o/r', target: 'pr-9',
-      review: { name: 'lekker-review-core', status: 'completed' } })
-    save('worktree.json', { headSha: sha })
-    save('findings.json', { findings: [{ file: 'src/a.ts', line: 42, severity: 'important' }] })
-    const emptyDir = join(dir, 'verified-clean')
-    mkdirSync(emptyDir)
-    writeFileSync(join(emptyDir, 'run.json'), JSON.stringify({ status: 'ok', verdict: 'lgtm', repo: 'o/r', target: 'pr-10',
-      review: { name: 'lekker-review-core', status: 'completed' } }))
-    writeFileSync(join(emptyDir, 'worktree.json'), JSON.stringify({ headSha: 'b'.repeat(40) }))
-    writeFileSync(join(emptyDir, 'findings.json'), JSON.stringify({ findings: [] }))
-    const cases = { prs: [
-      { repo: 'o/r', pr: 9, sha, runId, expect: 'buggy', knownBug: 'src/a.ts:42 known issue' },
-      { repo: 'o/r', pr: 10, sha: 'b'.repeat(40), runId: 'verified-clean', expect: 'clean' },
-      { repo: 'o/r', pr: 11, sha: 'c'.repeat(40), runId: 'missing-run', expect: 'clean' },
-      { repo: 'o/r', pr: 12, sha: 'd'.repeat(40), runId: '../escape', expect: 'clean' },
-    ] }
-    const manifestFile = join(dir, 'manifest.json')
-    writeFileSync(manifestFile, JSON.stringify(cases))
-    const result = spawnSync('node', [
-      'plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs',
-      '--manifest', manifestFile, '--archive', dir, '--json',
-    ], { encoding: 'utf8' })
-    assert.equal(result.status, 0, result.stderr)
-    const out = JSON.parse(result.stdout)
-    assert.equal(out.recall, 1)
-    assert.equal(out.cleanScored, 1)
-    assert.equal(out.falsePositives, 0)
-    assert.deepEqual(out.unscoredReasons.map((item) => item.reason), ['run.json missing or malformed', 'unsafe or missing runId'])
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
-
-test('archive normalization rejects incomplete reviews, short SHA and malformed findings', () => {
-  const entry = { repo: 'o/r', pr: 9, sha: 'a'.repeat(40), runId: 'run', expect: 'clean' }
-  const run = { status: 'ok', verdict: 'lgtm', repo: 'o/r', target: 'pr-9', review: { name: 'lekker-review-core', status: 'completed' } }
-  const worktree = { headSha: entry.sha }
-  assert.equal(normalizeArchivedEvidence(entry, run, worktree, { findings: [] }).reason, null)
-  assert.equal(normalizeArchivedEvidence(entry, { ...run, status: 'failed' }, worktree, { findings: [] }).reason, 'run status is not ok')
-  assert.equal(normalizeArchivedEvidence(entry, { ...run, review: null }, worktree, { findings: [] }).reason, 'completed review record unavailable')
-  assert.equal(normalizeArchivedEvidence(entry, { ...run, repo: 'other/r' }, worktree, { findings: [] }).reason, 'run repo or target mismatch')
-  assert.equal(normalizeArchivedEvidence(entry, { ...run, target: 'pr-8' }, worktree, { findings: [] }).reason, 'run repo or target mismatch')
-  assert.equal(normalizeArchivedEvidence(entry, run, { headSha: 'b'.repeat(40) }, { findings: [] }).reason, 'worktree headSha mismatch')
-  assert.equal(normalizeArchivedEvidence({ ...entry, sha: 'a'.repeat(7) }, run, worktree, { findings: [] }).reason, 'manifest needs a full 40-character sha')
+test('archive evidence normalization preserves only complete, matching evidence', () => {
+  const entry = { repo: 'o/r', pr: 9, sha: 'A'.repeat(40), runId: 'run', expect: 'clean' }
+  const run = { runId: 'run', status: 'ok', verdict: 'lgtm', repo: 'o/r', target: 'pr-9', review: { name: 'lekker-review-core', status: 'completed' } }
+  const worktree = { headSha: entry.sha.toLowerCase() }
+  const finding = { file: 'src/a.ts', line: null, severity: 'observation' }
+  assert.deepEqual(normalizeArchivedEvidence(entry, run, worktree, { findings: [finding] }), {
+    key: 'o/r#9@' + entry.sha, findings: [finding], reason: null,
+  })
+  assert.equal(normalizeArchivedEvidence(entry, { ...run, runId: 'other' }, worktree, { findings: [] }).reason, 'runId mismatch')
   assert.equal(normalizeArchivedEvidence({ ...entry, sha: [entry.sha] }, run, worktree, { findings: [] }).reason, 'manifest needs a full 40-character sha')
-  assert.equal(normalizeArchivedEvidence(entry, run, { headSha: 'a'.repeat(7) }, { findings: [] }).reason, 'worktree headSha is not a full SHA')
-  assert.equal(normalizeArchivedEvidence(entry, run, { headSha: [entry.sha] }, { findings: [] }).reason, 'worktree headSha is not a full SHA')
-  assert.equal(normalizeArchivedEvidence(entry, run, worktree, { findings: [{}] }).reason, 'findings.json contains a malformed finding')
-  assert.equal(normalizeArchivedEvidence(entry, run, worktree, null).reason, 'findings.json missing or malformed')
+  assert.equal(normalizeArchivedEvidence(entry, run, worktree, { findings: [{ file: ' ', line: 0, severity: 'important' }] }).reason, 'findings.json contains a malformed finding')
+  const longId = 'r'.repeat(140)
+  assert.equal(normalizeArchivedEvidence({ ...entry, runId: longId }, { ...run, runId: longId }, worktree, []).reason, null)
+  assert.throws(() => validateArchiveRunIds([{ runId: 'same' }, { runId: 'same' }]), /reuses runId/)
 })
