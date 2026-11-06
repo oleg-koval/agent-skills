@@ -12,3 +12,4 @@ into the active Hermes profile. The canonical packages are:
 - `plugins/olko-product/skills/frontend-direction/SKILL.md`
 - `plugins/olko-product/skills/starter-rules/SKILL.md`
 - `plugins/olko-product/skills/viral-launch/SKILL.md`
+- `plugins/olko-product/skills/claim-evidence-regression/SKILL.md`

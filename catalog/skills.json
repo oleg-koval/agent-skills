@@ -681,6 +681,21 @@
             "grok",
             "hermes"
           ]
+        },
+        {
+          "name": "claim-evidence-regression",
+          "lookupName": "olko:claim-evidence-regression",
+          "path": "plugins/olko-product/skills/claim-evidence-regression",
+          "description": "Harden extracted-claim validation with literal evidence and paired regressions so negation and unrelated wording cannot establish a claim.",
+          "tags": [
+            "testing",
+            "validation",
+            "regression"
+          ],
+          "adapters": [
+            "codex",
+            "hermes"
+          ]
         }
       ]
     },
@@ -877,6 +892,21 @@
             "windsurf",
             "kiro",
             "grok",
+            "hermes"
+          ]
+        },
+        {
+          "name": "shared-verification-window",
+          "lookupName": "olko:shared-verification-window",
+          "path": "plugins/olko-skill-meta/skills/shared-verification-window",
+          "description": "Coordinate expensive verification over shared resources with acknowledged ownership and a frozen source fingerprint so concurrent work cannot invalidate results.",
+          "tags": [
+            "testing",
+            "coordination",
+            "verification"
+          ],
+          "adapters": [
+            "codex",
             "hermes"
           ]
         }
