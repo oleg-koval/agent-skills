@@ -17,41 +17,11 @@
 import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve, sep } from 'node:path'
+import { anchor } from './finding-core.mjs'
 
-const WINDOW = 3
+export { anchor } from './finding-core.mjs'
+
 const SKILL = dirname(dirname(fileURLToPath(import.meta.url)))
-
-function candidates(badCode) {
-  const first = String(badCode || '').split('\n').map(l => l.trim()).find(l => l.length > 0)
-  if (!first) return []
-  // Agents copy from the diff and sometimes keep its "+" marker.
-  const unmarked = first.replace(/^\+\s?/, '').trim()
-  return [...new Set([first, unmarked])].filter(Boolean)
-}
-
-function matches(fileLine, cands) {
-  const t = fileLine.trim()
-  return cands.some(c => t === c || (c.length >= 12 && t.includes(c)))
-}
-
-export function anchor(finding, fileLines) {
-  const cands = candidates(finding.badCode)
-  if (cands.length === 0 || !Number.isInteger(finding.line)) return { finding, outcome: 'unchecked' }
-  const near = []
-  for (let n = Math.max(1, finding.line - WINDOW); n <= Math.min(fileLines.length, finding.line + WINDOW); n++) {
-    if (matches(fileLines[n - 1], cands)) near.push(n)
-  }
-  if (near.length > 0) return { finding, outcome: 'kept' }
-  const hits = []
-  fileLines.forEach((l, i) => { if (matches(l, cands)) hits.push(i + 1) })
-  if (hits.length === 1) {
-    return { finding: { ...finding, line: hits[0], originalLine: finding.line, lineRemapped: true }, outcome: 'remapped' }
-  }
-  if (hits.length === 0) {
-    return { finding: { ...finding, line: null, originalLine: finding.line }, outcome: 'nulled' }
-  }
-  return { finding: { ...finding, lineAmbiguous: true }, outcome: 'ambiguous' }
-}
 
 // Same source-lift selftest.mjs uses: workflow.js runs inside the Workflow
 // harness and cannot be imported, so its dedup is extracted by brace matching.
