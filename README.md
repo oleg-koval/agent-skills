@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-63-2563eb" alt="63 skills">
+    <img src="https://img.shields.io/badge/skills-65-2563eb" alt="65 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -211,7 +211,7 @@ plugins/{plugin}/skills/{skill}/SKILL.md
 
 ---
 
-## All 53 Skills
+## All 64 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
@@ -266,7 +266,7 @@ Ship a release: semantic-release setup, changelogs, store listing copy, release-
 | [changelog-generator](plugins/olko-release/skills/changelog-generator/SKILL.md) | Transforms git commits into polished user-facing changelogs by categorising changes and rewriting technical commit messages | Preparing release notes, a CHANGELOG entry, or "what changed since the last release"; for setting up the release pipeline itself use semantic-release-beta |
 | [store-listing-copy](plugins/olko-release/skills/store-listing-copy/SKILL.md) | Generates platform-validated App Store, Google Play, and Connect IQ store listing copy (title, subtitle, description, what's new, keywords) from a git changelog | Writing store copy before submitting to apple-store-submit or the garmin-watchface store workflow |
 
-### olko-product (7)
+### olko-product (8)
 
 Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.
 
@@ -278,15 +278,17 @@ Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/U
 | [frontend-direction](plugins/olko-product/skills/frontend-direction/SKILL.md) | Chooses a distinctive, coherent visual direction and source-backed components before writing frontend code | Building a new page or a substantial UI redesign, or making an interface less generic; small fixes keep the existing design |
 | [starter-rules](plugins/olko-product/skills/starter-rules/SKILL.md) | Loads and enforces hard rules for every oleg-koval/* starter | Ensuring 300-line files, E2E tests, pre-commit hooks, Vertical Slice architecture, and KISS/DRY/SOLID |
 | [ingest-publication-slice](plugins/olko-product/skills/ingest-publication-slice/SKILL.md) | Builds a test-first ingest-to-publication path with atomic persistence, read fallback, and static artifact precedence | Publishing validated ingested data before a static artifact exists |
+| [claim-evidence-regression](plugins/olko-product/skills/claim-evidence-regression/SKILL.md) | Harden extracted-claim validation with literal evidence and paired regressions so negation and unrelated wording cannot establish a claim. | Extracted claims accept misleading or negated evidence |
 | [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, or package for public launch ("prep for Product Hunt", "write the launch post", "make this shareable"); for building the thing itself use mvp-oneshot or product-builder |
 
-### olko-skill-meta (9)
+### olko-skill-meta (10)
 
 Author and maintain agent skills and the AI toolchain itself.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
 | [agterm-team](plugins/olko-skill-meta/skills/agterm-team/SKILL.md) | Creates named Codex sessions in project agterm workspaces and coordinates acknowledged tasks with lead-owned verification | A lead delegates work across agterm sessions and remains accountable for failures |
+| [shared-verification-window](plugins/olko-skill-meta/skills/shared-verification-window/SKILL.md) | Coordinate expensive verification over shared resources with acknowledged ownership and a frozen source fingerprint so concurrent work cannot invalidate results. | Concurrent checks share constrained resources or generated files |
 | [context-repo](plugins/olko-skill-meta/skills/context-repo/SKILL.md) | Resolves a single durable, private GitHub repository other skills use to persist context they produce, retro snapshots and shared-knowledge notes among them, searching the account for a store that already exists before ever asking to create one | A skill needs a durable, cross-machine store for content it generates, rather than a local scratch directory that does not survive across machines or repos |
 | [add-to-my-skills](plugins/olko-skill-meta/skills/add-to-my-skills/SKILL.md) | Copies a newly created skill from another repo into this catalog, refreshes the README and generated manifests, then commits and pushes | Adding a skill you wrote elsewhere into this catalog |
 | [skill-budget-audit](plugins/olko-skill-meta/skills/skill-budget-audit/SKILL.md) | Diagnoses and fixes Claude Code's skill context budget overflow, identifies heavy plugin bundles that exceed the 2% budget | Skills failing to load or Claude hitting context limits from plugin bundles |

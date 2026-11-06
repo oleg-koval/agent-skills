@@ -145,7 +145,7 @@ Current adapter targets:
 | `windsurf` | n/a | `.windsurf/rules/{name}.md` |
 | `kiro` | n/a | `.kiro/steering/{name}.md` |
 
-Adapter coverage is not uniform across the catalog; a skill only ships the adapters listed in its `adapters` array in `catalog/skills.json`. Current coverage: claude 56, grok 54, cursor 52, copilot 52, codex 50, windsurf 41, kiro 41, pi 3, hermes 56 (out of 56 canonical skills). Hermes uses `scripts/install-hermes-symlinks.sh` to expose the canonical packages to its skills loader.
+Adapter coverage is not uniform across the catalog; a skill only ships the adapters listed in its `adapters` array in `catalog/skills.json`. Current coverage: claude 56, grok 54, cursor 52, copilot 52, codex 50, windsurf 41, kiro 41, pi 3, hermes 64 (out of 64 canonical skills). Hermes uses `scripts/install-hermes-symlinks.sh` to expose the canonical packages to its skills loader.
 
 Claude plugin and marketplace identifiers must be kebab-case. Keep `olko:*` names for Codex and Cursor lookup names, but do not use colons or spaces in Claude marketplace/plugin names.
 

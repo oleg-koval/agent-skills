@@ -20,12 +20,12 @@ export const PLUGIN_ASSIGNMENT = {
   },
   'olko-product': {
     description: 'Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/UI quality loops, launch plans.',
-    skills: ['product-builder', 'mvp-oneshot', 'ux-ui-audit-loop', 'frontend-direction', 'starter-rules', 'viral-launch', 'ingest-publication-slice'],
+    skills: ['product-builder', 'mvp-oneshot', 'ux-ui-audit-loop', 'frontend-direction', 'starter-rules', 'viral-launch', 'ingest-publication-slice', 'claim-evidence-regression'],
   },
   'olko-skill-meta': {
     description: 'Author and maintain agent skills and the AI toolchain itself.',
     skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'veto-routing', 'ai-tools-setup',
-             'relay', 'shared-knowledge-artifact', 'agterm-team'],
+             'relay', 'shared-knowledge-artifact', 'agterm-team', 'shared-verification-window'],
   },
   'olko-reflection': {
     description: 'Look back and improve: self-critique, retrospectives, performance review, rapid learning.',
