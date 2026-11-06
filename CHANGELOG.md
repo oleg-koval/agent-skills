@@ -1,3 +1,10 @@
+# [1.76.0](https://github.com/oleg-koval/agent-skills/compare/v1.75.1...v1.76.0) (2026-11-06)
+
+
+### ✨ Features
+
+* **skills:** add claim evidence and shared verification workflows ([#184](https://github.com/oleg-koval/agent-skills/issues/184)) ([161a4b8](https://github.com/oleg-koval/agent-skills/commit/161a4b80fcb492f9a2cdbcdb7fb3a51d972a2688))
+
 ## [1.75.1](https://github.com/oleg-koval/agent-skills/compare/v1.75.0...v1.75.1) (2026-11-06)
 
 
