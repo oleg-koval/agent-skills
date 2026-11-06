@@ -2,7 +2,7 @@
 // Score lekker findings against a manifest of PRs with known outcomes.
 //
 // Usage:
-//   node eval-runner.mjs --manifest evals/manifest.json --results <results.json> [--json]
+//   node eval-runner.mjs --manifest <manifest.json> (--results <results.json> | --archive <runs-dir>) [--json]
 //
 // manifest.json: { prs: [{ repo, pr, expect: "buggy"|"clean", knownBug?: "file:line + description", id?, sha? }] }
 //                The case key is `id` when present, else "<repo>#<pr>@<sha>" when `sha` is
@@ -21,6 +21,7 @@
 // verdict-affecting finding (critical or important) is a false positive.
 
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const LINE_WINDOW = 10;
@@ -49,6 +50,9 @@ export function caseKey(e) {
 }
 
 const SHA = /^[0-9a-f]{7,40}$/i;
+const FULL_SHA = /^[0-9a-f]{40}$/i;
+const RUN_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+const SEVERITIES = new Set(['critical', 'important', 'observation', 'idiomatic']);
 
 const isMultiRun = (v) => Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
 
@@ -69,6 +73,51 @@ export function validateManifest(manifest) {
     }
   });
   return prs;
+}
+
+export function normalizeArchivedEvidence(entry, run, worktree, document) {
+  const key = caseKey(entry);
+  const unscored = (reason) => ({ key, reason });
+  if (typeof entry.runId !== 'string' || !RUN_ID.test(entry.runId)) return unscored('unsafe or missing runId');
+  if (typeof entry.sha !== 'string' || !FULL_SHA.test(entry.sha)) return unscored('manifest needs a full 40-character sha');
+  if (!run) return unscored('run.json missing or malformed');
+  if (run.status !== 'ok') return unscored('run status is not ok');
+  if (!['lgtm', 'lgtm-with-changes', 'needs-work'].includes(run.verdict)) return unscored('run verdict is missing or invalid');
+  if (run.review?.name !== 'lekker-review-core' || run.review.status !== 'completed') return unscored('completed review record unavailable');
+  if (run.repo !== entry.repo || run.target !== `pr-${entry.pr}`) return unscored('run repo or target mismatch');
+  if (!worktree) return unscored('worktree.json missing or malformed');
+  if (typeof worktree.headSha !== 'string' || !FULL_SHA.test(worktree.headSha)) return unscored('worktree headSha is not a full SHA');
+  if (worktree.headSha.toLowerCase() !== entry.sha.toLowerCase()) return unscored('worktree headSha mismatch');
+  const findings = Array.isArray(document) ? document : document?.findings;
+  if (!Array.isArray(findings)) return unscored('findings.json missing or malformed');
+  if (findings.some((f) => !f || typeof f.file !== 'string' || !SEVERITIES.has(f.severity)
+      || !(f.line === null || (Number.isInteger(f.line) && f.line > 0)))) {
+    return unscored('findings.json contains a malformed finding');
+  }
+  return { key, findings, reason: null };
+}
+
+function readArchiveJson(path) {
+  try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
+}
+
+function archivedResults(entries, runsDir) {
+  const results = {};
+  const reasons = [];
+  for (const entry of entries) {
+    if (typeof entry.runId !== 'string' || !RUN_ID.test(entry.runId)) {
+      reasons.push({ key: caseKey(entry), reason: 'unsafe or missing runId' });
+      continue;
+    }
+    const dir = join(runsDir, entry.runId);
+    const evidence = normalizeArchivedEvidence(entry,
+      readArchiveJson(join(dir, 'run.json')),
+      readArchiveJson(join(dir, 'worktree.json')),
+      readArchiveJson(join(dir, 'findings.json')));
+    if (evidence.reason) reasons.push({ key: evidence.key, reason: evidence.reason });
+    else results[evidence.key] = evidence.findings;
+  }
+  return { results, reasons };
 }
 
 export function score(manifest, results) {
@@ -113,11 +162,17 @@ export function score(manifest, results) {
 
 function main(argv) {
   const flag = (n) => { const i = argv.indexOf('--' + n); return i === -1 ? null : argv[i + 1]; };
-  if (!flag('manifest') || !flag('results')) {
-    console.error('usage: eval-runner.mjs --manifest <manifest.json> --results <results.json> [--json]');
+  const archive = flag('archive');
+  if (!flag('manifest') || Boolean(flag('results')) === Boolean(archive)) {
+    console.error('usage: eval-runner.mjs --manifest <manifest.json> (--results <results.json> | --archive <runs-dir>) [--json]');
     process.exit(2);
   }
-  const out = score(JSON.parse(readFileSync(flag('manifest'), 'utf8')), JSON.parse(readFileSync(flag('results'), 'utf8')));
+  const manifest = JSON.parse(readFileSync(flag('manifest'), 'utf8'));
+  const source = archive
+    ? archivedResults(validateManifest(manifest), archive)
+    : { results: JSON.parse(readFileSync(flag('results'), 'utf8')), reasons: null };
+  const out = score(manifest, source.results);
+  if (source.reasons) out.unscoredReasons = source.reasons;
   if (argv.includes('--json')) { console.log(JSON.stringify(out)); return; }
   const pct = (x) => (x === null ? 'n/a' : `${Math.round(x * 100)}%`);
   if (out.buggyRuns === undefined) {
