@@ -1,3 +1,15 @@
+## [1.75.1](https://github.com/oleg-koval/agent-skills/compare/v1.75.0...v1.75.1) (2026-11-06)
+
+
+### 📦 Code Refactoring
+
+* **lekker-review:** isolate archive evidence normalization ([#187](https://github.com/oleg-koval/agent-skills/issues/187)) ([55a42db](https://github.com/oleg-koval/agent-skills/commit/55a42db383d265276e479d2e98ccea9159834e4c))
+
+
+### 🚨 Tests
+
+* **lekker-review:** detect mutation on unchecked anchor paths ([#188](https://github.com/oleg-koval/agent-skills/issues/188)) ([7abc16c](https://github.com/oleg-koval/agent-skills/commit/7abc16c519bd81efc11e794df803e9c7ac8d1fd8))
+
 # [1.75.0](https://github.com/oleg-koval/agent-skills/compare/v1.74.1...v1.75.0) (2026-11-06)
 
 
