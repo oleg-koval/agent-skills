@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-64-2563eb" alt="64 skills">
+    <img src="https://img.shields.io/badge/skills-65-2563eb" alt="65 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -32,7 +32,7 @@ These skills are opinionated by design. They encode working defaults, preferred 
 
 ## Start here
 
-Eleven skills across different plugins that cover the most common jobs. Full catalog is below.
+Twelve skills across different plugins that cover the most common jobs. Full catalog is below.
 
 | What you're doing | Skill | Key principle |
 |--------------------|-------|----------------|
@@ -40,6 +40,7 @@ Eleven skills across different plugins that cover the most common jobs. Full cat
 | Driving a PR to merge-ready in one pass | [pr-to-green](plugins/olko-github-pr/skills/pr-to-green/SKILL.md) (`olko:pr-to-green`) | Chain the fix loops instead of running them by hand |
 | Getting CI back to green after a push | [ci-fix-loop](plugins/olko-github-pr/skills/ci-fix-loop/SKILL.md) (`olko:ci-fix-loop`) | Diagnose from the real failing log, not a guess |
 | Committing with a real conventional message | [git-commit](plugins/olko-git-tools/skills/git-commit/SKILL.md) (`olko:git-commit`) | The message describes the diff, not the intent |
+| Building clear operational Grafana dashboards | [evidence-dashboards](plugins/olko-web-ops/skills/evidence-dashboards/SKILL.md) (`olko:evidence-dashboards`) | Honest metrics, direct comparisons, verified live charts |
 | Closing out a finished piece of work | [wrap-up](plugins/olko-reflection/skills/wrap-up/SKILL.md) (`olko:wrap-up`) | Verify the objective and propose safe cleanup |
 | Running a recurring engineering retrospective | [retro-analysis](plugins/olko-reflection/skills/retro-analysis/SKILL.md) (`olko:retro-analysis`) | Evidence from delivery and code, not vibes |
 | Going from idea to a shippable MVP | [mvp-oneshot](plugins/olko-product/skills/mvp-oneshot/SKILL.md) (`olko:mvp-oneshot`) | Scope for one week, not the whole roadmap |
@@ -353,7 +354,7 @@ Creative and personal projects: photo galleries, music players, Plex ingest, lis
 | [shorts-animator](plugins/olko-creative/skills/shorts-animator/SKILL.md) | Makes narrated, painted animated shorts from a script and a look in words: scenes drawn in code, GPU-painted on twos, voiced locally, captioned and scored into an MP4 | Making a TikTok, Reels or YouTube Shorts animation, a painted quote or verse video, or any faceless short that should look drawn |
 | [carousel-maker](plugins/olko-creative/skills/carousel-maker/SKILL.md) | Makes Instagram or LinkedIn carousel slides from a topic or pasted copy: a brand template sets the text, a library of code-drawn illustrations made once per brand supplies the pictures, and every slide is measured for overflow before export | Making a carousel post, a swipeable slide series, or a set of on-brand social slides without image models |
 
-### olko-web-ops (4)
+### olko-web-ops (5)
 
 Operate a website: WAF rules, search console audits, analytics bootstrap, docs indexes.
 
@@ -363,6 +364,7 @@ Operate a website: WAF rules, search console audits, analytics bootstrap, docs i
 | [search-console-indexing-audit](plugins/olko-web-ops/skills/search-console-indexing-audit/SKILL.md) | Audits Google Search Console Coverage exports against sitemap, robots, canonical, redirect, and noindex signals | Diagnosing GSC indexing issues such as redirects, canonical alternates, and discovered-but-not-indexed pages |
 | [docs-index-keeper](plugins/olko-web-ops/skills/docs-index-keeper/SKILL.md) | Keeps a Markdown docs index in sync through pre-commit, CI, or one-off maintenance flows | A repo's docs index is stale, needs a CI check added, or new docs were added without being linked anywhere |
 | [website-analytics-bootstrap](plugins/olko-web-ops/skills/website-analytics-bootstrap/SKILL.md) | Sets up persistent SerpBear rank tracking, Google Search Console, seeded keywords, read-only SEO audits, and Telegram alerts on a local host or NAS | Bootstrapping SEO analytics and monitoring for a site with no tracking yet; for diagnosing an existing indexing problem use search-console-indexing-audit |
+| [evidence-dashboards](plugins/olko-web-ops/skills/evidence-dashboards/SKILL.md) | Builds evidence-focused Grafana dashboards with honest metrics, restrained charts, and reproducible provisioning | Redesigning operational dashboards, catalog freshness, or pipeline visibility |
 
 ---
 

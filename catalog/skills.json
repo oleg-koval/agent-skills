@@ -1543,6 +1543,27 @@
             "grok",
             "hermes"
           ]
+        },
+        {
+          "name": "evidence-dashboards",
+          "lookupName": "olko:evidence-dashboards",
+          "path": "plugins/olko-web-ops/skills/evidence-dashboards",
+          "description": "Build and verify evidence-focused Grafana dashboards: honest metrics, clear charts, reproducible provisioning, and catalog operations visibility.",
+          "tags": [
+            "grafana",
+            "observability",
+            "data-visualization",
+            "dashboard-design",
+            "operations"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "grok",
+            "pi",
+            "hermes"
+          ]
         }
       ]
     }
