@@ -9,3 +9,4 @@ into the active Hermes profile. The canonical packages are:
 - `plugins/olko-web-ops/skills/search-console-indexing-audit/SKILL.md`
 - `plugins/olko-web-ops/skills/docs-index-keeper/SKILL.md`
 - `plugins/olko-web-ops/skills/website-analytics-bootstrap/SKILL.md`
+- `plugins/olko-web-ops/skills/evidence-dashboards/SKILL.md`

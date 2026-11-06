@@ -7,3 +7,4 @@ Use the canonical skills directly:
 - `plugins/olko-web-ops/skills/cloudflare-block-countries/SKILL.md`
 - `plugins/olko-web-ops/skills/search-console-indexing-audit/SKILL.md`
 - `plugins/olko-web-ops/skills/docs-index-keeper/SKILL.md`
+- `plugins/olko-web-ops/skills/evidence-dashboards/SKILL.md`
