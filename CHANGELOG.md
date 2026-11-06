@@ -1,3 +1,15 @@
+# [1.75.0](https://github.com/oleg-koval/agent-skills/compare/v1.74.1...v1.75.0) (2026-11-06)
+
+
+### ✨ Features
+
+* **web-ops:** add evidence-focused Grafana dashboard skill ([#185](https://github.com/oleg-koval/agent-skills/issues/185)) ([0682754](https://github.com/oleg-koval/agent-skills/commit/0682754b81108fd3b3629561b4f919d4893b0e08))
+
+
+### 📦 Code Refactoring
+
+* **lekker-review:** isolate source anchoring for deterministic reuse ([#186](https://github.com/oleg-koval/agent-skills/issues/186)) ([c672e39](https://github.com/oleg-koval/agent-skills/commit/c672e392f8f9c691b11d03dd865b751ae3bc34c2))
+
 ## [1.74.1](https://github.com/oleg-koval/agent-skills/compare/v1.74.0...v1.74.1) (2026-11-05)
 
 
