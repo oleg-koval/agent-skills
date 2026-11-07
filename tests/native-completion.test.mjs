@@ -51,11 +51,15 @@ test('binds the receipt to expected run, full head and exact findings bytes', ()
   assert.equal(check({ ...good, findingsSha256: [] }).reason, 'findings hash mismatch')
 })
 
-test('rejects invalid stage counts and depth or worktree policy violations', () => {
+test('rejects invalid stage counts and depth or worktree policy violations', /** Covers stage accounting and depth-specific policy rejection. */ () => {
   const e = inputs(), good = receipt(e)
+  for (const stage of ['verify', 'prove']) {
+    for (const counts of [{ completed: good.stages[stage].scheduled - 1 }, { failed: 1 }]) {
+      assert.deepEqual(check(receipt(e, { stages: { ...good.stages, [stage]: { ...good.stages[stage], ...counts } } })),
+        { available: false, reason: 'verification or proof stage accounting is incomplete' })
+    }
+  }
   assert.equal(check(receipt(e, { stages: { ...good.stages, verify: { ...good.stages.verify, scheduled: 3 } } })).available, false)
-  for (const [name, patch] of [['verify', { completed: 1 }], ['verify', { failed: 1 }], ['prove', { completed: 0 }], ['prove', { failed: 1 }]])
-    assert.equal(check(receipt(e, { stages: { ...good.stages, [name]: { ...good.stages[name], ...patch } } })).available, false)
   assert.equal(check(receipt(e, { stages: { ...good.stages, critic: 'completed' } })).available, false)
   const deep = inputs('deep')
   assert.equal(check(receipt(deep, { stages: { ...receipt(deep).stages, critic: 'not_required' } }), deep).available, false)
