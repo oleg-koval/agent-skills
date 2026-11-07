@@ -79,7 +79,11 @@ bounded task:
 1. Read its exact prompt under
    `<SKILL_ROOT>/references/agents/<dimension>.md`.
 2. Read `DIFF_FILE` and `CONTEXT_FILE` by path. Read the worktree only when one
-   exists. Never paste the whole diff into the task message.
+   exists. Never paste the whole diff into the task message. When context supplies
+   a non-null `staticEvidenceFile`, reuse its available commit-bound inventory; report
+   stale/unavailable facts to the coordinator rather than silently retargeting
+   or recollecting them per agent. It does not replace semantic investigation,
+   the authoritative diff, or required schema/completion/verification gates.
 3. Review only the target diff. Do not edit files, run git writes, post to
    GitHub, or communicate externally.
 4. Write the shared result contract to
