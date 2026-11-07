@@ -414,7 +414,8 @@ ESLINT_SCOPE_FILE="/tmp/lekker-eslint-scope-$$.txt"
 # temp files): lint-findings.mjs turns it into botPredicted findings, so the
 # review can fix what the bot reviewers would have charged for. Exported by
 # path as eslintJson.
-ESLINT_JSON_FILE="$(dirname "$OUT_JSON")/eslint-report.json"
+ESLINT_ARTIFACT_DIR="$(mktemp -d "$(dirname "$OUT_JSON")/eslint.XXXXXX")"
+ESLINT_JSON_FILE="$ESLINT_ARTIFACT_DIR/eslint-report.json"
 ESLINT_PROVENANCE_FILE="$ESLINT_JSON_FILE.provenance.json"
 printf '' > "$TSC_TAIL_FILE"
 printf '' > "$TSC_CHANGED_FILE"
@@ -424,17 +425,17 @@ printf 'skipped' > "$ESLINT_SCOPE_FILE"
 printf '' > "$ESLINT_JSON_FILE"
 
 write_eslint_provenance() {
-    node - "$ESLINT_JSON_FILE" "$ESLINT_PROVENANCE_FILE" "$MERGE_BASE_VAL" "$@" <<'NODE'
+    node - "$ESLINT_JSON_FILE" "$ESLINT_PROVENANCE_FILE" "$MERGE_BASE_VAL" "$@" <<'NODE' || rm -f "$ESLINT_PROVENANCE_FILE"
 const { createHash } = require('node:crypto')
 const fs = require('node:fs')
 const [reportPath, receiptPath, baseSha, headBefore, headAfter, cleanBefore, cleanAfter, rawExit] = process.argv.slice(2)
-const fullSha = value => /^[0-9a-f]{40}$/i.test(value || '')
+const fullSha = value => /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value || '')
 let bytes = null, validReport = false
 try {
   bytes = fs.readFileSync(reportPath)
   const report = JSON.parse(bytes.toString('utf8'))
   validReport = bytes.length > 0 && Array.isArray(report) && report.length > 0
-    && report.every(file => file && typeof file.filePath === 'string' && Array.isArray(file.messages))
+    && report.every(file => file && typeof file.filePath === 'string' && file.filePath.trim() && Array.isArray(file.messages))
 } catch {}
 const exitCode = rawExit === '' ? null : Number(rawExit)
 const reasons = []
@@ -446,7 +447,8 @@ if (!validReport) reasons.push('ESLint report missing or malformed')
 fs.writeFileSync(receiptPath, JSON.stringify({
   schema: 1, status: reasons.length ? 'unavailable' : 'available',
   ...(reasons.length ? { reason: reasons.join('; ') } : {}),
-  baseSha, headShaBefore: headBefore || null, headShaAfter: headAfter || null,
+  baseSha: baseSha === 'null' ? null : baseSha,
+  headShaBefore: headBefore || null, headShaAfter: headAfter || null,
   trackedCleanBefore: cleanBefore === 'true', trackedCleanAfter: cleanAfter === 'true',
   exitCode, reportSha256: bytes ? createHash('sha256').update(bytes).digest('hex') : null,
 }, null, 2) + '\n')
