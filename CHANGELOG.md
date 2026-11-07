@@ -1,3 +1,11 @@
+# [1.81.0](https://github.com/oleg-koval/agent-skills/compare/v1.80.0...v1.81.0) (2026-11-07)
+
+
+### ✨ Features
+
+* **lekker-review:** inspect host completion independently of usage ([#206](https://github.com/oleg-koval/agent-skills/issues/206)) ([7b408fd](https://github.com/oleg-koval/agent-skills/commit/7b408fd504d66c0f01575d71f3b182450d48bfa2))
+* **lekker-review:** validate native reviewer results ([#205](https://github.com/oleg-koval/agent-skills/issues/205)) ([6b5a8bc](https://github.com/oleg-koval/agent-skills/commit/6b5a8bc55f6c9f3d9714ffb01be37fc628324ce1))
+
 # [1.80.0](https://github.com/oleg-koval/agent-skills/compare/v1.79.0...v1.80.0) (2026-11-07)
 
 
