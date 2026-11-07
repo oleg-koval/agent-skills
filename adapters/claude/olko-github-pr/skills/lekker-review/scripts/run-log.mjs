@@ -152,7 +152,7 @@ if (cmd === 'start') {
   const target = flag('target');
   if (!repo || !target) fail('start needs --repo and --target');
   const startedAt = new Date().toISOString();
-  const prefix = `${startedAt.replace(/[-:]/g, '').slice(0, 15)}-${slug(repo.split('/').pop())}-${slug(target)}-`;
+  const prefix = `${startedAt.replace(/[-:]/g, '').slice(0, 15)}-${slug(repo.split('/').pop())}-${slug(target)}-`.slice(0, 249);
   mkdirSync(RUNS_DIR, { recursive: true });
   const dir = mkdtempSync(join(RUNS_DIR, prefix));
   const runId = basename(dir);

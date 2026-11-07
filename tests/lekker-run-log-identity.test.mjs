@@ -16,9 +16,8 @@ test('same-second starts allocate independent run archives', async () => {
       static now() { return RealDate.parse('2026-11-07T12:00:00.000Z') }
     }`)
     const env = { ...process.env, LEKKER_STATE_DIR: state, NODE_OPTIONS: `--require=${shim}` }
-    const args = extra => [cli, 'start', '--repo', 'org/repo', '--target', 'pr-7', ...extra]
-    const start = extra => new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, args(extra), { env })
+    const start = (extra, repo = 'org/repo', target = 'pr-7') => new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [cli, 'start', '--repo', repo, '--target', target, ...extra], { env })
       let stdout = ''
       let stderr = ''
       child.stdout.on('data', chunk => { stdout += chunk })
@@ -35,6 +34,10 @@ test('same-second starts allocate independent run archives', async () => {
     assert.notEqual(first.runId, second.runId)
     assert.equal(first.runId.startsWith('20261107T120000-repo-pr-7-'), true)
     assert.equal(second.runId.startsWith('20261107T120000-repo-pr-7-'), true)
+    const longTarget = 'a'.repeat(236)
+    const longRuns = await Promise.all([start([], 'o/r', longTarget), start([], 'o/r', longTarget)])
+    assert.notEqual(longRuns[0].runId, longRuns[1].runId)
+    assert.ok(longRuns.every(({ runId }) => Buffer.byteLength(runId) <= 255))
     const runDir = id => join(state, 'runs', id)
     const readRun = id => JSON.parse(readFileSync(join(runDir(id), 'run.json'), 'utf8'))
     assert.deepEqual([readRun(first.runId).depth, readRun(first.runId).engine], ['deep', 'workflow'])
