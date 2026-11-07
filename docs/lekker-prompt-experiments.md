@@ -29,9 +29,12 @@ execution order were uncontrolled. Sessions within each experiment ran concurren
 there is no valid wall-time comparison. Coordinator usage is excluded. One observation
 per arm on a small, deliberately simple fixture is not a representative or held-out
 real-PR corpus. Only quality and implementation were screened, not all six review
-dimensions or the complete Verify/Critic/Prove workflow. Required JSON fields were
-checked, but the production StructuredOutput host schema was not enforced in this
-standalone probe.
+dimensions or the complete Verify/Critic/Prove workflow. The benchmark caller
+contract omitted native-required `bugClass` and `otherInstances`; all five outputs
+lack both. They satisfy the smaller benchmark contract but would be unavailable
+under the native result contract. The production StructuredOutput host schema was
+not enforced. These are raw content/usage probes, not usable native review runs;
+their common contract failure prevents a production non-regression conclusion.
 
 Decision: leave production prompts, six dimensions and verification unchanged. Require
 broader independently adjudicated real-PR cases, failure/unknown cases, repeated
