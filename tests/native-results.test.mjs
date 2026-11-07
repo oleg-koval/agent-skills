@@ -5,7 +5,8 @@ import { validateNativeResult } from '../plugins/olko-github-pr/skills/lekker-re
 
 const finding = { file: 'src/a.ts', line: 4, severity: 'critical', title: 'Failure', description: 'Reachable failure',
   badCode: 'broken()', fix: 'working()', bugClass: 'missing-check', otherInstances: ['src/b.ts:9'],
-  boundary: { entryPoint: 'route', consumer: 'response', transitions: ['read', 'write'] } }
+  boundary: { entryPoint: 'route', consumer: 'response', transitions: ['read', 'write'],
+    decisionPoint: 'authorize request', realizationPoint: 'write response', stateOwner: 'request handler', evidenceClass: 'runtime' } }
 const check = (value, dimension = 'quality') => validateNativeResult(dimension, value).available
 const one = value => ({ findings: [value] })
 
