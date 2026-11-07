@@ -688,6 +688,32 @@ git -C <worktreePath> log --format='%s%n%b' <mergeBase>..HEAD
 - (medium/deep only, optional) Prior-review-memory recall, if you maintain
   such a system: patterns and false positives specific to this repo.
 
+### Collect shared deterministic evidence
+
+For a run with `worktree.json`, collect once through the trusted installed
+helper before assembling context. Never run a copy from the reviewed worktree:
+
+```sh
+node "<SKILL_ROOT>/scripts/evidence-bundle.mjs" \
+  --worktree "<scratchpad>/worktree.json" > "<scratchpad>/evidence-bundle.json"
+jq 'del(.git.diff.text, .lint.report)' "<scratchpad>/evidence-bundle.json" \
+  > "<scratchpad>/static-evidence.json"
+```
+
+Check each exit status and re-read the JSON. Missing tools, nonzero exits or
+malformed output make this collection unavailable: preserve diagnostics and
+set both context paths below to null. Do not silently pass an empty file.
+When Git evidence is available, its provenance base/head must match the
+review's selected commit pair; a mismatch invalidates the collection, never
+changes the review target. Unavailable Git or lint stays explicitly unknown.
+
+The compact view removes only duplicate raw diff text and lint report data.
+Keep the full bundle for provenance and detail; semantic review still reads
+DIFF_FILE and existing lint/preflight inputs. Do not replace changedPaths,
+project rules or the mandatory risk check with a different Git diff. Reuse
+available pinned inventory instead of recollecting it in every review agent.
+In scan/no-worktree mode, set both paths to null; do not fabricate a bundle.
+
 ### Assemble CONTEXT_FILE
 
 Write `<scratchpad>/context.json` with keys:
@@ -707,6 +733,8 @@ Write `<scratchpad>/context.json` with keys:
   "prePush":         "<true in MODE=branch, false in MODE=pr>",
   "preflightFile":   "<PREFLIGHT_FILE, or null>",
   "botPatternsFile": "<BOT_PATTERNS_FILE, or null>",
+  "evidenceBundleFile": "<full evidence-bundle.json path; null on collection failure or no worktree>",
+  "staticEvidenceFile": "<compact static-evidence.json path; null on collection failure or no worktree>",
   "depsReport":      "<deps-report.json contents at depth deps, else null>",
   "depsInstall":     "<worktree.json depsInstall>",
   "deterministicDedup": "<boolean: true only for explicit --deterministic-dedup with ENGINE=codex>",
