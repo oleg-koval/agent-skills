@@ -27,7 +27,7 @@
 // `finish` may be called more than once for one run (after the review, again
 // after fix mode); every call appends a fresh row and the newest one wins.
 
-import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, copyFileSync, readdirSync, statSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, mkdtempSync, copyFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 
@@ -152,9 +152,10 @@ if (cmd === 'start') {
   const target = flag('target');
   if (!repo || !target) fail('start needs --repo and --target');
   const startedAt = new Date().toISOString();
-  const runId = `${startedAt.replace(/[-:]/g, '').slice(0, 15)}-${slug(repo.split('/').pop())}-${slug(target)}`;
-  const dir = runDir(runId);
-  mkdirSync(dir, { recursive: true });
+  const prefix = `${startedAt.replace(/[-:]/g, '').slice(0, 15)}-${slug(repo.split('/').pop())}-${slug(target)}-`.slice(0, 249);
+  mkdirSync(RUNS_DIR, { recursive: true });
+  const dir = mkdtempSync(join(RUNS_DIR, prefix));
+  const runId = basename(dir);
   const meta = {
     schema: 1, runId, startedAt, repo, target,
     mode: flag('mode', 'pr'), depth: flag('depth'), engine: flag('engine', 'workflow'),
