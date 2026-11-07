@@ -1,3 +1,11 @@
+# [1.78.0](https://github.com/oleg-koval/agent-skills/compare/v1.77.0...v1.78.0) (2026-11-07)
+
+
+### ✨ Features
+
+* **lekker-review:** compose Git and lint capture evidence ([#197](https://github.com/oleg-koval/agent-skills/issues/197)) ([ea55605](https://github.com/oleg-koval/agent-skills/commit/ea55605a5bf72c9bfdcf2938894da8f471f341ee))
+* **lekker-review:** evaluate saved run archives ([#191](https://github.com/oleg-koval/agent-skills/issues/191)) ([b427201](https://github.com/oleg-koval/agent-skills/commit/b4272011ae1bae2104c20ad4f98870dff2cab2a6)), closes [#194](https://github.com/oleg-koval/agent-skills/issues/194)
+
 # [1.77.0](https://github.com/oleg-koval/agent-skills/compare/v1.76.0...v1.77.0) (2026-11-07)
 
 
