@@ -1,3 +1,21 @@
+# [1.80.0](https://github.com/oleg-koval/agent-skills/compare/v1.79.0...v1.80.0) (2026-11-07)
+
+
+### ✨ Features
+
+* **lekker-review:** offer opt-in deterministic Codex dedup ([#203](https://github.com/oleg-koval/agent-skills/issues/203)) ([bbda967](https://github.com/oleg-koval/agent-skills/commit/bbda9673b924ebff04b17679b457a610c1dfef12))
+* **lekker-review:** reuse shared deterministic evidence ([#204](https://github.com/oleg-koval/agent-skills/issues/204)) ([79b377a](https://github.com/oleg-koval/agent-skills/commit/79b377a26647c78669012eb7cd8f3054b8433210))
+
+
+### 📚 Documentation
+
+* **lekker-review:** record separate prompt screening results ([#201](https://github.com/oleg-koval/agent-skills/issues/201)) ([aa60c52](https://github.com/oleg-koval/agent-skills/commit/aa60c527b5c8242e80590296543b4a0af2e27628))
+
+
+### 🚨 Tests
+
+* **lekker-review:** preserve dedup policy and failure coverage ([#202](https://github.com/oleg-koval/agent-skills/issues/202)) ([c428a4e](https://github.com/oleg-koval/agent-skills/commit/c428a4e3a95ed758e1a2c37440590de1d546b738))
+
 # [1.79.0](https://github.com/oleg-koval/agent-skills/compare/v1.78.1...v1.79.0) (2026-11-07)
 
 
