@@ -365,6 +365,12 @@ scripts reject `scan` (see Depth gate). If depth resolves to `scan` or `deps`
 the flag and note `engine forced to <workflow|codex> - revmux needs
 medium/deep` in the review header.
 
+**`--deterministic-dedup` flag:** after resolving ENGINE, opt in to the trusted
+native dedup helper for the initial Review -> Dedup stage only. Record it as
+`deterministicDedup` in CONTEXT_FILE. Accept it only with `ENGINE=codex`;
+otherwise report unsupported and stop. Without the flag, preserve the existing
+manual native merge.
+
 **Re-review detection:** run
 `ls ~/code-reviews/*-<TARGET_SLUG>-<repo-short-name>.md 2>/dev/null | sort | tail -1`
 (`TARGET_SLUG` = `pr-<PR_NUMBER>` in pr mode, `branch-<LOCAL_BRANCH sanitized to
@@ -702,6 +708,7 @@ Write `<scratchpad>/context.json` with keys:
   "botPatternsFile": "<BOT_PATTERNS_FILE, or null>",
   "depsReport":      "<deps-report.json contents at depth deps, else null>",
   "depsInstall":     "<worktree.json depsInstall>",
+  "deterministicDedup": "<boolean: true only for explicit --deterministic-dedup with ENGINE=codex>",
   "prBody":          "<full PR body at every depth; empty string in branch mode>"
 }
 ```
