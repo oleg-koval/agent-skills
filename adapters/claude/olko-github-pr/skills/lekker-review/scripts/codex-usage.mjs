@@ -7,14 +7,17 @@ const FIELDS = ['input_tokens', 'cached_input_tokens', 'cache_write_input_tokens
 const record = v => v && typeof v === 'object' && !Array.isArray(v);
 const unavailable = (agentPath, reason) => ({ agentPath, status: 'unavailable', reason });
 
-async function inspectSession(sessionFile, parentThreadId, agentPath) {
-  let sessionId = null, usage = null, complete = false, models = [];
+async function inspectSession(sessionFile, parentThreadId, agentPath, requireUsage) {
+  let sessionId = null, usage = null, complete = false, models = [], terminalReason = null, turnId = null;
   try {
     const input = createReadStream(sessionFile);
     for await (const line of createInterface({ input, crlfDelay: Infinity })) {
       if (!line.trim()) continue;
       let row;
       try { row = JSON.parse(line); } catch { return unavailable(agentPath, 'malformed JSONL'); }
+      if (!requireUsage && !record(row)) return unavailable(agentPath, 'malformed JSONL');
+      if (!requireUsage && row.type === 'event_msg' && ['task_complete', 'turn_aborted'].includes(row.payload?.type)
+          && (!turnId || row.payload.turn_id !== turnId)) return unavailable(agentPath, 'task turn identity mismatch');
       if (row.type === 'session_meta') {
         const spawn = row.payload?.source?.subagent?.thread_spawn;
         if (sessionId || typeof row.payload?.id !== 'string' || !row.payload.id) return unavailable(agentPath, 'session metadata missing or duplicated');
@@ -22,9 +25,16 @@ async function inspectSession(sessionFile, parentThreadId, agentPath) {
         sessionId = row.payload.id;
       } else if (row.type === 'turn_context' && typeof row.payload?.model === 'string' && row.payload.model && !models.includes(row.payload.model)) {
         models = [...models, row.payload.model];
-      } else if (row.type === 'event_msg' && row.payload?.type === 'task_started') complete = false;
-      else if (row.type === 'event_msg' && row.payload?.type === 'task_complete') complete = true;
-      else if (row.type === 'event_msg' && row.payload?.type === 'token_count') {
+      } else if (row.type === 'event_msg' && row.payload?.type === 'task_started') {
+        if (!requireUsage && (typeof row.payload.turn_id !== 'string' || !row.payload.turn_id.trim())) return unavailable(agentPath, 'task turn identity unavailable');
+        if (!requireUsage) turnId = row.payload.turn_id;
+        complete = false;
+        terminalReason = null;
+      } else if (!requireUsage && row.type === 'event_msg' && row.payload?.type === 'turn_aborted') {
+        complete = false;
+        terminalReason = 'task aborted';
+      } else if (row.type === 'event_msg' && row.payload?.type === 'task_complete') complete = terminalReason === null;
+      else if (requireUsage && row.type === 'event_msg' && row.payload?.type === 'token_count') {
         const raw = row.payload.info?.total_token_usage;
         if (!record(raw) || FIELDS.some(k => !Number.isSafeInteger(raw[k]) || raw[k] < 0)) return unavailable(agentPath, 'token counters are malformed');
         const next = Object.fromEntries(FIELDS.map(k => [k, raw[k]]));
@@ -34,15 +44,15 @@ async function inspectSession(sessionFile, parentThreadId, agentPath) {
     }
   } catch { return unavailable(agentPath, 'session file could not be read'); }
   if (!sessionId) return unavailable(agentPath, 'session metadata unavailable');
-  if (!complete) return unavailable(agentPath, 'task completion unavailable');
-  if (!usage) return unavailable(agentPath, 'token counters unavailable');
-  return { agentPath, status: 'available', sessionId, models, usage };
+  if (!complete) return unavailable(agentPath, terminalReason || 'task completion unavailable');
+  if (requireUsage && !usage) return unavailable(agentPath, 'token counters unavailable');
+  return { agentPath, status: 'available', sessionId, models, ...(requireUsage ? { usage } : { turnId }) };
 }
 
-export async function collectUsage(manifest) {
+async function collectSessions(manifest, requireUsage) {
   if (!record(manifest) || typeof manifest.parentThreadId !== 'string' || !manifest.parentThreadId
       || !Array.isArray(manifest.agents) || !manifest.agents.length
-      || manifest.agents.some(a => !record(a) || typeof a.agentPath !== 'string' || !a.agentPath || typeof a.sessionFile !== 'string' || !a.sessionFile)) {
+      || Array.from(manifest.agents).some(a => !record(a) || typeof a.agentPath !== 'string' || !a.agentPath || typeof a.sessionFile !== 'string' || !a.sessionFile)) {
     return { available: false, agents: [], totals: null, reason: 'manifest needs parentThreadId and explicit agentPath/sessionFile entries' };
   }
   const paths = manifest.agents.map(a => a.agentPath), files = manifest.agents.map(a => a.sessionFile);
@@ -50,11 +60,22 @@ export async function collectUsage(manifest) {
     return { available: false, agents: [], totals: null, reason: 'manifest repeats an agent path or session file' };
   }
   let agents = [];
-  for (const agent of manifest.agents) agents = [...agents, await inspectSession(agent.sessionFile, manifest.parentThreadId, agent.agentPath)];
+  for (const agent of manifest.agents) agents = [...agents, await inspectSession(agent.sessionFile, manifest.parentThreadId, agent.agentPath, requireUsage)];
   const available = agents.every(a => a.status !== 'unavailable');
+  if (!requireUsage) return { available, agents };
   const totals = available ? Object.fromEntries(FIELDS.map(k => [k, agents.reduce((n, a) => n + a.usage[k], 0)])) : null;
   const safe = totals && FIELDS.every(k => Number.isSafeInteger(totals[k]));
   return { available: Boolean(safe), agents, totals: safe ? totals : null, ...(available && !safe ? { reason: 'aggregate token counters exceed safe integer range' } : {}) };
+}
+
+export async function collectUsage(manifest) {
+  return collectSessions(manifest, true);
+}
+
+/** Host terminal evidence only; does not validate assigned tasks or result artifacts. */
+export async function collectCompletion(manifest) {
+  const { totals, ...completion } = await collectSessions(manifest, false);
+  return completion;
 }
 
 async function main(argv) {
