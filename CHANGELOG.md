@@ -1,3 +1,23 @@
+# [1.77.0](https://github.com/oleg-koval/agent-skills/compare/v1.76.0...v1.77.0) (2026-11-07)
+
+
+### ✨ Features
+
+* **lekker-review:** capture ESLint invocation provenance ([#189](https://github.com/oleg-koval/agent-skills/issues/189)) ([b0b9622](https://github.com/oleg-koval/agent-skills/commit/b0b9622e92baf2bde2dc6ac870a63c109a883b46))
+* **lekker-review:** collect commit-bound Git evidence ([#195](https://github.com/oleg-koval/agent-skills/issues/195)) ([908d8a3](https://github.com/oleg-koval/agent-skills/commit/908d8a30d017e45c63f3b249eb3bf100d21f65e1))
+* **lekker-review:** collect native reviewer session usage ([#193](https://github.com/oleg-koval/agent-skills/issues/193)) ([65349df](https://github.com/oleg-koval/agent-skills/commit/65349df6db61870503c766a75c6bd5154596e6a8))
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** isolate concurrent run archives ([#192](https://github.com/oleg-koval/agent-skills/issues/192)) ([30b31ca](https://github.com/oleg-koval/agent-skills/commit/30b31cad353585f411e01762180bcdec190717d6))
+
+
+### 📦 Code Refactoring
+
+* **lekker-review:** extract adapter finding normalization ([#196](https://github.com/oleg-koval/agent-skills/issues/196)) ([f24e6b5](https://github.com/oleg-koval/agent-skills/commit/f24e6b548b4a964115d383dac7a93d8e2024c83c))
+* **lekker-review:** validate lint receipt identity ([#190](https://github.com/oleg-koval/agent-skills/issues/190)) ([ab79f27](https://github.com/oleg-koval/agent-skills/commit/ab79f27faec6a68b0c9b4ce137ca0e6a7ebc70c4))
+
 # [1.76.0](https://github.com/oleg-koval/agent-skills/compare/v1.75.1...v1.76.0) (2026-11-06)
 
 
