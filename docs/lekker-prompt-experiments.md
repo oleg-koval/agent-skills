@@ -1,5 +1,8 @@
 # Separate prompt experiments: screening results
 
+The initial attempt below failed native contracts. The corrected-contract rerun
+is reported separately at the end; do not pool the two attempts.
+
 Both experiments used fresh gpt-6.1-sol low-effort sessions. Inputs and hidden expected
 outcomes were frozen before runs. All input hashes remained unchanged. Three introduced
 defects (tenant isolation, cache identity, validation-before-mutation) and three safe
@@ -120,3 +123,39 @@ bd34418b97f3c5568b94f0f45240761842a82ab0f1cab00b00b838a77befddb3  results/narrow
 433e9f3664e3582cd8c28147338516e63bee8481529cee854fbb80dfd6d5413e  results/consolidation-implementation.json
 57c6e4f8aabcadca017ff3d2bf4bc481f5f511c5d60cbd3eaf16142d63a667e4  results/consolidation-candidate.json
 ```
+
+## Corrected-contract rerun
+
+Run `20261107-semantic-prompt-experiments-v2` preserves the same fixture and
+original prompts. Its shared caller now supplies the complete required metadata,
+string AC coverage and host boundary requirement to every arm. Inputs and oracle
+were frozen before five fresh reviewers ran; no prior outputs or oracle were
+shared with reviewers. Actual model/effort remained gpt-6.1-sol/low in every arm.
+
+| Experiment | Control total | Candidate total | Control uncached input | Candidate uncached input |
+|---|---:|---:|---:|---:|
+| Narrow quality prompt | 79755 | 103824 | 5194 | 8907 |
+| Combine quality + implementation | 185438 | 112000 | 11212 | 7921 |
+
+Narrowing increased observed total tokens 30.18%; consolidation reduced them 39.60%.
+Uncached input increased 71.49% for narrowing and decreased 29.35% for consolidation.
+All five outputs pass the shipped quality/implementation schemas, extracted from
+trusted workflow.js and checked with jsonschema 4.23.0. All three seeded defects
+were found by every reviewer, no safe control was flagged, and severities matched.
+Input hashes remained unchanged. This is schema/source proof, not hosted review.
+
+Metadata still differed: control quality reviewers listed service.ts:7 as another
+cache instance; candidate reviewers returned an empty list, though their code
+quotes and fixes cover that line. Production grouping also differs from manual
+adjudication: the trusted existing dedup helper retains six separate-control
+findings for three underlying defects because titles/classifications differ.
+The reported three-issue union is manual; full pipeline output was not measured.
+
+This corrective rerun used 481017 aggregate agent tokens; the invalid first attempt
+used 559640, for 1040657 across both attempts, excluding coordinator work. Those
+are investigation costs, not production savings. Cache/tool-strategy effects,
+concurrent scheduling, one observation per arm and the simple corpus still
+prevent causal, dollar-cost, representative-quality or whole-review conclusions.
+No further reruns are planned from this screening evidence. Keep production
+prompts, six dimensions and verification unchanged pending broader held-out
+cases and hosted end-to-end evidence.
