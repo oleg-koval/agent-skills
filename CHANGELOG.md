@@ -1,3 +1,10 @@
+# [1.79.0](https://github.com/oleg-koval/agent-skills/compare/v1.78.1...v1.79.0) (2026-11-07)
+
+
+### ✨ Features
+
+* **lekker-review:** add deterministic native dedup CLI ([#199](https://github.com/oleg-koval/agent-skills/issues/199)) ([532d654](https://github.com/oleg-koval/agent-skills/commit/532d6549be3954ea42fece15eb4e56932c41f1f7))
+
 ## [1.78.1](https://github.com/oleg-koval/agent-skills/compare/v1.78.0...v1.78.1) (2026-11-07)
 
 
