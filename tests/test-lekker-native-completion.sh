@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 set -eu
 
-node --test tests/native-completion.test.mjs
+node --test tests/native-completion.test.mjs tests/native-results.test.mjs
