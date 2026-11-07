@@ -11,6 +11,7 @@ const HASH = /^[a-f0-9]{64}$/i;
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
 const count = value => Number.isSafeInteger(value) && value >= 0;
 
+/** Validate a native completion receipt against run policy and exact findings bytes. */
 export function validateNativeCompletion(receipt, expected, findingsBytes) {
   const unavailable = reason => ({ available: false, reason });
   if (!record(expected) || !record(expected.eligible) || !record(receipt)) return unavailable('receipt or expected inputs are malformed');
