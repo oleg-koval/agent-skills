@@ -2,7 +2,7 @@
 // Score lekker findings against a manifest of PRs with known outcomes.
 //
 // Usage:
-//   node eval-runner.mjs --manifest evals/manifest.json --results <results.json> [--json]
+//   node eval-runner.mjs --manifest <manifest.json> (--results <results.json> | --archive <runs-dir>) [--json]
 //
 // manifest.json: { prs: [{ repo, pr, expect: "buggy"|"clean", knownBug?: "file:line + description", id?, sha? }] }
 //                The case key is `id` when present, else "<repo>#<pr>@<sha>" when `sha` is
@@ -21,6 +21,7 @@
 // verdict-affecting finding (critical or important) is a false positive.
 
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const LINE_WINDOW = 10;
@@ -105,6 +106,29 @@ export function validateArchiveRunIds(entries) {
   return entries;
 }
 
+function readArchiveJson(path) {
+  try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
+}
+
+function archivedResults(entries, runsDir) {
+  const results = {};
+  const reasons = [];
+  for (const entry of entries) {
+    if (typeof entry.runId !== 'string' || !RUN_ID.test(entry.runId)) {
+      reasons.push({ key: caseKey(entry), reason: 'unsafe or missing runId' });
+      continue;
+    }
+    const dir = join(runsDir, entry.runId);
+    const evidence = normalizeArchivedEvidence(entry,
+      readArchiveJson(join(dir, 'run.json')),
+      readArchiveJson(join(dir, 'worktree.json')),
+      readArchiveJson(join(dir, 'findings.json')));
+    if (evidence.reason) reasons.push({ key: evidence.key, reason: evidence.reason });
+    else results[evidence.key] = evidence.findings;
+  }
+  return { results, reasons };
+}
+
 export function score(manifest, results) {
   const rows = validateManifest(manifest).map((e) => {
     const key = caseKey(e);
@@ -147,12 +171,21 @@ export function score(manifest, results) {
 
 function main(argv) {
   const flag = (n) => { const i = argv.indexOf('--' + n); return i === -1 ? null : argv[i + 1]; };
-  if (!flag('manifest') || !flag('results')) {
-    console.error('usage: eval-runner.mjs --manifest <manifest.json> --results <results.json> [--json]');
+  const archiveIndex = argv.indexOf('--archive');
+  const archive = archiveIndex === -1 ? null : argv[archiveIndex + 1];
+  if (!flag('manifest') || (archiveIndex !== -1 && (!archive || archive.startsWith('--')))
+      || Boolean(flag('results')) === Boolean(archive)) {
+    console.error('usage: eval-runner.mjs --manifest <manifest.json> (--results <results.json> | --archive <runs-dir>) [--json]');
     process.exit(2);
   }
-  const out = score(JSON.parse(readFileSync(flag('manifest'), 'utf8')), JSON.parse(readFileSync(flag('results'), 'utf8')));
+  const manifest = JSON.parse(readFileSync(flag('manifest'), 'utf8'));
+  const source = archive
+    ? archivedResults(validateArchiveRunIds(validateManifest(manifest)), archive)
+    : { results: JSON.parse(readFileSync(flag('results'), 'utf8')), reasons: null };
+  const out = score(manifest, source.results);
+  if (source.reasons) out.unscoredReasons = source.reasons;
   if (argv.includes('--json')) { console.log(JSON.stringify(out)); return; }
+  for (const { key, reason } of source.reasons || []) console.error(`unscored ${key}: ${reason}`);
   const pct = (x) => (x === null ? 'n/a' : `${Math.round(x * 100)}%`);
   if (out.buggyRuns === undefined) {
     console.log(`recall ${pct(out.recall)} (${out.buggyScored} buggy scored), false positives ${out.falsePositives} (${out.cleanScored} clean scored), unscored ${out.unscored.length}`);
