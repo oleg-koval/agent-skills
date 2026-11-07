@@ -13,10 +13,11 @@ assert.equal(packageVersion, '8.100.3', 'install the pinned pilot package versio
 
 const cases = [
   { name: 'async-filter', expected: 'warning', text: 'const values = [1, 2];\nconst result = values.filter(async value => value > 1);\n' },
-  { name: 'async-forEach', expected: 'warning', text: 'const values = [1, 2];\nvalues.forEach(async value => console.log(value));\n' },
+  { name: 'async-forEach', expected: 'warning', text: 'let completed = 0;\n[1, 2].forEach(async () => { await Promise.resolve(); completed += 1; });\nif (completed !== 2) throw new Error("returned before work finished");\n' },
   { name: 'sync-filter', expected: 'unchanged', text: 'const values = [1, 2];\nconst result = values.filter(value => value > 1);\n' },
   { name: 'async-map', expected: 'unchanged', text: 'const values = [1, 2];\nconst result = values.map(async value => value + 1);\n' },
   { name: 'custom-filter', expected: 'unchanged', text: 'class Custom { filter(callback: () => Promise<boolean>): Promise<boolean> { return callback(); } }\nnew Custom().filter(async () => true);\n' },
+  { name: 'known-safe-untyped-custom-filter', expected: 'warning', text: 'const custom: any = { filter: (callback: () => Promise<boolean>) => callback() };\nconst result = custom.filter(async () => true);\n' },
   { name: 'syntax-error', expected: 'unavailable', text: 'const values = [;\n' },
 ]
 const directory = 'artifacts'

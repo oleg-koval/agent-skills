@@ -52,9 +52,16 @@ it implements no substitute detection rule.
 | Array.filter with sync callback | Unchanged |
 | Array.map with async callback | Unchanged |
 | Typed custom filter accepting async callback | Unchanged |
+| Known-safe custom filter with erased receiver type | Warning: characterized false positive |
 | Invalid TypeScript syntax | Parse-error / unavailable |
 
-The original 7 November 2026 local pilot passed in two cold processes with two
+The extra untyped custom filter returns the callback's promise to its caller;
+unlike Array.filter, it never interprets that promise as a boolean. The warning
+is therefore not a demonstrated defect. Its expected warning characterizes the
+recipe's limitation, not a passing semantic-quality gate. The `any` annotation
+exists only to make the lost type attribution explicit in this isolated fixture.
+
+The original six-fixture 7 November 2026 pilot passed in two cold processes with two
 passes each. All four normalized outputs matched SHA-256
 `ae1a6381c263289b5d006eda96cd73e87d1c9f5cbb95040fdb7c3e916d410bb9`.
 Pass times were 3492/3078 ms and 2880/2136 ms, excluding image/npm setup,
@@ -64,11 +71,14 @@ is `~/.local/state/lekker-review-evaluation/runs/20261107-openrewrite-native`.
 The wrapper checks the package version; the retained lockfile pins transitive
 dependencies for that historical run. A fresh install may resolve different
 transitives and is a new experiment, not an exact historical replay.
+The expanded seven-fixture run also makes the forEach callback suspend before
+checking whether its work finished. Including the safe untyped receiver, it produced
+`52ba49e0a0fdc5a7fb0ad13574e04f11a102c19b029cf2e41d95bfab460e2613`.
 
 ## Adoption limits
 
 This proves one recipe/version on synthetic fixtures, not population recall or
-false-positive rates. Unattributed receivers may be treated as potential arrays;
+false-positive rates. A false positive on a safe untyped receiver was observed;
 warnings need semantic verification. Preserve parse failures as unavailable.
 Printed markers/patches are evidence only; do not auto-apply them. The fixture
 runner is opt-in and intentionally absent from the normal dependency-free suite.
