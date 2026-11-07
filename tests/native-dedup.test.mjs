@@ -69,3 +69,48 @@ test('CLI rejects missing, malformed, duplicate, or invalid findings instead of 
     assert.match(result.stderr, /native-dedup:/)
   }
 })
+
+test('keeps canonical PROJECT quote exceptions and arrival-order evidence ownership', t => {
+  const f = fixture(t, {
+    quality: [
+      { file: 'src/rules.ts', line: 8, severity: 'important', title: 'First title', bugClass: 'first-class', rule: 'PROJECT:first-rule', ruleQuote: 'MUST keep this check.', proof: 'first proof' },
+      { file: 'src/rules.ts', line: 8, severity: 'critical', title: 'Different title', bugClass: 'other-class', rule: 'PROJECT:renamed-rule', ruleQuote: ' must   keep THIS check. ', description: 'longer detail' },
+      { file: 'src/rules.ts', line: 20, severity: 'important', title: 'same rule passage', rule: 'PROJECT:one-rule', ruleQuote: 'MUST retain the first path.' },
+      { file: 'src/rules.ts', line: 20, severity: 'important', title: 'same rule passage', rule: 'PROJECT:one-rule', ruleQuote: 'MUST retain a second path.' },
+      { file: 'src/evidence.ts', line: 5, severity: 'important', title: 'Preserve original proof', proof: 'earlier proof' },
+      { file: 'src/evidence.ts', line: 5, severity: 'important', title: 'Preserve original proof', proof: 'later proof' },
+      { file: 'src/clear.ts', line: 5, severity: 'important', title: 'Higher severity clears proof', proof: 'lower proof' },
+    ],
+    implementation: [
+      { file: 'src/rules.ts', line: 8, severity: 'critical', title: 'Third title', bugClass: 'third-class', rule: 'PROJECT:third-rule', ruleQuote: 'MUST KEEP this check.' },
+      { file: 'src/evidence.ts', line: 5, severity: 'important', title: 'Preserve original proof', proof: 'latest proof' },
+      { file: 'src/clear.ts', line: 5, severity: 'critical', title: 'Higher severity clears proof' },
+    ],
+  })
+  const result = spawnSync('node', [cli, '--manifest', f.manifestPath], { encoding: 'utf8' })
+  assert.equal(result.status, 0, result.stderr)
+  const findings = JSON.parse(result.stdout).findings
+  const project = findings.filter(item => item.file === 'src/rules.ts')
+  assert.deepEqual(project.filter(item => item.line === 8).map(item => [item.severity, item.description, item.agreedBy]), [
+    ['critical', 'longer detail', ['quality', 'implementation']],
+  ])
+  assert.deepEqual(project.filter(item => item.line === 20).map(item => item.ruleQuote), [
+    'MUST retain the first path.', 'MUST retain a second path.',
+  ])
+  const evidence = findings.find(item => item.file === 'src/evidence.ts')
+  assert.equal(evidence.proof, 'earlier proof')
+  assert.equal(findings.find(item => item.file === 'src/clear.ts').proof, undefined)
+})
+
+test('fails closed when the trusted workflow source is unavailable', t => {
+  const f = fixture(t, { quality: [] })
+  const scripts = join(f.dir, 'skill', 'scripts')
+  mkdirSync(scripts, { recursive: true })
+  for (const file of ['native-dedup.mjs', 'validate-lines.mjs', 'finding-core.mjs']) {
+    copyFileSync(`plugins/olko-github-pr/skills/lekker-review/scripts/${file}`, join(scripts, file))
+  }
+  const result = spawnSync('node', [join(scripts, 'native-dedup.mjs'), '--manifest', f.manifestPath], { encoding: 'utf8' })
+  assert.equal(result.status, 2)
+  assert.equal(result.stdout, '')
+  assert.match(result.stderr, /workflow\.js/)
+})
