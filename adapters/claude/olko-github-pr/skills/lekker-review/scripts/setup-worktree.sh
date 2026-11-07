@@ -414,13 +414,46 @@ ESLINT_SCOPE_FILE="/tmp/lekker-eslint-scope-$$.txt"
 # temp files): lint-findings.mjs turns it into botPredicted findings, so the
 # review can fix what the bot reviewers would have charged for. Exported by
 # path as eslintJson.
-ESLINT_JSON_FILE="$(dirname "$OUT_JSON")/eslint-report.json"
+ESLINT_ARTIFACT_DIR="$(mktemp -d "$(dirname "$OUT_JSON")/eslint.XXXXXX")"
+ESLINT_JSON_FILE="$ESLINT_ARTIFACT_DIR/eslint-report.json"
+ESLINT_PROVENANCE_FILE="$ESLINT_JSON_FILE.provenance.json"
 printf '' > "$TSC_TAIL_FILE"
 printf '' > "$TSC_CHANGED_FILE"
 printf '0' > "$TSC_COUNT_FILE"
 printf '' > "$ESLINT_TAIL_FILE"
 printf 'skipped' > "$ESLINT_SCOPE_FILE"
 printf '' > "$ESLINT_JSON_FILE"
+
+write_eslint_provenance() {
+    node - "$ESLINT_JSON_FILE" "$ESLINT_PROVENANCE_FILE" "$MERGE_BASE_VAL" "$@" <<'NODE' || rm -f "$ESLINT_PROVENANCE_FILE"
+const { createHash } = require('node:crypto')
+const fs = require('node:fs')
+const [reportPath, receiptPath, baseSha, headBefore, headAfter, cleanBefore, cleanAfter, rawExit] = process.argv.slice(2)
+const fullSha = value => /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value || '')
+let bytes = null, validReport = false
+try {
+  bytes = fs.readFileSync(reportPath)
+  const report = JSON.parse(bytes.toString('utf8'))
+  validReport = bytes.length > 0 && Array.isArray(report) && report.length > 0
+    && report.every(file => file && typeof file.filePath === 'string' && file.filePath.trim() && Array.isArray(file.messages))
+} catch {}
+const exitCode = rawExit === '' ? null : Number(rawExit)
+const reasons = []
+if (!fullSha(baseSha)) reasons.push('invalid base SHA')
+if (!fullSha(headBefore) || headBefore !== headAfter) reasons.push('HEAD missing or changed during lint')
+if (cleanBefore !== 'true' || cleanAfter !== 'true') reasons.push('tracked worktree was dirty')
+if (exitCode !== 0 && exitCode !== 1) reasons.push('ESLint did not complete with a result')
+if (!validReport) reasons.push('ESLint report missing or malformed')
+fs.writeFileSync(receiptPath, JSON.stringify({
+  schema: 1, status: reasons.length ? 'unavailable' : 'available',
+  ...(reasons.length ? { reason: reasons.join('; ') } : {}),
+  baseSha: baseSha === 'null' ? null : baseSha,
+  headShaBefore: headBefore || null, headShaAfter: headAfter || null,
+  trackedCleanBefore: cleanBefore === 'true', trackedCleanAfter: cleanAfter === 'true',
+  exitCode, reportSha256: bytes ? createHash('sha256').update(bytes).digest('hex') : null,
+}, null, 2) + '\n')
+NODE
+}
 
 # Render a stylish-style tail from the JSON report. An empty or unparseable
 # report (eslint crashed, bad config) keeps whatever eslint wrote on stderr
@@ -473,7 +506,7 @@ run_tsc() {
 }
 
 run_eslint() {
-    local has_config
+    local has_config head_before='' head_after='' clean_before=false clean_after=false lint_exit='' tracked_state
     has_config=false
     if [[ "$NM_LINKED" == "true" ]]; then
         (cd "$WORKTREE_PATH" && compgen -G '.eslintrc*' >/dev/null 2>&1) && has_config=true
@@ -486,8 +519,17 @@ run_eslint() {
                     # One run, JSON formatter: the machine-readable report feeds
                     # lint-findings.mjs and the human tail is rendered from the
                     # same report, so the two can never disagree.
-                    (cd "$WORKTREE_PATH" && npx eslint --max-warnings=0 -f json -o "$ESLINT_JSON_FILE" "${ESLINT_TARGETS[@]}" 2> "$ESLINT_TAIL_FILE") || true
-                    render_eslint_tail
+                    head_before="$(git -C "$WORKTREE_PATH" rev-parse HEAD 2>/dev/null || true)"
+                    if tracked_state="$(git -C "$WORKTREE_PATH" status --porcelain=v1 --untracked-files=no 2>/dev/null)"; then
+                        [[ -z "$tracked_state" ]] && clean_before=true
+                    fi
+                    lint_exit=0
+                    (cd "$WORKTREE_PATH" && npx eslint --max-warnings=0 -f json -o "$ESLINT_JSON_FILE" "${ESLINT_TARGETS[@]}" 2> "$ESLINT_TAIL_FILE") || lint_exit=$?
+                    head_after="$(git -C "$WORKTREE_PATH" rev-parse HEAD 2>/dev/null || true)"
+                    if tracked_state="$(git -C "$WORKTREE_PATH" status --porcelain=v1 --untracked-files=no 2>/dev/null)"; then
+                        [[ -z "$tracked_state" ]] && clean_after=true
+                    fi
+                    render_eslint_tail || true
                     printf 'changed-files' > "$ESLINT_SCOPE_FILE"
                 else
                     printf 'no-changed-lintable-files\n' > "$ESLINT_TAIL_FILE"
@@ -508,6 +550,7 @@ run_eslint() {
         printf 'skipped\n' > "$ESLINT_TAIL_FILE"
         printf 'skipped' > "$ESLINT_SCOPE_FILE"
     fi
+    write_eslint_provenance "$head_before" "$head_after" "$clean_before" "$clean_after" "$lint_exit"
 }
 
 run_tsc &
@@ -582,6 +625,7 @@ python3 - \
     "$MERGE_BASE_VAL" \
     "$DEPS_INSTALL_FILE" \
     "$ESLINT_JSON_FILE" \
+    "$ESLINT_PROVENANCE_FILE" \
     "$TEST_RUNNER_JSON" \
     "$OUT_JSON" \
     "$BASE_RULES_FILE" \
@@ -592,8 +636,8 @@ import json, sys, os
  tsc_file, eslint_file, rules_file, delta_file, notes,
  changed_files_file, base_ref_val, eslint_scope_file,
  tsc_changed_file, tsc_count_file, merge_base_val,
- deps_install_file, eslint_json_file, test_runner_json, out_json,
- base_rules_file, base_rules_state) = sys.argv[1:22]
+ deps_install_file, eslint_json_file, eslint_provenance_file, test_runner_json, out_json,
+ base_rules_file, base_rules_state) = sys.argv[1:23]
 
 def parse_runner(raw):
     try:
@@ -665,6 +709,7 @@ data = {
     # no structured report (skipped, no config, crashed, or the repo-wide
     # fallback), so a consumer can tell "no lint report" from "no problems".
     "eslintJson":     eslint_json_file if file_has_content(eslint_json_file) else None,
+    "eslintProvenance": eslint_provenance_file if file_has_content(eslint_provenance_file) else None,
 }
 
 for p in (tsc_file, eslint_file, rules_file, base_rules_file, changed_files_file,

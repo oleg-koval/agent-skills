@@ -511,8 +511,10 @@ ${SKILL_ROOT}/scripts/setup-worktree.sh \
 On completion, read `worktree.json`. Keys emitted:
 `worktreePath`, `repoRoot`, `headSha`, `headShaShort`, `tscTail`,
 `tscChangedTail`, `tscErrorCount`, `eslintTail`, `eslintScope`, `eslintJson`,
-`changedFiles`, `baseRef`, `mergeBase`, `projectRules`, `deltaFile`, `notes`,
+`eslintProvenance`, `changedFiles`, `baseRef`, `mergeBase`, `projectRules`, `deltaFile`, `notes`,
 `depsInstall`, `testRunner`.
+
+`eslintProvenance` is the provenance-only receipt for `eslintJson` (base/head, tracked-worktree state, exit code, raw report hash).
 
 `testRunner` is `{runner, dirs, reason}` from `scripts/test-runner.mjs`:
 `runner` is `vitest|jest|mocha|node-test` only when its binary is installed
