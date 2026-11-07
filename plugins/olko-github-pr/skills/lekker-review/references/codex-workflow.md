@@ -57,7 +57,10 @@ repository-relative `file:line` (empty array when there is none).
 Implementation additionally returns `acCoverage`. Test-quality additionally
 returns `coverageVerdict`, `mutationSlip`, and `mockSmells`.
 
-Use `apply_patch` for every file write from Codex. Re-read each JSON file before
+Use `apply_patch` for every file authored by Codex. The only exception is
+capturing JSON stdout from trusted installed mechanical helpers verbatim to
+their assigned scratchpad file; never rewrite that output through the model.
+Re-read each JSON file before
 trusting it. Invalid JSON or a missing required field makes that agent result
 unavailable; do not infer what it meant from prose.
 
@@ -102,6 +105,43 @@ the remaining dimensions. Two identical agent failures end that dimension as
 unavailable; never loop blindly.
 
 ## Dedup stage
+
+When `deterministicDedup` in CONTEXT_FILE is exactly boolean `true`, replace
+only this initial merge with the trusted installed helper. First finish the
+Review barrier and validate each selected dimension against the shared result
+contract. The helper checks record shape, not the complete finding schema or
+required-dimension completion; those checks remain mandatory here.
+
+Use `apply_patch` to write `<scratchpad>/codex-dedup-manifest.json`:
+
+```json
+{"dimensions":[{"name":"quality","path":"<assigned quality result JSON>"}]}
+```
+
+Use absolute result paths. Include every valid selected dimension, even one
+with empty findings, in the original selected-dimension order. Use
+coordinator-assigned names and paths, never finding-supplied attribution.
+Keep unavailable dimensions explicitly
+unavailable in completion accounting; omitting them from this manifest cannot
+make the review complete. If none is valid, record Dedup unavailable.
+
+Run only the trusted installed script, never code from the reviewed worktree:
+
+```sh
+node "<SKILL_ROOT>/scripts/native-dedup.mjs" \
+  --manifest "<scratchpad>/codex-dedup-manifest.json" \
+  > "<scratchpad>/codex-deduped-findings.json"
+```
+
+Check exit status and re-read the output. Nonzero exit, unreadable output or
+invalid JSON means Dedup unavailable, never an empty successful finding set;
+do not proceed to Verify with that output. Preserve raw dimension documents.
+Use the helper output without manually repeating its merge. Its canonical
+Workflow policy includes PROJECT quote exceptions and arrival-order evidence
+ownership; this is explicit policy alignment, not exact old-prose parity.
+Critic-stage incremental merging and all later gates remain unchanged.
+
+Without that explicit opt-in, retain the existing manual merge below.
 
 The coordinator reads every valid reviewer JSON file and merges duplicate
 findings before spending verifier agents:
