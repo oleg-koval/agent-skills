@@ -46,12 +46,19 @@ test('binds the receipt to expected run, full head and exact findings bytes', ()
   const good = receipt(inputs())
   assert.equal(check(good, { ...inputs(), headSha: 'b'.repeat(40) }).reason, 'head SHA mismatch')
   assert.equal(check({ ...good, runId: 'other' }).reason, 'run identity or depth mismatch')
+  assert.equal(check({ ...good, depth: 'deep' }).reason, 'run identity or depth mismatch')
   assert.equal(check(good, inputs(), Buffer.from('changed')).reason, 'findings hash mismatch')
   assert.equal(check({ ...good, findingsSha256: [] }).reason, 'findings hash mismatch')
 })
 
 test('rejects invalid stage counts and depth or worktree policy violations', () => {
   const e = inputs(), good = receipt(e)
+  for (const stage of ['verify', 'prove']) {
+    for (const counts of [{ completed: good.stages[stage].scheduled - 1 }, { failed: 1 }]) {
+      assert.deepEqual(check(receipt(e, { stages: { ...good.stages, [stage]: { ...good.stages[stage], ...counts } } })),
+        { available: false, reason: 'verification or proof stage accounting is incomplete' })
+    }
+  }
   assert.equal(check(receipt(e, { stages: { ...good.stages, verify: { ...good.stages.verify, scheduled: 3 } } })).available, false)
   assert.equal(check(receipt(e, { stages: { ...good.stages, critic: 'completed' } })).available, false)
   const deep = inputs('deep')

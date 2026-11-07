@@ -171,17 +171,20 @@ export function score(manifest, results) {
 
 function main(argv) {
   const flag = (n) => { const i = argv.indexOf('--' + n); return i === -1 ? null : argv[i + 1]; };
+  const resultsIndex = argv.indexOf('--results');
+  const results = flag('results');
   const archiveIndex = argv.indexOf('--archive');
   const archive = archiveIndex === -1 ? null : argv[archiveIndex + 1];
   if (!flag('manifest') || (archiveIndex !== -1 && (!archive || archive.startsWith('--')))
-      || Boolean(flag('results')) === Boolean(archive)) {
+      || (resultsIndex !== -1 && (!results || results.startsWith('--')))
+      || Boolean(results) === Boolean(archive)) {
     console.error('usage: eval-runner.mjs --manifest <manifest.json> (--results <results.json> | --archive <runs-dir>) [--json]');
     process.exit(2);
   }
   const manifest = JSON.parse(readFileSync(flag('manifest'), 'utf8'));
   const source = archive
     ? archivedResults(validateArchiveRunIds(validateManifest(manifest)), archive)
-    : { results: JSON.parse(readFileSync(flag('results'), 'utf8')), reasons: null };
+    : { results: JSON.parse(readFileSync(results, 'utf8')), reasons: null };
   const out = score(manifest, source.results);
   if (source.reasons) out.unscoredReasons = source.reasons;
   if (argv.includes('--json')) { console.log(JSON.stringify(out)); return; }
