@@ -31,8 +31,11 @@ per arm on a small, deliberately simple fixture is not a representative or held-
 real-PR corpus. Only quality and implementation were screened, not all six review
 dimensions or the complete Verify/Critic/Prove workflow. The benchmark caller
 contract omitted native-required `bugClass` and `otherInstances`; all five outputs
-lack both. They satisfy the smaller benchmark contract but would be unavailable
-under the native result contract. The production StructuredOutput host schema was
+lack both. All five also encode `acCoverage` as an array, while workflow.js schemas
+require a string when present. The three quality-only outputs omit the boundary
+required by that host schema for untagged Critical/Important findings. They satisfy
+the smaller benchmark contract but would fail native/host contracts. The
+production StructuredOutput host schema was
 not enforced. These are raw content/usage probes, not usable native review runs;
 their common contract failure prevents a production non-regression conclusion.
 
