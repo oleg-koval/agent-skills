@@ -58,11 +58,16 @@ test('CLI rejects missing, malformed, duplicate, or invalid findings instead of 
     { dimensions: [{ name: 'quality', path: 'missing.json' }] },
     { dimensions: [{ name: 'quality', path: 'bad.json' }] },
     { dimensions: [{ name: 'quality', path: 'null.json' }] },
+    { dimensions: [{ name: ' quality', path: 'good.json' }] },
+    { dimensions: [{ name: 'quality ', path: 'good.json' }] },
+    { dimensions: [{ name: 'quality', path: ' good.json' }] },
+    { dimensions: [{ name: 'quality', path: 'good.json ' }] },
     { dimensions: [{ name: 'quality', path: 'good.json' }, { name: 'quality', path: 'good.json' }] },
   ]) {
     writeFileSync(join(dir, 'bad.json'), '{')
     writeFileSync(join(dir, 'null.json'), JSON.stringify({ findings: [null] }))
     writeFileSync(join(dir, 'good.json'), JSON.stringify({ findings: [] }))
+    for (const path of [' good.json', 'good.json ']) writeFileSync(join(dir, path), JSON.stringify({ findings: [] }))
     const result = invoke(value)
     assert.equal(result.status, 2)
     assert.equal(result.stdout, '')
