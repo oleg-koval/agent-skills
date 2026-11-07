@@ -51,7 +51,7 @@ test('binds the receipt to expected run, full head and exact findings bytes', ()
   assert.equal(check({ ...good, findingsSha256: [] }).reason, 'findings hash mismatch')
 })
 
-test('rejects invalid stage counts and depth or worktree policy violations', () => {
+test('rejects invalid stage counts and depth or worktree policy violations', /** Covers stage accounting and depth-specific policy rejection. */ () => {
   const e = inputs(), good = receipt(e)
   for (const stage of ['verify', 'prove']) {
     for (const counts of [{ completed: good.stages[stage].scheduled - 1 }, { failed: 1 }]) {

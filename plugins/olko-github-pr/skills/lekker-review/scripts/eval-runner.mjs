@@ -75,6 +75,7 @@ export function validateManifest(manifest) {
   return prs;
 }
 
+/** Normalize archived review evidence, returning findings only when every identity check passes. */
 export function normalizeArchivedEvidence(entry, run, worktree, document) {
   const key = caseKey(entry);
   const unscored = (reason) => ({ key, reason });
@@ -99,6 +100,7 @@ export function normalizeArchivedEvidence(entry, run, worktree, document) {
 }
 
 // Validate archive references before reading any run directories.
+/** Reject duplicate archive run IDs before archive paths are read. */
 export function validateArchiveRunIds(entries) {
   const duplicate = entries.find((entry, index) => entry.runId
     && entries.slice(0, index).some(previous => previous.runId === entry.runId));
@@ -110,6 +112,7 @@ function readArchiveJson(path) {
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
 }
 
+/** Load valid archived findings and retain a reason for each rejected run. */
 function archivedResults(entries, runsDir) {
   const results = {};
   const reasons = [];
@@ -171,10 +174,10 @@ export function score(manifest, results) {
 
 function main(argv) {
   const flag = (n) => { const i = argv.indexOf('--' + n); return i === -1 ? null : argv[i + 1]; };
-  const resultsIndex = argv.indexOf('--results');
   const results = flag('results');
   const archiveIndex = argv.indexOf('--archive');
   const archive = archiveIndex === -1 ? null : argv[archiveIndex + 1];
+  const resultsIndex = argv.indexOf('--results');
   if (!flag('manifest') || (archiveIndex !== -1 && (!archive || archive.startsWith('--')))
       || (resultsIndex !== -1 && (!results || results.startsWith('--')))
       || Boolean(results) === Boolean(archive)) {

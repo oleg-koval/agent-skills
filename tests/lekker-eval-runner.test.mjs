@@ -149,7 +149,7 @@ test('the CLI summary names run counts when a case has repeated runs', () => {
     'recall 50% per run (2 runs over 1 buggy cases), false positives 1 (2 runs over 1 clean cases, 0.50 per run), unscored 2')
 })
 
-test('archive CLI scores valid runs and leaves incomplete or unsafe runs unscored', () => {
+test('archive CLI scores valid runs and leaves incomplete or unsafe runs unscored', /** Covers accepted evidence and stable reasons for every rejected archive. */ () => {
   const dir = mkdtempSync(join(tmpdir(), 'lekker-eval-archive-'))
   try {
     const sha = 'A'.repeat(40)
@@ -168,8 +168,8 @@ test('archive CLI scores valid runs and leaves incomplete or unsafe runs unscore
     writeFileSync(join(cleanDir, 'worktree.json'), JSON.stringify({ headSha: 'b'.repeat(40) }))
     writeFileSync(join(cleanDir, 'findings.json'), JSON.stringify({ findings: [{ file: 'src/b.ts', line: null, severity: 'observation' }] }))
     for (const [id, pr, status, headSha] of [
-      ['failed-run', 13, 'failed', sha],
-      ['wrong-head', 14, 'ok', 'e'.repeat(40)],
+      ['failed-run', 13, 'failed', 'e'.repeat(40)],
+      ['mismatched-head', 14, 'ok', 'f'.repeat(40)],
     ]) {
       const invalidDir = join(dir, id)
       mkdirSync(invalidDir)
@@ -183,8 +183,8 @@ test('archive CLI scores valid runs and leaves incomplete or unsafe runs unscore
       { repo: 'o/r', pr: 10, sha: 'b'.repeat(40), runId: 'verified-clean', expect: 'clean' },
       { repo: 'o/r', pr: 11, sha: 'c'.repeat(40), runId: 'missing-run', expect: 'clean' },
       { repo: 'o/r', pr: 12, sha: 'd'.repeat(40), runId: '../escape', expect: 'clean' },
-      { repo: 'o/r', pr: 13, sha, runId: 'failed-run', expect: 'clean' },
-      { repo: 'o/r', pr: 14, sha, runId: 'wrong-head', expect: 'clean' },
+      { repo: 'o/r', pr: 13, sha: 'e'.repeat(40), runId: 'failed-run', expect: 'clean' },
+      { repo: 'o/r', pr: 14, sha: 'a'.repeat(40), runId: 'mismatched-head', expect: 'clean' },
     ] }
     const manifestFile = join(dir, 'manifest.json')
     writeFileSync(manifestFile, JSON.stringify(cases))
@@ -195,9 +195,13 @@ test('archive CLI scores valid runs and leaves incomplete or unsafe runs unscore
     assert.equal(out.recall, 1)
     assert.equal(out.cleanScored, 1)
     assert.equal(out.falsePositives, 0)
-    assert.deepEqual(out.unscoredReasons.map((item) => item.reason), ['run.json missing or malformed', 'unsafe or missing runId', 'run status is not ok', 'worktree headSha mismatch'])
-    assert.deepEqual(out.unscored, cases.prs.slice(2).map((entry) => `o/r#${entry.pr}@${entry.sha}`))
-    assert.deepEqual(out.rows.slice(4).map((row) => row.scored), [false, false])
+    assert.deepEqual(out.rows.filter((row) => !row.scored).map((row) => row.key), [
+      'o/r#11@' + 'c'.repeat(40), 'o/r#12@' + 'd'.repeat(40),
+      'o/r#13@' + 'e'.repeat(40), 'o/r#14@' + 'a'.repeat(40),
+    ])
+    assert.deepEqual(out.unscoredReasons.map((item) => item.reason), [
+      'run.json missing or malformed', 'unsafe or missing runId', 'run status is not ok', 'worktree headSha mismatch',
+    ])
     const human = spawnSync('node', [cli, '--manifest', manifestFile, '--archive', dir], { encoding: 'utf8' })
     assert.match(human.stderr, /run\.json missing or malformed/)
     assert.match(human.stderr, /unsafe or missing runId/)
