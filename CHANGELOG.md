@@ -1,3 +1,10 @@
+# [1.82.0](https://github.com/oleg-koval/agent-skills/compare/v1.81.0...v1.82.0) (2026-11-08)
+
+
+### ✨ Features
+
+* **lekker:** validate defect evaluation evidence ([#207](https://github.com/oleg-koval/agent-skills/issues/207)) ([16f5dc5](https://github.com/oleg-koval/agent-skills/commit/16f5dc598d5536dc9511d6ff684865b8d9b57495))
+
 # [1.81.0](https://github.com/oleg-koval/agent-skills/compare/v1.80.0...v1.81.0) (2026-11-07)
 
 
