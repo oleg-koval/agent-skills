@@ -10,7 +10,7 @@ const dimensions = ['deps', 'triage-quality', 'triage-logic', 'quality', 'implem
 /** Canonicalize location objects without altering or replacing the raw document. */
 export function normalizeNativeResult(dimension, document) {
   const location = value => record(value) && Object.keys(value).length === 2
-    && typeof value.file === 'string' && !/[\r\n:]/.test(value.file)
+    && typeof value.file === 'string' && !/[\x00-\x1f\x7f:]/.test(value.file)
     && Number.isSafeInteger(value.line) && value.line > 0
     && instances.test(`${value.file}:${value.line}`) ? `${value.file}:${value.line}` : value
   const normalized = record(document) && Array.isArray(document.findings)
