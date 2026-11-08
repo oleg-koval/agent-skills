@@ -1,3 +1,18 @@
+# [1.83.0](https://github.com/oleg-koval/agent-skills/compare/v1.82.0...v1.83.0) (2026-11-08)
+
+
+### ✨ Features
+
+* **lekker:** capture exact source for isolated boundary probes ([#211](https://github.com/oleg-koval/agent-skills/issues/211)) ([8fca204](https://github.com/oleg-koval/agent-skills/commit/8fca2048a77cf8cb01fc825f088b94cadedd69f8))
+* **lekker:** generate deterministic filesystem boundary cases ([#209](https://github.com/oleg-koval/agent-skills/issues/209)) ([a20441d](https://github.com/oleg-koval/agent-skills/commit/a20441d064eb9e8a0facbac7eb84e0e60a13ff8a))
+* **lekker:** score adjudicated defects and safe review controls ([#210](https://github.com/oleg-koval/agent-skills/issues/210)) ([0bd2383](https://github.com/oleg-koval/agent-skills/commit/0bd2383249e559242f56e9a53284c5c01f1a5811))
+* **lekker:** summarize boundary outcomes and observe filesystem limits ([#212](https://github.com/oleg-koval/agent-skills/issues/212)) ([cf372a7](https://github.com/oleg-koval/agent-skills/commit/cf372a7f51b62e8d8647bb57ed39624282ac8498))
+
+
+### 🐛 Bug Fixes
+
+* **lekker:** preserve findings with object-form sibling locations ([#208](https://github.com/oleg-koval/agent-skills/issues/208)) ([9cce1e1](https://github.com/oleg-koval/agent-skills/commit/9cce1e1b1bc5548f5934c079b5d4903548c8e7ac))
+
 # [1.82.0](https://github.com/oleg-koval/agent-skills/compare/v1.81.0...v1.82.0) (2026-11-08)
 
 
