@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { validateNativeResult } from '../plugins/olko-github-pr/skills/lekker-review/scripts/native-results.mjs'
+import { validateNativeResult, normalizeNativeResult } from '../plugins/olko-github-pr/skills/lekker-review/scripts/native-results.mjs'
 
 const finding = { file: 'src/a.ts', line: 4, severity: 'critical', title: 'Failure', description: 'Reachable failure',
   badCode: 'broken()', fix: 'working()', bugClass: 'missing-check', otherInstances: ['src/b.ts:9'],
@@ -9,6 +9,21 @@ const finding = { file: 'src/a.ts', line: 4, severity: 'critical', title: 'Failu
     decisionPoint: 'authorize request', realizationPoint: 'write response', stateOwner: 'request handler', evidenceClass: 'runtime' } }
 const check = (value, dimension = 'quality') => validateNativeResult(dimension, value).available
 const one = value => ({ findings: [value] })
+
+test('normalizes only unambiguous safe location objects and preserves raw findings', () => {
+  const raw = one({ ...finding, otherInstances: [{ file: 'src/b.ts', line: 9 }] })
+  const before = JSON.stringify(raw)
+  const result = normalizeNativeResult('quality', raw)
+  assert.equal(result.available, true)
+  assert.deepEqual(result.document, one(finding))
+  assert.equal(JSON.stringify(raw), before)
+  for (const value of [{ file: '../a.ts', line: 1 }, { file: '/a.ts', line: 1 },
+    { file: 'a.ts', line: '1' }, { file: 'a.ts', line: 0 }, { file: 'a.ts', line: 1, extra: true },
+    { file: 'a.ts:2', line: 1 }, { file: 'a\nb.ts', line: 1 }]) {
+    assert.equal(normalizeNativeResult('quality', one({ ...finding, otherInstances: [value] })).available, false)
+  }
+  assert.equal(normalizeNativeResult('quality', one({ ...finding, badCode: '' })).document, null)
+})
 
 test('valid empty and nonempty results are deterministic, open and unchanged', () => {
   for (const dimension of ['deps', 'triage-quality', 'triage-logic', 'quality', 'implementation', 'simplification', 'conventions', 'test-quality', 'project-rules']) {

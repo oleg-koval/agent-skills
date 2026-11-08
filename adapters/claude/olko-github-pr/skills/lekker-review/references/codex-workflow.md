@@ -89,6 +89,14 @@ bounded task:
 4. Write the shared result contract to
    `<scratchpad>/codex-review-<dimension>.json`, re-read it, and return the path.
 
+Before accepting each result, the coordinator runs the trusted installed helper:
+`node <SKILL_ROOT>/scripts/normalize-native-result.mjs <dimension> <raw-result>`.
+Save its stdout separately; never overwrite the raw result. A successful envelope
+contains the raw byte hash and validated `document` for downstream deduplication.
+Only exact `{file,line}` location objects become `path:line` strings; ambiguous or
+unsafe locations remain invalid. A nonzero exit or `available: false` makes the
+review unavailable. Preserve the reason and raw output; never substitute empty findings.
+
 For the implementation dimension, explicitly apply the root-cause-versus-
 symptom check in `references/agents/implementation.md` to bug-fix PRs. Require
 evidence that the reported defect remains unresolved or a contract is violated
