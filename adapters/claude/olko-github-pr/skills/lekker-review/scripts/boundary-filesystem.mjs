@@ -11,13 +11,14 @@ export function observeComponentLimit(parentDir) {
       throw error
     }
   }
-  let low = 1, high = 1024
-  if (attempt(high)) throw new Error('filesystem component limit exceeds bounded observation range')
-  while (low < high) {
-    const middle = Math.ceil((low + high) / 2)
-    if (attempt(middle)) low = middle
-    else high = middle - 1
-  }
-  rmSync(probeDir, { recursive: true, force: true })
-  return low
+  try {
+    let low = 1, high = 1024
+    if (attempt(high)) throw new Error('filesystem component limit exceeds bounded observation range')
+    while (low < high) {
+      const middle = Math.ceil((low + high) / 2)
+      if (attempt(middle)) low = middle
+      else high = middle - 1
+    }
+    return low
+  } finally { rmSync(probeDir, { recursive: true, force: true }) }
 }
