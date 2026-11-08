@@ -84,6 +84,11 @@ bounded task:
    stale/unavailable facts to the coordinator rather than silently retargeting
    or recollecting them per agent. It does not replace semantic investigation,
    the authoritative diff, or required schema/completion/verification gates.
+   If opted-in static evidence contains boundary data, inspect its capture status,
+   source provenance, candidate/reduced-input summary, and verified reduced failure
+   code with its stderr hash/path as evidence only. An
+   unavailable probe stays unknown; a candidate never creates a finding or clean
+   verdict without semantic verification.
 3. Review only the target diff. Do not edit files, run git writes, post to
    GitHub, or communicate externally.
 4. Write the shared result contract to
