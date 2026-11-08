@@ -696,9 +696,19 @@ helper before assembling context. Never run a copy from the reviewed worktree:
 ```sh
 node "<SKILL_ROOT>/scripts/evidence-bundle.mjs" \
   --worktree "<scratchpad>/worktree.json" > "<scratchpad>/evidence-bundle.json"
-jq 'del(.git.diff.text, .lint.report)' "<scratchpad>/evidence-bundle.json" \
+jq 'del(.git.diff.text, .lint.report, .boundary.report.results)' "<scratchpad>/evidence-bundle.json" \
   > "<scratchpad>/static-evidence.json"
 ```
+
+Boundary probes are optional and remain off unless the operator explicitly
+opts in with `--trusted-boundary-opt-in`, `--boundary-config`, and
+`--boundary-out`. The fixed trusted CLI adapter reads only exact base/head
+source from observed Git evidence. Follow
+[`references/boundary-evidence.md`](references/boundary-evidence.md) for the
+local configuration. Include the compact boundary status, provenance, candidate
+summary, and verified reduced failure code with its stderr hash/path in semantic review context. Treat candidates as evidence for
+review; they never create findings or a clean verdict automatically. If opted
+in collection is unavailable, preserve its reason in the bundle.
 
 Check each exit status and re-read the JSON. Missing tools, nonzero exits or
 malformed output make this collection unavailable: preserve diagnostics and
@@ -707,8 +717,8 @@ When Git evidence is available, its provenance base/head must match the
 review's selected commit pair; a mismatch invalidates the collection, never
 changes the review target. Unavailable Git or lint stays explicitly unknown.
 
-The compact view removes only duplicate raw diff text and lint report data.
-Keep the full bundle for provenance and detail; semantic review still reads
+The compact view removes duplicate raw diff text, lint report data, and raw
+boundary invocation rows, but retains the reduced failure reference after its raw stderr hash is checked. Keep the full bundle for provenance and detail; semantic review still reads
 DIFF_FILE and existing lint/preflight inputs. Do not replace changedPaths,
 project rules or the mandatory risk check with a different Git diff. Reuse
 available pinned inventory instead of recollecting it in every review agent.
