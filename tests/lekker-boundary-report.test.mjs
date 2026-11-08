@@ -22,3 +22,12 @@ test('marks missing or unexpected invocation coverage unavailable', () => {
     shrinkResults: [hit], outputDir: '/artifact', reduced: null })
   assert.equal(report.status, 'unavailable')
 })
+
+test('requires every configured comparison role', () => {
+  for (const role of ['original', 'defective', 'repaired']) {
+    const item = row('missing'); delete item.runs[role]
+    const report = assembleBoundaryReport({ provenance: { sources: { repaired: {} } },
+      cases: [item], results: [item], shrinkResults: [] })
+    assert.equal(report.status, 'unavailable', role)
+  }
+})

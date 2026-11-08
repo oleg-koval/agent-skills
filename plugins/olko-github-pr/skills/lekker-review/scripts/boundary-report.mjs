@@ -1,5 +1,5 @@
 function isCandidate(row) {
-  const original = row.runs.original, defective = row.runs.defective, repaired = row.runs.repaired
+  const original = row.runs?.original, defective = row.runs?.defective, repaired = row.runs?.repaired
   return original?.status === 'observed' && defective?.status === 'observed'
     && original.exitClass === 'success' && defective.exitClass === 'component-limit'
     && (!repaired || repaired.status === 'observed' && repaired.exitCode === 0)
@@ -11,8 +11,10 @@ export function assembleBoundaryReport({ source, provenance, seed, componentLimi
   const candidates = allResults.filter(isCandidate).map(row => ({ id: row.id, input: row.input,
     evidenceClass: 'composed trusted CLI probe', inputSha256: row.inputSha256,
     outcomes: Object.fromEntries(Object.entries(row.runs).map(([role, result]) => [role, result.exitCode])) }))
+  const roles = ['original', 'defective', ...(provenance?.sources?.repaired ? ['repaired'] : [])]
   const incomplete = results.length !== cases.length || allResults.length > 100
-    || allResults.some(row => row.status !== 'available' || Object.values(row.runs).some(run => run.status !== 'observed'
+    || allResults.some(row => row.status !== 'available' || roles.some(role => !row.runs?.[role])
+      || Object.values(row.runs).some(run => run?.status !== 'observed'
       || run.exitClass === 'unexpected'))
   return { schema: 1, status: incomplete ? 'unavailable' : 'available', reason: incomplete ? 'timeout, unexpected exit, or incomplete invocation coverage' : null,
     source, provenance, seed, contract: { maxComponentBytes: componentLimit, count: allResults.length,
