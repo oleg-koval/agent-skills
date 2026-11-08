@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 
 const sha256 = value => createHash('sha256').update(value).digest('hex')
 
 export function runTrustedCli({ source, target, repoSlug, outputDir, id, timeoutMs = 5000 }) {
-  const dir = join(outputDir, id)
+  const dir = resolve(outputDir, id)
   const home = join(dir, 'home'), state = join(dir, 'state'), scripts = join(dir, 'scripts')
   mkdirSync(home, { recursive: true }); mkdirSync(state, { recursive: true }); mkdirSync(scripts, { recursive: true })
   const cli = join(scripts, 'run-log.mjs')

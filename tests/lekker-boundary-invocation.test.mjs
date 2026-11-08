@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 import test from 'node:test'
 import { runTrustedCli } from '../plugins/olko-github-pr/skills/lekker-review/scripts/boundary-invocation.mjs'
 
 function run(t, id, source, timeoutMs = 5000) {
   const root = mkdtempSync(join(tmpdir(), `boundary-invocation-${id}-`)); t.after(() => rmSync(root, { recursive: true, force: true }))
   return { root, result: runTrustedCli({ source: { bytes: Buffer.from(source) }, target: 'target', repoSlug: 'repo',
-    outputDir: root, id, timeoutMs }) }
+    outputDir: relative(process.cwd(), root), id, timeoutMs }) }
 }
 
 test('captures fixed CLI stdout and classifies a known component-limit error', t => {
