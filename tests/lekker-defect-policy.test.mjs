@@ -21,6 +21,8 @@ test('run validation binds status, case SHA, exact finding hash, and one evidenc
   assert.equal(validateDefectEvaluation(manifest, evaluation, sha256).valid, true)
   assert.match(validateDefectEvaluation(manifest, evaluation, 'c'.repeat(64)).reason, /hash mismatch/)
   assert.match(validateDefectEvaluation(manifest, { ...evaluation, run: { ...evaluation.run, status: 'failed' } }, sha256).reason, /not completed/)
+  assert.match(validateDefectEvaluation(manifest, { ...evaluation, run: { ...evaluation.run, runId: 123 },
+    adjudication: { ...evaluation.adjudication, runId: 123 } }, sha256).reason, /unsafe or duplicate runId/)
   assert.match(validateDefectEvaluation(manifest, { ...evaluation, adjudication: { ...evaluation.adjudication,
     decisions: [{ ...evaluation.adjudication.decisions[0], findingIndex: 1 }] } }, sha256).reason, /malformed or duplicated/)
   assert.match(validateDefectEvaluation(manifest, evaluation, sha256, ['review-1']).reason, /duplicate runId/)

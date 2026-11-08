@@ -38,7 +38,7 @@ export function validateDefectEvaluation(manifest, evaluation, findingsSha256, p
   if (!run || !adjudication || !registry.caseIds.includes(run.caseId)) return unavailable('run or registered case unavailable')
   const testCase = manifest.cases.find(item => item.id === run.caseId)
   if (run.status !== 'completed') return unavailable('run is not completed')
-  if (!RUN_ID.test(run.runId || '') || previousRunIds.includes(run.runId)) return unavailable('unsafe or duplicate runId')
+  if (typeof run.runId !== 'string' || !RUN_ID.test(run.runId) || previousRunIds.includes(run.runId)) return unavailable('unsafe or duplicate runId')
   if (run.headSha !== testCase.headSha || adjudication.headSha !== run.headSha || adjudication.runId !== run.runId) return unavailable('run identity mismatch')
   if (!SHA256.test(findingsSha256 || '') || adjudication.findingsSha256 !== findingsSha256) return unavailable('finding bytes hash mismatch')
   if (!Array.isArray(run.findings) || run.findings.some(finding => !finding || typeof finding.file !== 'string' || !finding.file.trim()
