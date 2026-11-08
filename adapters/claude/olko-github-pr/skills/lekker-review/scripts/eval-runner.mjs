@@ -21,8 +21,10 @@
 // verdict-affecting finding (critical or important) is a false positive.
 
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scoreDefectCorpus } from './defect-scoring.mjs';
 
 export const LINE_WINDOW = 10;
 const BLOCKING = new Set(['critical', 'important']);
@@ -174,6 +176,34 @@ export function score(manifest, results) {
 
 function main(argv) {
   const flag = (n) => { const i = argv.indexOf('--' + n); return i === -1 ? null : argv[i + 1]; };
+  if (argv.includes('--defects')) {
+    const manifestPath = flag('manifest'), resultsPath = flag('results'), adjudicationPath = flag('adjudication');
+    if (!manifestPath || !resultsPath || !adjudicationPath || [manifestPath, resultsPath, adjudicationPath].some(value => value.startsWith('--'))) {
+      console.error('usage: eval-runner.mjs --defects --manifest <manifest.json> --results <defect-runs.json> --adjudication <adjudication.json> [--json]');
+      process.exitCode = 2; return;
+    }
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const results = JSON.parse(readFileSync(resultsPath, 'utf8'));
+    const adjudication = JSON.parse(readFileSync(adjudicationPath, 'utf8'));
+    const evaluations = Array.isArray(results.runs) ? results.runs.map(run => {
+      const matches = Array.isArray(adjudication.evaluations)
+        ? adjudication.evaluations.filter(item => item?.runId === run?.runId) : [];
+      const bytes = typeof run?.findingsBytes === 'string' ? Buffer.from(run.findingsBytes, 'utf8') : Buffer.alloc(0);
+      let findings = null;
+      try { findings = JSON.parse(bytes.toString('utf8')); } catch { /* scorer marks malformed evidence unavailable */ }
+      return { run: { ...run, findings }, adjudication: matches.length === 1 ? matches[0] : null,
+        findingsSha256: createHash('sha256').update(bytes).digest('hex') };
+    }) : [];
+    const out = scoreDefectCorpus(manifest, evaluations);
+    if (argv.includes('--json')) console.log(JSON.stringify(out));
+    else {
+      const pct = value => value === null ? 'n/a' : `${Math.round(value * 100)}%`;
+      console.log(`defect evaluation ${out.available ? 'complete' : 'unavailable'}: recall ${pct(out.recall)}, precision ${pct(out.precision)}, false alarms ${out.falseAlarms}, unresolved ${out.unresolved}, distinct cases ${out.distinctCases}`);
+    }
+    if (!out.coverageComplete || !out.available) process.exitCode = 1;
+    return;
+  }
+  console.error('legacy heuristic mode: location-only scoring; use --defects for adjudicated scoring');
   const results = flag('results');
   const archiveIndex = argv.indexOf('--archive');
   const archive = archiveIndex === -1 ? null : argv[archiveIndex + 1];
