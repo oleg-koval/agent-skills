@@ -23,7 +23,7 @@ export function validateDefectManifest(manifest) {
   const caseIds = manifest.cases.map(item => item.id)
   requireValue(caseIds.every(id => typeof id === 'string' && id) && new Set(caseIds).size === caseIds.length,
     'case ids must be unique non-empty strings')
-  requireValue(manifest.cases.every(item => FULL_SHA.test(item.headSha || '')
+  requireValue(manifest.cases.every(item => typeof item.headSha === 'string' && FULL_SHA.test(item.headSha)
     && Number.isInteger(item.expectedRuns) && item.expectedRuns > 0 && Array.isArray(item.expectedDefects)
     && item.expectedDefects.every(id => defectIds.includes(id))
     && new Set(item.expectedDefects).size === item.expectedDefects.length), 'case identity or expected defects are malformed')
@@ -40,6 +40,7 @@ export function validateDefectEvaluation(manifest, evaluation, findingsSha256, p
   if (run.status !== 'completed') return unavailable('run is not completed')
   if (typeof run.runId !== 'string' || !RUN_ID.test(run.runId) || previousRunIds.includes(run.runId)) return unavailable('unsafe or duplicate runId')
   if (run.headSha !== testCase.headSha || adjudication.headSha !== run.headSha || adjudication.runId !== run.runId) return unavailable('run identity mismatch')
+  // The edge hashes exact findings bytes; this pure check only binds that supplied hash.
   if (!SHA256.test(findingsSha256 || '') || adjudication.findingsSha256 !== findingsSha256) return unavailable('finding bytes hash mismatch')
   if (!Array.isArray(run.findings) || run.findings.some(finding => !finding || typeof finding.file !== 'string' || !finding.file.trim()
     || !(finding.line === null || (Number.isInteger(finding.line) && finding.line > 0)) || !SEVERITIES.has(finding.severity))) return unavailable('malformed findings')

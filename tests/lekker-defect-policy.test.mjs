@@ -15,6 +15,8 @@ test('manifest validation requires frozen cases and reproduced defect contracts'
   assert.throws(() => validateDefectManifest({ ...manifest, cases: [] }), /cases/)
   assert.throws(() => validateDefectManifest({ ...manifest, defects: [{ id: 'D1', contract: 'claim' }] }), /reproduction contract/)
   assert.throws(() => validateDefectManifest({ ...manifest, cases: [{ ...manifest.cases[0], headSha: 'main' }] }), /case identity/)
+  assert.throws(() => validateDefectManifest({ ...manifest, cases: [{ ...manifest.cases[0], headSha: ['a'.repeat(40)] }] }), /case identity/)
+  assert.throws(() => validateDefectManifest({ ...manifest, cases: [{ ...manifest.cases[0], expectedDefects: ['UNKNOWN'] }] }), /expected defects/)
 })
 
 test('run validation binds status, case SHA, exact finding hash, and one evidence-backed decision per finding', () => {
@@ -26,4 +28,25 @@ test('run validation binds status, case SHA, exact finding hash, and one evidenc
   assert.match(validateDefectEvaluation(manifest, { ...evaluation, adjudication: { ...evaluation.adjudication,
     decisions: [{ ...evaluation.adjudication.decisions[0], findingIndex: 1 }] } }, sha256).reason, /malformed or duplicated/)
   assert.match(validateDefectEvaluation(manifest, evaluation, sha256, ['review-1']).reason, /duplicate runId/)
+})
+
+test('rejects mismatched identities and incomplete or duplicate adjudication', () => {
+  const invalid = [
+    { ...evaluation, run: { ...evaluation.run, headSha: 'c'.repeat(40) } },
+    { ...evaluation, adjudication: { ...evaluation.adjudication, headSha: 'c'.repeat(40) } },
+    { ...evaluation, adjudication: { ...evaluation.adjudication, runId: 'other' } },
+    { ...evaluation, adjudication: { ...evaluation.adjudication, decisions: [{ ...evaluation.adjudication.decisions[0], rationale: ' ' }] } },
+    { ...evaluation, adjudication: { ...evaluation.adjudication, decisions: [{ ...evaluation.adjudication.decisions[0], evidence: '' }] } },
+    { ...evaluation, run: { ...evaluation.run, findings: [...evaluation.run.findings, ...evaluation.run.findings] },
+      adjudication: { ...evaluation.adjudication, decisions: [evaluation.adjudication.decisions[0], evaluation.adjudication.decisions[0]] } },
+  ]
+  for (const candidate of invalid) assert.equal(validateDefectEvaluation(manifest, candidate, sha256).valid, false)
+})
+
+test('preserves confirmed unknown IDs for later corpus adjudication', () => {
+  const candidate = { ...evaluation, adjudication: { ...evaluation.adjudication,
+    decisions: [{ ...evaluation.adjudication.decisions[0], defectId: 'NEW-DEFECT' }] } }
+  const result = validateDefectEvaluation(manifest, candidate, sha256)
+  assert.equal(result.valid, true)
+  assert.equal(result.decisions[0].defectId, 'NEW-DEFECT')
 })
