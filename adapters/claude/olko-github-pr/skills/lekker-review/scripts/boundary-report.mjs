@@ -1,4 +1,4 @@
-function isCandidate(row) {
+export function isBoundaryCandidate(row) {
   const original = row.runs?.original, defective = row.runs?.defective, repaired = row.runs?.repaired
   return original?.status === 'observed' && defective?.status === 'observed'
     && original.exitClass === 'success' && defective.exitClass === 'component-limit'
@@ -8,7 +8,7 @@ function isCandidate(row) {
 export function assembleBoundaryReport({ source, provenance, seed, componentLimit, prefixSha256, suffixSha256,
   cases, results, shrinkResults, outputDir, reduced }) {
   const allResults = [...results, ...shrinkResults]
-  const candidates = allResults.filter(isCandidate).map(row => ({ id: row.id, input: row.input,
+  const candidates = allResults.filter(isBoundaryCandidate).map(row => ({ id: row.id, input: row.input,
     evidenceClass: 'composed trusted CLI probe', inputSha256: row.inputSha256,
     outcomes: Object.fromEntries(Object.entries(row.runs).map(([role, result]) => [role, result.exitCode])) }))
   const roles = ['original', 'defective', ...(provenance?.sources?.repaired ? ['repaired'] : [])]
