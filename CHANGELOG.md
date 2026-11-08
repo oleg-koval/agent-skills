@@ -1,3 +1,10 @@
+# [1.84.0](https://github.com/oleg-koval/agent-skills/compare/v1.83.0...v1.84.0) (2026-11-08)
+
+
+### ✨ Features
+
+* **lekker:** integrate boundary evidence and stage accounting ([#214](https://github.com/oleg-koval/agent-skills/issues/214)) ([955595c](https://github.com/oleg-koval/agent-skills/commit/955595cd3a3426d52c8c53c055c12753b57bd366))
+
 # [1.83.0](https://github.com/oleg-koval/agent-skills/compare/v1.82.0...v1.83.0) (2026-11-08)
 
 
