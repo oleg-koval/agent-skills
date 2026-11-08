@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -6,6 +7,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 
 import { isHit, normalizeArchivedEvidence, parseKnownBug, score, validateArchiveRunIds, validateManifest } from '../plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs'
+import { scoreDefectCorpus } from '../plugins/olko-github-pr/skills/lekker-review/scripts/defect-scoring.mjs'
 
 const manifestPath = 'plugins/olko-github-pr/skills/lekker-review/evals/manifest.json'
 const manifest = {
@@ -45,6 +47,80 @@ test('recall, false positives and unscored PRs', () => {
 test('a malformed manifest is rejected', () => {
   assert.throws(() => validateManifest({ prs: [{ repo: 'o/r', pr: 1, expect: 'maybe' }] }), /expect/)
   assert.throws(() => validateManifest({}), /prs/)
+})
+
+test('defect scoring needs bound complete adjudication and separates unknown confirmations', () => {
+  const manifest = { schema: 1, defects: [{ id: 'D1', contract: 'reproduce dropped item', reproductionEvidence: 'fixture assertion' }], cases: [
+    { id: 'buggy', headSha: 'a'.repeat(40), expectedDefects: ['D1'], expectedRuns: 1 },
+    { id: 'clean', headSha: 'b'.repeat(40), expectedDefects: [], expectedRuns: 1 },
+  ] }
+  const evaluation = (caseId, runId, headSha, decisions) => ({ findingsSha256: 'c'.repeat(64),
+    run: { caseId, runId, headSha, status: 'completed', findings: decisions.map(() => ({ file: 'src/a.js', line: 1, severity: 'important' })) },
+    adjudication: { runId, headSha, findingsSha256: 'c'.repeat(64), decisions } })
+  const judgment = (findingIndex, verdict, defectId) => ({ findingIndex, verdict, defectId, rationale: 'adjudicator reviewed claim', evidence: 'review note' })
+  const out = scoreDefectCorpus(manifest, [
+    evaluation('buggy', 'run-1', 'a'.repeat(40), [
+      judgment(0, 'confirmed', 'D1'), judgment(1, 'confirmed', 'new-defect'),
+      judgment(2, 'false-alarm'), judgment(3, 'suggestion'), judgment(4, 'confirmed', 'D1'),
+    ]),
+    evaluation('clean', 'run-2', 'b'.repeat(40), []),
+  ])
+  assert.equal(out.available, false)
+  assert.equal(out.needsAdjudication, true)
+  assert.equal(out.recall, null)
+  assert.equal(out.precision, 3 / 4)
+  assert.equal(out.falseAlarms, 1)
+  assert.equal(out.confirmedExpected, 1)
+  assert.equal(out.confirmedClaims, 3)
+  assert.equal(out.uniqueConfirmedDefects, 2)
+  assert.equal(out.confirmedUnknown, 1)
+  assert.equal(out.cleanAlarmRate, 0)
+  assert.equal(scoreDefectCorpus(manifest, []).coverageComplete, false)
+})
+
+test('missing, duplicated, unresolved, or identity-mismatched adjudication cannot score clean', () => {
+  const manifest = { schema: 1, defects: [], cases: [{ id: 'clean', headSha: 'a'.repeat(40), expectedDefects: [], expectedRuns: 1 }] }
+  const run = { caseId: 'clean', runId: 'run', headSha: 'a'.repeat(40), status: 'completed', findings: [{ file: 'a.js', line: null, severity: 'observation' }] }
+  const adjudication = { runId: 'run', headSha: run.headSha, findingsSha256: 'b'.repeat(64), decisions: [{ findingIndex: 0, verdict: 'unresolved', rationale: 'needs checking', evidence: 'none yet' }] }
+  const scoreOne = (adj, hash = 'b'.repeat(64), actualRun = run) => scoreDefectCorpus(manifest, [{ run: actualRun, adjudication: adj, findingsSha256: hash }])
+  assert.equal(scoreOne(null).available, false)
+  assert.equal(scoreOne({ ...adjudication, runId: 'other' }).available, false)
+  assert.equal(scoreOne(adjudication, 'c'.repeat(64)).available, false)
+  assert.equal(scoreOne(adjudication, 'b'.repeat(64), { ...run, status: 'failed' }).available, false)
+  assert.equal(scoreOne(adjudication, 'b'.repeat(64), { ...run, findings: [null] }).available, false)
+  assert.equal(scoreOne({ ...adjudication, decisions: [{ ...adjudication.decisions[0] }, { ...adjudication.decisions[0], verdict: 'suggestion' }] }).available, false)
+  assert.equal(scoreOne(adjudication).available, false)
+  assert.equal(scoreOne(adjudication).precision, null)
+})
+
+test('defect CLI hashes raw findings bytes and keeps absent runs unavailable', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lekker-defect-cli-'))
+  try {
+    const write = (name, value) => { const path = join(dir, name); writeFileSync(path, JSON.stringify(value)); return path }
+    const bytes = '[{"file":"src/a.js","line":3,"severity":"important"}]'
+    const hash = createHash('sha256').update(bytes).digest('hex')
+    const manifest = { schema: 1, defects: [{ id: 'D1', contract: 'reproduces defect', reproductionEvidence: 'test case' }],
+      cases: [{ id: 'case-1', headSha: 'a'.repeat(40), expectedDefects: ['D1'], expectedRuns: 1 }] }
+    const results = { runs: [{ caseId: 'case-1', runId: 'run-1', status: 'completed', headSha: 'a'.repeat(40), findingsBytes: bytes }] }
+    const adjudication = { evaluations: [{ runId: 'run-1', headSha: 'a'.repeat(40), findingsSha256: hash,
+      decisions: [{ findingIndex: 0, verdict: 'confirmed', defectId: 'D1', rationale: 'matches contract', evidence: 'repro log' }] }] }
+    const manifestPath = write('manifest.json', manifest), resultsPath = write('results.json', results)
+    const adjudicationPath = write('adjudication.json', adjudication)
+    const cli = 'plugins/olko-github-pr/skills/lekker-review/scripts/eval-runner.mjs'
+    const run = () => spawnSync('node', [cli, '--defects', '--manifest', manifestPath, '--results', resultsPath,
+      '--adjudication', adjudicationPath, '--json'], { encoding: 'utf8' })
+    const valid = run()
+    assert.equal(valid.status, 0, valid.stderr)
+    assert.equal(JSON.parse(valid.stdout).recall, 1)
+    write('results.json', { runs: [{ ...results.runs[0], findingsBytes: `${bytes} ` }] })
+    const changedBytes = run()
+    assert.equal(changedBytes.status, 1)
+    const invalidHash = JSON.parse(changedBytes.stdout)
+    assert.equal(invalidHash.available, false)
+    assert.equal(invalidHash.rows[0].reason, 'finding bytes hash mismatch')
+    write('results.json', { runs: [] })
+    assert.equal(JSON.parse(run().stdout).coverageComplete, false)
+  } finally { rmSync(dir, { recursive: true, force: true }) }
 })
 
 test('spaced paths, line 0 and null lines', () => {
@@ -203,6 +279,7 @@ test('archive CLI scores valid runs and leaves incomplete or unsafe runs unscore
       'run.json missing or malformed', 'unsafe or missing runId', 'run status is not ok', 'worktree headSha mismatch',
     ])
     const human = spawnSync('node', [cli, '--manifest', manifestFile, '--archive', dir], { encoding: 'utf8' })
+    assert.match(human.stderr, /legacy heuristic mode/)
     assert.match(human.stderr, /run\.json missing or malformed/)
     assert.match(human.stderr, /unsafe or missing runId/)
     assert.match(human.stderr, /run status is not ok/)
