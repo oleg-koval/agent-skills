@@ -36,7 +36,7 @@ export function generateBoundaryCases({ seed, limit, prefix = '', suffix = '', c
     const size = lengths[index % lengths.length]
     const body = fill(size, alphabet, seed, index)
     const input = body + suffix
-    const fitted = fitComponent(prefix, input, '', limit)
+    const fitted = fitComponent(prefix, body, suffix, limit)
     return Object.freeze({ id: `${kind}-${index}`, kind, input, component: fitted.value,
       inputSha256: hash(input), componentSha256: fitted.value === null ? null : hash(fitted.value),
       inputBytes: bytes(input), outputBytes: fitted.bytes, status: fitted.status, limit })

@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import test from 'node:test'
+
+test('generated fitted components preserve required suffixes', () => {
+  for (const item of generateBoundaryCases({ seed: 19, limit: 12, prefix: 'p', suffix: '.txt' })) {
+    assert.ok(item.component.endsWith('.txt'))
+  }
+  assert.ok(generateBoundaryCases({ seed: 19, limit: 3, prefix: 'p', suffix: '.txt' })
+    .every(item => item.status === 'rejected' && item.component === null))
+})
 import { fitComponent, generateBoundaryCases } from '../plugins/olko-github-pr/skills/lekker-review/scripts/boundary-cases.mjs'
 
 const hash = value => createHash('sha256').update(value).digest('hex')
