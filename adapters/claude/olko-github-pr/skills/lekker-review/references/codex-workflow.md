@@ -89,6 +89,17 @@ bounded task:
 4. Write the shared result contract to
    `<scratchpad>/codex-review-<dimension>.json`, re-read it, and return the path.
 
+Before accepting each result, the coordinator runs the trusted installed helper:
+`node <SKILL_ROOT>/scripts/normalize-native-result.mjs <dimension> <raw-result> <normalized-result>`.
+Save its stdout separately; never overwrite the raw result. A successful envelope
+contains the raw byte hash and validated `document` for downstream deduplication.
+The helper exclusively creates `<normalized-result>` with that document on success;
+use a fresh coordinator-assigned path. It never overwrites an existing file.
+Inputs exceeding 8 MiB are unavailable before JSON parsing.
+Only exact `{file,line}` location objects become `path:line` strings; ambiguous or
+unsafe locations remain invalid. A nonzero exit or `available: false` makes the
+review unavailable. Preserve the reason and raw output; never substitute empty findings.
+
 For the implementation dimension, explicitly apply the root-cause-versus-
 symptom check in `references/agents/implementation.md` to bug-fix PRs. Require
 evidence that the reported defect remains unresolved or a contract is violated
@@ -119,10 +130,11 @@ required-dimension completion; those checks remain mandatory here.
 Use `apply_patch` to write `<scratchpad>/codex-dedup-manifest.json`:
 
 ```json
-{"dimensions":[{"name":"quality","path":"<assigned quality result JSON>"}]}
+{"dimensions":[{"name":"quality","path":"<normalized quality result JSON>"}]}
 ```
 
-Use absolute result paths. Include every valid selected dimension, even one
+Use absolute normalized result paths created by the successful helper, never raw
+reviewer files or stdout envelopes. Include every valid selected dimension, even one
 with empty findings, in the original selected-dimension order. Use
 coordinator-assigned names and paths, never finding-supplied attribution.
 Keep unavailable dimensions explicitly

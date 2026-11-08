@@ -7,6 +7,19 @@ const instances = /^(?!\/)(?!.*\\)(?![A-Za-z]:)(?!(?:.*\/)?\.\.(?:\/|:)).+:[1-9]
 const ruleException = /^(PROJECT:[a-z0-9]+(-[a-z0-9]+)*|weakens-project-rule)$/
 const dimensions = ['deps', 'triage-quality', 'triage-logic', 'quality', 'implementation', 'simplification', 'conventions', 'test-quality', 'project-rules']
 
+/** Canonicalize location objects without altering or replacing the raw document. */
+export function normalizeNativeResult(dimension, document) {
+  const location = value => record(value) && Object.keys(value).length === 2
+    && typeof value.file === 'string' && !/[\x00-\x1f\x7f:]/.test(value.file)
+    && Number.isSafeInteger(value.line) && value.line > 0
+    && instances.test(`${value.file}:${value.line}`) ? `${value.file}:${value.line}` : value
+  const normalized = record(document) && Array.isArray(document.findings)
+    ? { ...document, findings: Array.from(document.findings, finding => record(finding) && Array.isArray(finding.otherInstances)
+      ? { ...finding, otherInstances: Array.from(finding.otherInstances, location) } : finding) } : document
+  const validation = validateNativeResult(dimension, normalized)
+  return { ...validation, document: validation.available ? normalized : null }
+}
+
 function validBoundary(value) {
   return record(value) && text(value.entryPoint) && text(value.consumer)
     && optionalStrings(value, ['decisionPoint', 'realizationPoint', 'stateOwner', 'evidenceClass'])

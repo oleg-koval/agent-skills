@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import test from 'node:test'
-import { validateNativeResult } from '../plugins/olko-github-pr/skills/lekker-review/scripts/native-results.mjs'
+import { validateNativeResult, normalizeNativeResult } from '../plugins/olko-github-pr/skills/lekker-review/scripts/native-results.mjs'
 
 const finding = { file: 'src/a.ts', line: 4, severity: 'critical', title: 'Failure', description: 'Reachable failure',
   badCode: 'broken()', fix: 'working()', bugClass: 'missing-check', otherInstances: ['src/b.ts:9'],
@@ -9,6 +13,48 @@ const finding = { file: 'src/a.ts', line: 4, severity: 'critical', title: 'Failu
     decisionPoint: 'authorize request', realizationPoint: 'write response', stateOwner: 'request handler', evidenceClass: 'runtime' } }
 const check = (value, dimension = 'quality') => validateNativeResult(dimension, value).available
 const one = value => ({ findings: [value] })
+
+test('normalizes only unambiguous safe location objects and preserves raw findings', () => {
+  const raw = one({ ...finding, otherInstances: [{ file: 'src/b.ts', line: 9 }] })
+  const before = JSON.stringify(raw)
+  const result = normalizeNativeResult('quality', raw)
+  assert.equal(result.available, true)
+  assert.deepEqual(result.document, one(finding))
+  assert.equal(JSON.stringify(raw), before)
+  for (const value of [{ file: '../a.ts', line: 1 }, { file: '/a.ts', line: 1 },
+    { file: 'a.ts', line: '1' }, { file: 'a.ts', line: 0 }, { file: 'a.ts', line: 1, extra: true },
+    { file: 'a.ts:2', line: 1 }, { file: 'a\nb.ts', line: 1 }, { file: 'a\0b.ts', line: 1 }]) {
+    assert.equal(normalizeNativeResult('quality', one({ ...finding, otherInstances: [value] })).available, false)
+  }
+  assert.equal(normalizeNativeResult('quality', one({ ...finding, badCode: '' })).document, null)
+})
+
+test('CLI preserves bytes, materializes dedup input, and fails closed', t => {
+  const dir = mkdtempSync(join(tmpdir(), 'normalize-native-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  const input = join(dir, 'raw.json'), output = join(dir, 'normalized.json')
+  const scripts = 'plugins/olko-github-pr/skills/lekker-review/scripts/'
+  const invoke = () => spawnSync(process.execPath, [scripts + 'normalize-native-result.mjs', 'quality', input, output], { encoding: 'utf8' })
+  const raw = JSON.stringify(one({ ...finding, otherInstances: [{ file: 'src/b.ts', line: 9 }] }), null, 2) + '\n'
+  writeFileSync(input, raw)
+  const result = invoke()
+  assert.equal(result.status, 0, result.stdout)
+  assert.equal(JSON.parse(result.stdout).rawSha256, createHash('sha256').update(raw).digest('hex'))
+  assert.equal(readFileSync(input, 'utf8'), raw)
+  const manifest = join(dir, 'manifest.json')
+  writeFileSync(manifest, JSON.stringify({ dimensions: [{ name: 'quality', path: output }] }))
+  const dedup = spawnSync(process.execPath, [scripts + 'native-dedup.mjs', '--manifest', manifest], { encoding: 'utf8' })
+  assert.equal(dedup.status, 0, dedup.stderr)
+  assert.deepEqual(JSON.parse(dedup.stdout).findings[0].otherInstances, ['src/b.ts:9'])
+  assert.notEqual(invoke().status, 0) // Never overwrite an existing destination.
+  for (const bytes of ['{', '{}', ' '.repeat(8 * 1024 * 1024 + 1)]) {
+    writeFileSync(input, bytes)
+    const rejected = invoke()
+    assert.equal(rejected.status, 1)
+    assert.equal(JSON.parse(rejected.stdout).available, false)
+  }
+  assert.deepEqual(JSON.parse(readFileSync(output, 'utf8')), one(finding))
+})
 
 test('valid empty and nonempty results are deterministic, open and unchanged', () => {
   for (const dimension of ['deps', 'triage-quality', 'triage-logic', 'quality', 'implementation', 'simplification', 'conventions', 'test-quality', 'project-rules']) {
