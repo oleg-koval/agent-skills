@@ -35,12 +35,19 @@ test('rejects mismatched identities and incomplete or duplicate adjudication', (
     { ...evaluation, run: { ...evaluation.run, headSha: 'c'.repeat(40) } },
     { ...evaluation, adjudication: { ...evaluation.adjudication, headSha: 'c'.repeat(40) } },
     { ...evaluation, adjudication: { ...evaluation.adjudication, runId: 'other' } },
-    { ...evaluation, adjudication: { ...evaluation.adjudication, decisions: [{ ...evaluation.adjudication.decisions[0], rationale: ' ' }] } },
-    { ...evaluation, adjudication: { ...evaluation.adjudication, decisions: [{ ...evaluation.adjudication.decisions[0], evidence: '' }] } },
     { ...evaluation, run: { ...evaluation.run, findings: [...evaluation.run.findings, ...evaluation.run.findings] },
       adjudication: { ...evaluation.adjudication, decisions: [evaluation.adjudication.decisions[0], evaluation.adjudication.decisions[0]] } },
   ]
   for (const candidate of invalid) assert.equal(validateDefectEvaluation(manifest, candidate, sha256).valid, false)
+  for (const field of ['rationale', 'evidence']) {
+    for (const value of [undefined, '', ' ']) {
+      const decision = { ...evaluation.adjudication.decisions[0] }
+      if (value === undefined) delete decision[field]
+      else decision[field] = value
+      const candidate = { ...evaluation, adjudication: { ...evaluation.adjudication, decisions: [decision] } }
+      assert.equal(validateDefectEvaluation(manifest, candidate, sha256).valid, false, `${field} must be non-blank`)
+    }
+  }
 })
 
 test('preserves confirmed unknown IDs for later corpus adjudication', () => {
