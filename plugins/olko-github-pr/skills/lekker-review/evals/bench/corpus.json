@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "id": "page-offset",
+      "expect": "buggy",
+      "knownBug": "src/paginate.js:2 page 1 skips the first page of results (offset is n * size, not (n - 1) * size)",
+      "repo": "project",
+      "baseRef": "HEAD",
+      "patch": "patches/paginate-page-offset.patch",
+      "depths": ["scan", "medium"]
+    },
+    {
+      "id": "discount-cap-units",
+      "expect": "buggy",
+      "knownBug": "src/discount.js:4 the 50 percent cap is compared with a 0..1 rate, so it never applies; checkout.js now passes pct / 100",
+      "repo": "project",
+      "baseRef": "HEAD",
+      "patch": "patches/discount-cap-units.patch"
+    },
+    {
+      "id": "money-padding",
+      "expect": "buggy",
+      "knownBug": "src/format.js:2 cents are not zero padded, 105 cents prints as $1.5",
+      "repo": "project",
+      "baseRef": "HEAD",
+      "patch": "patches/money-cents-padding.patch"
+    },
+    {
+      "id": "cart-loop-control",
+      "expect": "clean",
+      "repo": "project",
+      "baseRef": "HEAD",
+      "patch": "patches/cart-total-loop.patch"
+    }
+  ]
+}
