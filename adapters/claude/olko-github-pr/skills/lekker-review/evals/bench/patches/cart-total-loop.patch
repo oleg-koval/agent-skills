@@ -1,0 +1,11 @@
+diff --git a/src/cart.js b/src/cart.js
+index 0a84fa8..3201280 100644
+--- a/src/cart.js
++++ b/src/cart.js
+@@ -1,3 +1,5 @@
+ export function total(items) {
+-  return items.reduce((sum, i) => sum + i.price * i.qty, 0)
++  let sum = 0
++  for (const { price, qty } of items) sum += price * qty
++  return sum
+ }

@@ -1,0 +1,9 @@
+diff --git a/src/paginate.js b/src/paginate.js
+index 2265a85..6c82cb1 100644
+--- a/src/paginate.js
++++ b/src/paginate.js
+@@ -1,3 +1,3 @@
+ export function page(list, n, size) {
+-  return list.slice((n - 1) * size, n * size)
++  return list.slice(n * size, (n + 1) * size)
+ }
