@@ -1,0 +1,25 @@
+diff --git a/src/checkout.js b/src/checkout.js
+index a88a387..0c761c2 100644
+--- a/src/checkout.js
++++ b/src/checkout.js
+@@ -2,5 +2,5 @@ import { total } from './cart.js'
+ import { applyDiscount } from './discount.js'
+ 
+ export function checkout(items, pct) {
+-  return applyDiscount(total(items), pct)
++  return applyDiscount(total(items), pct / 100)
+ }
+diff --git a/src/discount.js b/src/discount.js
+index 9a31e2c..8ca66da 100644
+--- a/src/discount.js
++++ b/src/discount.js
+@@ -1,6 +1,6 @@
+ export const MAX_PCT = 50
+ 
+-export function applyDiscount(amount, pct) {
+-  const capped = Math.min(pct, MAX_PCT)
+-  return amount - (amount * capped) / 100
++export function applyDiscount(amount, rate) {
++  const capped = Math.min(rate, MAX_PCT)
++  return amount - amount * capped
+ }
