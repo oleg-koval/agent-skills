@@ -26,16 +26,20 @@
 //
 // `finish` may be called more than once for one run (after the review, again
 // after fix mode); every call appends a fresh row and the newest one wins.
+// Each run.json and row carries `skillVersion` (plugin.json version, null if unreadable).
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, mkdtempSync, copyFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
+import { readSkillVersion } from './skill-version.mjs';
 
 const STATE_DIR = process.env.LEKKER_STATE_DIR || join(homedir(), '.local', 'state', 'lekker-review');
 const RUNS_DIR = join(STATE_DIR, 'runs');
 const LEDGER = join(STATE_DIR, 'runs.jsonl');
 const PROJECTS_DIR = process.env.LEKKER_CLAUDE_PROJECTS || join(homedir(), '.claude', 'projects');
 const REVMUX_TASKS = process.env.LEKKER_REVMUX_TASKS_DIR || join(homedir(), 'code-reviews', 'revmux-tasks');
+
+const PLUGIN_JSON = new URL('../../../.claude-plugin/plugin.json', import.meta.url);
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -160,6 +164,7 @@ if (cmd === 'start') {
     schema: 1, runId, startedAt, repo, target,
     mode: flag('mode', 'pr'), depth: flag('depth'), engine: flag('engine', 'workflow'),
     fix: has('fix'), host: flag('host', 'claude'),
+    skillVersion: readSkillVersion(() => readFileSync(PLUGIN_JSON, 'utf8')),
   };
   writeFileSync(join(dir, 'run.json'), JSON.stringify(meta, null, 2) + '\n');
   appendFileSync(join(dir, 'timeline.jsonl'), JSON.stringify({ phase: 'start', at: startedAt }) + '\n');
