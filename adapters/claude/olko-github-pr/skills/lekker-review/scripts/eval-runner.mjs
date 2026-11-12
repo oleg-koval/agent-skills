@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { scoreDefectCorpus } from './defect-scoring.mjs';
 
 export const LINE_WINDOW = 10;
-const BLOCKING = new Set(['critical', 'important']);
+export const BLOCKING = new Set(['critical', 'important']);
 
 export function parseKnownBug(text) {
   // The file is everything before the last ":<digits>" that is followed by whitespace
@@ -38,12 +38,12 @@ export function parseKnownBug(text) {
   return line >= 1 ? { file: m[1], line } : null;
 }
 
-export function isHit(findings, knownBug) {
+export function isHit(findings, knownBug, window = LINE_WINDOW) {
   const spot = parseKnownBug(knownBug);
   if (!spot) return false;
   return findings.some((f) => f.file === spot.file
     && Number.isInteger(f.line) && f.line > 0
-    && Math.abs(f.line - spot.line) <= LINE_WINDOW);
+    && Math.abs(f.line - spot.line) <= window);
 }
 
 export function caseKey(e) {
@@ -134,15 +134,15 @@ function archivedResults(entries, runsDir) {
   return { results, reasons };
 }
 
-export function score(manifest, results) {
+export function score(manifest, results, window = LINE_WINDOW) {
   const rows = validateManifest(manifest).map((e) => {
     const key = caseKey(e);
     const value = results[key];
     if (!Array.isArray(value)) return { key, expect: e.expect, scored: false };
     const runs = isMultiRun(value) ? value : null;
     if (e.expect === 'buggy') {
-      if (!runs) return { key, expect: 'buggy', scored: true, hit: isHit(value, e.knownBug) };
-      const hits = runs.filter((r) => isHit(r, e.knownBug)).length;
+      if (!runs) return { key, expect: 'buggy', scored: true, hit: isHit(value, e.knownBug, window) };
+      const hits = runs.filter((r) => isHit(r, e.knownBug, window)).length;
       return { key, expect: 'buggy', scored: true, hit: hits > 0, runs: runs.length, hits, hitRate: hits / runs.length };
     }
     const fp = (r) => r.filter((f) => BLOCKING.has(f.severity)).length;
