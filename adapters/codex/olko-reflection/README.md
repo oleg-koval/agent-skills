@@ -11,3 +11,4 @@ Use the canonical skills directly:
 - `plugins/olko-reflection/skills/crash-course/SKILL.md`
 - `plugins/olko-reflection/skills/wrap-up/SKILL.md`
 - `plugins/olko-reflection/skills/team-retrospective/SKILL.md`
+- `plugins/olko-reflection/skills/supplied-telemetry-review/SKILL.md`

@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-65-2563eb" alt="65 skills">
+    <img src="https://img.shields.io/badge/skills-66-2563eb" alt="66 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -211,7 +211,7 @@ plugins/{plugin}/skills/{skill}/SKILL.md
 
 ---
 
-## All 64 Skills
+## All 66 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
@@ -309,6 +309,7 @@ Look back and improve: self-critique, retrospectives, performance review, rapid 
 | [retro-analysis](plugins/olko-reflection/skills/retro-analysis/SKILL.md) | Produces repository, comparison, and cross-project retrospectives from delivery, code-quality, work-pattern, and trend evidence | The user asks for a retro over shipped work ("run a retrospective", "how did this quarter go", "what did we ship") or a scheduled retro job fires; for agent-operations retros use agent-ops-retro, for a single finished change use wrap-up |
 | [team-retrospective](plugins/olko-reflection/skills/team-retrospective/SKILL.md) | Collects agent reports and safely dismisses a completed team | During wrap-up of a green multi-agent task |
 | [agent-ops-retro](plugins/olko-reflection/skills/agent-ops-retro/SKILL.md) | Retrospective on how the agents themselves are being operated: mines local transcripts and reads the reports other jobs already produce to surface what the human keeps repeating, what the guardrails caught, and where delivery leaked, carrying unactioned findings forward | Checking agent usage, delegation cost, or repeating corrections across sessions rather than shipped code |
+| [supplied-telemetry-review](plugins/olko-reflection/skills/supplied-telemetry-review/SKILL.md) | Reviews supplied operations metrics with explicit coverage limits and evidence-based keep/defer decisions | Asked to evaluate measured evidence or telemetry gaps without live inspection |
 | [crash-course](plugins/olko-reflection/skills/crash-course/SKILL.md) | Expert tutor for rapid, source-grounded learning of any topic: a timed 4-hour sprint plus cheat-sheet, learning-ladder, quiz-me, Feynman, and resource-curation modes | Ramping up on an unfamiliar codebase, project, or concept under time pressure |
 | [wrap-up](plugins/olko-reflection/skills/wrap-up/SKILL.md) | Verifies work against its original objective, checks applicable gates, audits task-owned artifacts, and proposes safe cleanup | A change is believed done and the user says "wrap up", "we are done here", or "clean up after this", or before handing work off; for a retro over repository history use retro-analysis |
 

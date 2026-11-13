@@ -1081,6 +1081,22 @@
             "grok",
             "hermes"
           ]
+        },
+        {
+          "name": "supplied-telemetry-review",
+          "lookupName": "olko:supplied-telemetry-review",
+          "path": "plugins/olko-reflection/skills/supplied-telemetry-review",
+          "description": "Assess supplied operations metrics without mistaking activity for effectiveness; use when asked to evaluate measured evidence, keep or defer controls, or report telemetry gaps without live inspection.",
+          "tags": [
+            "telemetry",
+            "agent-operations",
+            "evidence",
+            "read-only"
+          ],
+          "adapters": [
+            "codex",
+            "hermes"
+          ]
         }
       ]
     },
