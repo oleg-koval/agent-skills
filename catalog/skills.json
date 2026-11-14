@@ -909,6 +909,28 @@
             "codex",
             "hermes"
           ]
+        },
+        {
+          "name": "1password-agent-access",
+          "lookupName": "olko:1password-agent-access",
+          "path": "plugins/olko-skill-meta/skills/1password-agent-access",
+          "description": "Set up scoped 1Password access for coding agents, copy approved credentials, and organize vaults with reversible tags.",
+          "tags": [
+            "1password",
+            "agents",
+            "credentials",
+            "security"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
+            "hermes"
+          ]
         }
       ]
     },

@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-65-2563eb" alt="65 skills">
+    <img src="https://img.shields.io/badge/skills-66-2563eb" alt="66 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -295,6 +295,7 @@ Author and maintain agent skills and the AI toolchain itself.
 | [promptctl](plugins/olko-skill-meta/skills/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, scoring, or reusable prompt templates, or the user names promptctl directly; for bringing a skill into this catalog use add-to-my-skills |
 | [veto-routing](plugins/olko-skill-meta/skills/veto-routing/SKILL.md) | Routes or executes AI tasks through Veto across configured providers while preserving privacy, cost, transport, and output boundaries | A task needs cost-aware multi-provider model selection, execution, fallback, or a machine-readable routing decision |
 | [ai-tools-setup](plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit, installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine, or the user says "my hooks are broken", "MCP is not loading", "check my toolkit", "is ICM working"; also runs as the scheduled weekly toolkit report |
+| [1password-agent-access](plugins/olko-skill-meta/skills/1password-agent-access/SKILL.md) | Scoped agent credential access, verified copies, and reversible vault tags | Repeated CLI prompts, agent vault setup, or personal vault organization |
 | [relay](plugins/olko-skill-meta/skills/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
 | [shared-knowledge-artifact](plugins/olko-skill-meta/skills/shared-knowledge-artifact/SKILL.md) | Builds a shared, self-persisting knowledge ledger as a Claude Artifact, a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons and append to them | Giving multiple agents one place to learn from each other instead of repeating the same mistakes |
 
@@ -523,8 +524,8 @@ Never edit one by hand: CI regenerates and fails on any difference.
 The maintained `scripts/install-hermes-symlinks.sh` makes the Hermes pointers usable by its skills loader.
 
 Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
-decides which targets it ships to, so the file counts differ per target: Claude 56, Grok 54,
-Cursor 52, Copilot 52, Codex 50, Windsurf 41, Kiro 41, Pi 3, Hermes 56. A skill is absent from a
+decides which targets it ships to, so the file counts differ per target: Claude 57, Grok 55,
+Cursor 53, Copilot 53, Codex 51, Windsurf 42, Kiro 42, Pi 3, Hermes 57. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
 ## Local validation

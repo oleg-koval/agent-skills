@@ -11,3 +11,4 @@ Use the canonical skills directly:
 - `plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md`
 - `plugins/olko-skill-meta/skills/agterm-team/SKILL.md`
 - `plugins/olko-skill-meta/skills/shared-verification-window/SKILL.md`
+- `plugins/olko-skill-meta/skills/1password-agent-access/SKILL.md`
