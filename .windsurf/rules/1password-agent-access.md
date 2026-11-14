@@ -120,13 +120,17 @@ Never use private APIs or browser session extraction to bypass the limitation.
 4. Use tag-only CLI flags, not item JSON templates: JSON edits can overwrite
    passkeys. Read current tags immediately before each write and preserve their
    union with the planned additions. Handle comma-containing tags explicitly;
-   never split or corrupt them through a comma-delimited argument.
+   never split or corrupt them through a comma-delimited argument. The CLI
+   replaces the tag set, so obtain an exclusive maintenance window for the
+   affected items and have other clients/users pause tag edits. A workflow-local
+   lock cannot coordinate external writers. If an exclusive window is unavailable,
+   skip tag writes and report them.
 5. Use one writer per vault and run writes sequentially. The CLI replaces the tag
-   set, so another client can add a tag between read and write. Re-read immediately
-   before editing and verify immediately after. If the tag set changes concurrently,
-   reconcile by re-reading and applying the union with a bounded retry; stop if
-   conflicts persist. Concurrent writes produced HTTP 409 conflicts in the observed
-   workflow. Known unsupported `ssoLogin`
+   set. Re-read immediately before each write and verify immediately after while
+   the exclusive window remains in effect. If an unexpected tag-set change or
+   write conflict occurs, stop; restore the exclusive window before any bounded
+   reread-and-reconcile attempt. Concurrent writes produced HTTP 409 conflicts in
+   the observed workflow. Known unsupported `ssoLogin`
    fields and SSH-key editing must be skipped when the installed CLI rejects
    them; do not reconstruct the item to force an edit.
 6. Set a finite item budget from the frozen plan. On failure, terminate pending
