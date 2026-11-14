@@ -1,34 +1,36 @@
 ---
 name: namespace-runner-migration
-description: USE THIS SKILL AUTOMATICALLY whenever changing GitHub Actions runner providers or profiles, including moving workflows to or from Namespace. Migrate workflow runner selectors, open the migration PR and a dependent rollback PR, and schedule a calendar reminder for a verified Namespace trial end date.
+description: USE THIS SKILL AUTOMATICALLY for GitHub Actions migrations to or from Namespace. Inventory workflow runners, validate the requested destination, open the migration and paired rollback PRs, and create a trial-end calendar reminder only when requested and verified.
 metadata:
-  short-description: Migrate CI workflows to Namespace and prepare rollback
+  short-description: Migrate GitHub Actions runners to or from Namespace
 ---
 
 # Namespace Runner Migration
 
-Use this skill automatically when a request changes GitHub Actions runner providers, runner profiles, or `runs-on` selectors. Keep the migration limited to runner selection unless the user asks for other CI changes.
+Use this skill for runner migrations where Namespace is the source or destination. Do not use it for migrations between other providers; use the provider-specific workflow.
 
 ## Workflow
 
-1. Read the repository instructions and inspect the live base branch. Preserve unrelated checkout changes by using an isolated worktree when needed.
-2. Inventory every workflow file and every job-level `runs-on` declaration. Identify the current provider, conditional routing, profile label, and any security conditions tied to self-hosted execution.
-3. Confirm the exact Namespace profile label from the user, repository configuration, or an authoritative Namespace source. A `namespace-profile-*` label selects a profile. Do not assume the account name is the profile name when evidence is unavailable.
-4. Change only the runner selectors needed for the migration. Keep workflow triggers, permissions, job conditions, deployment gates, and step behavior intact. Remove or update comments that become false. Review security guards separately and preserve them unless the user asks to change them.
-5. Validate the diff, including a complete search for old runner selectors and a check that every intended workflow job now selects the confirmed Namespace profile. Run available local CI checks when the repository contract requires them, and report checks that cannot be run. Do not claim live runner acceptance until a workflow has actually run on Namespace.
-6. Commit and push a migration branch. Open a PR with a `TL;DR (for humans)` section that states the before/after runner selection and the effect on where jobs execute. Keep the PR focused and report its current checks accurately.
-7. Prepare a paired rollback PR that restores the exact pre-migration runner settings:
-   - If the migration PR is already merged, branch from the current `main`, apply the inverse diff, and open a normal PR against `main`.
-   - If it is not merged, create a draft rollback PR against the migration branch so its diff is genuinely a revert. State that it must be retargeted to `main` after the migration merges. Never open a supposed revert against `main` when that would instead introduce the migration.
-   - If the user asks for a cherry-pick PR, cherry-pick the rollback commit onto a branch based on the then-current `main`, resolve only relevant conflicts, and verify the resulting diff restores the original runner settings.
-   - Do not merge either PR unless the user explicitly asks.
-8. Find the Namespace trial expiration from an authoritative source such as a trial confirmation, billing page, or a user-provided date. If it cannot be verified, ask for the expiration date and continue with the code and PR work. Do not guess or schedule a placeholder.
-9. Once verified, create an all-day Google Calendar event on the expiration date in the user's calendar, with a title such as `Namespace trial ends: review CI runners`. Add a short description linking the migration and rollback PRs. Do not add attendees or send invitations. Re-read the event or rely on the creation receipt to confirm the saved date and calendar.
-10. Re-read the live PRs, branch SHAs, check rollups, and calendar event after writes. Report the migration PR, rollback PR and dependency, local checks, live checks, verified trial date, and any remaining acceptance step separately.
+1. Read repository instructions and inspect the live repository, workflow files, and actual migration PR base branch. Preserve unrelated checkout changes with an isolated worktree.
+2. Inventory every workflow job's `runs-on`, conditional routing, relevant security conditions, and the current provider. Confirm the requested source and destination providers before editing.
+3. Confirm the destination selector from the user or an authoritative provider source. For Namespace destinations, verify the exact `namespace-profile-*` label. For migrations away from Namespace, verify the actual destination selector, such as `ubuntu-latest`, or the requested provider's documented label. Do not require Namespace details when Namespace is not the destination.
+4. Change only the selectors needed for the migration. Preserve triggers, permissions, job conditions, deployment gates, and step behavior. Update comments that become false. Preserve and assess security guards independently of the runner change.
+5. Validate each changed job against the requested destination provider, and search for remaining old selectors. Run the repository's applicable checks and report any check that cannot run. A configured selector is not proof of live runner acceptance; verify a completed job on the destination provider before claiming acceptance.
+6. Prevent duplicate work before making external writes. Search for an existing migration PR and reuse or update it when it represents this migration. Use one deterministic migration branch per repository, base branch, and migration. Creating that branch is the concurrency claim: if it already exists, inspect and reuse its work rather than creating a second branch. Recheck open PRs after pushing. Stop if another concurrent change makes ownership or scope unclear.
+7. Record the migration PR's exact head SHA and actual base branch. Open the migration PR as a draft until its rollback is prepared. Do not mark it ready while the rollback PR is missing. If rollback creation fails, keep the migration draft, diagnose once, and resume from the recorded branch and SHA. Do not report the pair as complete until both PRs exist and their diffs are verified.
+8. Prepare the paired rollback so it restores the original runner selectors:
+   - Before the migration merges, branch from its exact head SHA and apply the inverse runner diff. Open a draft rollback PR with the migration PR's head branch as its base, so the visible diff is the inverse runner change. Verify the PR diff explicitly.
+   - If the migration changes after the rollback is prepared, record the new head SHA and rebuild or update the rollback from that exact head. Verify that every changed runner selector is restored and unrelated migration-branch changes are not reverted.
+   - After the migration merges, use its actual merge result and actual base branch. Rebuild the rollback branch from the updated base branch and cherry-pick only the inverse commit. Do not assume GitHub retargeting preserves a useful diff after squash or rebase merges. Verify the result is a non-empty diff that restores the original runner settings.
+   - A cherry-pick rollback targeting the integration branch is valid only after the migration is merged there. Before then, keep the rollback draft based on the migration PR's actual base branch.
+   - Check branch deletion settings before relying on a dependent PR. Preserve the migration branch until the rollback is rebuilt from the merge result and retargeted. If branch retention cannot be ensured, keep the migration PR draft and do not claim the paired rollback is safe to merge.
+   - Use the migration PR's actual base branch throughout. Never assume it is named `main`.
+9. If, and only if, the user requests a calendar reminder, verify the trial end date from an authoritative source or the user. Search the calendar for an existing reminder with the same title and date; update or reuse it instead of creating a duplicate. If the date is unknown, ask for it and continue independent migration work. Create an all-day event with no attendees or invitations, and include links to both PRs.
+10. Re-read the live PR states, exact branch SHAs, complete check rollups, and any calendar event after writes. Report migration and rollback PRs, their dependency and verified diffs, local and remote checks, and live runner acceptance separately.
 
 ## Boundaries
 
-- The migration authorizes only the requested runner changes. Creating the paired PRs and the trial-end calendar reminder is part of this skill when requested.
-- Never deploy, merge, change Namespace billing, or enable a profile as a side effect of changing workflow files.
-- If the profile is unavailable or its runner requirements are incompatible with a workflow, document the blocker rather than silently falling back to another provider.
-- Keep PR bodies factual, avoid placeholder ticket references, and omit generated attribution footers.
+- Creating a calendar event requires an explicit request. A migration request alone does not authorize a calendar write.
+- Never merge either PR, change provider billing, or enable runner profiles unless separately requested.
+- If a destination runner is unavailable or incompatible with a job, document the blocker rather than silently falling back to another provider.
+- Keep PR bodies factual, use a `TL;DR (for humans)` section, avoid placeholder ticket references, and omit generated attribution footers.
