@@ -1,3 +1,10 @@
+# [1.85.0](https://github.com/oleg-koval/agent-skills/compare/v1.84.0...v1.85.0) (2026-11-14)
+
+
+### ✨ Features
+
+* **skill-meta:** add scoped 1Password agent access ([#223](https://github.com/oleg-koval/agent-skills/issues/223)) ([61aeea5](https://github.com/oleg-koval/agent-skills/commit/61aeea5cc21befaef2f6c4677da95b2dc5f0da19))
+
 # [1.84.0](https://github.com/oleg-koval/agent-skills/compare/v1.83.0...v1.84.0) (2026-11-08)
 
 
