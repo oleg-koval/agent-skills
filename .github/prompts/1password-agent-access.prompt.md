@@ -136,7 +136,10 @@ Never use private APIs or browser session extraction to bypass the limitation.
    first exception. Resume only unfinished IDs and avoid repeated identical errors.
 7. Re-read the authoritative inventory. Assert all original IDs, titles, vault
    locations and original tags remain, and every successful addition is present.
-   Keep the rollback manifest and report modified, skipped and failed counts.
+   For each written item, assert its tags equal the tag set read immediately
+   before that write plus the planned additions. Report any missing or unexpected
+   tag without exposing item values. Keep the rollback manifest and report
+   modified, skipped and failed counts.
 
 ## Handoff
 
