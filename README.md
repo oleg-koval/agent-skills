@@ -524,8 +524,8 @@ Never edit one by hand: CI regenerates and fails on any difference.
 The maintained `scripts/install-hermes-symlinks.sh` makes the Hermes pointers usable by its skills loader.
 
 Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
-decides which targets it ships to, so the file counts differ per target: Claude 56, Grok 54,
-Cursor 52, Copilot 52, Codex 50, Windsurf 41, Kiro 41, Pi 3, Hermes 56. A skill is absent from a
+decides which targets it ships to, so the file counts differ per target: Claude 57, Grok 55,
+Cursor 53, Copilot 53, Codex 51, Windsurf 42, Kiro 42, Pi 3, Hermes 57. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
 ## Local validation
