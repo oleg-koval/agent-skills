@@ -16,3 +16,4 @@ into the active Hermes profile. The canonical packages are:
 - `plugins/olko-skill-meta/skills/agterm-team/SKILL.md`
 - `plugins/olko-skill-meta/skills/shared-verification-window/SKILL.md`
 - `plugins/olko-skill-meta/skills/1password-agent-access/SKILL.md`
+- `plugins/olko-skill-meta/skills/ask-experts/SKILL.md`
