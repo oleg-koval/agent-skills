@@ -1,3 +1,10 @@
+# [1.87.0](https://github.com/oleg-koval/agent-skills/compare/v1.86.0...v1.87.0) (2026-11-15)
+
+
+### ✨ Features
+
+* add expert consensus planning skill ([#224](https://github.com/oleg-koval/agent-skills/issues/224)) ([53c8752](https://github.com/oleg-koval/agent-skills/commit/53c8752f1dd0f6585be7354064d8d7bf92433413))
+
 # [1.86.0](https://github.com/oleg-koval/agent-skills/compare/v1.85.0...v1.86.0) (2026-11-15)
 
 
