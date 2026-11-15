@@ -215,7 +215,7 @@ plugins/{plugin}/skills/{skill}/SKILL.md
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
-### olko-github-pr (11)
+### olko-github-pr (12)
 
 Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.
 
@@ -232,6 +232,7 @@ Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descripti
 | [geminiloop](plugins/olko-github-pr/skills/geminiloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments, treating each as a claim to verify, fixing the correct ones and rebutting the rest with evidence | Clearing a Gemini Code Assist review whose findings need checking first |
 | [ci-fix-loop](plugins/olko-github-pr/skills/ci-fix-loop/SKILL.md) | Diagnoses GitHub Actions CI failures in a loop: fetches failing check logs, applies a targeted fix, pushes, and waits for the next run, repeating until green or a blocker needs a human | CI is red after a push and you want it driven to green automatically |
 | [nas-actions-migration](plugins/olko-github-pr/skills/nas-actions-migration/SKILL.md) | Safely migrates trusted GitHub Actions jobs to a repository-scoped NAS runner, with fork guards, credential boundaries, rollback, and verified activation | Moving CI jobs from hosted runners to a NAS, following the Roazon/Funda Radar pattern |
+| [namespace-runner-migration](plugins/olko-github-pr/skills/namespace-runner-migration/SKILL.md) | Automatically guides GitHub Actions runner-provider migrations to or from Namespace, creates a dependent rollback PR, and schedules a reminder from a verified trial end date | Migrating CI jobs to Namespace or preparing a later rollback |
 | [dependabot-triage](plugins/olko-github-pr/skills/dependabot-triage/SKILL.md) | Triages open Dependabot and Renovate PRs in bulk: classifies by risk tier, auto-approves safe patch bumps, flags breaking major upgrades for human review, and posts a digest | Clearing a backlog of dependency update PRs during a maintenance window |
 | [lekker-review](plugins/olko-github-pr/skills/lekker-review/SKILL.md) | Runs a FAANG-quality PR review in an isolated worktree: parallel specialist agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings (Claude Workflow or Codex native collaboration) | Reviewing a GitHub PR beyond what a single-pass review or a bot reviewer catches |
 
@@ -295,6 +296,7 @@ Author and maintain agent skills and the AI toolchain itself.
 | [promptctl](plugins/olko-skill-meta/skills/promptctl/SKILL.md) | Uses `promptctl` for reusable prompt templates, scoring, and workflow automation | A project needs prompt conventions, scoring, or reusable prompt templates, or the user names promptctl directly; for bringing a skill into this catalog use add-to-my-skills |
 | [veto-routing](plugins/olko-skill-meta/skills/veto-routing/SKILL.md) | Routes or executes AI tasks through Veto across configured providers while preserving privacy, cost, transport, and output boundaries | A task needs cost-aware multi-provider model selection, execution, fallback, or a machine-readable routing decision |
 | [ai-tools-setup](plugins/olko-skill-meta/skills/ai-tools-setup/SKILL.md) | Sets up, repairs, and reports on the RTK + ICM + Vox AI development toolkit, installs missing tools, fixes broken hooks and MCP config | Bootstrapping AI dev tools on a new machine, or the user says "my hooks are broken", "MCP is not loading", "check my toolkit", "is ICM working"; also runs as the scheduled weekly toolkit report |
+| [1password-agent-access](plugins/olko-skill-meta/skills/1password-agent-access/SKILL.md) | Scoped agent credential access, verified copies, and reversible vault tags | Repeated CLI prompts, agent vault setup, or personal vault organization |
 | [relay](plugins/olko-skill-meta/skills/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
 | [shared-knowledge-artifact](plugins/olko-skill-meta/skills/shared-knowledge-artifact/SKILL.md) | Builds a shared, self-persisting knowledge ledger as a Claude Artifact, a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons and append to them | Giving multiple agents one place to learn from each other instead of repeating the same mistakes |
 
@@ -524,8 +526,8 @@ Never edit one by hand: CI regenerates and fails on any difference.
 The maintained `scripts/install-hermes-symlinks.sh` makes the Hermes pointers usable by its skills loader.
 
 Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
-decides which targets it ships to, so the file counts differ per target: Claude 56, Grok 54,
-Cursor 52, Copilot 52, Codex 50, Windsurf 41, Kiro 41, Pi 3, Hermes 56. A skill is absent from a
+decides which targets it ships to, so the file counts differ per target: Claude 57, Grok 55,
+Cursor 53, Copilot 53, Codex 51, Windsurf 42, Kiro 42, Pi 3, Hermes 57. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
 ## Local validation

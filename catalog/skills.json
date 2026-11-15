@@ -265,6 +265,28 @@
           ]
         },
         {
+          "name": "namespace-runner-migration",
+          "lookupName": "olko:namespace-runner-migration",
+          "path": "plugins/olko-github-pr/skills/namespace-runner-migration",
+          "description": "USE THIS SKILL AUTOMATICALLY for GitHub Actions runner-provider or profile migrations. Migrates jobs to or from Namespace, opens a dependent rollback PR, and schedules a calendar reminder only for a verified trial end date.",
+          "tags": [
+            "github-actions",
+            "namespace",
+            "ci",
+            "runner",
+            "migration",
+            "rollback"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "grok",
+            "hermes"
+          ]
+        },
+        {
           "name": "dependabot-triage",
           "lookupName": "olko:dependabot-triage",
           "path": "plugins/olko-github-pr/skills/dependabot-triage",
@@ -907,6 +929,28 @@
           ],
           "adapters": [
             "codex",
+            "hermes"
+          ]
+        },
+        {
+          "name": "1password-agent-access",
+          "lookupName": "olko:1password-agent-access",
+          "path": "plugins/olko-skill-meta/skills/1password-agent-access",
+          "description": "Set up scoped 1Password access for coding agents, copy approved credentials, and organize vaults with reversible tags.",
+          "tags": [
+            "1password",
+            "agents",
+            "credentials",
+            "security"
+          ],
+          "adapters": [
+            "codex",
+            "claude",
+            "cursor",
+            "copilot",
+            "windsurf",
+            "kiro",
+            "grok",
             "hermes"
           ]
         }

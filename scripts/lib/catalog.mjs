@@ -7,7 +7,7 @@ export const PLUGIN_ASSIGNMENT = {
     description: 'Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.',
     skills: ['pr-finalize', 'pr-finalize-complete', 'pr-to-green', 'pr-description-writer',
              'qodoloop', 'coderabbitloop', 'codexloop', 'copilotloop', 'geminiloop', 'ci-fix-loop',
-             'dependabot-triage', 'lekker-review', 'nas-actions-migration'],
+             'dependabot-triage', 'lekker-review', 'nas-actions-migration', 'namespace-runner-migration'],
   },
   'olko-git-tools': {
     description: 'Everyday git and GitHub CLI operations: conventional commits, branch hygiene.',
@@ -24,7 +24,7 @@ export const PLUGIN_ASSIGNMENT = {
   },
   'olko-skill-meta': {
     description: 'Author and maintain agent skills and the AI toolchain itself.',
-    skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'veto-routing', 'ai-tools-setup',
+    skills: ['context-repo', 'add-to-my-skills', 'skill-budget-audit', 'promptctl', 'veto-routing', 'ai-tools-setup', '1password-agent-access',
              'relay', 'shared-knowledge-artifact', 'agterm-team', 'shared-verification-window'],
   },
   'olko-reflection': {
