@@ -215,7 +215,7 @@ plugins/{plugin}/skills/{skill}/SKILL.md
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
-### olko-github-pr (11)
+### olko-github-pr (12)
 
 Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.
 
@@ -232,6 +232,7 @@ Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descripti
 | [geminiloop](plugins/olko-github-pr/skills/geminiloop/SKILL.md) | Iteratively drives a GitHub PR to zero unresolved Gemini Code Assist comments, treating each as a claim to verify, fixing the correct ones and rebutting the rest with evidence | Clearing a Gemini Code Assist review whose findings need checking first |
 | [ci-fix-loop](plugins/olko-github-pr/skills/ci-fix-loop/SKILL.md) | Diagnoses GitHub Actions CI failures in a loop: fetches failing check logs, applies a targeted fix, pushes, and waits for the next run, repeating until green or a blocker needs a human | CI is red after a push and you want it driven to green automatically |
 | [nas-actions-migration](plugins/olko-github-pr/skills/nas-actions-migration/SKILL.md) | Safely migrates trusted GitHub Actions jobs to a repository-scoped NAS runner, with fork guards, credential boundaries, rollback, and verified activation | Moving CI jobs from hosted runners to a NAS, following the Roazon/Funda Radar pattern |
+| [namespace-runner-migration](plugins/olko-github-pr/skills/namespace-runner-migration/SKILL.md) | Automatically guides GitHub Actions runner-provider migrations to or from Namespace, creates a dependent rollback PR, and schedules a reminder from a verified trial end date | Migrating CI jobs to Namespace or preparing a later rollback |
 | [dependabot-triage](plugins/olko-github-pr/skills/dependabot-triage/SKILL.md) | Triages open Dependabot and Renovate PRs in bulk: classifies by risk tier, auto-approves safe patch bumps, flags breaking major upgrades for human review, and posts a digest | Clearing a backlog of dependency update PRs during a maintenance window |
 | [lekker-review](plugins/olko-github-pr/skills/lekker-review/SKILL.md) | Runs a FAANG-quality PR review in an isolated worktree: parallel specialist agents, adversarial finding verification, proof-of-bug tests for Criticals, and an optional --fix mode that applies and commits its own findings (Claude Workflow or Codex native collaboration) | Reviewing a GitHub PR beyond what a single-pass review or a bot reviewer catches |
 
