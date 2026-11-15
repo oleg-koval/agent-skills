@@ -1,3 +1,11 @@
+# [1.86.0](https://github.com/oleg-koval/agent-skills/compare/v1.85.0...v1.86.0) (2026-11-15)
+
+
+### ✨ Features
+
+* add Namespace runner migration skill ([#222](https://github.com/oleg-koval/agent-skills/issues/222)) ([db729bb](https://github.com/oleg-koval/agent-skills/commit/db729bb5403a4071cccab4e4e917748efeacb8a0))
+* **reflection:** add supplied telemetry review skill ([#221](https://github.com/oleg-koval/agent-skills/issues/221)) ([4d23b36](https://github.com/oleg-koval/agent-skills/commit/4d23b36d94c9ad851063bb4a05774026468f14ac))
+
 # [1.85.0](https://github.com/oleg-koval/agent-skills/compare/v1.84.0...v1.85.0) (2026-11-14)
 
 
