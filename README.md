@@ -3,7 +3,7 @@
   <p><strong>Agent-agnostic skill catalog for Codex, Claude, Cursor, Grok, Copilot, Windsurf, Kiro, Hermes Agent, and other skill-aware tools.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license">
-    <img src="https://img.shields.io/badge/skills-66-2563eb" alt="66 skills">
+    <img src="https://img.shields.io/badge/skills-68-2563eb" alt="68 skills">
     <img src="https://img.shields.io/badge/platforms-Codex%20%7C%20Claude%20%7C%20Cursor%20%7C%20Grok%20%7C%20Copilot%20%7C%20Windsurf%20%7C%20Kiro%20%7C%20Hermes-111827" alt="Codex Claude Cursor Grok Copilot Windsurf Kiro Hermes">
     <img src="https://img.shields.io/badge/status-public%20catalog-16a34a" alt="Public catalog">
   </p>
@@ -211,11 +211,11 @@ plugins/{plugin}/skills/{skill}/SKILL.md
 
 ---
 
-## All 66 Skills
+## All 68 Skills
 
 Each entry links to its `SKILL.md`. Reference any skill by its `olko:*` lookup name in a new agent session. Skills are grouped by the plugin that owns them.
 
-### olko-github-pr (12)
+### olko-github-pr (14)
 
 Drive GitHub pull requests to merge-ready: review-bot loops, CI fixes, descriptions, dependency triage.
 
@@ -282,7 +282,7 @@ Take a product idea to a shippable build: MVP passes, full-stack scaffolds, UX/U
 | [claim-evidence-regression](plugins/olko-product/skills/claim-evidence-regression/SKILL.md) | Harden extracted-claim validation with literal evidence and paired regressions so negation and unrelated wording cannot establish a claim. | Extracted claims accept misleading or negated evidence |
 | [viral-launch](plugins/olko-product/skills/viral-launch/SKILL.md) | Sets up a project repository and launch plan for shareable marketing, public launch readiness, and growth loops | Preparing a repo, product, or package for public launch ("prep for Product Hunt", "write the launch post", "make this shareable"); for building the thing itself use mvp-oneshot or product-builder |
 
-### olko-skill-meta (10)
+### olko-skill-meta (11)
 
 Author and maintain agent skills and the AI toolchain itself.
 
@@ -300,7 +300,7 @@ Author and maintain agent skills and the AI toolchain itself.
 | [relay](plugins/olko-skill-meta/skills/relay/SKILL.md) | Uses `claude-relay` to run long or rate-limit-prone tasks autonomously across subscription accounts | A task will outlive one session or hit rate limits partway through |
 | [shared-knowledge-artifact](plugins/olko-skill-meta/skills/shared-knowledge-artifact/SKILL.md) | Builds a shared, self-persisting knowledge ledger as a Claude Artifact, a private page that stores its own data, renders itself from it, and publishes new versions of itself so several agents read the same lessons and append to them | Giving multiple agents one place to learn from each other instead of repeating the same mistakes |
 
-### olko-reflection (6)
+### olko-reflection (8)
 
 Look back and improve: self-critique, retrospectives, performance review, rapid learning.
 
@@ -526,8 +526,8 @@ Never edit one by hand: CI regenerates and fails on any difference.
 The maintained `scripts/install-hermes-symlinks.sh` makes the Hermes pointers usable by its skills loader.
 
 Coverage is per skill, not uniform. Each skill's `adapters` array in `catalog/skills.json`
-decides which targets it ships to, so the file counts differ per target: Claude 57, Grok 55,
-Cursor 53, Copilot 53, Codex 51, Windsurf 42, Kiro 42, Pi 3, Hermes 57. A skill is absent from a
+decides which targets it ships to, so the file counts differ per target: Claude 65, Grok 63,
+Cursor 61, Copilot 60, Codex 62, Windsurf 48, Kiro 48, Pi 4, Hermes 68. A skill is absent from a
 target's tree when its catalog entry does not list that target.
 
 ## Local validation
