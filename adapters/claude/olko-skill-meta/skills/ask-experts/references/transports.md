@@ -32,7 +32,7 @@ Prefer headless processes to typing into an interactive agent. Check installed
 IDs or authorization to relax permissions:
 
 ```sh
-claude -p --model "$FABLE_MODEL" --tools "" --output-format json < request.md > response.json
+claude -p --model "$FABLE_MODEL" --tools "" --disallowedTools "mcp__*" --output-format json < request.md > response.json
 codex exec --model "$ASTRA_MODEL" --sandbox read-only --ephemeral --skip-git-repo-check - < request.md > response.txt
 ```
 

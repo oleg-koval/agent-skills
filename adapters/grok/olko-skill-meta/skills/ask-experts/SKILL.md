@@ -69,8 +69,11 @@ not repeated status probes. Stop when both approve or the budget is exhausted.
    stated scope; conditional approval counts as `REVISE`.
 4. Save each raw response as `cycle-N-fable.md` or `cycle-N-astra.md`. If either
    requests changes, create a new immutable plan version and submit that exact
-   new version to BOTH in the next cycle. An approval of an older version does
-   not carry forward. Never pressure an expert to agree or suppress dissent.
+   new version to BOTH in the next cycle. Include BOTH saved cycle responses in
+   each next-cycle prompt, including the other expert's critique, and again ask
+   each to address the strongest objection and reference the new plan version
+   and SHA-256. An approval of an older version does not carry forward. Never
+   pressure an expert to agree or suppress dissent.
 
 The coordinator computes SHA-256 over the candidate file's actual bytes using an
 available checksum tool, records it in the prompts, and checks the responses
