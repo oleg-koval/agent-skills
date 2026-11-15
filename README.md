@@ -288,6 +288,7 @@ Author and maintain agent skills and the AI toolchain itself.
 
 | Skill | What it does | Use when |
 |-------|-------------|----------|
+| [ask-experts](plugins/olko-skill-meta/skills/ask-experts/SKILL.md) | Gets Fable and Astra to agree on one implementation-ready plan with recorded mutual critique | You want two expert opinions reconciled into a collective vision |
 | [agterm-team](plugins/olko-skill-meta/skills/agterm-team/SKILL.md) | Creates named Codex sessions in project agterm workspaces and coordinates acknowledged tasks with lead-owned verification | A lead delegates work across agterm sessions and remains accountable for failures |
 | [shared-verification-window](plugins/olko-skill-meta/skills/shared-verification-window/SKILL.md) | Coordinate expensive verification over shared resources with acknowledged ownership and a frozen source fingerprint so concurrent work cannot invalidate results. | Concurrent checks share constrained resources or generated files |
 | [context-repo](plugins/olko-skill-meta/skills/context-repo/SKILL.md) | Resolves a single durable, private GitHub repository other skills use to persist context they produce, retro snapshots and shared-knowledge notes among them, searching the account for a store that already exists before ever asking to create one | A skill needs a durable, cross-machine store for content it generates, rather than a local scratch directory that does not survive across machines or repos |

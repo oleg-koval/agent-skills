@@ -953,6 +953,28 @@
             "grok",
             "hermes"
           ]
+        },
+        {
+          "name": "ask-experts",
+          "lookupName": "olko:ask-experts",
+          "path": "plugins/olko-skill-meta/skills/ask-experts",
+          "description": "Consult Fable and Astra independently, reconcile their recommendations, and obtain explicit agreement on one implementation-ready plan. Use for expert consultation or a collective technical vision.",
+          "tags": [
+            "planning",
+            "agents",
+            "consensus"
+          ],
+          "adapters": [
+            "claude",
+            "codex",
+            "cursor",
+            "copilot",
+            "grok",
+            "windsurf",
+            "kiro",
+            "hermes",
+            "pi"
+          ]
         }
       ]
     },

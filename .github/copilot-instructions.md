@@ -46,6 +46,7 @@ Available reusable prompt files:
 - ai-tools-setup: .github/prompts/ai-tools-setup.prompt.md
 - agterm-team: .github/prompts/agterm-team.prompt.md
 - 1password-agent-access: .github/prompts/1password-agent-access.prompt.md
+- ask-experts: .github/prompts/ask-experts.prompt.md
 - self-critique: .github/prompts/self-critique.prompt.md
 - review-past-performance: .github/prompts/review-past-performance.prompt.md
 - retro-analysis: .github/prompts/retro-analysis.prompt.md
