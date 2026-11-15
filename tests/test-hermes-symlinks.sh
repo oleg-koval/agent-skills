@@ -11,7 +11,7 @@ trap cleanup EXIT
 
 HERMES_HOME="$TMP/profile with spaces" sh ./scripts/install-hermes-symlinks.sh >/dev/null
 skills_dir="$TMP/profile with spaces/skills/olko-agent-skills"
-expected=66
+expected=68
 catalog_total="$(node --input-type=module -e 'import {loadCatalog} from "./scripts/lib/catalog.mjs"; console.log(loadCatalog().skills.length)')"
 hermes_total="$(node --input-type=module -e 'import {loadCatalog} from "./scripts/lib/catalog.mjs"; console.log(loadCatalog().skills.filter(s => s.adapters.includes("hermes")).length)')"
 if test "$catalog_total" != "$expected" || test "$hermes_total" != "$catalog_total"; then
@@ -29,10 +29,11 @@ test "$(find "$skills_dir" -type l | wc -l | tr -d ' ')" = "$expected" || {
   echo "FAIL: rerun changed Hermes link count" >&2; exit 1; }
 test -f "$skills_dir/olko-reflection/wrap-up/SKILL.md" || {
   echo "FAIL: wrap-up link does not resolve" >&2; exit 1; }
-for skill in claim-evidence-regression shared-verification-window; do
+for skill in claim-evidence-regression shared-verification-window supplied-telemetry-review; do
   case "$skill" in
     claim-evidence-regression) expected_path=olko-product/skills/claim-evidence-regression; link="$skills_dir/olko-product/$skill" ;;
     shared-verification-window) expected_path=olko-skill-meta/skills/shared-verification-window; link="$skills_dir/olko-skill-meta/$skill" ;;
+    supplied-telemetry-review) expected_path=olko-reflection/skills/supplied-telemetry-review; link="$skills_dir/olko-reflection/$skill" ;;
   esac
   expected_target="$ROOT/plugins/$expected_path"
   actual_target="$(readlink "$link")"
