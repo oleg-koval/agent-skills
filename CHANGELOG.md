@@ -1,3 +1,10 @@
+## [1.87.1](https://github.com/oleg-koval/agent-skills/compare/v1.87.0...v1.87.1) (2026-11-16)
+
+
+### 🛠 Builds
+
+* **deps-dev:** bump [@semantic-release](https://github.com/semantic-release)/github ([#225](https://github.com/oleg-koval/agent-skills/issues/225)) ([306c34f](https://github.com/oleg-koval/agent-skills/commit/306c34fd365da68517bbf052e0f8adaf4e52e1ed))
+
 # [1.87.0](https://github.com/oleg-koval/agent-skills/compare/v1.86.0...v1.87.0) (2026-11-15)
 
 
