@@ -37,14 +37,24 @@ claude -p --model "$ANTHROPIC_MODEL" --tools "" --strict-mcp-config --disallowed
 codex exec --model "$OPENAI_MODEL" -c model_reasoning_effort=high --sandbox read-only --ephemeral --skip-git-repo-check --ignore-user-config -o response.txt - < request.md > run.log 2> run.err
 ```
 
+Before launching, the coordinator sets `ANTHROPIC_MODEL` and `OPENAI_MODEL` from
+the resolved bindings and checks each is non-empty; an unset variable must stop
+the run, not fall back to a default model.
+
 - Claude: the answer is the JSON field `result`; the resolved model is the key
   under `modelUsage`; check `is_error` and `stop_reason`. Without
   `--strict-mcp-config` the user's configured MCP servers may load.
 - Codex: the answer is the file written by `-o` (final message only); the stderr
   header prints `model:` and `provider:` as identity evidence. Run from the
-  scratch directory.
-- Inventory without a paid call: read `~/.codex/models_cache.json` (keys
-  `models[].slug`, `display_name`, `visibility`, `supported_reasoning_levels`).
+  scratch directory. `--ignore-user-config` discards `~/.codex/config.toml`,
+  including any provider or gateway route; if the account reaches OpenAI through
+  such a route, drop the flag and pass the needed settings with `-c key=value`
+  so the call uses the intended provider.
+- Inventory without a paid call: read `${CODEX_HOME:-$HOME/.codex}/models_cache.json`
+  (keys `models[].slug`, `display_name`, `visibility`, `supported_reasoning_levels`).
+  It is refreshed only when Codex runs and entries expire: check `fetched_at`
+  (missing or older than 24 hours means refresh first, or disclose the age as an
+  identity limit); never silently bind from a stale cache.
 - Reasoning effort: do not run at the lowest effort; `high` is a sensible default
   for planning.
 
@@ -62,7 +72,10 @@ subshell that writes `<name>.exit` when done, then `wait`, with the call's timeo
 above the per-call timeout. Do not use the harness's `run_in_background` for the
 launcher: it returns immediately while the children still run, which looks like
 completion. If it was used, wait on the `.exit` files, not the launcher's
-notification. Check `.exit` and a non-empty response file before parsing.
+notification. Use per-call paths, or `rm -f` the `.exit` and response files
+immediately before launching each call, so a stale marker from an earlier call is
+not read as the current one. Check `.exit` and a non-empty response file before
+parsing.
 Save each raw response next to its request and put the `shasum -a 256` digest of
 the exact candidate file in the prompt.
 

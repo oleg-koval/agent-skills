@@ -26,8 +26,13 @@ Resolve two distinct bindings before starting: `anthropic` and `openai`, each
 with provider, exact model ID, harness, and identity evidence. Each is the newest
 flagship of its provider family that the account can actually access, read from
 live inventory (Claude: the current model docs and IDs known to the harness;
-Codex: `~/.codex/models_cache.json`, entries with `visibility: list`, slugs and
-display names). Do not hardcode version numbers in this skill, and never wait on
+otherwise the selected harness's own model cache or the provider's models API;
+for Codex, `${CODEX_HOME:-$HOME/.codex}/models_cache.json`, entries with
+`visibility: list`, slugs and display names). Before binding from a cache, check
+its `fetched_at`; if missing or older than 24 hours, refresh the inventory first
+(start the harness once or use the provider API) or, if impossible, bind from it
+and disclose the cache age as an identity limit. Never silently bind from a stale
+cache. Do not hardcode version numbers in this skill, and never wait on
 or invent a named version. Disclose the selected ID. Never silently substitute a
 smaller tier (such as Opus, Sonnet, or Sol) or a second copy of one model. If two
 different provider families cannot both be reached, the status is `BLOCKED`.
@@ -55,7 +60,8 @@ not repeated status probes. Stop when both approve or the budget is exhausted. I
 where either expert returned `REVISE`, the coordinator may write the next
 version with all amendments, labelled UNREVIEWED and never called agreed;
 `decision.md` stays `DISAGREED` ("budget stop, newest candidate unreviewed")
-with the smallest next step (one more cycle and its cost).
+with the smallest next step (one more cycle and its cost), unless an expert
+returned `BLOCKED`; then `decision.md` is `BLOCKED` and names the missing evidence.
 
 1. Give each expert the same brief independently, without the other's answer.
    Ask for the best approach, rationale, alternatives, assumptions, risks, evidence
