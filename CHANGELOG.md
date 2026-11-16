@@ -1,3 +1,10 @@
+## [1.87.2](https://github.com/oleg-koval/agent-skills/compare/v1.87.1...v1.87.2) (2026-11-16)
+
+
+### 🐛 Bug Fixes
+
+* **ask-experts:** bind newest accessible flagships, verified CLI recipes ([#226](https://github.com/oleg-koval/agent-skills/issues/226)) ([a503363](https://github.com/oleg-koval/agent-skills/commit/a503363ab884cc71ed84505d31b83ccd85bd09af))
+
 ## [1.87.1](https://github.com/oleg-koval/agent-skills/compare/v1.87.0...v1.87.1) (2026-11-16)
 
 
