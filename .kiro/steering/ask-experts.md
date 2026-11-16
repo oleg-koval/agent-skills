@@ -24,6 +24,10 @@ which the coordinator saves verbatim in separate files. File exchange is the
 communication channel; native agent messages or headless CLI stdout are transports.
 Do not require a shared terminal, server, paid relay, or a particular orchestrator.
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:706771a4e00b7aca05e638672e5294bcf20c8cb35b34e4c96903e6d04781c4a8 -->
+
 Resolve two distinct bindings before starting: `anthropic` and `openai`, each
 with provider, exact model ID, harness, and identity evidence. Each is the newest
 flagship of its provider family that the account can actually access, read from
@@ -34,13 +38,18 @@ for Codex, `${CODEX_HOME:-$HOME/.codex}/models_cache.json`, entries with
 its `fetched_at`; if missing or older than 24 hours, refresh the inventory first
 (start the harness once or use the provider API) or, if impossible, bind from it
 and disclose the cache age as an identity limit. Never silently bind from a stale
-cache. Do not hardcode version numbers in this skill, and never wait on
+cache. Cache freshness does not verify the account or provider. Before binding
+from the Codex cache, refresh its catalog under the active account and intended
+provider configuration; if that is impossible, disclose that the cache's
+account/provider identity is unverified, regardless of age.
+Do not hardcode version numbers in this skill, and never wait on
 or invent a named version. Disclose the selected ID. Never silently substitute a
 smaller tier (such as Opus, Sonnet, or Sol) or a second copy of one model. If two
 different provider families cannot both be reached, the status is `BLOCKED`.
 A model's self-description alone is not identity evidence. Record configured ID
 and provider-reported resolved ID when available, otherwise label identity limits.
 
+<!-- /coderabbit-ai-generated:v1 -->
 Use native agents only when they support the required exact model bindings.
 Otherwise use installed, authenticated CLIs or configured provider APIs. Read
 [transport guidance](references/transports.md) for harness and terminal choices.

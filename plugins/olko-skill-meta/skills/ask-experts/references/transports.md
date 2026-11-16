@@ -50,11 +50,20 @@ the run, not fall back to a default model.
   including any provider or gateway route; if the account reaches OpenAI through
   such a route, drop the flag and pass the needed settings with `-c key=value`
   so the call uses the intended provider.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:33dccd2b7b18068bd53f8abeb4f238ef95fd092aaebd78a123a91136dd7fff4c -->
+
 - Inventory without a paid call: read `${CODEX_HOME:-$HOME/.codex}/models_cache.json`
   (keys `models[].slug`, `display_name`, `visibility`, `supported_reasoning_levels`).
-  It is refreshed only when Codex runs and entries expire: check `fetched_at`
-  (missing or older than 24 hours means refresh first, or disclose the age as an
-  identity limit); never silently bind from a stale cache.
+  Check `fetched_at`; missing or older than 24 hours means refresh first, or
+  disclose the cache age as an identity limit. Freshness does not verify the
+  account or provider: before binding, refresh the Codex catalog under the active
+  account and intended provider configuration. If that refresh is impossible,
+  disclose that the cache's account/provider identity is unverified, regardless
+  of age; never silently bind from a stale or identity-unverified cache.
+
+<!-- /coderabbit-ai-generated:v1 -->
 - Reasoning effort: do not run at the lowest effort; `high` is a sensible default
   for planning.
 
@@ -67,15 +76,22 @@ Neither expert needs write access to the project or shared run directory.
 
 ### Running the calls
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:18f5b7c92718aa03e1b15aacd6a7634f5b2c932a2ded3ad6e799819db18ce128 -->
+
 Launch both experts from ONE foreground shell call: each as a backgrounded
 subshell that writes `<name>.exit` when done, then `wait`, with the call's timeout
 above the per-call timeout. Do not use the harness's `run_in_background` for the
 launcher: it returns immediately while the children still run, which looks like
 completion. If it was used, wait on the `.exit` files, not the launcher's
-notification. Use per-call paths, or `rm -f` the `.exit` and response files
-immediately before launching each call, so a stale marker from an earlier call is
-not read as the current one. Check `.exit` and a non-empty response file before
-parsing.
+notification. Use distinct paths for every attempt, including retries (for
+example, include expert, cycle and attempt in each filename), for `.exit`,
+response and log files. Never reuse a timed-out attempt's paths: its child may
+still write to them. Check the current attempt's `.exit` and a non-empty response
+file before parsing.
+
+<!-- /coderabbit-ai-generated:v1 -->
 Save each raw response next to its request and put the `shasum -a 256` digest of
 the exact candidate file in the prompt.
 
