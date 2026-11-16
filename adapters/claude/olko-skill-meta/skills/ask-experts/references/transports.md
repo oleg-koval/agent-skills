@@ -27,14 +27,26 @@ proof of native integration. Do not modify global instructions to force loading.
 
 ## Expert calls
 
-Prefer headless processes to typing into an interactive agent. Check installed
-`--help` before choosing flags. These are invocation shapes, not verified model
-IDs or authorization to relax permissions:
+Prefer headless processes to typing into an interactive agent. Verified on
+claude CLI 2.1.325 and codex-cli 0.169.0 (2026-11-16); re-check `--help` on other
+versions. These shapes are not verified model IDs or authorization to relax
+permissions:
 
 ```sh
-claude -p --model "$FABLE_MODEL" --tools "" --disallowedTools "mcp__*" --output-format json < request.md > response.json
-codex exec --model "$ASTRA_MODEL" --sandbox read-only --ephemeral --skip-git-repo-check - < request.md > response.txt
+claude -p --model "$ANTHROPIC_MODEL" --tools "" --strict-mcp-config --disallowedTools "mcp__*" --no-session-persistence --output-format json < request.md > response.json
+codex exec --model "$OPENAI_MODEL" -c model_reasoning_effort=high --sandbox read-only --ephemeral --skip-git-repo-check --ignore-user-config -o response.txt - < request.md > run.log 2> run.err
 ```
+
+- Claude: the answer is the JSON field `result`; the resolved model is the key
+  under `modelUsage`; check `is_error` and `stop_reason`. Without
+  `--strict-mcp-config` the user's configured MCP servers may load.
+- Codex: the answer is the file written by `-o` (final message only); the stderr
+  header prints `model:` and `provider:` as identity evidence. Run from the
+  scratch directory.
+- Inventory without a paid call: read `~/.codex/models_cache.json` (keys
+  `models[].slug`, `display_name`, `visibility`, `supported_reasoning_levels`).
+- Reasoning effort: do not run at the lowest effort; `high` is a sensible default
+  for planning.
 
 Use a private scratch working directory containing only the supplied evidence,
 with minimal tool access and the host's normal approvals. Capture stderr
@@ -42,6 +54,17 @@ separately. Parse the final assistant message from JSON/event output; retain
 provider identity metadata and raw output. Do not send wrappers or progress logs
 back as expert reasoning. Apply deadlines through the host process supervisor.
 Neither expert needs write access to the project or shared run directory.
+
+### Running the calls
+
+Launch both experts from ONE foreground shell call: each as a backgrounded
+subshell that writes `<name>.exit` when done, then `wait`, with the call's timeout
+above the per-call timeout. Do not use the harness's `run_in_background` for the
+launcher: it returns immediately while the children still run, which looks like
+completion. If it was used, wait on the `.exit` files, not the launcher's
+notification. Check `.exit` and a non-empty response file before parsing.
+Save each raw response next to its request and put the `shasum -a 256` digest of
+the exact candidate file in the prompt.
 
 OpenCode can list configured models with `opencode models` and make headless
 calls through `opencode run --model provider/model`. Hermes provides model and
