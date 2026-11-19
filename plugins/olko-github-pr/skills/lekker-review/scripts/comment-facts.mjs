@@ -16,8 +16,11 @@ import { fileURLToPath } from 'node:url'
 
 export const MAX_PROSE_CHARS = 1200
 
-const FENCE = /```[^\n]*\n[\s\S]*?```/g
-const INLINE_CODE = /`[^`\n]+`/g
+// CommonMark: a fence closes only on its own line with at least as many
+// backticks as it opened with, and an inline code span closes on a backtick
+// run of the same length, so a backtick inside the code cannot end it early.
+const FENCE = /^(`{3,})[^\n]*\n[\s\S]*?^\1`*[ \t]*$/gm
+const INLINE_CODE = /(?<!`)(`+)(?!`)[\s\S]*?[^`]\1(?!`)/g
 const URL = /https?:\/\/[^\s)>\]]+/g
 const MARKER = /<!--\s*lekker:[\w-]+\s*-->/g
 const MARKER_LINE = /^<!--\s*lekker:[\w-]+\s*-->$/

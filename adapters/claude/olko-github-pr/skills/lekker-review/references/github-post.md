@@ -140,7 +140,10 @@ comments.
 
 The draft comments are accurate but written by the agent that found the bug,
 so they lean on identifiers the author has not seen yet. One rewrite pass makes
-them readable; a script then proves no fact moved.
+them readable; a script then reverts any comment whose checked facts changed
+(code, file references, numbers, links, suggestion blocks, negation count and
+will/may/must wording). It cannot see where a "not" moved inside a sentence,
+so the polish brief's "keep every claim" rule still carries that.
 
 Each tool call is a new shell, so `$$` names a different file in every call.
 Expand the payload path from Step 1 once and type that literal path below
@@ -173,9 +176,11 @@ an earlier run can never be merged into this one.
    It keeps each polished comment whose facts match the draft and reverts the
    rest to the draft wording, then prints a summary. Report it in one line:
    `comments polished: <polished>/<comments>, reverted: <reverted>` plus the
-   reasons for any revert. If the agent fails or writes nothing, the script
-   posts the draft unchanged; say `polish skipped: <reason>`. Never block the
-   post on the polish pass.
+   reasons for any revert. If the agent failed or returned an error, do NOT run
+   the merge, even when `polished.json` exists: `<PAYLOAD>` still holds the
+   draft, so post it as it is and say `polish skipped: <reason>`. If the agent
+   wrote nothing, the script posts the draft unchanged. Never block the post on
+   the polish pass.
 
 Skip this step when the payload has no inline comments.
 

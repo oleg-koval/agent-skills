@@ -62,6 +62,14 @@ test('a changed sign, bare file reference or code name in prose reverts', () => 
   assert.match(factDrift(base, base.replace('loadCache', 'load_cache')).join(), /file reference or code name/)
 })
 
+test('a backtick inside code cannot end a fence or code span early', () => {
+  const fence = (tail) => 'Return early.\n```suggestion\nconst s = "```";\nreturn ' + tail + '\n```\n' + marker
+  assert.match(factDrift(fence('true'), fence('false')).join(), /suggestion or code block changed/)
+  const span = (v) => 'Rename ``cache`' + v + '`` here.\n' + marker
+  assert.match(factDrift(span('old'), span('new')).join(), /inline code changed/)
+  assert.deepEqual(extractFacts('Use `a` and ``b`c`` now.').codes, ['``b`c``', '`a`'])
+})
+
 test('a flipped negation or changed claim strength reverts', () => {
   const base = 'This retry will write the charge twice when the lock is not held.\n' + marker
   assert.deepEqual(factDrift(base, base.replace('This retry', 'The retry')), [])
