@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -850,6 +850,75 @@ test('routing arg sets model and effort per role; without it the defaults hold',
   const malformed = await seen({ routing: { specialist: { model: '', effort: 'high' }, verifier: { model: 'opus', effort: 'ludicrous' } } })
   assert.deepEqual(malformed['review:quality'], { model: 'sonnet', effort: undefined })
   assert.deepEqual(malformed['verify:src/example.ts:10'], { model: 'sonnet', effort: 'high' })
+})
+
+test('a crossvendor verifier whose relay returns null reruns on the host model and counts one fallback', async () => {
+  const { routingFor } = await import('../plugins/olko-github-pr/skills/lekker-review/scripts/model-matrix.mjs')
+  const seen = []
+  const { result } = await runScenario({
+    extraArgs: { routing: routingFor('claude', 'critical', { crossvendor: true }), vendorBridge: '/skill/scripts/vendor-bridge.mjs' },
+    respond: ({ prompt, options: o }) => {
+      seen.push({ label: o.label, model: o.model, effort: o.effort })
+      if (o.label === 'review:quality') return { findings: [{ ...baseFinding, severity: 'important' }] }
+      if (o.label.startsWith('review:')) return { findings: [] }
+      if (o.label.startsWith('relay:verify:')) {
+        assert.match(prompt, /vendor-bridge\.mjs/)
+        assert.match(prompt, /'--to' 'codex' '--model' 'gpt-6\.2-astra' '--effort' 'high'/)
+        return null
+      }
+      if (o.label.startsWith('verify:')) return { verdict: 'confirmed', reasoning: 'Anchored and reachable.' }
+      throw new Error(`Unexpected agent call: ${o.label}`)
+    },
+  })
+  const relay = seen.find((c) => c.label.startsWith('relay:verify:'))
+  assert.deepEqual([relay.model, relay.effort], ['haiku', 'low'])
+  const verify = seen.filter((c) => c.label.startsWith('verify:'))
+  assert.deepEqual(verify.map((c) => [c.model, c.effort]), [['fable', 'high']])
+  assert.equal(result.crossvendorFallbacks, 1)
+  assert.equal(result.crossvendorAgents, 0)
+  assert.equal(result.findings[0].verificationStatus, 'confirmed')
+})
+
+test('a crossvendor verifier whose bridge result is readable skips the host rerun', async () => {
+  const { routingFor } = await import('../plugins/olko-github-pr/skills/lekker-review/scripts/model-matrix.mjs')
+  const dir = mkdtempSync(join(tmpdir(), 'lekker-xv-'))
+  try {
+    const diffFile = join(dir, 'pr.diff')
+    const { calls, result } = await runScenario({
+      extraArgs: { routing: routingFor('claude', 'standard', { crossvendor: true }), vendorBridge: '/skill/scripts/vendor-bridge.mjs', diffFile },
+      respond: ({ prompt, options: o }) => {
+        if (o.label === 'review:quality') return { findings: [{ ...baseFinding, severity: 'important' }] }
+        if (o.label.startsWith('review:')) return { findings: [] }
+        if (o.label.startsWith('relay:verify:')) {
+          const out = prompt.match(/'--out' '([^']+)'/)[1]
+          mkdirSync(join(dir, 'crossvendor'), { recursive: true })
+          writeFileSync(out, JSON.stringify({ verdict: 'dropped', reasoning: 'Not reachable.' }))
+          return { status: 'ok' }
+        }
+        throw new Error(`Unexpected agent call: ${o.label}`)
+      },
+    })
+    assert.equal(calls.filter((l) => l.startsWith('verify:')).length, 0)
+    assert.equal(result.crossvendorAgents, 1)
+    assert.equal(result.crossvendorFallbacks, 0)
+    assert.equal(result.droppedCount, 1)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('without a vendor route no relay runs and the counters are zero', async () => {
+  const { calls, result } = await runScenario({
+    extraArgs: {},
+    respond: ({ options: o }) => {
+      if (o.label === 'review:quality') return { findings: [{ ...baseFinding, severity: 'important' }] }
+      if (o.label.startsWith('review:')) return { findings: [] }
+      if (o.label.startsWith('verify:')) return { verdict: 'confirmed', reasoning: 'ok' }
+      throw new Error(`Unexpected agent call: ${o.label}`)
+    },
+  })
+  assert.equal(calls.some((l) => l.startsWith('relay:')), false)
+  assert.deepEqual([result.crossvendorAgents, result.crossvendorFallbacks], [0, 0])
 })
 
 test('decisions: one route entry per role, finding entries carry the verifier reason', async () => {

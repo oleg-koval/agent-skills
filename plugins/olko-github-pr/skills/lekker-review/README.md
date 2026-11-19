@@ -68,6 +68,26 @@ Terra high, the Codex model positioned for visual reasoning. The main loop
 (context gathering and the final write-up) runs on your session model. The
 table is generated from `scripts/model-matrix.mjs`; a test fails if they drift.
 
+## Cross-vendor review
+
+`--crossvendor` sends the agents that judge findings to the other vendor, at the
+same tier row as the table above. A second vendor does not share the finders'
+blind spots, so what survives verification has been checked by a model that did
+not write it. Agents that find issues stay on the host.
+
+| Role | With `--crossvendor` |
+| --- | --- |
+| Verifier, critic re-examine, critic-verify, fix verifier | other vendor |
+| Completeness critic (deep) | other vendor |
+| Triage, specialists, project rules, provers, fixers, polish, housekeeping | host |
+
+Provers and fixers need the host's worktree and write tools, so they never move.
+Each gate agent is one read-only call to the other vendor's CLI through
+`scripts/vendor-bridge.mjs`; the prompt goes by stdin and nothing is passed
+through a shell. If the other CLI is missing, unauthenticated, times out (600s
+default) or returns JSON that does not match the schema, that one agent reruns
+on the host and the review prints `Cross-vendor: N gate agents on <vendor>, M fell back`.
+
 ## Comment voice
 
 With `--post`, inline comments follow `references/comment-voice.md`: the ask,

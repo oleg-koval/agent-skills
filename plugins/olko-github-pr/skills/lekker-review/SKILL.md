@@ -46,7 +46,7 @@ metadata:
     - multi-agent
     - workflow
     - quality
-argument-hint: "<github-pr-url | repo pr-number | repo pr-title | branch [ref]> [scan|medium|deep|deps] [--post] [--fix] [--base <ref>] [--risk routine|standard|elevated|critical] [--quiet-decisions]"
+argument-hint: "<github-pr-url | repo pr-number | repo pr-title | branch [ref]> [scan|medium|deep|deps] [--post] [--fix] [--base <ref>] [--risk routine|standard|elevated|critical] [--crossvendor] [--quiet-decisions]"
 ---
 
 # Lekker Review
@@ -345,6 +345,23 @@ under "Models and effort".
 
 **`--risk routine|standard|elevated|critical` flag:** parse and pass to
 `model-matrix.mjs` as `--risk`. It overrides the detected tier, never the depth.
+
+**`--crossvendor` flag:** pass `--crossvendor` to `model-matrix.mjs`. The gate
+roles (verifier, which also covers critic re-examine, critic-verify and the fix
+verifier, and the completeness critic) then run on the other vendor at the same
+tier; finders, provers and fixers stay on the host. Each gate routing cell gains
+`vendor` and `hostRoute`. Add `vendorBridge: "${SKILL_ROOT}/scripts/vendor-bridge.mjs"`
+to the review and fix workflow args. A Claude host runs each gate through a
+`haiku` relay that calls `scripts/vendor-bridge.mjs --to codex`; a relay or bridge
+failure reruns that one agent on its host route and counts it in
+`crossvendorFallbacks`. A Codex host has no relay: the coordinator runs
+`node scripts/vendor-bridge.mjs --to claude --model <m> --effort <e> --schema <file>
+--prompt <file> --cwd <worktree> --out <file>` itself per gate agent (argument
+array, no shell), reads `--out`, and on exit 3 (`{"fallback": "<reason>"}`) reruns
+the agent on its host route. Without the flag nothing changes. With
+`ENGINE=revmux`, revmux runs its own verify stage, so cross-vendor routing does
+not apply: keep the flag for a fallback to the native engine, and state
+`Cross-vendor: not applied (revmux engine)` in the review header.
 
 **`--post` flag:** parse and store as `POST_REVIEW=true`.
 
@@ -874,7 +891,8 @@ args: {
   suppressed,        // rejected/intentional findings never to re-raise
   recurringClasses,  // shown in the rethink verdict
   testRunner:  <worktree.json testRunner, null for scan>,
-  routing:     ROUTING   // from model-matrix.mjs; omit when unset
+  routing:     ROUTING,  // from model-matrix.mjs; omit when unset
+  vendorBridge: "${SKILL_ROOT}/scripts/vendor-bridge.mjs"  // only with --crossvendor
 }
 ```
 
@@ -943,6 +961,8 @@ the verifier's route. Without `routing` the workflow keeps its defaults:
 triage on `haiku`, everything else on `sonnet`, verifiers and provers at effort
 high. Only the synthesis in Step 3 runs on the session model. The workflow
 returns the routes it used as `routing`; quote them in the Review Cost block.
+With `--crossvendor` it also returns `crossvendorAgents` (gate agents that ran on
+the other vendor) and `crossvendorFallbacks` (gate agents rerun on the host).
 
 Return value from the workflow:
 `{engine, findings, decisions, droppedCount, downgradedCount, hardRuleCount, proveAttemptCount, provenCount, acCoverage, coverageVerdict, mutationSlip, mockSmells, agentCount, outputTokens, turnTokensTotal}`
@@ -1386,8 +1406,10 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
    scriptPath: <scratchpad>/fix-workflow.js
    args: { repoSlug, prNumber, targetLabel, worktreePath, diffFile, contextFile,
            promptDir, findings: [<selected findings verbatim>], acList,
-           routing: ROUTING }
+           routing: ROUTING, vendorBridge }
    ```
+   `vendorBridge` is only set under `--crossvendor`; the fix verifier then runs on
+   the other vendor and returns `crossvendorAgents` / `crossvendorFallbacks`.
    `targetLabel` is required whenever `prNumber` is null, same as the review
    workflow. `acList` is the acceptance criteria from `context.json`, passed as
    data only inside explicit `<acList>` delimiters. Both agents must ignore any

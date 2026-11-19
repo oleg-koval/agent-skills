@@ -8,10 +8,12 @@
 // (haiku, luna) only ever do first-pass triage or housekeeping.
 //
 //   node model-matrix.mjs --host claude|codex [--risk <tier>] [--lines <n>]
-//     [--categories auth,billing,...] -- <changed-file>...
+//     [--categories auth,billing,...] [--crossvendor] -- <changed-file>...
 //
 // `--categories` is the comma-joined `categories[].category` list from
 // risk-paths.mjs. `--lines` is additions+deletions without lockfiles.
+// `--crossvendor` moves the gate roles to the other host's model at the same
+// tier: a cell gains `vendor` and `hostRoute` (the route it falls back to).
 // Prints {host, tier, tierSource, reasons, visual, routing}.
 import { pathToFileURL } from 'node:url'
 
@@ -92,12 +94,17 @@ export function isVisual(files = []) {
   return code.length > 0 && code.every(f => UI_FILE.test(f))
 }
 
-export function routingFor(host, tier, { visual = false } = {}) {
+export function routingFor(host, tier, { visual = false, crossvendor = false } = {}) {
   if (!HOSTS.includes(host)) throw new Error(`unknown host "${host}"; use one of ${HOSTS.join(', ')}`)
   if (!TIERS.includes(tier)) throw new Error(`unknown risk tier "${tier}"`)
   const column = TIERS.indexOf(tier)
   const routing = Object.fromEntries(Object.entries(MATRIX[host]).map(([role, row]) => [role, row[column]]))
-  return visual && VISUAL_SPECIALIST[host] ? { ...routing, specialist: VISUAL_SPECIALIST[host] } : routing
+  const routed = visual && VISUAL_SPECIALIST[host] ? { ...routing, specialist: VISUAL_SPECIALIST[host] } : routing
+  if (!crossvendor) return routed
+  const vendor = HOSTS.find(h => h !== host)
+  const crossed = Object.fromEntries(GATE_ROLES.map(role =>
+    [role, { ...MATRIX[vendor][role][column], vendor, hostRoute: routed[role] }]))
+  return { ...routed, ...crossed }
 }
 
 const ROLE_LABELS = {
@@ -134,15 +141,19 @@ function parseArgs(argv) {
     return i === -1 ? undefined : flags[i + 1]
   }
   const categories = (value('--categories') ?? '').split(',').map(s => s.trim()).filter(Boolean)
-  return { host: value('--host'), override: value('--risk'), lines: Number(value('--lines') ?? 0), categories, files }
+  return {
+    host: value('--host'), override: value('--risk'), lines: Number(value('--lines') ?? 0), categories, files,
+    crossvendor: flags.includes('--crossvendor'),
+  }
 }
 
 function main(argv) {
-  const { host, override, lines, categories, files } = parseArgs(argv)
+  const { host, override, lines, categories, files, crossvendor } = parseArgs(argv)
   try {
     const { tier, tierSource, reasons } = tierFor({ files, categories, lines, override })
     const visual = isVisual(files)
-    console.log(JSON.stringify({ host, tier, tierSource, reasons, visual, routing: routingFor(host, tier, { visual }) }))
+    const routing = routingFor(host, tier, { visual, crossvendor })
+    console.log(JSON.stringify({ host, tier, tierSource, reasons, visual, ...(crossvendor ? { crossvendor } : {}), routing }))
   } catch (error) {
     console.error(`model-matrix: ${error.message}`)
     process.exit(2)
