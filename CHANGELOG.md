@@ -1,3 +1,10 @@
+# [1.91.0](https://github.com/oleg-koval/agent-skills/compare/v1.90.0...v1.91.0) (2026-11-19)
+
+
+### ✨ Features
+
+* **lekker-review:** --crossvendor runs the verifier and critic on the other vendor ([#231](https://github.com/oleg-koval/agent-skills/issues/231)) ([b26fa52](https://github.com/oleg-koval/agent-skills/commit/b26fa52367108cfb88b5c53bd6a178fbfbf44bad))
+
 # [1.90.0](https://github.com/oleg-koval/agent-skills/compare/v1.89.0...v1.90.0) (2026-11-19)
 
 
