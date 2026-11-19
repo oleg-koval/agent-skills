@@ -76,6 +76,19 @@ critic), `prover`, `fixer`, `housekeeping`. Without `routing`, omit all three
 fields so agents inherit the session model, as before. Record the route used
 per agent in the `agents` receipt.
 
+With `--crossvendor` the `verifier` and `critic` cells carry `vendor: "claude"`
+and a `hostRoute`. For those agents, do not `spawn_agent`: write the prompt and
+the output schema to scratchpad files and run
+`node <SKILL_ROOT>/scripts/vendor-bridge.mjs --to claude --model <model> --effort <effort> --schema <schema> --prompt <prompt> --cwd <dir> --out <out>`
+through the shell-free process API, where `<dir>` is the worktree, or the run
+scratchpad when `WORKTREE_PATH` is null (scan). Only exit 0 with a readable,
+schema-checked `<out>` is a result. Every other outcome reruns that same agent
+with `spawn_agent` on its `hostRoute`: exit 3 (`<out>` holds
+`{"fallback": "<reason>"}`), exit 2 (bad arguments, a bug in this call: record
+it), any other exit, a crash, or an `<out>` that is missing or not valid JSON.
+Count each bridge attempt and each host rerun for the `Cross-vendor:` Review
+Cost line.
+
 ## Review stage
 
 Select dimensions exactly as the Claude workflow does:

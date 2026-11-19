@@ -257,6 +257,7 @@ Depth:            <📦 deps | ⚡ scan | 🔍 medium | 🔬 deep>
 Diff size:        ~<N> lines (~<N> tokens)
 Agents run:       <N total>: <breakdown, e.g. "5 reviewers (sonnet/high) + 6 verifiers (opus/high) + 2 provers (sonnet/high) + 1 critic (opus/high)">
 Risk tier:        <tier> (<auto: reason | --risk>), routes from the workflow's `routing` return value
+Cross-vendor:     <N> gate agents on <vendor>, <M> fell back (only with --crossvendor; N and M from crossvendorAgents and crossvendorFallbacks)
 Rule checks:      <N> hard-rule finding(s) validated with rule-specific checks (omit the line when 0)
 Context sources:  <the subset of issue-tracker / chat / docs / framework-docs / monitoring / CI / prior-review-memory actually used>
 

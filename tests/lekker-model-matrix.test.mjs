@@ -95,3 +95,32 @@ test('the README matrix matches the data', async () => {
   const readme = readFileSync('plugins/olko-github-pr/skills/lekker-review/README.md', 'utf8')
   assert.ok(readme.includes(matrixMarkdown()), 'README table is stale: paste matrixMarkdown() output into README.md')
 })
+
+test('--crossvendor moves only the gate roles to the other host, same tier, and keeps the host route', () => {
+  for (const [host, other] of [['claude', 'codex'], ['codex', 'claude']]) {
+    for (const tier of TIERS) {
+      const plain = routingFor(host, tier)
+      const crossed = routingFor(host, tier, { crossvendor: true })
+      for (const role of Object.keys(plain)) {
+        if (!GATE_ROLES.includes(role)) {
+          assert.deepEqual(crossed[role], plain[role], `${host} ${tier} ${role}`)
+          continue
+        }
+        const column = TIERS.indexOf(tier)
+        assert.deepEqual(crossed[role], { ...MATRIX[other][role][column], vendor: other, hostRoute: plain[role] }, `${host} ${tier} ${role}`)
+      }
+    }
+  }
+  assert.equal(routingFor('claude', 'critical', { crossvendor: true }).verifier.model, 'gpt-6.2-astra')
+  assert.equal(routingFor('codex', 'standard', { crossvendor: true }).critic.model, 'sonnet')
+})
+
+test('cli --crossvendor adds vendor to the gate roles; without the flag the output has none', () => {
+  const run = flags => JSON.parse(execFileSync('node', [script, '--host', 'claude', ...flags, '--', 'src/a.ts'], { encoding: 'utf8' }))
+  const crossed = run(['--crossvendor'])
+  assert.equal(crossed.crossvendor, true)
+  assert.deepEqual(Object.entries(crossed.routing).filter(([, c]) => c.vendor).map(([role]) => role), GATE_ROLES)
+  const plain = run([])
+  assert.equal('crossvendor' in plain, false)
+  assert.ok(Object.values(plain.routing).every(c => c.vendor === undefined))
+})
