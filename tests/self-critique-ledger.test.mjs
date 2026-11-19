@@ -11,6 +11,10 @@ import {
   anchors,
   validateLedger,
   summaryMarkdown,
+  integrityErrors,
+  openDefects,
+  statusOf,
+  PENALTIES,
 } from '../plugins/olko-reflection/skills/self-critique/scripts/claim-ledger.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -135,4 +139,182 @@ test('requires checked_by on missed items', () => {
 test('does not charge an inferred missed item', () => {
   const l = { version: 1, claims: [], missed: [{ id: 'm1', text: 'x', load_bearing: true, checked_by: 'inferred' }] }
   assert.deepEqual(scoreLedger(l), { score: 100, breakdown: {} })
+})
+
+// Integrity: the ledger must account for every author claim, every critic item and every earlier claim.
+const entry = (id, fields) => ({ ...verified(id, true), ...fields })
+const authorClaims = [{ id: 'a1', text: 'one', load_bearing: true, receipt: 'x' }, { id: 'a2', text: 'two', load_bearing: false, receipt: 'y' }]
+const criticOut = { claims: [{ text: 'one' }, { text: 'three' }], missed: [{ text: 'sibling' }] }
+const goodLedger = {
+  version: 1,
+  claims: [
+    entry('c1', { author_id: 'a1', critic_ref: 'r1:claims.0' }),
+    entry('c2', { author_id: 'a2', origin: 'author', load_bearing: false }),
+    entry('c3', { origin: 'critic', critic_ref: 'r1:claims.1' }),
+  ],
+  missed: [{ id: 'm1', text: 'sibling', load_bearing: false, checked_by: 'read', critic_ref: 'r1:missed.0' }],
+}
+const context = { author: authorClaims, critic: { r1: criticOut } }
+const without = (ledger, id) => ({ ...ledger, claims: ledger.claims.filter((c) => c.id !== id) })
+const replace = (ledger, id, fields) => ({ ...ledger, claims: ledger.claims.map((c) => (c.id === id ? { ...c, ...fields } : c)) })
+
+test('integrity passes a ledger that accounts for everything', () => {
+  assert.deepEqual(integrityErrors(goodLedger, context), [])
+})
+
+test('integrity names an author claim the ledger dropped', () => {
+  const errors = integrityErrors(without(goodLedger, 'c2'), context)
+  assert.deepEqual(errors, ['author claim a2 has no ledger entry'])
+})
+
+test('integrity rejects a dangling author_id', () => {
+  const errors = integrityErrors(replace(goodLedger, 'c2', { author_id: 'a9' }), context)
+  assert.ok(errors.includes('claims[1].author_id: origin author needs an author claim id, got a9'))
+  assert.ok(errors.includes('author claim a2 has no ledger entry'))
+})
+
+test('integrity rejects an origin critic claim that names an author claim', () => {
+  const errors = integrityErrors(replace(goodLedger, 'c3', { author_id: 'a1' }), context)
+  assert.deepEqual(errors, ['claims[2].author_id: origin critic must not name an author claim'])
+})
+
+test('integrity rejects a missing, unknown or unreferenced critic_ref', () => {
+  const missing = replace(goodLedger, 'c3', { critic_ref: undefined })
+  assert.ok(integrityErrors(missing, context).includes('claims[2].critic_ref: missing, name the critic item this entry came from'))
+  assert.ok(integrityErrors(missing, context).includes('critic item r1:claims.1 has no ledger entry'))
+  const unknown = replace(goodLedger, 'c3', { critic_ref: 'r1:claims.7' })
+  assert.ok(integrityErrors(unknown, context).includes('claims[2].critic_ref: unknown r1:claims.7'))
+  const loose = { ...goodLedger, missed: [] }
+  assert.deepEqual(integrityErrors(loose, context), ['critic item r1:missed.0 has no ledger entry'])
+})
+
+test('integrity rejects an author-only claim that cites the critic', () => {
+  const errors = integrityErrors(replace(goodLedger, 'c2', { critic_ref: 'r1:claims.0' }), context)
+  assert.deepEqual(errors, ['claims[1].critic_ref: origin author must not cite the critic'])
+})
+
+test('integrity requires every previous claim id to survive', () => {
+  const next = without(goodLedger, 'c3')
+  assert.deepEqual(integrityErrors(next, { prev: goodLedger }), ['claim c3 from the previous ledger is missing'])
+  assert.deepEqual(integrityErrors(goodLedger, { prev: next }), [])
+})
+
+test('integrity reports a duplicate id', () => {
+  const dup = { ...goodLedger, claims: [...goodLedger.claims, entry('c1', { author_id: 'a1', critic_ref: 'r1:claims.0' })] }
+  assert.ok(integrityErrors(dup, {}).includes('duplicate id: c1'))
+})
+
+test('a load-bearing inferred claim costs 10 and an ordinary one stays 5', () => {
+  assert.equal(PENALTIES.inferred_accepted_load_bearing, 10)
+  assert.deepEqual(scoreLedger({ version: 1, claims: [inferred('c1', true)], missed: [] }), {
+    score: 90,
+    breakdown: { inferred_accepted_load_bearing: 10 },
+  })
+  assert.equal(scoreLedger({ version: 1, claims: [inferred('c1', false)], missed: [] }).score, 95)
+  assert.deepEqual(anchors().map((a) => a.score), [95, 72, 40])
+})
+
+test('openDefects counts load-bearing inferred claims and misses, not verified ones or unpriced minor misses', () => {
+  const l = {
+    version: 1,
+    claims: [verified('c1', true), inferred('c2', true), unverifiable('c3', false), refuted('c4', true)],
+    missed: [
+      { id: 'm1', text: 'x', load_bearing: true, checked_by: 'read' },
+      { id: 'm2', text: 'y', load_bearing: true, checked_by: 'inferred' },
+      { id: 'm3', text: 'z', load_bearing: false, checked_by: 'read' },
+      { id: 'm4', text: 'w', load_bearing: false, checked_by: 'inferred' },
+    ],
+  }
+  assert.deepEqual(openDefects(l), { load_bearing: 4, other: 2 })
+})
+
+test('statusOf reports first and final score, trajectory and done', () => {
+  const v1 = { version: 1, claims: [refuted('c1', true), verified('c2', false)], missed: [] }
+  const v2 = { version: 1, claims: [verified('c1', true), verified('c2', false)], missed: [] }
+  assert.deepEqual(statusOf([v1, v2]), {
+    rounds: 2, first_score: 75, final_score: 100, kept: 2, trajectory: [75, 100], open: { load_bearing: 0, other: 0 }, done: true,
+  })
+  assert.equal(statusOf([v1]).done, false)
+})
+
+test('statusOf keeps the ratchet winner when a revision scores lower', () => {
+  const good = { version: 1, claims: [verified('c1', true)], missed: [] }
+  const worse = { version: 1, claims: [refuted('c1', true)], missed: [] }
+  const s = statusOf([good, worse])
+  assert.deepEqual([s.kept, s.final_score, s.done], [1, 100, true])
+})
+
+// CLI flags
+const writeJson = (dir, name, value) => {
+  const file = join(dir, name)
+  writeFileSync(file, JSON.stringify(value))
+  return file
+}
+const cli = (...args) => spawnSync(process.execPath, [script, ...args], { encoding: 'utf8' })
+
+test('cli labels a score unchecked without flags and checked with them', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'))
+  const ledger = writeJson(dir, 'ledger-v1.json', goodLedger)
+  const author = writeJson(dir, 'author-claims.json', authorClaims)
+  const critic = writeJson(dir, 'critic-r1.json', criticOut)
+  assert.equal(JSON.parse(cli('score', ledger).stdout).integrity, 'unchecked')
+  const checked = cli('score', ledger, '--author', author, '--critic', `r1=${critic}`)
+  assert.equal(checked.status, 0, checked.stderr)
+  assert.deepEqual([JSON.parse(checked.stdout).integrity, JSON.parse(checked.stdout).score], ['checked', 90])
+  assert.equal(JSON.parse(cli('check', ledger, '--author', author).stdout).integrity, 'checked')
+})
+
+test('cli exits 2 with the integrity errors when the ledger drops an author claim', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'))
+  const ledger = writeJson(dir, 'ledger-v1.json', without(goodLedger, 'c2'))
+  const author = writeJson(dir, 'author-claims.json', authorClaims)
+  const r = cli('score', ledger, '--author', author)
+  assert.equal(r.status, 2)
+  assert.match(JSON.parse(r.stderr).error, /author claim a2 has no ledger entry/)
+})
+
+test('cli rejects a malformed --critic spec', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'))
+  const ledger = writeJson(dir, 'ledger-v1.json', goodLedger)
+  const r = cli('score', ledger, '--critic', 'no-equals-sign')
+  assert.equal(r.status, 2)
+  assert.match(JSON.parse(r.stderr).error, /--critic needs <label>=<path>/)
+})
+
+test('cli ratchet checks the next ledger against the previous one', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'))
+  const v1 = writeJson(dir, 'ledger-v1.json', goodLedger)
+  const v2 = writeJson(dir, 'ledger-v2.json', replace(goodLedger, 'c1', { status: 'verified' }))
+  const dropped = writeJson(dir, 'ledger-v3.json', without(goodLedger, 'c3'))
+  const ok = cli('ratchet', v1, v2, '--author', writeJson(dir, 'a.json', authorClaims))
+  assert.equal(ok.status, 0, ok.stderr)
+  assert.deepEqual(JSON.parse(ok.stdout), { winner: 'next', score: 90, integrity: 'checked' })
+  const bad = cli('ratchet', v1, dropped, '--author', writeJson(dir, 'a.json', authorClaims))
+  assert.equal(bad.status, 2)
+  assert.match(JSON.parse(bad.stderr).error, /claim c3 from the previous ledger is missing/)
+})
+
+test('cli status prints rounds, trajectory and done', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'))
+  const v1 = writeJson(dir, 'ledger-v1.json', { version: 1, claims: [refuted('c1', true)], missed: [] })
+  const v2 = writeJson(dir, 'ledger-v2.json', { version: 1, claims: [verified('c1', true)], missed: [] })
+  const r = cli('status', v1, v2)
+  assert.equal(r.status, 0, r.stderr)
+  assert.deepEqual(JSON.parse(r.stdout), {
+    rounds: 2, first_score: 75, final_score: 100, kept: 2, trajectory: [75, 100], open: { load_bearing: 0, other: 0 }, done: true,
+  })
+})
+
+test('integrity rejects supplied context that is null instead of skipping it', () => {
+  assert.deepEqual(integrityErrors(goodLedger, { author: null }), ['author claims invalid: not an array'])
+  assert.deepEqual(integrityErrors(goodLedger, { critic: null }), ['critic outputs invalid: not an object'])
+})
+
+test('cli rejects a repeated --critic label', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'))
+  const ledger = writeJson(dir, 'ledger-v1.json', goodLedger)
+  const critic = writeJson(dir, 'critic-r1.json', criticOut)
+  const r = cli('score', ledger, '--critic', `r1=${critic}`, '--critic', `r1=${critic}`)
+  assert.equal(r.status, 2)
+  assert.match(JSON.parse(r.stderr).error, /--critic label repeated: r1/)
 })
