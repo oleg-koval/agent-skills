@@ -1438,7 +1438,11 @@ just created a PR, in which case use that PR number.
 
 Follow `references/github-post.md`:
 - Build a JSON payload with Critical + Important findings as inline comments
-  (only for lines present in the diff hunks).
+  (only for lines present in the diff hunks), written in the ask / why / fix
+  shape from `references/comment-voice.md`.
+- Polish the inline comments with one agent, then merge through
+  `scripts/comment-facts.mjs`, which reverts any comment whose facts drifted
+  (github-post.md Step 2b). Report `comments polished: N/M` in one line.
 - POST via `gh api repos/<REPO_SLUG>/pulls/<PR_NUMBER>/reviews` with NO
   `event` field (creates PENDING, visible only to you).
 - Verify post-condition: fetch review list, confirm PENDING state exists.

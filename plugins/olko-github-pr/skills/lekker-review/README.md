@@ -29,6 +29,16 @@ This skill spends most of its budget trying to disprove itself.
   the real `git diff`, and the captured proof re-run. If the proof stays red the
   group is reverted. Nothing is pushed without explicit confirmation.
 
+## Comment voice
+
+With `--post`, inline comments follow `references/comment-voice.md`: the ask,
+then why it matters in plain words, then the fix. One agent rewrites the drafts
+for readability, and `scripts/comment-facts.mjs` reverts any comment whose
+identifiers, numbers, links or suggestion blocks changed. The voice rules are
+adapted from [Clarity](https://github.com/addyosmani/clarity) by Addy Osmani
+(MIT). Clarity is optional: when it is installed
+(`npx skills add addyosmani/clarity`), the rewrite also uses its editing guide.
+
 ## Requirements
 
 Claude Code or OpenAI Codex, plus `git` and an authenticated `gh`. Claude uses
