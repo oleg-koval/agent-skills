@@ -44,9 +44,11 @@ otherwise: **Fix:** <one sentence>.>
 1. **Facts are locked.** Every code identifier, `file:line`, number, URL and
    suggestion block in the draft survives unchanged. No new number, scenario,
    cause or claim appears. Keep the strength of each claim: "can" stays "can",
-   never "will". `scripts/comment-facts.mjs` checks the tokens mechanically
-   and reverts any comment that drifted; it cannot check the meaning of plain
-   prose, so claim strength and negation rest on this rule.
+   never "will", and every "not" stays. `scripts/comment-facts.mjs` reverts a
+   comment when backticked code, file references, camelCase or snake_case
+   names, signed numbers, links, suggestion blocks, the count of negations or
+   the set of words like will/may/must changed. It cannot judge other meaning
+   changes in plain prose, so the rest of this rule is on the writer.
 2. **Mechanism over importance.** Cut "critical", "crucial", "important to
    note", "significant risk". State what happens and let the author judge.
 3. **No specific-looking vagueness.** "This could cause issues in some cases" is
@@ -79,13 +81,13 @@ Polished (same facts, readable on first pass):
 Please use one shared function to pick the winning fulfillment order, here and
 in `x.ts:104`.
 
-**Why:** the two copies can pick different winners for the same order, and that
-charges the shared line twice. This file ranks by value, then units, then id;
+**Why:** the two copies pick different winners for the same order, and the
+shared line gets charged twice. This file ranks by value, then units, then id;
 `x.ts:104` ranks by shipped quantity, then id. With FO-A (qty 1, one $100 item)
 and FO-B (qty 3, three $10 items), this file picks A and `x.ts:104` picks B. The
-duplicate check is keyed per `fulfillmentOrderGid`, so a fallback run that
-writes A's line followed by an exact-path retry on B writes the same charge
-twice.
+duplicate check is keyed per `fulfillmentOrderGid` with no cross-FO check, so a
+fallback run that writes A's line followed by an exact-path retry on B writes
+the same charge twice.
 
 **Fix:** extract one winner-picker keyed on fulfillment order value and call it
 from both files.

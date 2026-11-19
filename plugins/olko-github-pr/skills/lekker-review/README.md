@@ -34,7 +34,8 @@ This skill spends most of its budget trying to disprove itself.
 With `--post`, inline comments follow `references/comment-voice.md`: the ask,
 then why it matters in plain words, then the fix. One agent rewrites the drafts
 for readability, and `scripts/comment-facts.mjs` reverts any comment whose
-identifiers, numbers, links or suggestion blocks changed. The voice rules are
+code names, file references, numbers, links, suggestion blocks, negations or
+will/may/must wording changed. The voice rules are
 adapted from [Clarity](https://github.com/addyosmani/clarity) by Addy Osmani
 (MIT). Clarity is optional: when it is installed
 (`npx skills add addyosmani/clarity`), the rewrite also uses its editing guide.

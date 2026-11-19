@@ -11,8 +11,8 @@
 // The final payload is the draft with each comment body replaced by its
 // polished version when the facts match. The review body is never taken from
 // the polished payload. Prints a one-line JSON summary on stdout.
-import { readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { pathToFileURL } from 'node:url'
+import { readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 export const MAX_PROSE_CHARS = 1200
 
@@ -21,7 +21,18 @@ const INLINE_CODE = /`[^`\n]+`/g
 const URL = /https?:\/\/[^\s)>\]]+/g
 const MARKER = /<!--\s*lekker:[\w-]+\s*-->/g
 const MARKER_LINE = /^<!--\s*lekker:[\w-]+\s*-->$/
-const NUMBER = /\d+(?:[.,]\d+)*/g
+// A leading minus counts as part of the number only when it is not a joiner
+// ("2-4", "FO-1"), so "-1" and "1" are different facts.
+const NUMBER = /(?:(?<![\w)])-)?\d+(?:[.,]\d+)*/g
+// Code named in plain prose, outside backticks: file references
+// (`src/cache.js:42`) and camelCase, PascalCase-with-inner-capital or
+// snake_case names.
+const FILE_REF = /(?:[\w.-]+\/)*[\w.-]+\.(?:ts|tsx|js|jsx|mjs|cjs|json|md|py|rb|go|rs|java|kt|swift|sql|graphql|ya?ml|sh|css|scss|html|liquid|toml)(?::\d+(?:-\d+)?)?\b/g
+const IDENTIFIER = /\b(?:[a-z]+[A-Z][A-Za-z0-9]*|[A-Z][a-z0-9]+[A-Z][A-Za-z0-9]*|[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+)\b/g
+// Claim polarity and strength: a rewrite that drops a "not" or turns "will"
+// into "may" changes the finding even when every token above survives.
+const NEGATION = /\b(?:not|no|never|none|nothing|cannot|without)\b|n't\b/gi
+const MODAL = /\b(?:will|would|may|might|can|could|must|should|always|sometimes|often|only)\b/gi
 
 const matches = (text, re) => text.match(re) ?? []
 const sorted = values => [...values].sort()
@@ -44,6 +55,9 @@ export function extractFacts(text) {
     urls: unique(urls),
     markers,
     numbers: unique(matches(prose, NUMBER)),
+    names: unique([...matches(prose, FILE_REF), ...matches(stripAll(prose, [FILE_REF]), IDENTIFIER)]),
+    negations: matches(prose, NEGATION).length,
+    modals: unique(matches(prose, MODAL).map(m => m.toLowerCase())),
     proseChars: prose.trim().length,
     lastLine: text.trimEnd().split('\n').at(-1).trim(),
   }
@@ -56,6 +70,9 @@ const FACT_CHECKS = [
   ['suggestion or code block changed', (d, p) => sameList(d.fences, p.fences)],
   ['inline code changed', (d, p) => sameList(d.codes, p.codes)],
   ['link changed', (d, p) => sameList(d.urls, p.urls)],
+  ['file reference or code name in prose changed', (d, p) => sameList(d.names, p.names)],
+  ['negation added or dropped', (d, p) => d.negations === p.negations],
+  ['claim strength changed (will, may, must, ...)', (d, p) => sameList(d.modals, p.modals)],
   ['lekker marker changed', (d, p) => sameList(d.markers, p.markers)],
   ['lekker marker not on the last line', (d, p) => d.markers.length === 0 || MARKER_LINE.test(p.lastLine)],
   [`longer than ${MAX_PROSE_CHARS} characters of prose`, (_d, p) => p.proseChars <= MAX_PROSE_CHARS],
@@ -123,4 +140,9 @@ function main(argv) {
   console.log(JSON.stringify(summary))
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main(process.argv.slice(2))
+// Compare real paths: a skill installed through a symlinked directory runs
+// with argv[1] on the link while import.meta.url holds the resolved file.
+const isEntrypoint = () => {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)) } catch { return false }
+}
+if (isEntrypoint()) main(process.argv.slice(2))

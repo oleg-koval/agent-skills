@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import test from 'node:test'
 
 import {
@@ -23,7 +23,7 @@ const draft = [
 const polished = [
   'Please use one shared function to pick the winning fulfillment order, here and in `x.ts:104`.',
   '',
-  '**Why:** the two copies can pick different winners and charge the shared line twice.',
+  '**Why:** the two copies pick different winners and charge the shared line twice.',
   'With FO-A (qty 1, one $100 item) and FO-B (qty 3, three $10 items) this file picks A and the other picks B.',
   'The duplicate check is keyed per `fulfillmentOrderGid`, so a retry writes the same charge twice.',
   marker,
@@ -53,6 +53,25 @@ test('drift is caught: changed number, dropped identifier, edited suggestion, mo
   assert.match(factDrift(draft, '').join(), /polished body missing/)
 })
 
+test('a changed sign, bare file reference or code name in prose reverts', () => {
+  const base = 'Use -1 as the sentinel in src/cache.js:42 before loadCache runs.\n' + marker
+  assert.deepEqual(factDrift(base, base.replace('in src', 'here, in src')), [])
+  assert.match(factDrift(base, base.replace('-1', '1')).join(), /numbers lost \[-1\] added \[1\]/)
+  assert.match(factDrift(base, base.replace('src/cache.js:42', 'src/auth.js:42')).join(), /file reference or code name/)
+  assert.match(factDrift(base, base.replace('loadCache', 'loadAuth')).join(), /file reference or code name/)
+  assert.match(factDrift(base, base.replace('loadCache', 'load_cache')).join(), /file reference or code name/)
+})
+
+test('a flipped negation or changed claim strength reverts', () => {
+  const base = 'This retry will write the charge twice when the lock is not held.\n' + marker
+  assert.deepEqual(factDrift(base, base.replace('This retry', 'The retry')), [])
+  assert.match(factDrift(base, base.replace(' is not held', ' is held')).join(), /negation added or dropped/)
+  assert.match(factDrift(base, base.replace('will write', "won't write")).join(), /negation added or dropped/)
+  assert.match(factDrift(base, base.replace('will write', 'may write')).join(), /claim strength changed/)
+  assert.deepEqual(factDrift(base, base.replace('is not held', "isn't held")), [])
+  assert.deepEqual(extractFacts('Range 2-4 for FO-1 and -3 here.').numbers, ['-3', '1', '2', '4'])
+})
+
 test('merge keeps polished bodies that pass and reverts the ones that drift', () => {
   const { payload: out, summary } = mergePayload(
     payload(draft, draft),
@@ -73,6 +92,21 @@ test('a moved anchor or a changed comment count reverts to the draft', () => {
   const dropped = mergePayload(payload(draft, draft), { comments: [comment(polished)] })
   assert.deepEqual(dropped.payload, payload(draft, draft))
   assert.equal(dropped.summary.reason, 'comment count changed')
+})
+
+test('cli runs when invoked through a symlinked skill directory', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lekker-facts-link-'))
+  try {
+    const link = join(dir, 'scripts')
+    symlinkSync(resolve('plugins/olko-github-pr/skills/lekker-review/scripts'), link)
+    const d = join(dir, 'draft.json'), p = join(dir, 'polished.json'), o = join(dir, 'final.json')
+    writeFileSync(d, JSON.stringify(payload(draft)))
+    writeFileSync(p, JSON.stringify(payload(polished)))
+    const out = JSON.parse(execFileSync('node', [join(link, 'comment-facts.mjs'), d, p, '--out', o], { encoding: 'utf8' }))
+    assert.equal(out.polished, 1)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 test('cli writes the merged payload and falls back to the draft on unreadable input', () => {
