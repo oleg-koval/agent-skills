@@ -1,5 +1,5 @@
 ---
-description: quality, security and data-integrity issues - Acme's TS-1/TS-2 hard rules included
+description: quality, security and data-integrity issues - hard rules from the profile included
 ---
 ## Lens: lekker-quality
 
@@ -68,7 +68,7 @@ Axes to cover:
   Raise NO naming, comment, complexity, or TS-1 finding inside a lockfile or a
   `node_modules` path.
 
-TS-1 and TS-2 are Acme hard rules: their text is defined in full in `{{PROFILE}}`
+Hard rules are defined in full in `{{PROFILE}}`
 (read it there before applying either). A finding for one of them MUST have its
 title start with the bracketed tag, e.g. `[TS-1] ...` or `[TS-2] ...`, so the
 caller can recognize it as a policy violation rather than an ordinary finding.

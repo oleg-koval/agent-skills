@@ -1,5 +1,5 @@
 ---
-description: whether tests actually catch bugs - mutation-slip analysis, mock smell, Acme test conventions
+description: whether tests actually catch bugs - mutation-slip analysis, mock smell, team test conventions
 ---
 ## Lens: lekker-test-quality
 
@@ -131,7 +131,7 @@ g) Mock smell - test the behavior, not the way it's built
    banner that appears only when the fetch rejects). Even then, prefer an
    injected simple fake over a module-level spy, and assert what the user sees.
 
-h) Acme test conventions
+h) Team test conventions
    Read `{{PROFILE}}` and apply its §4 (test conventions) to every test file in
    the diff: `__tests__/` placement beside the source, `.test.ts` vs
    `.test.tsx`, English-sentence test names, `describe` nesting <= 2,

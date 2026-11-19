@@ -36,5 +36,5 @@ test('fixture adapter output matches the pre-extraction baseline exactly', () =>
     '--pricing', join(skill, 'references/pricing.json'),
     '--context', join(skill, 'scripts/fixtures/context.json'),
   ])
-  assert.equal(createHash('sha256').update(output).digest('hex'), 'e8474938633f7c3733a283612e801792c30ad62e4f7a4fa060320929e710851b')
+  assert.equal(createHash('sha256').update(output).digest('hex'), 'e3b0101293553c1b8d3d458c3655822338f418de4d3e205b31b8dbf151a7b378')
 })
