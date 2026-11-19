@@ -6,7 +6,7 @@ points at, and copies the numbers out of, everything else.
 | Trace | Path | Written by | Kept | What it answers |
 |---|---|---|---|---|
 | Run ledger | `~/.local/state/lekker-review/runs.jsonl` | `scripts/run-log.mjs finish`, `backfill` | forever (one line per run) | how long, how many tokens, findings, drops, proofs, verdict, per engine and depth |
-| Run archive | `~/.local/state/lekker-review/runs/<runId>/` | `run-log.mjs start/mark/attach/finish` | 90 days (`prune`) | `run.json` with timeline, plus the run's `findings.json`, `worktree.json`, `preflight.json`, `context.json` |
+| Run archive | `~/.local/state/lekker-review/runs/<runId>/` | `run-log.mjs start/mark/decide/attach/finish` | 90 days (`prune`) | `run.json` with timeline and decisions (also appended live to `timeline.jsonl`), plus the run's `findings.json`, `worktree.json`, `preflight.json`, `context.json` |
 | Dependency ledger | `~/.local/state/lekker-review/deps.json` | `scripts/deps.mjs` | forever | which optional tools were installed or skipped, versions, last upstream check |
 | Review report | `~/code-reviews/<date>-<target>-<repo>.md` | Step 3 | forever | the review as printed, including the `Review Cost` block |
 | revmux archive | `~/code-reviews/revmux-tasks/<task>/<NN-run>/` | revmux, plus `revmux.stderr.log` from `scripts/revmux-engine.sh` | forever, never edit | `events.jsonl` (agent start, degraded, retried), `agents/*.jsonl` (per-agent cost and usage), `revmux.stderr.log` (why a round degraded; rounds before 2026-10-20 have none) |

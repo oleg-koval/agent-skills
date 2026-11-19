@@ -11,6 +11,8 @@
 //   node run-log.mjs start  --repo <slug> --target <pr-N|branch-x> --mode pr|branch \
 //                           --depth <d> --engine workflow|revmux [--fix] [--host claude]
 //   node run-log.mjs mark   <runId> <phase> [--note <text>]
+//   node run-log.mjs decide <runId> --kind depth|tier|route|finding|fix|post --what <text> --why <text>
+//   node run-log.mjs decide <runId> --from-json <file>     array of {kind, what, why}
 //   node run-log.mjs attach <runId> <file>...
 //   node run-log.mjs finish <runId> --status ok|failed|aborted [--verdict lgtm|lgtm-with-changes|needs-work]
 //                           [--review-file <path>] [--artifact-url <url>] [--wf <wf_id>]... [--note <text>]
@@ -37,6 +39,7 @@ const LEDGER = join(STATE_DIR, 'runs.jsonl');
 const PROJECTS_DIR = process.env.LEKKER_CLAUDE_PROJECTS || join(homedir(), '.claude', 'projects');
 const REVMUX_TASKS = process.env.LEKKER_REVMUX_TASKS_DIR || join(homedir(), 'code-reviews', 'revmux-tasks');
 
+const DECISION_KINDS = ['depth', 'tier', 'route', 'finding', 'fix', 'post'];
 const argv = process.argv.slice(2);
 const cmd = argv[0];
 
@@ -171,6 +174,25 @@ if (cmd === 'start') {
   if (!existsSync(dir)) fail(`no run ${runId}`);
   appendFileSync(join(dir, 'timeline.jsonl'), JSON.stringify({ phase, at: new Date().toISOString(), note: flag('note') ?? undefined }) + '\n');
   console.log(JSON.stringify({ runId, phase }));
+} else if (cmd === 'decide') {
+  const runId = argv[1];
+  const dir = runDir(runId);
+  if (!existsSync(dir)) fail(`no run ${runId}`);
+  const fromJson = flag('from-json');
+  const raw = fromJson ? readJson(fromJson) : [{ kind: flag('kind'), what: flag('what'), why: flag('why') }];
+  if (!Array.isArray(raw)) fail(`--from-json ${fromJson} must hold an array of {kind, what, why}`);
+  const text = (v) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '');
+  const rows = raw.map((d, i) => ({ kind: text(d?.kind), what: text(d?.what), why: text(d?.why), i }));
+  const bad = rows.find((r) => !DECISION_KINDS.includes(r.kind) || !r.what || !r.why);
+  if (bad) {
+    fail(!DECISION_KINDS.includes(bad.kind)
+      ? `decision ${bad.i}: unknown kind "${bad.kind}" (use ${DECISION_KINDS.join('|')})`
+      : `decision ${bad.i}: --what and --why must be non-empty`);
+  }
+  const at = new Date().toISOString();
+  const lines = rows.map(({ kind, what, why }) => JSON.stringify({ at, kind, what, why }) + '\n').join('');
+  appendFileSync(join(dir, 'timeline.jsonl'), lines);
+  console.log(JSON.stringify({ runId, decisions: rows.length }));
 } else if (cmd === 'attach') {
   const runId = argv[1];
   const dir = runDir(runId);
@@ -188,7 +210,10 @@ if (cmd === 'start') {
   const meta = readJson(join(dir, 'run.json'));
   if (!meta) fail(`no run ${runId}`);
   const finishedAt = new Date().toISOString();
-  const timeline = [...readJsonl(join(dir, 'timeline.jsonl')), { phase: 'finish', at: finishedAt }];
+  const rows = readJsonl(join(dir, 'timeline.jsonl'));
+  // Decision rows have no phase; keeping them out of the timeline keeps phaseDurations exact.
+  const timeline = [...rows.filter((r) => r.phase && r.phase !== 'finish'), { phase: 'finish', at: finishedAt }];
+  const decisions = rows.filter((r) => r.kind);
   const workflows = flags('wf').map((id) => summariseWorkflow(findWorkflowRecord(id) || { runId: id }));
   const reviewWf = workflows.find((w) => w.name === 'lekker-review-core') || null;
   const row = {
@@ -206,7 +231,7 @@ if (cmd === 'start') {
     artifactUrl: flag('artifact-url'),
     note: flag('note', meta.note ?? null),
   };
-  writeFileSync(join(dir, 'run.json'), JSON.stringify({ ...row, timeline }, null, 2) + '\n');
+  writeFileSync(join(dir, 'run.json'), JSON.stringify({ ...row, timeline, decisions }, null, 2) + '\n');
   append(row);
   const unresolved = workflows.filter((w) => w.durationS == null).map((w) => w.wfId);
   console.log(JSON.stringify({ runId, ledger: LEDGER, wallS: row.wallS, tokensTotal: row.tokensTotal, unresolvedWorkflows: unresolved }));
