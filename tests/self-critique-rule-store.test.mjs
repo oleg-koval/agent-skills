@@ -11,6 +11,7 @@ import {
   listRules,
   checklistMarkdown,
   fire,
+  adopt,
   prune,
   evidenceCheck,
 } from '../plugins/olko-reflection/skills/self-critique/scripts/rule-store.mjs';
@@ -230,4 +231,56 @@ test('proposes a never-fired rule older than idleDays', () => {
   fs.utimesSync(path.join(dir, 'c.md'), old, old)
   const today = new Date().toISOString().slice(0, 10)
   assert.deepEqual(prune(dir, { idleDays: 30, today }).filter((p) => p.name === 'rule-c'), [{ name: 'rule-c', reason: 'never-fired' }])
+});
+
+const UNMARKED_COUNTED = `---
+name: counted-only
+description: Has a counter but no marker
+metadata:
+  type: feedback
+  fires: 4
+  last_fired: 2026-10-01
+---
+Body.
+`;
+const UNRELATED = `---
+name: unrelated
+description: Some other memory
+metadata:
+  type: project
+---
+Body.
+`;
+
+test('checklist lists only marked rules by default and every rule with scope all', () => {
+  const dir = fixtureDir({ 'counted.md': UNMARKED_COUNTED, 'unrelated.md': UNRELATED });
+  assert.equal(checklistMarkdown(dir), '- [rule-a]: First rule\n- [rule-b]: Second rule\n');
+  assert.match(checklistMarkdown(dir, { all: true }), /counted-only[\s\S]*unrelated/);
+  const cli = spawnSync(process.execPath, [script, 'checklist', '--dir', dir], { encoding: 'utf8' });
+  assert.equal(cli.stdout.trim(), '- [rule-a]: First rule\n- [rule-b]: Second rule');
+  const all = spawnSync(process.execPath, [script, 'checklist', '--dir', dir, '--scope', 'all'], { encoding: 'utf8' });
+  assert.match(all.stdout, /unrelated/);
+});
+
+test('fire adds the marker to a rule that was counted but never marked', () => {
+  const dir = fixtureDir({ 'counted.md': UNMARKED_COUNTED });
+  assert.ok(!prune(dir, { idleDays: 30, today: '2026-10-27' }).some((p) => p.name === 'counted-only'));
+  fire(dir, 'counted-only', '2026-10-27');
+  const rule = parseRule(fs.readFileSync(path.join(dir, 'counted.md'), 'utf8'));
+  assert.equal(rule.metadata.rule_store, 'self-critique');
+  assert.equal(rule.metadata.fires, '5');
+  assert.deepEqual(prune(dir, { idleDays: 30, today: '2027-01-27' }).filter((p) => p.name === 'counted-only'), [
+    { name: 'counted-only', reason: 'idle' },
+  ]);
+});
+
+test('adopt marks rules that have a counter and leaves everything else untouched', () => {
+  const dir = fixtureDir({ 'counted.md': UNMARKED_COUNTED, 'unrelated.md': UNRELATED });
+  assert.deepEqual(adopt(dir), ['counted-only']);
+  assert.equal(parseRule(fs.readFileSync(path.join(dir, 'counted.md'), 'utf8')).metadata.rule_store, 'self-critique');
+  assert.equal(fs.readFileSync(path.join(dir, 'unrelated.md'), 'utf8'), UNRELATED);
+  assert.equal(fs.readFileSync(path.join(dir, 'a.md'), 'utf8'), RULE_A);
+  assert.deepEqual(adopt(dir), []);
+  const cli = spawnSync(process.execPath, [script, 'adopt', '--dir', fixtureDir({ 'counted.md': UNMARKED_COUNTED })], { encoding: 'utf8' });
+  assert.deepEqual(JSON.parse(cli.stdout), ['counted-only']);
 });

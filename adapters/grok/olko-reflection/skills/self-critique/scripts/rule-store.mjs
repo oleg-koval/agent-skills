@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 const FENCE = '---';
 const EVIDENCE_LINE = /^\s*-\s.*\b20\d\d-\d\d-\d\d\b/;
 const DAY_MS = 86_400_000;
+const RULE_STORE = 'self-critique';
+const isOurs = (rule) => rule.metadata.rule_store === RULE_STORE;
 
 const topLevelKey = (line) => /^([A-Za-z_][\w-]*):(?: (.*))?$/.exec(line);
 const metaEntry = (line) => /^ {2}([A-Za-z_][\w-]*):(?: (.*))?$/.exec(line);
@@ -86,27 +88,45 @@ function readRuleFiles(dir) {
 
 export const listRules = (dir) => readRuleFiles(dir).map((e) => e.rule);
 
-export const checklistMarkdown = (dir) =>
-  listRules(dir).map((r) => `- [${r.name}]: ${r.description}\n`).join('');
+// The replay pass reads only rules this workflow stored; { all: true } lists every rule with a name.
+export const checklistMarkdown = (dir, { all = false } = {}) =>
+  listRules(dir)
+    .filter((r) => all || isOurs(r))
+    .map((r) => `- [${r.name}]: ${r.description}\n`)
+    .join('');
 
 export function bumpFire(rule, isoDate) {
   const fires = Number.parseInt(rule.metadata.fires ?? '0', 10) || 0;
-  return { ...rule, metadata: { ...rule.metadata, fires: String(fires + 1), last_fired: isoDate } };
+  // A rule that fires is one this workflow now counts, so it must also be one prune may propose.
+  return { ...rule, metadata: { ...rule.metadata, rule_store: RULE_STORE, fires: String(fires + 1), last_fired: isoDate } };
+}
+
+function writeRule(dir, file, rule) {
+  const target = path.join(dir, file);
+  const temporary = path.join(dir, `.${file}.${randomUUID()}.tmp`);
+  try {
+    fs.writeFileSync(temporary, serializeRule(rule), { flag: 'wx', mode: fs.statSync(target).mode });
+    fs.renameSync(temporary, target);
+  } finally {
+    fs.rmSync(temporary, { force: true });
+  }
 }
 
 export function fire(dir, name, isoDate) {
   const entry = readRuleFiles(dir).find((e) => e.rule.name === name);
   if (!entry) throw new Error(`rule not found: ${name}`);
   const updated = bumpFire(entry.rule, isoDate);
-  const target = path.join(dir, entry.file);
-  const temporary = path.join(dir, `.${entry.file}.${randomUUID()}.tmp`);
-  try {
-    fs.writeFileSync(temporary, serializeRule(updated), { flag: 'wx', mode: fs.statSync(target).mode });
-    fs.renameSync(temporary, target);
-  } finally {
-    fs.rmSync(temporary, { force: true });
-  }
+  writeRule(dir, entry.file, updated);
   return updated;
+}
+
+// One-off repair: a rule with a fire counter but no marker was counted yet never prunable.
+export function adopt(dir) {
+  return readRuleFiles(dir).flatMap(({ file, rule }) => {
+    if (isOurs(rule) || rule.metadata.fires === undefined) return [];
+    writeRule(dir, file, { ...rule, metadata: { ...rule.metadata, rule_store: RULE_STORE } });
+    return [rule.name];
+  });
 }
 
 const daysBetween = (fromIso, toIso) => (Date.parse(toIso) - Date.parse(fromIso)) / DAY_MS;
@@ -129,7 +149,7 @@ export function pruneReason(rule, { idleDays, today, mtimeIso }) {
 
 export function prune(dir, { idleDays, today }) {
   return readRuleFiles(dir).flatMap(({ file, rule }) => {
-    if (rule.metadata.rule_store !== 'self-critique') return [];
+    if (!isOurs(rule)) return [];
     const mtimeIso = fs.statSync(path.join(dir, file)).mtime.toISOString().slice(0, 10);
     const reason = pruneReason(rule, { idleDays, today, mtimeIso });
     return reason ? [{ name: rule.name, reason }] : [];
@@ -170,7 +190,8 @@ function runCli(argv) {
   const date = flags.date ?? todayIso();
   const commands = {
     list: () => JSON.stringify(listRules(dir).map(({ top, ...rule }) => rule), null, 2),
-    checklist: () => checklistMarkdown(dir).trimEnd(),
+    checklist: () => checklistMarkdown(dir, { all: flags.scope === 'all' }).trimEnd(),
+    adopt: () => JSON.stringify(adopt(dir), null, 2),
     fire: () => {
       const { top, ...rule } = fire(dir, positional[0], date);
       return JSON.stringify(rule, null, 2);
