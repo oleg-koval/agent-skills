@@ -64,6 +64,18 @@ Re-read each JSON file before
 trusting it. Invalid JSON or a missing required field makes that agent result
 unavailable; do not infer what it meant from prose.
 
+## Model routing
+
+SKILL.md runs `scripts/model-matrix.mjs --host codex` and passes its `routing`
+object. Every `spawn_agent` call sets `model` and `reasoning_effort` from the
+role's route and `fork_turns: "none"` (Codex requires it whenever a spawn
+overrides the model). Roles: `triage` (triage dimensions), `specialist` (the
+five specialists), `rules` (`project-rules`, `deps`), `verifier` (verifiers,
+critic re-examine and critic-verify, fix verifiers), `critic` (completeness
+critic), `prover`, `fixer`, `housekeeping`. Without `routing`, omit all three
+fields so agents inherit the session model, as before. Record the route used
+per agent in the `agents` receipt.
+
 ## Review stage
 
 Select dimensions exactly as the Claude workflow does:

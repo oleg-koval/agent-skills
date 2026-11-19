@@ -29,6 +29,45 @@ This skill spends most of its budget trying to disprove itself.
   the real `git diff`, and the captured proof re-run. If the proof stays red the
   group is reverted. Nothing is pushed without explicit confirmation.
 
+## Models and effort
+
+The model is not the main lever: a reviewer finds more when it spends effort
+checking callers, tests, error paths and assumptions. So each agent's effort
+rises with the PR's risk first, and the model grows only for risky changes.
+Not every agent gets the same tier: the agents that find issues stay one step
+below the verifier, because the verifier decides what survives. Haiku and Luna
+only ever do a cheap first pass, never the final check.
+
+Each host uses its own vendor's models: Claude Code runs Claude models, Codex
+runs Codex models. Cells read `Claude / Codex`.
+
+| Agent | routine | standard | elevated | critical |
+| --- | --- | --- | --- | --- |
+| Triage (scan depth, first pass only) | Haiku medium / Luna medium | Haiku medium / Luna medium | Haiku medium / Luna medium | Haiku medium / Luna medium |
+| Specialists x5 (quality, implementation, simplification, conventions, test-quality) | Sonnet medium / Sol medium | Sonnet high / Sol high | Opus high / Astra high | Opus xhigh / Astra xhigh |
+| Project rules, deps checklist | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet high / Sol high | Sonnet high / Sol high |
+| Verifier, critic re-examine, fix verifier | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high | Fable high / Astra high |
+| Completeness critic (deep) | Sonnet medium / Sol medium | Sonnet high / Sol high | Opus high / Astra high | Fable xhigh / Astra xhigh |
+| Prover (writes the failing test) | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high |
+| Fixer (--fix) | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high |
+| Comment polish (--post) | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium |
+| Housekeeping | Haiku low / Luna low | Haiku low / Luna low | Haiku low / Luna low | Haiku low / Luna low |
+
+The risk tier is picked from the changed files, and `--risk <tier>` overrides it:
+
+| Tier | When |
+| --- | --- |
+| routine | every changed file is documentation (`*.md`, `*.mdx`, `*.txt`, `*.rst`, `docs/`, `LICENSE`) |
+| standard | everything else |
+| elevated | CI workflows or installers, migrations or `*.sql`, or more than 800 changed lines or 25 files |
+| critical | auth or billing paths |
+
+Depth and tier are separate: depth decides how many agents run, the tier
+decides how strong each one is. A UI-only diff runs the Codex specialists on
+Terra high, the Codex model positioned for visual reasoning. The main loop
+(context gathering and the final write-up) runs on your session model. The
+table is generated from `scripts/model-matrix.mjs`; a test fails if they drift.
+
 ## Comment voice
 
 With `--post`, inline comments follow `references/comment-voice.md`: the ask,

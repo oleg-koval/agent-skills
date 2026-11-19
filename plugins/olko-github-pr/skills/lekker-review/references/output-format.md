@@ -235,7 +235,8 @@ section if empty.)*
 ```
 Depth:            <📦 deps | ⚡ scan | 🔍 medium | 🔬 deep>
 Diff size:        ~<N> lines (~<N> tokens)
-Agents run:       <N total>: <breakdown, e.g. "5 reviewers (sonnet) + 6 verifiers (sonnet) + 2 provers (sonnet) + 1 critic (sonnet)">
+Agents run:       <N total>: <breakdown, e.g. "5 reviewers (sonnet/high) + 6 verifiers (opus/high) + 2 provers (sonnet/high) + 1 critic (opus/high)">
+Risk tier:        <tier> (<auto: reason | --risk>), routes from the workflow's `routing` return value
 Rule checks:      <N> hard-rule finding(s) validated with rule-specific checks (omit the line when 0)
 Context sources:  <the subset of issue-tracker / chat / docs / framework-docs / monitoring / CI / prior-review-memory actually used>
 
@@ -257,7 +258,7 @@ Per-MTok pricing (input/output) - verified 2026-10-15 from the claude-api refere
 
 The main-loop line uses the session model's rate from this list. When the session model is not listed, say so in the cost block rather than leaving the main loop out silently.
 
-Reviewer agents, verifiers, provers, and the critic all run on sonnet; triage and housekeeping on haiku. Only the main loop (context gathering + this synthesis) runs on the session model: use the session model's actual ID for that tier.
+Each agent role runs on the model and effort its risk tier assigns (README "Models and effort"); price each role at its own model. Only the main loop (context gathering + this synthesis) runs on the session model: use the session model's actual ID for that tier.
 
 For the Codex engine, use the model and usage metadata actually exposed by the
 native collaboration surface. Never relabel Codex agents as Claude tiers and
