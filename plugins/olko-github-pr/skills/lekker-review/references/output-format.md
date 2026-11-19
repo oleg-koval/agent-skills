@@ -230,6 +230,26 @@ section if empty.)*
 
 ---
 
+## 🧭 Decisions
+
+*(Why the run went the way it did. Built from the decisions written to the run
+log; omit the whole section with `--quiet-decisions`, and when the run log is
+unavailable.)*
+
+- **Depth:** <depth>, <the AUTO-DEPTH rule or "explicit">
+- **Tier:** <tier> (<auto: reason | --risk>)
+- **Routes:** <role> <model> [<effort>] · <role> <model> [<effort>] · ... (<"risk tier routing" | "default model">)
+- **Findings:** <K> kept · <D> downgraded · <X> dropped *(Critical/Important only, counted from the `finding` decisions)*
+  - <kept | downgraded | dropped> `<file:line>` <title>: <verifier's one-line reason>
+
+Exact rules: one bullet per Critical/Important finding the verifier ruled on,
+in the order they were decided, reason copied from the decision's `why` without
+the leading outcome word. No bullets and `Findings: none verified` when no
+`finding` decisions exist (for example `scan` with no Criticals, or the revmux
+engine). Never add decisions that were not written to the run log.
+
+---
+
 ## 💰 Review Cost
 
 ```

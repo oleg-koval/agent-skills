@@ -851,3 +851,43 @@ test('routing arg sets model and effort per role; without it the defaults hold',
   assert.deepEqual(malformed['review:quality'], { model: 'sonnet', effort: undefined })
   assert.deepEqual(malformed['verify:src/example.ts:10'], { model: 'sonnet', effort: 'high' })
 })
+
+test('decisions: one route entry per role, finding entries carry the verifier reason', async () => {
+  const run = (routing) => runScenario({
+    extraArgs: routing ? { routing } : {},
+    respond: ({ options }) => {
+      if (options.label === 'review:quality') {
+        return { findings: [
+          { ...baseFinding, severity: 'important' },
+          { ...baseFinding, line: 20, title: 'Dropped one', severity: 'critical' },
+          { ...baseFinding, line: 30, title: 'Kept one', severity: 'critical', description: 'Kept distinct.' },
+        ] }
+      }
+      if (options.label.startsWith('review:')) return { findings: [] }
+      if (options.label === 'verify:src/example.ts:10') {
+        return { verdict: 'downgraded', newSeverity: 'observation', reasoning: `Only reachable in tests. ${'x'.repeat(300)}` }
+      }
+      if (options.label === 'verify:src/example.ts:20') return { verdict: 'dropped', reasoning: 'Guarded two lines above.' }
+      if (options.label.startsWith('verify:')) return { verdict: 'confirmed', reasoning: 'Reachable on empty input.' }
+      if (options.label.startsWith('prove:')) return null
+      throw new Error(`Unexpected agent call: ${options.label}`)
+    },
+  })
+
+  const { result } = await run(null)
+  const routes = result.decisions.filter((d) => d.kind === 'route')
+  assert.deepEqual(routes.map((d) => d.what.split(' ')[0]).sort(), ['critic', 'prover', 'rules', 'specialist', 'triage', 'verifier'])
+  assert.ok(routes.every((d) => d.why === 'default model'))
+  assert.equal(routes.find((d) => d.what.startsWith('verifier')).what, 'verifier -> sonnet high')
+
+  const tiered = await run({ verifier: { model: 'opus', effort: 'high' } })
+  assert.ok(tiered.result.decisions.filter((d) => d.kind === 'route').every((d) => d.why === 'risk tier routing'))
+
+  const findings = result.decisions.filter((d) => d.kind === 'finding')
+  assert.equal(findings.length, 3)
+  const downgraded = findings.find((d) => d.what.startsWith('src/example.ts:10 '))
+  assert.match(downgraded.why, /^downgraded: Only reachable in tests\./)
+  assert.ok(downgraded.why.length <= 160)
+  assert.equal(findings.find((d) => d.what.startsWith('src/example.ts:20 ')).why, 'dropped: Guarded two lines above.')
+  assert.match(findings.find((d) => d.what.startsWith('src/example.ts:30 ')).why, /^kept: Reachable/)
+})
