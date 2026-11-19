@@ -78,8 +78,8 @@ test('claude success reads structured_output and runs in plan mode with read-onl
     assert.deepEqual(out, { verdict: 'confirmed' })
     const args = JSON.parse(sb.recorded('claude', 'argv.json'))
     assert.equal(args[args.indexOf('--json-schema') + 1], JSON.stringify(schema))
-    assert.equal(args[args.indexOf('--permission-mode') + 1], 'plan')
-    assert.equal(args[args.indexOf('--allowedTools') + 1], 'Read,Grep,Glob')
+    assert.equal(args[args.indexOf('--allowedTools') + 1], 'Read,Grep,Glob,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git status:*)')
+    assert.equal(args[args.indexOf('--disallowedTools') + 1], 'Edit,Write,NotebookEdit')
     assert.equal(args[args.indexOf('--effort') + 1], 'high')
     assert.equal(sb.recorded('claude', 'stdin'), 'Judge the finding.')
   } finally { sb.cleanup() }

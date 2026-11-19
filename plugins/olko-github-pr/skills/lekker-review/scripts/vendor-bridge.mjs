@@ -69,12 +69,17 @@ export function promptFor(to, prompt, schemaText) {
     : prompt
 }
 
+// Fix verifiers judge the real `git diff`, so the Claude target may run
+// read-only git; in print mode every tool outside this list is denied.
+const CLAUDE_READ_ONLY_TOOLS = 'Read,Grep,Glob,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git status:*)'
+
 export function commandFor({ to, model, effort, schemaText, rawOut, cwd }) {
   return to === 'codex'
     ? { cmd: 'codex', args: ['exec', '-m', model, '-c', `model_reasoning_effort=${effort}`, '-s', 'read-only',
         '--skip-git-repo-check', '-o', rawOut, '-C', cwd, '-'] }
     : { cmd: 'claude', args: ['-p', '--model', model, '--effort', effort, '--output-format', 'json',
-        '--json-schema', schemaText, '--permission-mode', 'plan', '--allowedTools', 'Read,Grep,Glob'] }
+        '--json-schema', schemaText, '--permission-mode', 'default',
+        '--allowedTools', CLAUDE_READ_ONLY_TOOLS, '--disallowedTools', 'Edit,Write,NotebookEdit'] }
 }
 
 const parseJson = raw => {
