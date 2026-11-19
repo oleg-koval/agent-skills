@@ -1,5 +1,5 @@
 ---
-description: correctness, scalability and integration issues - Acme's GQL-1 hard rule included
+description: correctness, scalability and integration issues - hard rules from the profile included
 ---
 ## Lens: lekker-implementation
 
@@ -51,7 +51,7 @@ Axes to cover:
   Title any critical finding under this axis `[GQL-1] ...`.
 - Feature-flag rollout (Reflag repos ONLY): first check the repo actually uses
   Reflag - a `package.json` (any depth, excluding node_modules) depending on
-  `@reflag/node-sdk` or `@acme-org/reflag-client`. If it does not, SKIP this
+  `@reflag/node-sdk`. If it does not, SKIP this
   axis entirely and raise nothing; a repo with no flag client cannot act on the
   finding. Where it does apply, ask whether the change should ship behind a flag:
   (a) a client should validate it before everyone sees it; (b) it changes data

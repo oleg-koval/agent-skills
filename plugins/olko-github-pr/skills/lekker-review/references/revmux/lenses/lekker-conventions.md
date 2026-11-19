@@ -1,16 +1,16 @@
 ---
-description: deviations from Acme's own codebase conventions - the "strong teammate" non-blocking lens
+description: deviations from the team's own codebase conventions - the "strong teammate" non-blocking lens
 ---
 ## Lens: lekker-conventions
 
-Review the change for deviations from Acme's established codebase
+Review the change for deviations from the team's established codebase
 conventions and idioms. This is the "strong teammate" lens: the suggestions a
-senior Acme engineer leaves - non-blocking, but they make the code match how
+senior engineer on the team leaves - non-blocking, but they make the code match how
 the rest of the codebase is written. Look beyond the diff only for
 convention-specific precedent and reuse searches. Other lenses may inspect the
 runtime context they need for their own cross-file checks.
 
-Read `{{PROFILE}}` now, before forming any opinion - it carries the Acme
+Read `{{PROFILE}}` now, before forming any opinion - it carries the team's
 conventions text. Its §1 (naming matrix), §2 (comment policy), §5 (commit
 hygiene) and §6 (generated code) are yours - they are the house style, so a
 deviation needs NO codebase precedent beyond that file (the file IS the
@@ -49,7 +49,7 @@ Axes to cover:
     infers.
   * A GID validated/parsed inline where a shared helper exists (e.g.
     `zNamespacedGid`). Grep the shared libs and the repo before asserting.
-- Reuse (search the worktree AND sibling Acme repos before flagging):
+- Reuse (search the worktree AND sibling repos before flagging):
   * Inline fetch/client logic that should reuse - or be promoted into - a
     shared client (e.g. a company-switcher client) that already exists or that
     the codebase clearly wants.

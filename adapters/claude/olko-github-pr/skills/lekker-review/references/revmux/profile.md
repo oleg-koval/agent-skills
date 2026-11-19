@@ -1,163 +1,18 @@
-# Acme project profile
+# Project profile
 
-This is the Acme project profile, handed to revmux as `{{PROFILE}}` for the lekker-medium
-and lekker-deep review profiles. It concatenates the two files lekker-review itself reads as
-`org-rules.md` (hard rules, always critical) and `org-conventions.md` (soft house style).
-
----
-
-# Acme rules, taxonomy, and stack context
-
-## Acme Hard Rules (apply during review AND development)
-
-These rules are non-negotiable. Violations are always **Critical** findings regardless of depth or other filters. Apply them when developing a feature or bugfix, not only during review.
-
-### TS-1 - Type safety (TypeScript only)
-
-- No type casting (`as X`, `<X>expr`) - ask them if they are Harry Potter for casting spells.
-- No `any` - except in test files where types are genuinely hard to express; even there, blatantly omitted types (e.g. `any[]` on a known shaped list) must be flagged.
-- Every finding: quote the cast/`any`, explain the correct type, show the fix.
-
-### TS-2 - No JavaScript files
-
-- No `.js` files may be added to any Acme integrations repo.
-- Exception: Liquid themes (Online Store 2.0 Shopify themes) may contain `.js`.
-- If the PR adds a `.js` file to a non-theme repo, flag it as Critical: must be converted to `.ts`.
-
-### GQL-1 - GraphQL NodesConnection pagination
-
-- Every query that uses a nodes connection (`nodes { ... }`) **must** include `pageInfo { hasNextPage endCursor }` alongside the nodes.
-- All remaining pages **must** be fetched - a single-page fetch with no loop/recursion is a bug.
-- The page size **must** be `250` (Shopify max). If any other value is used, a code comment explaining why is required; if no comment exists, flag it.
-
-### PR-1 - PR title must be prefixed with Linear ticket(s)
-
-- PR title must start with `[PROJ-123]` (or the relevant project prefix) in square brackets.
-- Go through the commit history: if merged PRs or commits reference Linear tickets in square brackets (`[PROJ-123]`), all of them must appear comma-separated in the current PR title (e.g. `[PROJ-123,PROJ-124]`).
-- This is a **blocking** finding: display a prominent `⛔ CANNOT MERGE` warning and recommend the correct title prefix. Confidence score is not affected - this is a process rule, not a code quality signal.
-
-### 1g. Repo placement check (Acme multi-repo projects only)
-
-For any PR in a `acme-org/` repo, verify that the code being changed
-belongs in *this* repo and not a sibling repo.
-
-**Acme repo taxonomy:**
-
-| Repo pattern | Purpose |
-|---|---|
-| `*-live` (e.g. `app-live`, `shop-live`) | Shopify app: customer account extensions, app blocks, storefront extensions, Polaris admin UI |
-| `*-integrations` (e.g. `shop-integrations`; see the PROJ exception below) | Backend ERP sync: cron jobs, orchestrator, BC/Sage/iPaaS/ROI API clients |
-| `acme-org` / shared libs | Cross-project utilities, shared types |
-
-**Note:** `app-integrations` has an `extensions/` folder containing legacy/reference extensions (e.g. `link-account-customer`), but **new customer account extensions for PROJ should target `app-live`** per project specs. Always check the Linear/Notion ticket for explicit repo path - don't infer from existing repo contents alone.
-
-**Action:** If the diff adds a new Shopify extension and the PR targets `*-integrations`, check the Linear/Notion spec for the explicit target directory. If the spec names `*-live`, flag it as a **Critical** placement error (`## 🏠 Wrong Repo`).
-
-Include: spec quote with correct path, which repo to target, and the risk (wrong Shopify Partner app, extension not published to correct store).
-
-## Notes for Acme / shop-integrations
-
-### Standing coding rules (apply during development and review)
-
-| Rule | What | When to flag |
-|---|---|---|
-| TS-1 | No type casts (`as X`), no `any` | Critical; test files lenient on genuine unknowns only |
-| TS-2 | No `.js` files in integrations repos | Critical; Liquid themes exempt |
-| GQL-1 | nodes connections need `pageInfo`, all pages fetched, size=250 | Critical if pageInfo/pagination missing; Important if size≠250 without comment |
-| PR-1 | PR title must start with `[TICKET-NNN]`; include all commit-referenced tickets | Blocking - ⛔ CANNOT MERGE warning |
-| FLAG-1 | Reflag repos only: risky change should ship behind a feature flag | Non-blocking; `important` at most, usually `observation`. Never a `rule:` tag |
-
-These apply equally when you are writing a feature or bugfix - not only in review.
-
-### FLAG-1 - Ship behind a feature flag (Reflag repos only)
-
-Applies ONLY where a `package.json` (any depth, excluding `node_modules`) depends on
-`@reflag/node-sdk` or `@acme-org/reflag-client`. Elsewhere there is no flag client,
-so the finding is unactionable and must not be raised.
-
-Flag it when any of these hold:
-- a client should validate it before everyone sees it
-- it changes data shape or what gets written
-- it touches orders, money, or fulfilment
-- it cannot be verified without real client data or volume
-
-Just ship it when: pure UI/copy with no data change; a bug fix that is strictly better
-and obviously correct; an internal/admin-only surface; fully covered by tests and
-verifiable in staging.
-
-Tie-breaker: would you be comfortable being the one to fix this forward at 2am?
-Yes → ship it. No → flag it.
-
-Deliberately NOT blocking, unlike TS-1/GQL-1/PR-1: whether something needs a flag is a
-rollout judgement, not a correctness violation, and a blocking comment on every
-borderline diff trains people to ignore the signal. Never invent a concrete flag key -
-keys must be confirmed against Reflag, so say a flag is needed without naming one.
-
-Related: a diff that BOTH adds a column/table AND changes what is read or written must
-be split into expand / migrate / read-switch / contract PRs (`important`, name the split).
-
-### CONS-1 — One rule, two implementations, must agree
-
-When a change enforces the same business rule in two places that can both run
-for the same input — a client-side guard and the server-side validator behind
-it, a UI filter and its query, a webhook handler and the cron that backfills the
-same state — the two must make the same decision for every input class.
-
-Build both decision tables and compare them row by row, including the
-missing/undefined input, the not-applicable actor, the flag-off case and the
-error path. The server-side, unbypassable layer is authoritative; the advisory
-layer must match it. A client layer that is STRICTER than the server is a bug,
-not extra safety: it blocks work the system allows.
-
-Severity: critical when the divergence blocks a legitimate action or admits one
-that should be blocked; major when the authoritative layer is still right and
-only the message is wrong. Detail and the reporting format live in the
-`lekker-consistency` lens.
-
-### Stack context to inform the review:
-
-- **Backend:** TypeScript, Node.js, Express, Prisma, pgtyped, PostgreSQL
-- **Frontend:** React, Shopify Polaris, Vite
-- **Shopify:** REST Admin + GraphQL Admin, Webhooks, Shopify Functions, genql
-- **External APIs:** Business Central (OAuth2, rate-limited), Salesforce GraphQL, ROI
-- **Infra:** Docker Compose locally; environment-var–driven cron syncs via `orchestrator.ts`
-- **Type gen pipeline:** pgtyped (SQL→TS), genql (GraphQL→TS), json2ts (schemas→TS) -
-  check that generated files are regenerated when their sources change
-- **MCPs available:** Linear, Slack, Notion, Shopify Dev docs, Harvest, Sentry
-
-### Repo taxonomy (for Step 1g placement check)
-
-**Per-project repo structure varies - always verify before flagging.**
-
-- For **SHOP project**: `shop-integrations` = backend ERP sync only; `shop-live` = Shopify app (extensions, Polaris UI).
-- For **PROJ project**: `app-integrations` owns the ERP backend sync and retains
-  legacy/reference Shopify extensions. New PROJ customer account extensions belong
-  in `app-live`; do not treat the legacy `extensions/` folder as placement precedent.
-- For other projects (`client-*`, `other-*`, etc.): check the repo's `extensions/` folder
-  presence before assuming a split - do not assume the `*-integrations` pattern always
-  means backend-only.
-
-**Step 1g action**: Before flagging a placement mismatch, run:
-
-```bash
-gh api "repos/<REPO_SLUG>/git/trees/HEAD" 2>/dev/null | python3 -c "
-import sys,json; t=json.load(sys.stdin).get('tree',[]); print([f['path'] for f in t if f['path']=='extensions'])
-"
-```
-
-If `extensions/` exists in the target repo, placement may be intentional, but
-that alone is not precedent for new PROJ extensions. Flag when the repo has no
-`extensions/` folder, or when a PROJ spec targets the new extension to `app-live`.
+This file is handed to revmux as `{{PROFILE}}` for the lekker-medium and
+lekker-deep review profiles. It ships with generic default conventions only.
+Put your team's own hard rules (always Critical) in `references/house-rules.md`
+and, if you use revmux, add them to the top of this file as well, each with an
+ID such as `TS-1` so findings can cite it. Where this file disagrees with a
+reviewer's general taste, this file wins.
 
 ---
 
-# Acme soft conventions (styling, naming, comments, tests, hygiene)
+# Default conventions (styling, naming, comments, tests, hygiene)
 
-Companion to `org-rules.md`. Those are the four HARD rules (TS-1, TS-2,
-GQL-1, PR-1) - always Critical. This file is the house style the Acme
-plugin skills enforce during development (`org-dev:code-review`,
-`rename-pass`, `comment-stripper`, `unit-test-best-practices`). A review that
-misses them lets the same nits come back from the human reviewer.
+These are default house-style conventions. A review that misses them lets the
+same nits come back from the human reviewer.
 
 Severity ceiling: everything here is **idiomatic** unless a row says otherwise.
 Cite a precedent from the codebase where the row asks for one, and never
@@ -165,7 +20,7 @@ inflate a style deviation into Critical.
 
 ---
 
-## 1. Naming matrix (source: `org-dev` rename-pass agent)
+## 1. Naming matrix
 
 Flag a name the diff INTRODUCES that breaks a row. Renaming is cheap in the
 diff, expensive later - but a rename is still a cost, so leave conforming
@@ -233,7 +88,7 @@ it to a human if it matters.
 
 ---
 
-## 2. Comment policy (source: `org-dev` comment-stripper + code-review Cat. 5)
+## 2. Comment policy
 
 **Default: a comment should not exist.** It earns its place only by saying
 something the code *cannot*, and then in as few words as possible. Flag each
@@ -290,7 +145,7 @@ repo has a logger idiom - then cite it.
 
 ---
 
-## 4. Test conventions (source: `org-dev:unit-test-best-practices`)
+## 4. Test conventions
 
 These are on top of the mutation/mock analysis the test-quality agent already
 does. Each is an `idiomatic` finding with the corrected code as the `fix`.
@@ -345,21 +200,10 @@ block.
 
 ## 6. Generated code - check the source, not the artifact
 
-The Acme type-gen pipeline means several files must move together. When a
-source changes and its generated artifact does not (or vice-versa), that is an
-`important` finding:
-
-| Source changed | Artifact that must be regenerated |
-|---|---|
-| `services/db/queries/*.sql` | `services/db/queries/generated/` (pgtyped) |
-| `services/gql/queries/*.graphql` | `services/gql/queries/generated/queries.ts` (genql) |
-| `schemas/*.json` | `schemas/generated/` (json2ts) |
-| `prisma/schema.prisma` | a migration in `prisma/migrations/` + Prisma client |
+When a source file changes and the artifact generated from it does not (or
+vice versa), that is an `important` finding: for example a changed `.sql`,
+`.graphql`, JSON schema or ORM schema without its regenerated output, or a
+migration missing for a schema change.
 
 Never review the *content* of a generated file as if it were hand-written - no
 naming, comment, or complexity findings inside `generated/`. Review the source.
-
-Related hard convention (project CLAUDE.md): Shopify Admin API calls go through
-the genql client (`gql.<file>.<query>.run(graphql, vars)`) - a hand-rolled
-`fetch` to `/admin/api/…/graphql.json` is an `important` finding even for a
-one-off probe.

@@ -143,8 +143,6 @@ Rules:
 - Do NOT prefix the body with a banner like "## Lekker review". Do NOT praise the
   PR or describe what it does well: no "solid", "handled well", "clean", "nice".
   State the risk and the asks only.
-- We use **Linear**, not Jira. Never write "Jira" in any comment or body; refer
-  to Linear ticket IDs (e.g. PROJ-201) directly.
 
 ---
 

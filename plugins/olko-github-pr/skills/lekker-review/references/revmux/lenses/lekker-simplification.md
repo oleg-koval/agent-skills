@@ -1,5 +1,5 @@
 ---
-description: over-engineering and DRY violations, plus Acme's debug-artifact hygiene table
+description: over-engineering and DRY violations, plus the profile's debug-artifact hygiene table
 ---
 ## Lens: lekker-simplification
 
@@ -16,7 +16,7 @@ Look for:
   be plain if/else or async/await.
 - Config spread: same magic constant defined in multiple files.
 - Debug artifacts and hygiene: apply the fixed severity table in §3 of
-  `{{PROFILE}}` (the Acme conventions section) - `debugger` and
+  `{{PROFILE}}` (its conventions section) - `debugger` and
   `.only`/`fit`/`fdescribe` are critical, an added `console.log`/`console.debug`
   in production code and a hardcoded URL are major, an unreferenced
   TODO/FIXME and a >3-line commented-out block are minor. Those severities
