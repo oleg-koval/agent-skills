@@ -1,3 +1,10 @@
+# [1.88.0](https://github.com/oleg-koval/agent-skills/compare/v1.87.3...v1.88.0) (2026-11-19)
+
+
+### ✨ Features
+
+* **lekker-review:** readable inline comments with a fact-locked polish pass ([#228](https://github.com/oleg-koval/agent-skills/issues/228)) ([4c47ea3](https://github.com/oleg-koval/agent-skills/commit/4c47ea3a98dae60da823cfe7ca920b96bd294b50))
+
 ## [1.87.3](https://github.com/oleg-koval/agent-skills/compare/v1.87.2...v1.87.3) (2026-11-19)
 
 
