@@ -11,7 +11,7 @@
 // The final payload is the draft with each comment body replaced by its
 // polished version when the facts match. The review body is never taken from
 // the polished payload. Prints a one-line JSON summary on stdout.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
 export const MAX_PROSE_CHARS = 1200
@@ -115,7 +115,11 @@ function main(argv) {
   const { payload, summary } = polished
     ? mergePayload(draft, polished)
     : { payload: draft, summary: { comments: (draft.comments ?? []).length, polished: 0, reverted: (draft.comments ?? []).length, reason: 'polished payload unreadable', details: [] } }
-  writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`)
+  // Write then rename: a failed write must not leave a truncated payload in
+  // place of the one Step 3 posts.
+  const tmpPath = `${outPath}.tmp-${process.pid}`
+  writeFileSync(tmpPath, `${JSON.stringify(payload, null, 2)}\n`)
+  renameSync(tmpPath, outPath)
   console.log(JSON.stringify(summary))
 }
 

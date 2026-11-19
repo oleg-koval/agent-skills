@@ -44,8 +44,9 @@ otherwise: **Fix:** <one sentence>.>
 1. **Facts are locked.** Every code identifier, `file:line`, number, URL and
    suggestion block in the draft survives unchanged. No new number, scenario,
    cause or claim appears. Keep the strength of each claim: "can" stays "can",
-   never "will". `scripts/comment-facts.mjs` checks this mechanically and
-   reverts any comment that drifted.
+   never "will". `scripts/comment-facts.mjs` checks the tokens mechanically
+   and reverts any comment that drifted; it cannot check the meaning of plain
+   prose, so claim strength and negation rest on this rule.
 2. **Mechanism over importance.** Cut "critical", "crucial", "important to
    note", "significant risk". State what happens and let the author judge.
 3. **No specific-looking vagueness.** "This could cause issues in some cases" is
