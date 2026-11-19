@@ -437,6 +437,10 @@ function dimensionsFor(depth, ROUTE) {
   ]
 }
 
+function isBlockingSeverity(severity) {
+  return severity === 'critical' || severity === 'important'
+}
+
 // Model and effort for one role, from the `routing` arg that
 // scripts/model-matrix.mjs builds from the PR's risk tier. An absent or
 // malformed cell keeps the historical default, so an older caller runs exactly
@@ -766,11 +770,30 @@ const budgetAtStart = budget.spent()
     return onHost(route.hostRoute)
   }
 
+  // The harness has no filesystem, so decisions are logged as they happen and
+  // returned; the main loop writes them to the run timeline with run-log.mjs.
+  let decisions = []
+  const DECISION_WHY_MAX = 160
+  function decide(kind, what, why) {
+    const entry = { kind, what, why: String(why).replace(/\s+/g, ' ').trim().slice(0, DECISION_WHY_MAX) }
+    decisions = decisions.concat([entry])
+    log(`decision ${kind}: ${entry.what} (${entry.why})`)
+  }
+  // Only blocking-severity findings get a line; observations would drown the log.
+  function decideFinding(finding, outcome, reasoning) {
+    if (!isBlockingSeverity(finding.severity)) return
+    decide('finding', `${finding.file}:${finding.line} ${finding.title}`, `${outcome}: ${reasoning || 'no reason given'}`)
+  }
+
   // -------------------------------------------------------------------------
   // Dimensions by depth
   // -------------------------------------------------------------------------
 
   log(`routing: ${routing ? 'tiered' : 'defaults'} ${routeLabel}`)
+  Object.keys(ROUTE).forEach(function(role) {
+    decide('route', `${role} -> ${ROUTE[role].vendor ? ROUTE[role].vendor + ' ' : ''}${ROUTE[role].model}${ROUTE[role].effort ? ' ' + ROUTE[role].effort : ''}`,
+      routing ? 'risk tier routing' : 'default model')
+  })
   const dimensions = dimensionsFor(depth, ROUTE)
 
   const wtDisplay = worktreePath || 'null (scan mode: diff only)'
@@ -963,6 +986,7 @@ const budgetAtStart = budget.spent()
         if (!verdict) {
           // Missing verification cannot support a blocking finding.
           downgradedCount++
+          decideFinding(finding, 'downgraded', 'verifier returned no usable result')
           const kept = Object.assign({}, finding)
           kept.severity = 'observation'
           kept.verificationStatus = 'unavailable'
@@ -977,11 +1001,13 @@ const budgetAtStart = budget.spent()
 
         if (verdict.verdict === 'dropped') {
           droppedCount++
+          decideFinding(finding, 'dropped', verdict.reasoning)
           return null
         }
 
         if (verdict.verdict === 'downgraded') {
           downgradedCount++
+          decideFinding(finding, 'downgraded', verdict.reasoning)
           const downgraded = Object.assign({}, finding)
           downgraded.severity = verdict.newSeverity || 'observation'
           downgraded.verificationStatus = 'downgraded'
@@ -990,6 +1016,7 @@ const budgetAtStart = budget.spent()
         }
 
         // confirmed
+        decideFinding(finding, 'kept', verdict.reasoning)
         const confirmed = Object.assign({}, finding)
         confirmed.severity = weakenedRuleSeverity(finding, confirmed.severity)
         confirmed.verificationStatus = isHardRule(finding) ? 'hard-rule-confirmed' : 'confirmed'
@@ -1310,4 +1337,5 @@ const budgetAtStart = budget.spent()
     routing:           ROUTE,
     crossvendorAgents,
     crossvendorFallbacks,
+    decisions,
   }, Object.assign({ engine: ENGINE }, revmuxPassthrough || {}))

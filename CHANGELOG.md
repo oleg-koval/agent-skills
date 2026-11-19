@@ -1,3 +1,10 @@
+# [1.90.0](https://github.com/oleg-koval/agent-skills/compare/v1.89.0...v1.90.0) (2026-11-19)
+
+
+### ✨ Features
+
+* **lekker-review:** progress line and a live decision log ([#230](https://github.com/oleg-koval/agent-skills/issues/230)) ([0aa0e5e](https://github.com/oleg-koval/agent-skills/commit/0aa0e5eef163bcbab7763dd70fc49da55078345a))
+
 # [1.89.0](https://github.com/oleg-koval/agent-skills/compare/v1.88.0...v1.89.0) (2026-11-19)
 
 

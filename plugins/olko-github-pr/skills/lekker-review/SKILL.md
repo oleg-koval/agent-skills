@@ -46,7 +46,7 @@ metadata:
     - multi-agent
     - workflow
     - quality
-argument-hint: "<github-pr-url | repo pr-number | repo pr-title | branch [ref]> [scan|medium|deep|deps] [--post] [--fix] [--base <ref>] [--risk routine|standard|elevated|critical] [--crossvendor]"
+argument-hint: "<github-pr-url | repo pr-number | repo pr-title | branch [ref]> [scan|medium|deep|deps] [--post] [--fix] [--base <ref>] [--risk routine|standard|elevated|critical] [--crossvendor] [--quiet-decisions]"
 ---
 
 # Lekker Review
@@ -365,6 +365,10 @@ not apply: keep the flag for a fallback to the native engine, and state
 
 **`--post` flag:** parse and store as `POST_REVIEW=true`.
 
+**`--quiet-decisions` flag:** parse and store as `QUIET_DECISIONS=true`: the
+saved review omits the `## 🧭 Decisions` block. The run log still records every
+decision.
+
 **`--fix` flag:** parse and store as `FIX_MODE=true`. Fix mode needs a real
 checkout, so `--fix` forces Track A (worktree setup) to run even when
 depth=scan. If the user did NOT pass `--fix`, leave `FIX_MODE=false` for now -
@@ -464,6 +468,54 @@ Keep the returned `runId` as `RUN_ID`. Then run
 at each step boundary: `context` (Step 1), `review` (Step 2), `synthesis`
 (Step 3), `fix` (Step 4), `post` (Step 5). A marker is one line of JSON; never
 skip the review because the log failed, just say `run log unavailable`.
+
+**Record the first decisions.** Right after `start`, write the two decisions made
+before the log existed, one call each (`what` is the value, `why` the rule that
+picked it, a short phrase; `--why` is mandatory):
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" decide <RUN_ID> --kind depth --what <depth> --why "<AUTO-DEPTH rule | explicit>"
+node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" decide <RUN_ID> --kind tier --what <tier> --why "<auto: reason | --risk>"
+```
+
+`decide` accepts only the kinds `depth`, `tier`, `route`, `finding`, `fix` and
+`post`, and rejects an empty `--what` or `--why`; a failed call is
+`run log unavailable`, never a reason to stop.
+
+---
+
+## Progress line
+
+At each milestone below, run
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/lekker-progress.mjs" --stage <stage> --message "<short fact>"`
+(foreground, it returns in under a second; in Codex use the absolute path to
+`scripts/lekker-progress.mjs` beside the selected `SKILL.md`). It prints one
+status line (a boat drifting toward a lighthouse), animates only on a real
+terminal, and always exits 0. It is decoration: run it after the milestone's own
+output, never instead of it, and keep every count and reason in the report too.
+Add `--ascii` on terminals that mis-measure emoji.
+
+| Milestone | Stage | Message, e.g. |
+| --- | --- | --- |
+| Step 0 parsed the request | `start` | `owner/repo#42, medium, tier standard` |
+| Step 1 context ready | `context` | `worktree ready, 4 sources` |
+| Step 2 workflow started | `review` | `5 specialists + rules` |
+| Step 2 verify began | `verify` | `verifying 6 findings` |
+| Step 2 critic began (deep) | `critic` | `3 angles to re-examine` |
+| Step 2 prove began | `prove` | `2 provers` |
+| Step 3 review saved | `post` | `saved, 1 Critical, 2 Important` |
+| Step 4 fixes applied | `fix` | `3 of 4 applied` |
+| Step 5 posted | `post` | `5 inline comments, pending` |
+| Run finished | `success` | `lgtm-with-changes, 1 Important` |
+| Run failed or stopped | `failure` | `worktree setup failed` |
+
+Every decision you write with `run-log.mjs decide` is also printed once, right
+after it, with `--stage decision --message "<what>: <why>"`. That prints a
+compass line without moving the boat, for example `verifier -> opus high:
+elevated, migrations`, `dropped src/a.ts:12: not reachable from any caller`, or
+`code smell kept as Idiomatic: duplicated tie-break, two copies disagree`. For
+the workflow's bulk `decisions`, print the `route` entries as one line and each
+`finding` entry on its own line.
 
 ---
 
@@ -913,9 +965,19 @@ With `--crossvendor` it also returns `crossvendorAgents` (gate agents that ran o
 the other vendor) and `crossvendorFallbacks` (gate agents rerun on the host).
 
 Return value from the workflow:
-`{engine, findings, droppedCount, downgradedCount, hardRuleCount, proveAttemptCount, provenCount, acCoverage, coverageVerdict, mutationSlip, mockSmells, agentCount, outputTokens, turnTokensTotal}`
+`{engine, findings, decisions, droppedCount, downgradedCount, hardRuleCount, proveAttemptCount, provenCount, acCoverage, coverageVerdict, mutationSlip, mockSmells, agentCount, outputTokens, turnTokensTotal}`
 `outputTokens` is this workflow's own output spend; `turnTokensTotal` is the
 whole turn's shared pool (main loop included).
+
+`decisions` is `[{kind, what, why}]`: one `route` entry per role and one
+`finding` entry per Critical/Important the verifier ruled on (kept, downgraded
+or dropped, with its one-line reason). The workflow also `log()`s each as it is
+decided, but it cannot write files, so right after it returns write them to the
+run log in one call (a missing `decisions` on a host that returns none is fine):
+`node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" decide <RUN_ID> --from-json <scratchpad>/decisions.json`,
+with `decisions` saved to `<scratchpad>/decisions.json` first. The Codex and
+revmux engines return no `decisions`; write only the `depth` and `tier`
+entries for them.
 
 Wait for the workflow to complete before proceeding to Step 3.
 
@@ -1268,7 +1330,10 @@ the run (review and fix) and
 `--artifact-url`: the newest row wins. A run that dies part-way still gets
 `node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" finish <RUN_ID> --status failed --note <why>`.
 
-Then print the full review as the response.
+Then print the full review as the response. Unless `QUIET_DECISIONS=true`, or
+the run log was unavailable, it carries the `## 🧭 Decisions` block from
+`references/output-format.md`, built only from the decisions written to the run
+log, and saved in the review file with it.
 
 **Closer goes last.** The run's FINAL message (this one, or the later summary
 after Step 4 / 4.6 / 5 when those run) ends with `CLOSER.md_terminal` as its
@@ -1399,7 +1464,9 @@ Read `references/fix-mode.md` and follow it. Shape of the run:
      confirm it equals `$worktree_head_sha`. Then refresh the review marker for
      the new sha (Step 3).
 8. Print the per-finding status table and append `## 🔧 Fixes applied` to the
-   saved review file.
+   saved review file. Record each applied finding, and each one skipped, with
+   `run-log.mjs decide <RUN_ID> --kind fix --what "<file:line title>" --why "<applied | skipped: reason>"`
+   (or one `--from-json` call).
 
 Fix-agent tokens are additional spend: add a `Fix agents:` line to the
 `## 💰 Review Cost` block.
@@ -1491,7 +1558,8 @@ Follow `references/github-post.md`:
 - POST via `gh api repos/<REPO_SLUG>/pulls/<PR_NUMBER>/reviews` with NO
   `event` field (creates PENDING, visible only to you).
 - Verify post-condition: fetch review list, confirm PENDING state exists.
-- Print count + link.
+- Print count + link, and record it with
+  `run-log.mjs decide <RUN_ID> --kind post --what "<N inline comments + body>" --why "<what was left out and why, or 'all Critical/Important posted'>"`.
 - Observation and Idiomatic findings go in the review body, never inline.
 - When `CLOSER` is set, its `md_github` is the last thing in the review body.
 - Never submit the review programmatically.
