@@ -123,7 +123,8 @@ export function fire(dir, name, isoDate) {
 // One-off repair: a rule with a fire counter but no marker was counted yet never prunable.
 export function adopt(dir) {
   return readRuleFiles(dir).flatMap(({ file, rule }) => {
-    if (isOurs(rule) || rule.metadata.fires === undefined) return [];
+    // Only a rule with no owner is adopted; a rule marked for another workflow keeps its marker.
+    if (rule.metadata.rule_store !== undefined || rule.metadata.fires === undefined) return [];
     writeRule(dir, file, { ...rule, metadata: { ...rule.metadata, rule_store: RULE_STORE } });
     return [rule.name];
   });

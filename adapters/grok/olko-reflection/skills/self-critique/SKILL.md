@@ -101,7 +101,7 @@ Penalties, anchors, ledger shape and integrity checks: `references/scoring.md`.
    `node <skill>/scripts/claim-ledger.mjs status $RUN/ledger-v1.json [$RUN/ledger-v2.json ...]`.
    It prints `first_score`, `final_score`, `trajectory`, `open` (`load_bearing` and `other` counts)
    and `done`. **Stop when** `done` is true (no load-bearing claim is refuted, unverifiable or
-   inferred, and no load-bearing missed item remains), OR nothing left open can be fixed by a
+   inferred, and no load-bearing missed item remains, inferred ones included), OR nothing left open can be fixed by a
    revision (say why in "Declined findings"), OR 3 rounds have run. There is no score threshold:
    the critic-only penalty can never be revised away, so a score target would loop on nothing.
 
@@ -121,16 +121,17 @@ Penalties, anchors, ledger shape and integrity checks: `references/scoring.md`.
      skill) and the open-defect count from `status` (load-bearing and other). The first-answer
      score is the honest quality number; the final score only measures the revision.
    - **Corrected answer (`v_final`)** - restated in full, not as a diff. After a single round with
-     no revision, restate `v1` unchanged.
+     no revision, restate `v1` unchanged and label it unrevised. If load-bearing defects are still
+     open, give their count and the stop reason beside it; never call that outcome clean.
    - **Score trajectory** - for example `72 -> 88 -> 94 (+22 pts)`, all computed. If only one round
-     ran, state `no revision needed`. Add the trend from
+     ran with `done` true, state `no revision needed`; if it stopped with load-bearing defects open, say that instead. Add the trend from
      `node <skill>/scripts/run-store.mjs history --cwd "$PWD"` (first-answer score per run).
    - **Claim ledger** - the `summary` table for the ledger the ratchet kept, and its `score` with
      `integrity: checked`.
    - **Where you were wrong** - consolidated, each item with the receipt the critic cited.
    - **Asymmetric claims** - claims only you found, and claims only the critic found.
    - **Recurring rules fired** - each stored rule the replay pass hit, with its new `fires` count.
-   - **Iterations to satisfy** - how many critic rounds it took (1 means it was solid first pass).
+   - **Iterations to satisfy** - how many critic rounds it took (1 with `done` true means it was solid first pass).
    - **Unverifiable** - anything you should not present as fact.
    - **Declined findings** - ledger items you chose not to fix, with the reason. Silently dropping
      one looks identical to missing it.
@@ -200,7 +201,7 @@ the default stance is that the answer is wrong until a live source proves otherw
 
 ## Notes
 
-- One critic round is fine and common. If the answer was already solid, report
+- One critic round is fine and common. If the answer was already solid (`done` true), report
   `iterations: 1, no revision needed` and the single score rather than forcing a revision.
 - Diversity beats redundancy: if a claim can fail in more than one way, give the critic distinct
   lenses (correctness, completeness, does-it-reproduce) instead of repeating the same check.

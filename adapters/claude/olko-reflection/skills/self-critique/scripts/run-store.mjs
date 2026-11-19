@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Per-run state for self-critique: one dated folder per run under a state dir, outside any repo.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -13,7 +14,11 @@ const LEDGER_FILE = /^ledger-v(\d+)\.json$/
 export const stateRoot = (env = process.env) =>
   env.SELF_CRITIQUE_STATE_DIR || join(env.XDG_STATE_HOME || join(homedir(), '.local', 'state'), 'self-critique')
 
-export const projectSlug = (cwd) => cwd.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'root'
+// The digest keeps /work/foo-bar and /work/foo/bar apart; the readable part is only for humans.
+export const projectSlug = (cwd) => {
+  const readable = cwd.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'root'
+  return `${readable}-${createHash('sha256').update(cwd).digest('hex').slice(0, 8)}`
+}
 
 export const runId = (date) => date.toISOString().slice(0, 19).replaceAll(':', '-')
 
@@ -41,9 +46,17 @@ export const newRun = ({ root, cwd, now = new Date() }) => {
   return dir
 }
 
+// Timestamp first, then the collision suffix as a number, so -2 sorts before -10.
+const SUFFIX = /^(.{19})(?:-(\d+))?$/
+const runOrder = (a, b) => {
+  const [, ta, sa = '0'] = SUFFIX.exec(a)
+  const [, tb, sb = '0'] = SUFFIX.exec(b)
+  return ta === tb ? Number(sa) - Number(sb) : ta < tb ? -1 : 1
+}
+
 const runNames = (project) => {
   try {
-    return readdirSync(project).filter((n) => RUN_NAME.test(n)).sort()
+    return readdirSync(project).filter((n) => RUN_NAME.test(n)).sort(runOrder)
   } catch (e) {
     if (e.code === 'ENOENT') return []
     throw e

@@ -116,6 +116,7 @@ const criticRefs = (critic) =>
   ])
 
 const criticErrors = (ledger, critic) => {
+  if (!isRecord(critic)) return ['critic outputs invalid: not an object']
   const valid = new Set(criticRefs(critic))
   const entries = [
     ...ledger.claims.map((c, i) => [`claims[${i}]`, c]),
@@ -142,13 +143,14 @@ const carryErrors = (ledger, prev) => {
 
 export const integrityErrors = (ledger, { author, critic, prev } = {}) => [
   ...duplicateIdErrors(ledger),
-  ...(author ? authorErrors(ledger, author) : []),
-  ...(critic ? criticErrors(ledger, critic) : []),
+  ...(author !== undefined ? authorErrors(ledger, author) : []),
+  ...(critic !== undefined ? criticErrors(ledger, critic) : []),
   ...(prev ? carryErrors(ledger, prev) : []),
 ]
 
 const isOpenClaim = (c) => c.status !== 'verified'
-const isOpenMissed = (m) => m.checked_by !== 'inferred'
+// A reasoning-only miss is not priced, but a load-bearing one still blocks the stop rule.
+const isOpenMissed = (m) => m.checked_by !== 'inferred' || m.load_bearing
 
 export const openDefects = (ledger) => ({
   load_bearing:
@@ -246,13 +248,15 @@ const OPTIONS = {
   prev: { type: 'string' },
 }
 
-const criticFromFlags = (specs) =>
-  Object.fromEntries(
-    specs.map((spec) => {
-      const at = spec.indexOf('=')
-      return at < 1 ? fail(`--critic needs <label>=<path>, got ${spec}`) : [spec.slice(0, at), readJson(spec.slice(at + 1))]
-    }),
-  )
+const criticFromFlags = (specs) => {
+  const pairs = specs.map((spec) => {
+    const at = spec.indexOf('=')
+    return at < 1 ? fail(`--critic needs <label>=<path>, got ${spec}`) : [spec.slice(0, at), spec.slice(at + 1)]
+  })
+  const repeated = pairs.map(([label]) => label).filter((label, i, all) => all.indexOf(label) !== i)
+  if (repeated.length > 0) fail(`--critic label repeated: ${[...new Set(repeated)].join(', ')}`)
+  return Object.fromEntries(pairs.map(([label, path]) => [label, readJson(path)]))
+}
 
 const contextFrom = (flags, prevPath) => {
   const given = flags.author !== undefined || flags.critic !== undefined || prevPath !== undefined

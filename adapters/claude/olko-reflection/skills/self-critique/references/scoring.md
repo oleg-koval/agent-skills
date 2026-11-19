@@ -17,7 +17,8 @@ The score is `100` minus penalties, floored at 0. It is computed by
 | missed | 5 |
 | verified but found only by the critic | 5 |
 
-An `inferred` missed item (`checked_by: inferred`) is not penalised and is not an open defect.
+An `inferred` missed item (`checked_by: inferred`) is never penalised. A non-load-bearing one is
+not an open defect; a load-bearing one is, so it still blocks the stop rule until you verify it.
 
 Why a load-bearing inferred claim costs 10: it used to cost 5, which made "inferred" cheaper than
 "unverifiable" (10) for the same lack of evidence, so unverified claims drifted into the cheaper

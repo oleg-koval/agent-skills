@@ -214,7 +214,7 @@ test('a load-bearing inferred claim costs 10 and an ordinary one stays 5', () =>
   assert.deepEqual(anchors().map((a) => a.score), [95, 72, 40])
 })
 
-test('openDefects counts load-bearing inferred and unverifiable claims, not verified ones', () => {
+test('openDefects counts load-bearing inferred claims and misses, not verified ones or unpriced minor misses', () => {
   const l = {
     version: 1,
     claims: [verified('c1', true), inferred('c2', true), unverifiable('c3', false), refuted('c4', true)],
@@ -222,9 +222,10 @@ test('openDefects counts load-bearing inferred and unverifiable claims, not veri
       { id: 'm1', text: 'x', load_bearing: true, checked_by: 'read' },
       { id: 'm2', text: 'y', load_bearing: true, checked_by: 'inferred' },
       { id: 'm3', text: 'z', load_bearing: false, checked_by: 'read' },
+      { id: 'm4', text: 'w', load_bearing: false, checked_by: 'inferred' },
     ],
   }
-  assert.deepEqual(openDefects(l), { load_bearing: 3, other: 2 })
+  assert.deepEqual(openDefects(l), { load_bearing: 4, other: 2 })
 })
 
 test('statusOf reports first and final score, trajectory and done', () => {
@@ -302,4 +303,18 @@ test('cli status prints rounds, trajectory and done', () => {
   assert.deepEqual(JSON.parse(r.stdout), {
     rounds: 2, first_score: 75, final_score: 100, kept: 2, trajectory: [75, 100], open: { load_bearing: 0, other: 0 }, done: true,
   })
+})
+
+test('integrity rejects supplied context that is null instead of skipping it', () => {
+  assert.deepEqual(integrityErrors(goodLedger, { author: null }), ['author claims invalid: not an array'])
+  assert.deepEqual(integrityErrors(goodLedger, { critic: null }), ['critic outputs invalid: not an object'])
+})
+
+test('cli rejects a repeated --critic label', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'))
+  const ledger = writeJson(dir, 'ledger-v1.json', goodLedger)
+  const critic = writeJson(dir, 'critic-r1.json', criticOut)
+  const r = cli('score', ledger, '--critic', `r1=${critic}`, '--critic', `r1=${critic}`)
+  assert.equal(r.status, 2)
+  assert.match(JSON.parse(r.stderr).error, /--critic label repeated: r1/)
 })

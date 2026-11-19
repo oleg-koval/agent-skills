@@ -264,7 +264,8 @@ test('checklist lists only marked rules by default and every rule with scope all
 
 test('fire adds the marker to a rule that was counted but never marked', () => {
   const dir = fixtureDir({ 'counted.md': UNMARKED_COUNTED });
-  assert.ok(!prune(dir, { idleDays: 30, today: '2026-10-27' }).some((p) => p.name === 'counted-only'));
+  // 2027-01-27 is well past the idle window, so only the missing marker keeps it out.
+  assert.ok(!prune(dir, { idleDays: 30, today: '2027-01-27' }).some((p) => p.name === 'counted-only'));
   fire(dir, 'counted-only', '2026-10-27');
   const rule = parseRule(fs.readFileSync(path.join(dir, 'counted.md'), 'utf8'));
   assert.equal(rule.metadata.rule_store, 'self-critique');
@@ -283,4 +284,13 @@ test('adopt marks rules that have a counter and leaves everything else untouched
   assert.deepEqual(adopt(dir), []);
   const cli = spawnSync(process.execPath, [script, 'adopt', '--dir', fixtureDir({ 'counted.md': UNMARKED_COUNTED })], { encoding: 'utf8' });
   assert.deepEqual(JSON.parse(cli.stdout), ['counted-only']);
+});
+
+test('adopt leaves a counted rule owned by another workflow alone and it stays out of replay and prune', () => {
+  const foreign = UNMARKED_COUNTED.replace('name: counted-only', 'name: foreign').replace('  fires: 4', '  rule_store: other-workflow\n  fires: 4');
+  const dir = fixtureDir({ 'foreign.md': foreign });
+  assert.deepEqual(adopt(dir), []);
+  assert.equal(fs.readFileSync(path.join(dir, 'foreign.md'), 'utf8'), foreign);
+  assert.ok(!checklistMarkdown(dir).includes('foreign'));
+  assert.ok(!prune(dir, { idleDays: 30, today: '2027-01-27' }).some((p) => p.name === 'foreign'));
 });
