@@ -106,6 +106,20 @@ Depth is auto-selected from the diff size when you do not name one: `scan` under
 150 changed lines and 5 files, `deep` over 800 changed lines or 25 files or when
 the diff touches migrations or `*.sql`, `medium` otherwise.
 
+## Progress and decisions
+
+Every run keeps a decision log: the depth and why, the risk tier and why, the
+model each role got, and for each Critical or Important finding whether the
+verifier kept, downgraded or dropped it, with its one-line reason. The same
+lines end up in the saved review under `## 🧭 Decisions`; `--quiet-decisions`
+leaves that block out (the log still records everything).
+
+While it runs, the skill prints one status line per milestone with
+`scripts/lekker-progress.mjs --stage <stage> --message "<fact>"`: a small boat
+drifting over a tide line toward a lighthouse, and a `🧭` compass line for each
+decision. It animates only on a real terminal; in captured output, with
+`NO_COLOR`, or with `--ascii` it prints a single plain line with no escape codes.
+
 ## Regenerating the posters
 
 The posters are self-contained HTML in `assets/`. Open either file in a browser
