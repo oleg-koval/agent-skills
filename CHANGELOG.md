@@ -1,3 +1,10 @@
+# [1.92.0](https://github.com/oleg-koval/agent-skills/compare/v1.91.0...v1.92.0) (2026-11-19)
+
+
+### ✨ Features
+
+* **self-critique:** harden ledger integrity, stop rule and run storage ([#232](https://github.com/oleg-koval/agent-skills/issues/232)) ([9076c73](https://github.com/oleg-koval/agent-skills/commit/9076c73dded13d23e3f7cd2690ee84db9f0d1c69))
+
 # [1.91.0](https://github.com/oleg-koval/agent-skills/compare/v1.90.0...v1.91.0) (2026-11-19)
 
 
