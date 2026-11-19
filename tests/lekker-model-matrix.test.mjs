@@ -25,8 +25,8 @@ test('routine only when every file is documentation', () => {
   assert.equal(tierFor({ files: [] }).tier, 'standard')
 })
 
-test('an org-specific category never sets a tier', () => {
-  assert.equal(tierFor({ files: ['src/p21-sync.ts'], categories: ['p21'] }).tier, 'standard')
+test('an unknown risk category never sets a tier', () => {
+  assert.equal(tierFor({ files: ['src/erp-sync.ts'], categories: ['custom'] }).tier, 'standard')
 })
 
 test('--risk overrides the detected tier and rejects unknown values', () => {
