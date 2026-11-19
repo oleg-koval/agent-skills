@@ -1486,6 +1486,9 @@ real PRs is a human job. A hit is location-only (same file, within 10 lines),
 so a nearby finding about a different problem still counts; read recall as an
 upper bound.
 
+To find which release made detection worse, replay each release's own `workflow.js`
+over a fixed corpus and bisect: `references/version-benchmark.md`.
+
 If you maintain a persistent notes/memory system across reviews, launch ONE
 background Agent with `model: 'haiku'`, passing the review file path +
 repo-short-name + PR author login, instructed to follow
