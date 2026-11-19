@@ -1,3 +1,10 @@
+# [1.89.0](https://github.com/oleg-koval/agent-skills/compare/v1.88.0...v1.89.0) (2026-11-19)
+
+
+### ✨ Features
+
+* **lekker-review:** risk-tiered model and effort per agent ([#229](https://github.com/oleg-koval/agent-skills/issues/229)) ([8255dae](https://github.com/oleg-koval/agent-skills/commit/8255dae678b569bb19cf7de1ed7339728167d06a))
+
 # [1.88.0](https://github.com/oleg-koval/agent-skills/compare/v1.87.3...v1.88.0) (2026-11-19)
 
 
