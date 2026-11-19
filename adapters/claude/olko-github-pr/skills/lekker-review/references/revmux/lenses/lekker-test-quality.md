@@ -1,5 +1,5 @@
 ---
-description: whether tests actually catch bugs - mutation-slip analysis, mock smell, Acme test conventions
+description: whether tests actually catch bugs - mutation-slip analysis, mock smell, team test conventions
 ---
 ## Lens: lekker-test-quality
 
@@ -131,21 +131,8 @@ g) Mock smell - test the behavior, not the way it's built
    banner that appears only when the fetch rejects). Even then, prefer an
    injected simple fake over a module-level spy, and assert what the user sees.
 
-h) Acme test conventions
-   Read `{{PROFILE}}` and apply its §4 (test conventions) to every test file in
-   the diff: `__tests__/` placement beside the source, `.test.ts` vs
-   `.test.tsx`, English-sentence test names, `describe` nesting <= 2,
-   `afterEach(cleanup)`, `retry: false` on the test QueryClient (major - its
-   absence hangs the suite on a failing query), the getByRole → getByLabelText
-   → getByText → getByTestId priority, module-boundary mocking, `safeParse` for
-   Zod schemas, and the typed `it.each` matrix with AC tags plus the
-   exhaustiveness assertion whenever behaviour depends on 3+ independent inputs.
-   A `vi.mock('@lib/common/…')` inside `common/` is major, not style: the
-   alias resolves only from `web/`, so the mock silently does nothing and the
-   test passes against the real module. Quote the line, give the relative path
-   as the fix.
-   A comment explaining WHY a test exists (a captured past bug, a subtle
-   contract) is sanctioned - never flag it as over-commenting.
+h) Project test conventions
+   Apply the test conventions documented in `{{PROFILE}}` to the changed tests.
 
 Report each per-line issue as:
 `test-file:line - <concise description of the gap or weakness>`

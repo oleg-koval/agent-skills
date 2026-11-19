@@ -1,5 +1,5 @@
 ---
-description: correctness, scalability and integration issues - Acme's GQL-1 hard rule included
+description: correctness, scalability and integration issues - hard rules from the profile included
 ---
 ## Lens: lekker-implementation
 

@@ -15,7 +15,6 @@ test('risky paths escalate to deep with a human-review marker', () => {
   assert.deepEqual(cats(['src/session-store.ts']), ['auth'])
   assert.deepEqual(cats(['web/billing/invoice.ts']), ['billing'])
   assert.deepEqual(cats(['scripts/install.sh']), ['installer'])
-  assert.deepEqual(cats(['src/erp/mapping.ts']), ['erp'])
   const r = riskPaths(['src/auth/token.ts'])
   assert.equal(r.deep, true)
   assert.equal(r.needsHumanReview, true)
@@ -25,11 +24,6 @@ test('ordinary paths stay on size-based depth', () => {
   const r = riskPaths(['src/components/Button.tsx', 'README.md', 'src/authors.ts'])
   assert.equal(r.deep, false)
   assert.deepEqual(r.categories, [])
-})
-
-test('erp identifier in added lines counts, in removed or context lines it does not', () => {
-  assert.deepEqual(cats(['src/orders.ts'], '+++ b/src/orders.ts\n+const payload = buildErpPayload(o)'), ['erp'])
-  assert.deepEqual(cats(['src/orders.ts'], '-const erp = 1\n const erp = 2'), [])
 })
 
 test('cli reads file arguments', () => {
@@ -79,13 +73,13 @@ test('invalid CLI options fail instead of reporting no risk', () => {
 })
 
 
-test('CLI classifies ERP additions with a fetched diff and literal options', () => {
+test('CLI accepts a diff file and literal options', () => {
   const dir = mkdtempSync(join(tmpdir(), 'risk-paths-'))
   try {
     const diff = join(dir, 'pr.diff')
-    writeFileSync(diff, '+++ b/src/handler.ts\n+const payload = erp(order)\n')
-    assert.deepEqual(runCli(['--diff', diff, '--', '--stdin', 'src/handler.ts']).categories.map(c => c.category), ['erp'])
-    assert.deepEqual(runCli(['--stdin0', '--diff', diff], 'src/handler.ts\0').categories.map(c => c.category), ['erp'])
+    writeFileSync(diff, '+++ b/.github/workflows/ci.yml\n+on: push\n')
+    assert.deepEqual(runCli(['--diff', diff, '--', '--stdin', '.github/workflows/ci.yml']).categories.map(c => c.category), ['ci-workflow'])
+    assert.deepEqual(runCli(['--stdin0', '--diff', diff], '.github/workflows/ci.yml\0').categories.map(c => c.category), ['ci-workflow'])
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

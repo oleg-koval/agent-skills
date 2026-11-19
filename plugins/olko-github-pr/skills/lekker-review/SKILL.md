@@ -305,7 +305,7 @@ Never interpolate PR-controlled paths into shell source. Alternatively pipe
 Do not continue on classifier failure; report risk classification unavailable.
 
 The classifier detects configured path patterns for CI workflows, auth,
-billing, installers/setup, and ERP, plus `erp` in added lines. These are path
+billing, and installers/setup. These are path
 heuristics, not complete detection of auth/billing behavior in generic files;
 reviewers still inspect that behavior in the diff. Whenever
 `needsHumanReview: true`, always put `NEEDS HUMAN REVIEW: <categories>` in the

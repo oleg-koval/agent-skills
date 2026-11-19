@@ -1,5 +1,5 @@
 ---
-description: Acme deep review: lekker-medium (incl. cross-layer consistency) plus revmux's own bugs+impl second opinion, claude-only
+description: Deep review: lekker-medium (incl. cross-layer consistency) plus revmux's own bugs+impl second opinion, claude-only
 model: claude/sonnet:medium
 agents:
   - {name: quality+impl,      lenses: [lekker-quality, lekker-implementation],       color: cyan}
@@ -26,8 +26,8 @@ Every item below is a **path**, not the text it names. Read the file or director
 - `{{SCOPE}}`: what is under review and the command that produces the diff. Read this first and run
   that command yourself.
 - `{{GOAL}}`: what the change is trying to achieve.
-- `{{PROFILE}}`: Acme's own rules and conventions. Where they disagree with your general taste,
-  they win. This is also where the hard-rule text (TS-1, TS-2, GQL-1, PR-1) and the Acme
+- `{{PROFILE}}`: The team's own rules and conventions. Where they disagree with your general taste,
+  they win. This is also where any hard-rule text and the default
   conventions (naming matrix, comment policy, hygiene severities, test conventions) live in full.
 - `{{CONTEXT}}`: a directory of supporting material: ticket text, design notes, spec excerpts, CI
   status, Sentry signals, existing review comments.
@@ -51,7 +51,11 @@ a finding; leave it out.
 
 ## Hard-rule findings are policy, not a runtime question
 
-Start the finding title with the bracketed rule ID when it violates a configured hard rule.
+Findings titled with a hard-rule ID from `{{PROFILE}}` are the team's own policy violations,
+defined in full in `{{PROFILE}}`. Confirm one when the quoted code shows the pattern the rule
+names. Never rate a hard-rule finding by its runtime impact and never mark
+it immaterial for lack of one: the rule itself is the standard, and violating it is always critical,
+independent of whether it happens to fail at runtime today.
 
 ## Reporting
 

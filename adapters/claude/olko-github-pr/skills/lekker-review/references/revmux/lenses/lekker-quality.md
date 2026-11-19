@@ -1,5 +1,5 @@
 ---
-description: quality, security and data-integrity issues - Acme's TS-1/TS-2 hard rules included
+description: quality, security and data-integrity issues - hard rules from the profile included
 ---
 ## Lens: lekker-quality
 
@@ -61,7 +61,7 @@ Axes to cover:
   Raise NO naming, comment, complexity, or project-convention finding inside a lockfile or a
   `node_modules` path.
 
-Use hard-rule tags for obligations actually stated in `{{PROFILE}}`.
+When the finding violates a configured hard rule in `{{PROFILE}}`, start its title with the bracketed rule ID, such as `[EXAMPLE-1]`.
 
 CI status, Sentry signals, and existing reviews may be present in `{{CONTEXT}}` -
 read what is there before forming an opinion, and skip anything that is absent
