@@ -1,3 +1,10 @@
+## [1.87.3](https://github.com/oleg-koval/agent-skills/compare/v1.87.2...v1.87.3) (2026-11-19)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** ship a generic default review profile ([57346a4](https://github.com/oleg-koval/agent-skills/commit/57346a46e56e5050e50f2524f64924129f5421fd))
+
 ## [1.87.2](https://github.com/oleg-koval/agent-skills/compare/v1.87.1...v1.87.2) (2026-11-16)
 
 
