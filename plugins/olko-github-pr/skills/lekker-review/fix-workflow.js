@@ -121,7 +121,9 @@ const RELAY_SCHEMA = {
   required: ['status'],
   properties: { status: { enum: ['ok', 'fallback'] } },
 }
-const scratchDir = contextFile.replace(/\/[^/]*$/, '')
+// contextFile is optional here (acList can arrive directly), so the relay's
+// scratch files sit next to whichever run file was passed.
+const scratchDir = [contextFile, diffFile].filter(Boolean).map(function(p) { return p.replace(/\/[^/]*$/, '') })[0] || null
 const shellQuote = function(word) { return `'${String(word).split("'").join("'\\''")}'` }
 
 function relayPrompt(route, paths, prompt, schema) {
@@ -144,6 +146,7 @@ function relayPrompt(route, paths, prompt, schema) {
 
 async function relayToVendor(route, prompt, opts) {
   if (!vendorBridge) return { reason: 'vendorBridge arg missing' }
+  if (!scratchDir) return { reason: 'no contextFile or diffFile to place relay files beside' }
   relaySeq++
   const stem = `${scratchDir}/crossvendor/${relaySeq}-${opts.label.replace(/[^A-Za-z0-9._-]+/g, '_')}`
   const paths = { prompt: `${stem}.prompt.md`, schema: `${stem}.schema.json`, out: `${stem}.out.json` }

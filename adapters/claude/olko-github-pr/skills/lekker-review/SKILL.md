@@ -359,7 +359,10 @@ failure reruns that one agent on its host route and counts it in
 `node scripts/vendor-bridge.mjs --to claude --model <m> --effort <e> --schema <file>
 --prompt <file> --cwd <worktree> --out <file>` itself per gate agent (argument
 array, no shell), reads `--out`, and on exit 3 (`{"fallback": "<reason>"}`) reruns
-the agent on its host route. Without the flag nothing changes.
+the agent on its host route. Without the flag nothing changes. With
+`ENGINE=revmux`, revmux runs its own verify stage, so cross-vendor routing does
+not apply: keep the flag for a fallback to the native engine, and state
+`Cross-vendor: not applied (revmux engine)` in the review header.
 
 **`--post` flag:** parse and store as `POST_REVIEW=true`.
 

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { parseArgs, promptFor, resultFrom, validate } from '../plugins/olko-github-pr/skills/lekker-review/scripts/vendor-bridge.mjs'
+import { parseArgs, promptFor, resultFrom, validate, withDiffNote, worktreeDiff } from '../plugins/olko-github-pr/skills/lekker-review/scripts/vendor-bridge.mjs'
 
 const bridge = 'plugins/olko-github-pr/skills/lekker-review/scripts/vendor-bridge.mjs'
 const schema = { type: 'object', required: ['verdict'], properties: { verdict: { enum: ['confirmed', 'dropped'] } } }
@@ -78,8 +78,9 @@ test('claude success reads structured_output and runs in plan mode with read-onl
     assert.deepEqual(out, { verdict: 'confirmed' })
     const args = JSON.parse(sb.recorded('claude', 'argv.json'))
     assert.equal(args[args.indexOf('--json-schema') + 1], JSON.stringify(schema))
-    assert.equal(args[args.indexOf('--allowedTools') + 1], 'Read,Grep,Glob,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git status:*)')
-    assert.equal(args[args.indexOf('--disallowedTools') + 1], 'Edit,Write,NotebookEdit')
+    assert.equal(args[args.indexOf('--permission-mode') + 1], 'default')
+    assert.equal(args[args.indexOf('--allowedTools') + 1], 'Read,Grep,Glob')
+    assert.equal(args[args.indexOf('--disallowedTools') + 1], 'Bash,Edit,Write,NotebookEdit')
     assert.equal(args[args.indexOf('--effort') + 1], 'high')
     assert.equal(sb.recorded('claude', 'stdin'), 'Judge the finding.')
   } finally { sb.cleanup() }
@@ -178,4 +179,39 @@ test('resultFrom unwraps a claude envelope, a fenced codex reply and an error en
 test('codex gets the schema in the prompt, claude gets the prompt unchanged', () => {
   assert.equal(promptFor('claude', 'P', '{}'), 'P')
   assert.match(promptFor('codex', 'P', '{"type":"object"}'), /^P\n\n.*JSON Schema:\n\{"type":"object"\}/s)
+})
+
+test('validate enforces anyOf and pattern like the findings schema', () => {
+  const finding = {
+    type: 'object',
+    required: ['severity'],
+    anyOf: [
+      { properties: { severity: { enum: ['observation', 'idiomatic'] } } },
+      { required: ['boundary'] },
+      { required: ['rule'], properties: { rule: { pattern: '^(PROJECT:[a-z0-9]+(-[a-z0-9]+)*|weakens-project-rule)$' } } },
+    ],
+  }
+  assert.deepEqual(validate(finding, { severity: 'observation' }), [])
+  assert.deepEqual(validate(finding, { severity: 'critical', boundary: {} }), [])
+  assert.deepEqual(validate(finding, { severity: 'critical', rule: 'PROJECT:no-casts' }), [])
+  assert.match(validate(finding, { severity: 'critical' }).join(), /none of the anyOf/)
+  assert.match(validate(finding, { severity: 'critical', rule: 'TS 1!' }).join(), /none of the anyOf/)
+  assert.match(validate({ type: 'string', pattern: '^a+$' }, 'ab').join(), /does not match/)
+})
+
+test('the Claude target reads the worktree diff from a file instead of a shell', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bridge-diff-'))
+  try {
+    execFileSync('git', ['init', '-q', dir])
+    writeFileSync(join(dir, 'a.txt'), 'one\n')
+    execFileSync('git', ['-C', dir, 'add', 'a.txt'])
+    execFileSync('git', ['-C', dir, '-c', 'user.email=t@example.com', '-c', 'user.name=t', 'commit', '-qm', 'init'])
+    writeFileSync(join(dir, 'a.txt'), 'two\n')
+    const diff = worktreeDiff(dir)
+    assert.match(diff, /-one/)
+    assert.match(diff, /\+two/)
+    assert.equal(worktreeDiff(join(dir, 'missing')), null)
+    assert.match(withDiffNote('Check it.', '/tmp/x.diff'), /You have no shell.*\/tmp\/x\.diff/s)
+    assert.equal(withDiffNote('Check it.', null), 'Check it.')
+  } finally { rmSync(dir, { recursive: true, force: true }) }
 })

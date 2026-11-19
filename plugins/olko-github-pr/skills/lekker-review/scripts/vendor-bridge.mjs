@@ -9,11 +9,11 @@
 // and the caller reruns the agent on its own vendor. Exit 2: unusable arguments.
 // The prompt travels by stdin and every process gets an argument array, so
 // nothing from the prompt, schema or paths is ever parsed by a shell.
-import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { execFileSync, spawn } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { text } from 'node:stream/consumers'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
 export const FALLBACK_EXIT = 3
 export const TARGETS = ['codex', 'claude']
@@ -41,13 +41,20 @@ const typeMatches = (type, value) => ({
   boolean: v => typeof v === 'boolean',
 }[type]?.(value) ?? true)
 
-// The subset of JSON Schema the lekker gate schemas use. Unknown keywords pass,
-// so a stricter schema is still enforced by the vendor CLI itself.
+// The JSON Schema keywords the lekker gate schemas use: type, enum, minLength,
+// pattern, items, required, properties and anyOf. Any other keyword passes
+// unchecked, so a schema must not rely on one this function does not know.
 export function validate(schema, value, path = '$') {
   if (schema.type !== undefined && !typeMatches(schema.type, value)) return [`${path} is not ${schema.type}`]
   if (schema.enum && !schema.enum.includes(value)) return [`${path} is not one of ${schema.enum.join('|')}`]
   if (typeof value === 'string' && schema.minLength !== undefined && value.length < schema.minLength) {
     return [`${path} is shorter than ${schema.minLength}`]
+  }
+  if (typeof value === 'string' && schema.pattern !== undefined && !new RegExp(schema.pattern).test(value)) {
+    return [`${path} does not match ${schema.pattern}`]
+  }
+  if (schema.anyOf && schema.anyOf.every(sub => validate(sub, value, path).length > 0)) {
+    return [`${path} matches none of the anyOf alternatives`]
   }
   if (Array.isArray(value) && schema.items) {
     return value.flatMap((item, i) => validate(schema.items, item, `${path}[${i}]`))
@@ -69,9 +76,27 @@ export function promptFor(to, prompt, schemaText) {
     : prompt
 }
 
-// Fix verifiers judge the real `git diff`, so the Claude target may run
-// read-only git; in print mode every tool outside this list is denied.
-const CLAUDE_READ_ONLY_TOOLS = 'Read,Grep,Glob,Bash(git diff:*),Bash(git show:*),Bash(git log:*),Bash(git status:*)'
+// The Claude target gets no shell at all: git options such as --output can
+// write files, and prefix rules cannot exclude them. A fix verifier needs the
+// worktree's uncommitted diff, so the bridge saves it to a file it can Read.
+const CLAUDE_READ_ONLY_TOOLS = 'Read,Grep,Glob'
+const CLAUDE_DENIED_TOOLS = 'Bash,Edit,Write,NotebookEdit'
+
+export function worktreeDiff(cwd) {
+  try {
+    const status = execFileSync('git', ['-C', cwd, 'status', '--short'], { encoding: 'utf8', maxBuffer: 1 << 26 })
+    const diff = execFileSync('git', ['-C', cwd, 'diff', '--no-ext-diff', '--no-color'], { encoding: 'utf8', maxBuffer: 1 << 26 })
+    return `# git status --short\n${status}\n# git diff\n${diff}`
+  } catch {
+    return null
+  }
+}
+
+export function withDiffNote(prompt, diffPath) {
+  return diffPath === null
+    ? prompt
+    : `${prompt}\n\nYou have no shell. The working tree's uncommitted changes (git status and git diff) are saved at ${diffPath}; Read that file wherever these instructions say to run git.\n`
+}
 
 export function commandFor({ to, model, effort, schemaText, rawOut, cwd }) {
   return to === 'codex'
@@ -79,7 +104,7 @@ export function commandFor({ to, model, effort, schemaText, rawOut, cwd }) {
         '--skip-git-repo-check', '-o', rawOut, '-C', cwd, '-'] }
     : { cmd: 'claude', args: ['-p', '--model', model, '--effort', effort, '--output-format', 'json',
         '--json-schema', schemaText, '--permission-mode', 'default',
-        '--allowedTools', CLAUDE_READ_ONLY_TOOLS, '--disallowedTools', 'Edit,Write,NotebookEdit'] }
+        '--allowedTools', CLAUDE_READ_ONLY_TOOLS, '--disallowedTools', CLAUDE_DENIED_TOOLS] }
 }
 
 const parseJson = raw => {
@@ -147,7 +172,11 @@ async function runVendor(options) {
   const rawOut = `${out}.raw`
   rmSync(rawOut, { force: true })
   const { cmd, args } = commandFor({ to, model, effort, schemaText: inputs.schemaText, rawOut, cwd })
-  const ran = await runProcess(cmd, args, { stdin: promptFor(to, inputs.prompt, inputs.schemaText), cwd, timeoutMs: timeout * 1000 })
+  const diffText = to === 'claude' ? worktreeDiff(cwd) : null
+  const diffPath = diffText === null ? null : `${out}.worktree.diff`
+  if (diffPath !== null) writeFileSync(diffPath, diffText)
+  const stdin = withDiffNote(promptFor(to, inputs.prompt, inputs.schemaText), diffPath)
+  const ran = await runProcess(cmd, args, { stdin, cwd, timeoutMs: timeout * 1000 })
   if (ran.reason) return { fallback: ran.reason }
   if (ran.code !== 0) return { fallback: `${cmd} exited ${ran.code}: ${firstLine(ran.stderr)}` }
 
@@ -171,4 +200,8 @@ async function main(argv) {
   process.exit(failed ? FALLBACK_EXIT : 0)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main(process.argv.slice(2))
+// Real paths, so a skill installed through a symlinked directory still runs.
+const isEntrypoint = () => {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)) } catch { return false }
+}
+if (isEntrypoint()) main(process.argv.slice(2))
