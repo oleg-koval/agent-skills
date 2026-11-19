@@ -333,7 +333,7 @@ console.log('\ndeps depth: routing, classifier, line validation')
   check('workflow.js defines dimensionsFor', Boolean(dimsSrc), true)
   if (dimsSrc) {
     const dimensionsFor = new Function(dimsSrc + '\nreturn dimensionsFor')()
-    const M = { review: 'r', triage: 't' }
+    const M = { specialist: { model: 's' }, triage: { model: 't' }, rules: { model: 'r' } }
     check('deps runs exactly one agent', dimensionsFor('deps', M).map(d => d.file), ['deps.md'])
     check('scan runs the triage pair plus project-rules', dimensionsFor('scan', M).map(d => d.key), ['triage-quality', 'triage-logic', 'project-rules'])
     check('medium runs five specialists plus project-rules', dimensionsFor('medium', M).length, 6)

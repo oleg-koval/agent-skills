@@ -62,9 +62,22 @@ const {
   findings,
   acList,
   targetLabel: fixTargetLabelArg,
+  routing,
 } = input
 
 const targetLabel = fixTargetLabelArg || `PR #${prNumber}`
+
+// Same contract as routeOf in workflow.js: the routing arg from
+// scripts/model-matrix.mjs, with today's defaults when a cell is absent.
+const VALID_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+function routeOf(role, fallback) {
+  const cell = routing && routing[role]
+  const valid = Boolean(cell) && typeof cell.model === 'string' && cell.model.length > 0
+    && (cell.effort === undefined || VALID_EFFORTS.includes(cell.effort))
+  return valid ? { model: cell.model, effort: cell.effort } : fallback
+}
+const FIXER = routeOf('fixer', { model: 'sonnet', effort: 'high' })
+const FIX_VERIFIER = routeOf('verifier', { model: 'sonnet', effort: 'high' })
 
 if (!repoSlug || (!prNumber && !fixTargetLabelArg) || !worktreePath || !promptDir || !Array.isArray(findings)) {
   throw new Error(
@@ -275,8 +288,8 @@ async function fixStage(group) {
     label:  `fix:${group.file}`,
     phase:  'Fix',
     schema: FIX_RESULT_SCHEMA,
-    model:  'sonnet',
-    effort: 'high',
+    model:  FIXER.model,
+    effort: FIXER.effort,
   })
 
   if (!result) {
@@ -381,8 +394,8 @@ async function verifyStage(state) {
     label:  `fix-verify:${state.file}`,
     phase:  'Fix-verify',
     schema: FIX_VERDICT_SCHEMA,
-    model:  'sonnet',
-    effort: 'high',
+    model:  FIX_VERIFIER.model,
+    effort: FIX_VERIFIER.effort,
   }))
 
   // One retry only (VERIFICATION.md: surface retries, never loop).
@@ -395,8 +408,8 @@ async function verifyStage(state) {
       label:  `fix-retry:${state.file}`,
       phase:  'Fix',
       schema: FIX_RESULT_SCHEMA,
-      model:  'sonnet',
-      effort: 'high',
+      model:  FIXER.model,
+      effort: FIXER.effort,
     })
 
     if (retryResult) {
@@ -406,8 +419,8 @@ async function verifyStage(state) {
         label:  `fix-reverify:${state.file}`,
         phase:  'Fix-verify',
         schema: FIX_VERDICT_SCHEMA,
-        model:  'sonnet',
-        effort: 'high',
+        model:  FIX_VERIFIER.model,
+        effort: FIX_VERIFIER.effort,
       }))
     }
   }

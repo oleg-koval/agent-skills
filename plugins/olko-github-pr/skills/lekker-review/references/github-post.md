@@ -153,8 +153,9 @@ an earlier run can never be merged into this one.
 1. Create the run directory once: `mktemp -d /tmp/lekker-polish.XXXXXX`, and
    use its printed path as `<POLISH_DIR>`. Copy the payload:
    `cp <PAYLOAD> <POLISH_DIR>/draft.json`.
-2. Launch ONE agent (`model: 'sonnet'`; in Codex, one native agent or inline
-   when none is available) with this brief: rewrite each `comments[].body` in
+2. Launch ONE agent on `ROUTING.polish` (model and effort; default
+   `model: 'sonnet'` when `ROUTING` is unset; in Codex, one native agent with
+   that route, or inline when none is available) with this brief: rewrite each `comments[].body` in
    `<POLISH_DIR>/draft.json` per `${SKILL_ROOT}/references/comment-voice.md`
    and write the full payload to `<POLISH_DIR>/polished.json`, same order, same
    `path`, `line` and `side`. Keep every identifier, `file:line`, number, link,

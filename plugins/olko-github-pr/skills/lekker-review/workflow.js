@@ -416,25 +416,37 @@ function shouldVerify(finding, depth) {
 // a large rules file was missed when the check was only a side duty of generalist
 // agents. It always runs because the script cannot cheaply tell whether the
 // context holds rules; its prompt returns no findings when they are absent.
-function dimensionsFor(depth, MODEL) {
+function dimensionsFor(depth, ROUTE) {
   if (depth === 'deps') {
-    return [{ key: 'deps', file: 'deps.md', model: MODEL.review }]
+    return [{ key: 'deps', file: 'deps.md', route: ROUTE.rules }]
   }
   if (depth === 'scan') {
     return [
-      { key: 'triage-quality', file: 'triage-quality.md', model: MODEL.triage },
-      { key: 'triage-logic',   file: 'triage-logic.md',   model: MODEL.triage },
-      { key: 'project-rules',  file: 'project-rules.md',  model: MODEL.review },
+      { key: 'triage-quality', file: 'triage-quality.md', route: ROUTE.triage },
+      { key: 'triage-logic',   file: 'triage-logic.md',   route: ROUTE.triage },
+      { key: 'project-rules',  file: 'project-rules.md',  route: ROUTE.rules },
     ]
   }
   return [
-    { key: 'quality',        file: 'quality.md',        model: MODEL.review },
-    { key: 'implementation', file: 'implementation.md', model: MODEL.review },
-    { key: 'simplification', file: 'simplification.md', model: MODEL.review },
-    { key: 'conventions',    file: 'conventions.md',    model: MODEL.review },
-    { key: 'test-quality',   file: 'test-quality.md',   model: MODEL.review },
-    { key: 'project-rules',  file: 'project-rules.md',  model: MODEL.review },
+    { key: 'quality',        file: 'quality.md',        route: ROUTE.specialist },
+    { key: 'implementation', file: 'implementation.md', route: ROUTE.specialist },
+    { key: 'simplification', file: 'simplification.md', route: ROUTE.specialist },
+    { key: 'conventions',    file: 'conventions.md',    route: ROUTE.specialist },
+    { key: 'test-quality',   file: 'test-quality.md',   route: ROUTE.specialist },
+    { key: 'project-rules',  file: 'project-rules.md',  route: ROUTE.rules },
   ]
+}
+
+// Model and effort for one role, from the `routing` arg that
+// scripts/model-matrix.mjs builds from the PR's risk tier. An absent or
+// malformed cell keeps the historical default, so an older caller runs exactly
+// as before.
+const VALID_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+function routeOf(routing, role, fallback) {
+  const cell = routing && routing[role]
+  const valid = Boolean(cell) && typeof cell.model === 'string' && cell.model.length > 0
+    && (cell.effort === undefined || VALID_EFFORTS.includes(cell.effort))
+  return valid ? { model: cell.model, effort: cell.effort } : fallback
 }
 
 /**
@@ -588,6 +600,7 @@ const {
   engine: engineArg,
   findingsFile,
   testRunner,
+  routing,
 } = input
 
 // 'revmux' skips straight to Prove on pre-computed findings, so Prove's
@@ -595,6 +608,18 @@ const {
 const ENGINE = (engineArg === 'revmux') ? 'revmux' : 'workflow'
 
 const targetLabel = targetLabelArg || `PR #${prNumber}`
+
+const ROUTE = {
+  specialist: routeOf(routing, 'specialist', { model: 'sonnet' }),
+  triage:     routeOf(routing, 'triage',     { model: 'haiku' }),
+  rules:      routeOf(routing, 'rules',      { model: 'sonnet' }),
+  verifier:   routeOf(routing, 'verifier',   { model: 'sonnet', effort: 'high' }),
+  critic:     routeOf(routing, 'critic',     { model: 'sonnet' }),
+  prover:     routeOf(routing, 'prover',     { model: 'sonnet', effort: 'high' }),
+}
+const routeLabel = Object.keys(ROUTE).map(function(role) {
+  return `${role}=${ROUTE[role].model}${ROUTE[role].effort ? '/' + ROUTE[role].effort : ''}`
+}).join(' ')
 
 if (!repoSlug || (!prNumber && !targetLabelArg) || !depth || !diffFile || !contextFile || !promptDir) {
   throw new Error(
@@ -654,8 +679,8 @@ const budgetAtStart = budget.spent()
   // Dimensions by depth
   // -------------------------------------------------------------------------
 
-  const MODEL = { review: 'sonnet', triage: 'haiku' }
-  const dimensions = dimensionsFor(depth, MODEL)
+  log(`routing: ${routing ? 'tiered' : 'defaults'} ${routeLabel}`)
+  const dimensions = dimensionsFor(depth, ROUTE)
 
   const wtDisplay = worktreePath || 'null (scan mode: diff only)'
 
@@ -758,7 +783,8 @@ const budgetAtStart = budget.spent()
       label:  `review:${dim.key}`,
       phase:  'Review',
       schema,
-      model:  dim.model,
+      model:  dim.route.model,
+      effort: dim.route.effort,
     })
 
     if (!result) {
@@ -839,10 +865,10 @@ const budgetAtStart = budget.spent()
 
         const verdict = await agent(verifierPrompt(finding), {
           label:  `verify:${finding.file}:${finding.line}`,
-          model:  'sonnet',
+          model:  ROUTE.verifier.model,
           phase:  'Verify',
           schema: VERDICT_SCHEMA,
-          effort: 'high',
+          effort: ROUTE.verifier.effort,
         })
 
         if (!verdict) {
@@ -978,9 +1004,10 @@ const budgetAtStart = budget.spent()
       ].join(' '),
       {
         label:  'critic',
-        model:  'sonnet',
+        model:  ROUTE.critic.model,
         phase:  'Critic',
         schema: CRITIC_SCHEMA,
+        effort: ROUTE.critic.effort,
       }
     )
 
@@ -1003,10 +1030,10 @@ const budgetAtStart = budget.spent()
             ].join(' '),
             {
               label:  `critic-reexamine:${angle.file}:${angle.line}`,
-              model:  'sonnet',
+              model:  ROUTE.verifier.model,
               phase:  'Critic',
               schema: FINDINGS_SCHEMA,
-              effort: 'high',
+              effort: ROUTE.verifier.effort,
             }
           )
 
@@ -1022,10 +1049,10 @@ const budgetAtStart = budget.spent()
           agentCount++
           const verdict = await agent(verifierPrompt(newFinding), {
             label:  `critic-verify:${newFinding.file}:${newFinding.line}`,
-            model:  'sonnet',
+            model:  ROUTE.verifier.model,
             phase:  'Critic',
             schema: VERDICT_SCHEMA,
-            effort: 'high',
+            effort: ROUTE.verifier.effort,
           })
 
           if (!verdict || verdict.verdict === 'dropped') {
@@ -1121,8 +1148,8 @@ const budgetAtStart = budget.spent()
             label:  'prove:' + finding.file + ':' + finding.line,
             phase:  'Prove',
             schema: PROOF_SCHEMA,
-            model:  'sonnet',
-            effort: 'high',
+            model:  ROUTE.prover.model,
+            effort: ROUTE.prover.effort,
           })
 
           if (!result) {
@@ -1195,4 +1222,5 @@ const budgetAtStart = budget.spent()
     mockSmells:        Array.isArray(testQualityResult.mockSmells) ? testQualityResult.mockSmells : [],
     outputTokens:      budget.spent() - budgetAtStart,
     turnTokensTotal:   budget.spent(),
+    routing:           ROUTE,
   }, Object.assign({ engine: ENGINE }, revmuxPassthrough || {}))

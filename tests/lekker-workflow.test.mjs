@@ -820,3 +820,34 @@ test('one project rule quote flagged by two reviewers is verified once', async (
 
   assert.equal(calls.filter((label) => label.startsWith('verify:')).length, 1)
 })
+
+test('routing arg sets model and effort per role; without it the defaults hold', async () => {
+  const { routingFor } = await import('../plugins/olko-github-pr/skills/lekker-review/scripts/model-matrix.mjs')
+  const seen = async (extraArgs) => {
+    const options = {}
+    await runScenario({
+      extraArgs,
+      respond: ({ options: o }) => {
+        options[o.label] = { model: o.model, effort: o.effort }
+        if (o.label === 'review:quality') return { findings: [{ ...baseFinding, severity: 'important' }] }
+        if (o.label.startsWith('review:')) return { findings: [] }
+        if (o.label.startsWith('verify:')) return { verdict: 'confirmed', reasoning: 'Anchored and reachable.' }
+        throw new Error(`Unexpected agent call: ${o.label}`)
+      },
+    })
+    return options
+  }
+
+  const critical = await seen({ routing: routingFor('claude', 'critical') })
+  assert.deepEqual(critical['review:quality'], { model: 'opus', effort: 'xhigh' })
+  assert.deepEqual(critical['review:project-rules'], { model: 'sonnet', effort: 'high' })
+  assert.deepEqual(critical['verify:src/example.ts:10'], { model: 'fable', effort: 'high' })
+
+  const defaults = await seen({})
+  assert.deepEqual(defaults['review:quality'], { model: 'sonnet', effort: undefined })
+  assert.deepEqual(defaults['verify:src/example.ts:10'], { model: 'sonnet', effort: 'high' })
+
+  const malformed = await seen({ routing: { specialist: { model: '', effort: 'high' }, verifier: { model: 'opus', effort: 'ludicrous' } } })
+  assert.deepEqual(malformed['review:quality'], { model: 'sonnet', effort: undefined })
+  assert.deepEqual(malformed['verify:src/example.ts:10'], { model: 'sonnet', effort: 'high' })
+})
