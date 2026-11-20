@@ -29,7 +29,6 @@ description: >
   the PR", provides a GitHub PR URL, or asks for a pull request review in any
   form.
 license: MIT
-model: sonnet
 allowed-tools: Bash, Read, Write, Edit, Agent, Workflow, AskUserQuestion, Artifact, spawn_agent, wait_agent, followup_task, send_message, interrupt_agent, list_agents
 compatibility: >
   Claude Code and OpenAI Codex. Claude uses Workflow/Agent/Artifact. Codex uses
@@ -486,14 +485,21 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/run-log.mjs" decide <RU
 
 ## Progress line
 
-At each milestone below, run
+`run-log.mjs` already prints this line on stderr for `start`, each `mark`
+(`context`, `review`, `synthesis` as `post`, `fix`, `post`), each `decide` (as a
+compass line) and `finish`. So the Bash tool result of those calls carries the
+boat; copy the line into your own text at each milestone and end the final
+message with the `success` or `failure` line. `LEKKER_PROGRESS=off` silences it.
+
+For the milestones the run log does not mark (`verify`, `critic`, `prove`), run
 `node "${CLAUDE_PLUGIN_ROOT}/skills/lekker-review/scripts/lekker-progress.mjs" --stage <stage> --message "<short fact>"`
 (foreground, it returns in under a second; in Codex use the absolute path to
 `scripts/lekker-progress.mjs` beside the selected `SKILL.md`). It prints one
 status line (a boat drifting toward a lighthouse), animates only on a real
-terminal, and always exits 0. It is decoration: run it after the milestone's own
-output, never instead of it, and keep every count and reason in the report too.
-Add `--ascii` on terminals that mis-measure emoji.
+terminal (the Bash tool is not one, so expect the static line), and always
+exits 0. It is decoration: run it after the milestone's own output, never
+instead of it, and keep every count and reason in the report too. Add `--ascii`
+on terminals that mis-measure emoji.
 
 | Milestone | Stage | Message, e.g. |
 | --- | --- | --- |
