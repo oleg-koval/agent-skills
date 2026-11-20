@@ -4,6 +4,8 @@ description: >
   Close out a small change or multi-step task by checking its original objective, running applicable
   quality gates, auditing the diff and task-owned artifacts, and preparing an evidence-backed handoff.
   Use when work is believed done, the user asks to wrap up or clean up, or before handing work off.
+  Also checks whether the session produced a repeatable workflow that deserves a skill, with a second
+  opinion from Jev, and suggests creating it only when both agree.
   For a retro over repository history use retro-analysis; for agent operations use agent-ops-retro.
 license: MIT
 compatibility: Codex, Claude Code, Cursor, GitHub Copilot, Windsurf, Kiro, Grok, and other Agent Skills compatible tools.
@@ -52,7 +54,45 @@ Before cleanup, when a completed task used a team and its applicable checks are 
 - For confirmed safe targets, propose `git worktree remove -- 'path with spaces'` or `git branch -d -- 'topic/branch'` with the actual argument shell-quoted, including embedded quotes. Use `--` to end options; never interpolate untrusted names as raw shell text. Use `git fetch --prune` only when network access and remote cleanup are appropriate. Force deletion requires explicit approval.
 - Read-only inspection and configured non-destructive checks may run automatically. Ask before committing, pushing, creating or updating a PR, deleting any file, branch, or worktree, or modifying external systems. Existing explicit authorization for the task still applies.
 
-## 5. Handoff
+## 5. Check for a skill worth creating
+
+Stay silent unless something qualifies. This step must never add noise to a small task.
+
+**Own pass.** Look at what the session actually did, not at what was asked. A workflow is a candidate only when all four hold:
+
+- It ran as a sequence of at least three distinct steps with recognisable inputs and outputs, for example: gather facts from two sources, produce an artifact, draft the message that goes with it.
+- It repeated in this session (the same sequence for a second item), or the user corrected or re-asked for the same shape of work, or the user called it a standing process ("again", "for each", "next one").
+- No installed skill already covers most of it. Check the skills listed in your context and a find-skills skill where available. If the skip rules in "Second opinion from Jev" allow Jev, also run `jev pick-skill --turn "<abstract>"` (an empty list means nothing fits; a `fail_open` reply means unknown, not none). If a skill covers most of it, report that skill to use or extend and skip the creation assessment.
+- It is a procedure, not a fact. A gotcha, preference or project rule belongs in memory or a knowledge entry, not in a skill.
+
+For the strongest candidate only, write a name, trigger phrases, the steps, inputs, outputs, side effects that need approval, and the plugin it would live in.
+
+**Second opinion from Jev.** Run it only when the own pass found a candidate. Jev is an outside service: send a short abstract, never session content. The abstract is at most eight lines: the goal, the steps, the tools or sources used, how many times it repeated, how many times the user corrected it. Leave out names, emails, ids, quotes, URLs, file paths, client or candidate details, and secrets. If you cannot write it without those, skip Jev and report "second opinion skipped: sensitive session". Also skip when `jev` is not installed or a project rule forbids outside services.
+
+```bash
+echo '{"state": "<abstract>", "questions": [
+  {"id": "reusable", "type": "noul",
+   "instructions": "This workflow will recur and a written procedure would save real effort"},
+  {"id": "shape", "type": "choice", "instructions": "What is the best form for capturing it?",
+   "criteria": {"skill": "A multi-step skill", "memory": "A remembered preference or rule",
+                "checklist": "A short checklist or a hook", "none": "Not worth capturing"}}]}' | ~/.local/bin/jev ask
+```
+
+Read `reusable` at 0.6 or higher as yes (a starting value; adjust it with experience). A Jev error or `fail_open` is no opinion, not a no.
+
+**Combine the two results.**
+
+| Own pass | Jev | Do |
+|---|---|---|
+| Candidate, not covered | reusable and shape `skill` | Suggest creating the skill: name, a one-sentence trigger description, at most six steps, inputs and outputs, approvals, plugin. Ask whether to create it; never create it unprompted. |
+| Candidate, an existing skill covers most | any | Name the skill to use or extend instead. |
+| Candidate, not covered | not reusable, or shape other than `skill` | One line: "possible skill, Jev disagrees (reason)". Suggest nothing. If the shape is `memory`, propose that memory entry instead. |
+| Candidate, not covered | no opinion or skipped | Report that Jev gave no opinion or was skipped; do not suggest creating a skill. |
+| None | not run | Silent: the report says "Skill check: none". |
+
+Report at most one suggestion, the strongest.
+
+## 6. Handoff
 
 Use the report below, keeping it brief for a small change and adding detail only where evidence or risk warrants it. State what was executed and what still needs confirmation. If a PR is appropriate, draft its motivation, changes, testing evidence, rollout and rollback considerations, and reviewer notes; do not publish it without authorization. Suggest a conventional commit message without committing.
 
@@ -95,6 +135,9 @@ Use the report below, keeping it brief for a small change and adding detail only
 - Updated: <files or none>
 - Not needed: <reason or none>
 
+**Skill check**
+- <none | suggestion: name, why, own-pass and Jev result | extend <existing skill> | second opinion skipped: reason>
+
 **Risks and follow-ups**
 - <remaining risk, blocked gate, or next action; include delivery state if relevant>
 
@@ -102,5 +145,5 @@ Use the report below, keeping it brief for a small change and adding detail only
 `type(scope): concise imperative summary`
 
 **Handoff**
-<2–5 sentences with the evidence and next step a teammate needs>
+<2 to 5 sentences with the evidence and next step a teammate needs>
 ```

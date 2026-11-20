@@ -1106,7 +1106,7 @@
           "name": "wrap-up",
           "lookupName": "olko:wrap-up",
           "path": "plugins/olko-reflection/skills/wrap-up",
-          "description": "Verify a task against its original objective, run applicable checks, audit task-owned artifacts, and prepare a safe, evidence-backed handoff.",
+          "description": "Verify a task against its original objective, run applicable checks, audit task-owned artifacts, check for a repeatable workflow worth a new skill, and prepare a safe, evidence-backed handoff.",
           "tags": [
             "delivery",
             "verification",
