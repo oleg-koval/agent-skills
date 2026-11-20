@@ -45,7 +45,7 @@ metadata:
     - multi-agent
     - workflow
     - quality
-argument-hint: "<github-pr-url | repo pr-number | repo pr-title | branch [ref]> [scan|medium|deep|deps] [--post] [--fix] [--base <ref>] [--risk routine|standard|elevated|critical] [--crossvendor] [--quiet-decisions]"
+argument-hint: "<github-pr-url | repo pr-number | repo pr-title | branch [ref]> [scan|medium|deep|deps] [--post] [--fix] [--base <ref>] [--risk routine|standard|large|elevated|critical] [--crossvendor] [--quiet-decisions]"
 ---
 
 # Lekker Review
@@ -342,7 +342,7 @@ it in one line and leave `ROUTING` unset: every agent then keeps the
 workflow's built-in default (`sonnet`, `haiku` for triage). The full matrix is in `README.md`
 under "Models and effort".
 
-**`--risk routine|standard|elevated|critical` flag:** parse and pass to
+**`--risk routine|standard|large|elevated|critical` flag:** parse and pass to
 `model-matrix.mjs` as `--risk`. It overrides the detected tier, never the depth.
 
 **`--crossvendor` flag:** pass `--crossvendor` to `model-matrix.mjs`. The gate

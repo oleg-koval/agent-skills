@@ -17,7 +17,7 @@
 // Prints {host, tier, tierSource, reasons, visual, routing}.
 import { pathToFileURL } from 'node:url'
 
-export const TIERS = ['routine', 'standard', 'elevated', 'critical']
+export const TIERS = ['routine', 'standard', 'large', 'elevated', 'critical']
 export const HOSTS = ['claude', 'codex']
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 
@@ -25,29 +25,32 @@ export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 export const GATE_ROLES = ['verifier', 'critic']
 
 const r = (model, effort) => ({ model, effort })
-const same = cell => [cell, cell, cell, cell]
+const same = cell => [cell, cell, cell, cell, cell]
 
-// One row per role: [routine, standard, elevated, critical].
+// One row per role: [routine, standard, large, elevated, critical].
+// `large` (500-800 lines) keeps the finders on the standard route and moves only the
+// verifier to the strong model at medium effort: finders are most of the spend
+// (PR 83: 9.8M of 12.1M cache reads), the verifier decides what survives.
 export const MATRIX = {
   claude: {
     triage:       same(r('haiku', 'medium')),
-    specialist:   [r('sonnet', 'medium'), r('sonnet', 'high'), r('opus', 'high'), r('opus', 'xhigh')],
-    rules:        [r('sonnet', 'medium'), r('sonnet', 'medium'), r('sonnet', 'high'), r('sonnet', 'high')],
-    verifier:     [r('sonnet', 'high'), r('sonnet', 'high'), r('opus', 'high'), r('fable', 'high')],
-    critic:       [r('sonnet', 'medium'), r('sonnet', 'high'), r('opus', 'high'), r('fable', 'xhigh')],
-    prover:       [r('sonnet', 'high'), r('sonnet', 'high'), r('sonnet', 'high'), r('opus', 'high')],
-    fixer:        [r('sonnet', 'high'), r('sonnet', 'high'), r('sonnet', 'high'), r('opus', 'high')],
+    specialist:   [r('sonnet', 'medium'), r('sonnet', 'high'), r('sonnet', 'high'), r('opus', 'high'), r('opus', 'xhigh')],
+    rules:        [r('sonnet', 'medium'), r('sonnet', 'medium'), r('sonnet', 'medium'), r('sonnet', 'high'), r('sonnet', 'high')],
+    verifier:     [r('sonnet', 'high'), r('sonnet', 'high'), r('opus', 'medium'), r('opus', 'high'), r('fable', 'high')],
+    critic:       [r('sonnet', 'medium'), r('sonnet', 'high'), r('opus', 'medium'), r('opus', 'high'), r('fable', 'xhigh')],
+    prover:       [r('sonnet', 'high'), r('sonnet', 'high'), r('sonnet', 'high'), r('sonnet', 'high'), r('opus', 'high')],
+    fixer:        [r('sonnet', 'high'), r('sonnet', 'high'), r('sonnet', 'high'), r('sonnet', 'high'), r('opus', 'high')],
     polish:       same(r('sonnet', 'medium')),
     housekeeping: same(r('haiku', 'low')),
   },
   codex: {
     triage:       same(r('gpt-6-luna', 'medium')),
-    specialist:   [r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high'), r('gpt-6.2-astra', 'xhigh')],
-    rules:        [r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high')],
-    verifier:     [r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high'), r('gpt-6.2-astra', 'high')],
-    critic:       [r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high'), r('gpt-6.2-astra', 'xhigh')],
-    prover:       [r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high')],
-    fixer:        [r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high')],
+    specialist:   [r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high'), r('gpt-6.2-astra', 'xhigh')],
+    rules:        [r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high')],
+    verifier:     [r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'medium'), r('gpt-6.2-astra', 'high'), r('gpt-6.2-astra', 'high')],
+    critic:       [r('gpt-6.2-sol', 'medium'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'medium'), r('gpt-6.2-astra', 'high'), r('gpt-6.2-astra', 'xhigh')],
+    prover:       [r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high')],
+    fixer:        [r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-sol', 'high'), r('gpt-6.2-astra', 'high')],
     polish:       same(r('gpt-6.2-sol', 'medium')),
     housekeeping: same(r('gpt-6-luna', 'low')),
   },
@@ -67,6 +70,7 @@ const CRITICAL_CATEGORIES = ['auth', 'billing']
 const ELEVATED_CATEGORIES = ['ci-workflow', 'installer']
 const DEEP_LINES = 800
 const DEEP_FILES = 25
+const LARGE_LINES = 500
 
 // Each rule: [tier, reason, test]. First match wins, so order is severity order.
 const TIER_RULES = [
@@ -75,6 +79,7 @@ const TIER_RULES = [
   ['elevated', 'migrations or SQL', s => s.files.some(f => MIGRATION_FILE.test(f))],
   ['elevated', `more than ${DEEP_LINES} changed lines or ${DEEP_FILES} files`, s => s.lines > DEEP_LINES || s.files.length > DEEP_FILES],
   ['routine', 'documentation only', s => s.files.length > 0 && s.files.every(f => DOC_FILE.test(f))],
+  ['large', `more than ${LARGE_LINES} changed lines`, s => s.lines > LARGE_LINES],
 ]
 
 export function tierFor({ files = [], categories = [], lines = 0, override } = {}) {

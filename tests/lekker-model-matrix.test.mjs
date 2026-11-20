@@ -17,6 +17,20 @@ test('tier follows the riskiest signal', () => {
   assert.equal(tierFor({ files: ['src/a.ts'], lines: 801 }).tier, 'elevated')
   assert.equal(tierFor({ files: Array.from({ length: 26 }, (_, i) => `src/f${i}.ts`) }).tier, 'elevated')
   assert.equal(tierFor({ files: ['src/a.ts'], lines: 40 }).tier, 'standard')
+  assert.equal(tierFor({ files: ['src/a.ts'], lines: 500 }).tier, 'standard')
+  assert.equal(tierFor({ files: ['src/a.ts'], lines: 501 }).tier, 'large')
+  assert.equal(tierFor({ files: ['src/a.ts'], lines: 800 }).tier, 'large')
+  assert.equal(tierFor({ files: ['README.md'], lines: 600 }).tier, 'routine')
+})
+
+test('large keeps the finders on the standard route and puts only the gate on Opus medium', () => {
+  const standard = routingFor('claude', 'standard')
+  const large = routingFor('claude', 'large')
+  for (const role of ['triage', 'specialist', 'rules', 'prover', 'fixer', 'polish', 'housekeeping']) {
+    assert.deepEqual(large[role], standard[role], role)
+  }
+  assert.deepEqual(large.verifier, { model: 'opus', effort: 'medium' })
+  assert.deepEqual(large.critic, { model: 'opus', effort: 'medium' })
 })
 
 test('routine only when every file is documentation', () => {

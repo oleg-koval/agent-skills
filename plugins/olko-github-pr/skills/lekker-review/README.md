@@ -41,17 +41,17 @@ only ever do a cheap first pass, never the final check.
 Each host uses its own vendor's models: Claude Code runs Claude models, Codex
 runs Codex models. Cells read `Claude / Codex`.
 
-| Agent | routine | standard | elevated | critical |
-| --- | --- | --- | --- | --- |
-| Triage (scan depth, first pass only) | Haiku medium / Luna medium | Haiku medium / Luna medium | Haiku medium / Luna medium | Haiku medium / Luna medium |
-| Specialists x5 (quality, implementation, simplification, conventions, test-quality) | Sonnet medium / Sol medium | Sonnet high / Sol high | Opus high / Astra high | Opus xhigh / Astra xhigh |
-| Project rules, deps checklist | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet high / Sol high | Sonnet high / Sol high |
-| Verifier, critic re-examine, fix verifier | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high | Fable high / Astra high |
-| Completeness critic (deep) | Sonnet medium / Sol medium | Sonnet high / Sol high | Opus high / Astra high | Fable xhigh / Astra xhigh |
-| Prover (writes the failing test) | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high |
-| Fixer (--fix) | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high |
-| Comment polish (--post) | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium |
-| Housekeeping | Haiku low / Luna low | Haiku low / Luna low | Haiku low / Luna low | Haiku low / Luna low |
+| Agent | routine | standard | large | elevated | critical |
+| --- | --- | --- | --- | --- | --- |
+| Triage (scan depth, first pass only) | Haiku medium / Luna medium | Haiku medium / Luna medium | Haiku medium / Luna medium | Haiku medium / Luna medium | Haiku medium / Luna medium |
+| Specialists x5 (quality, implementation, simplification, conventions, test-quality) | Sonnet medium / Sol medium | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high | Opus xhigh / Astra xhigh |
+| Project rules, deps checklist | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet high / Sol high | Sonnet high / Sol high |
+| Verifier, critic re-examine, fix verifier | Sonnet high / Sol high | Sonnet high / Sol high | Opus medium / Astra medium | Opus high / Astra high | Fable high / Astra high |
+| Completeness critic (deep) | Sonnet medium / Sol medium | Sonnet high / Sol high | Opus medium / Astra medium | Opus high / Astra high | Fable xhigh / Astra xhigh |
+| Prover (writes the failing test) | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high |
+| Fixer (--fix) | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Sonnet high / Sol high | Opus high / Astra high |
+| Comment polish (--post) | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium | Sonnet medium / Sol medium |
+| Housekeeping | Haiku low / Luna low | Haiku low / Luna low | Haiku low / Luna low | Haiku low / Luna low | Haiku low / Luna low |
 
 The risk tier is picked from the changed files, and `--risk <tier>` overrides it:
 
@@ -59,8 +59,15 @@ The risk tier is picked from the changed files, and `--risk <tier>` overrides it
 | --- | --- |
 | routine | every changed file is documentation (`*.md`, `*.mdx`, `*.txt`, `*.rst`, `docs/`, `LICENSE`) |
 | standard | everything else |
+| large | more than 500 changed lines (finders stay on the standard route; only the verifier and critic move to Opus medium) |
 | elevated | CI workflows or installers, migrations or `*.sql`, or more than 800 changed lines or 25 files |
 | critical | auth or billing paths |
+
+Most of a review's cost is the five specialists re-reading context every turn
+(on one 677-line PR they were 9.8M of 12.1M cache-read tokens), so each specialist
+gets a soft budget of about 12 tool calls at `medium` and 20 at `deep`, and two
+lenses that flag the same line count as one finding even when they name its class
+differently, so it is verified once.
 
 Depth and tier are separate: depth decides how many agents run, the tier
 decides how strong each one is. A UI-only diff runs the Codex specialists on

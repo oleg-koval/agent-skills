@@ -89,7 +89,22 @@ check('merge keeps the highest severity', dedup([
   { file: 'a.ts', line: 5, severity: 'critical',    title: 'Off-by-one loop skips the first line', badCode: '', description: '' },
 ])[0].severity, 'critical')
 
+// Regression (PR 83): two lenses flagged one line with their own class slugs, so the
+// class check kept both and the defect was verified twice.
+check('two lenses, one line, own class slugs -> 1 finding', dedup([
+  { file: 'g.liquid', line: 44, severity: 'important', _dimension: 'implementation', bugClass: 'config-key-mismatch', title: 'Diameter filter param never matches: case arm says specs.diameter, configured option is spec.diameter', badCode: '', description: '' },
+  { file: 'g.liquid', line: 44, severity: 'important', _dimension: 'quality', bugClass: 'inconsistent-metafield-namespace', title: 'Diameter filter param never matches: switch left on specs.diameter while the filter emits spec.diameter', badCode: '', description: '' },
+]).length, 1)
+
 console.log('\ndedup: distinct issues must NOT be merged')
+check('one lens, one line, two classes stay separate', dedup([
+  { file: 'a.ts', line: 10, severity: 'important', _dimension: 'quality', bugClass: 'tenant-cache', title: 'Missing tenant check before cache lookup', badCode: '', description: '' },
+  { file: 'a.ts', line: 10, severity: 'important', _dimension: 'quality', bugClass: 'different-class', title: 'Missing tenant check before cache lookup', badCode: '', description: '' },
+]).length, 2)
+check('two lenses, nearby lines, two classes stay separate', dedup([
+  { file: 'a.ts', line: 10, severity: 'important', _dimension: 'quality', bugClass: 'tenant-cache', title: 'Missing tenant check before cache lookup', badCode: '', description: '' },
+  { file: 'a.ts', line: 12, severity: 'important', _dimension: 'implementation', bugClass: 'different-class', title: 'Missing tenant check before cache lookup', badCode: '', description: '' },
+]).length, 2)
 check('similar titles 390 lines apart stay separate', dedup([
   { file: 'big.ts', line: 10,  severity: 'important', title: 'Missing pagination on the products query', badCode: '', description: '' },
   { file: 'big.ts', line: 400, severity: 'important', title: 'Missing pagination on the orders query',   badCode: '', description: '' },
@@ -873,8 +888,9 @@ const buildPrompt = new Function(
   'dim', 'SUPPRESSED', 'prevSha',
   [liftBlockOr('PROJECT_RULE_DIMENSIONS'), liftBlockOr('PROJECT_RULE_CORE'), liftBlockOr('IGNORE_ENTRY_NOTE'),
     liftBlockOr('PROJECT_RULE_INSTRUCTION'), liftBlockOr('PROJECT_RULE_ONLY_INSTRUCTION'), liftConst('BUG_CLASS_INSTRUCTION'),
+    liftBlockOr('SPECIALIST_KEYS'), liftBlockOr('SPECIALIST_TOOL_BUDGET'),
     `const targetMetadata = '{}', promptDir = 'p', repoSlug = 'o/r', prNumber = 1, prUrl = 'u',
-       diffFile = 'd', contextFile = 'c', wtDisplay = 'w'`,
+       diffFile = 'd', contextFile = 'c', wtDisplay = 'w', depth = 'medium'`,
     lift('reviewPrompt'), 'return reviewPrompt(dim)'].join('\n'),
 )
 const promptFor = key => buildPrompt({ key, file: `${key}.md` }, [], null)

@@ -206,8 +206,14 @@ function sameIssue(a, b) {
   if (sameProjectQuote) {
     return true
   }
-  // Merging two classes would send one class's instances to the other's fix.
-  if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass) {
+  // Merging two classes would send one class's instances to the other's fix. But each
+  // lens names its class freely, so two lenses on the SAME line are one defect under two
+  // labels when the titles agree (PR 83: config-key-mismatch vs
+  // inconsistent-metafield-namespace at one line cost a second verifier). One lens
+  // emitting two classes at one line still means two issues.
+  const twoLensesOneLine = a.line === b.line && Boolean(a._dimension) && Boolean(b._dimension)
+    && a._dimension !== b._dimension
+  if (a.bugClass && b.bugClass && a.bugClass !== b.bugClass && !twoLensesOneLine) {
     return false
   }
   const ta = titleTokens(a.title)
@@ -334,6 +340,14 @@ function mergeFindings(a, b) {
 // the body, the function signature. Kept tight enough that two genuinely
 // distinct findings in one file are not merged because their titles rhyme.
 const SAME_ISSUE_LINE_WINDOW = 30
+
+// Soft tool-call budget per specialist (agent() has no turn cap). Context grows every
+// turn, so cache reads grow faster than turns: on PR 83 the conventions lens made 25
+// tool calls and read 3.5M tokens, 29% of the run. Scan, deps and rules lenses are not
+// specialists and get no budget.
+const SPECIALIST_KEYS = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
+
+const SPECIALIST_TOOL_BUDGET = { medium: 12, deep: 20 }
 
 function nearbyLines(a, b) {
   const la = Number(a.line)
@@ -817,6 +831,15 @@ const budgetAtStart = budget.spent()
         + ` counted from the hunk header (@@ -a,b +c,d @@ starts at line c), never a line`
         + ` number of DIFF_FILE itself. Quote the code at that line verbatim in "badCode".`,
     ].join(' ')
+
+    const toolBudget = SPECIALIST_KEYS.includes(dim.key) ? SPECIALIST_TOOL_BUDGET[depth] : undefined
+    if (toolBudget) {
+      prompt += ` TOOL BUDGET: about ${toolBudget} tool calls. Read DIFF_FILE and CONTEXT_FILE first.`
+        + ` Open another file only to confirm or refute a specific suspected defect in a changed`
+        + ` path, or in a direct caller or callee of changed code. Do not browse the repo for`
+        + ` style examples beyond two sibling files. When the budget is spent, return the`
+        + ` findings you have.`
+    }
 
     prompt += ` PATH IGNORE SAFEGUARD: read changedPaths from CONTEXT_FILE. REVIEW.md`
       + ` ignore rules apply only to unchanged paths; always review and report defects`
