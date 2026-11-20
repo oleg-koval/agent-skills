@@ -26,12 +26,15 @@
 //   runs/<runId>/timeline.jsonl
 //   runs/<runId>/<attached files>
 //
+// `start`, `mark`, `decide` and `finish` also print the lekker-progress status line on stderr.
+//
 // `finish` may be called more than once for one run (after the review, again
 // after fix mode); every call appends a fresh row and the newest one wins.
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, mkdtempSync, copyFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
+import { frame, STAGES } from './lekker-progress.mjs';
 
 const STATE_DIR = process.env.LEKKER_STATE_DIR || join(homedir(), '.local', 'state', 'lekker-review');
 const RUNS_DIR = join(STATE_DIR, 'runs');
@@ -40,6 +43,8 @@ const PROJECTS_DIR = process.env.LEKKER_CLAUDE_PROJECTS || join(homedir(), '.cla
 const REVMUX_TASKS = process.env.LEKKER_REVMUX_TASKS_DIR || join(homedir(), 'code-reviews', 'revmux-tasks');
 
 const DECISION_KINDS = ['depth', 'tier', 'route', 'finding', 'fix', 'post'];
+// Run-log phase -> progress stage. `synthesis` is "review saved", so it shares the `post` slot.
+const PHASE_STAGE = { start: 'start', context: 'context', review: 'review', synthesis: 'post', fix: 'fix', post: 'post' };
 const argv = process.argv.slice(2);
 const cmd = argv[0];
 
@@ -53,6 +58,17 @@ function flags(name) {
   return out;
 }
 const has = (name) => argv.includes('--' + name);
+
+// The Bash tool is never a TTY, and a skill step that says "decoration" gets skipped, so the
+// run log (called at every milestone) prints the status line itself. It goes to stderr so
+// stdout stays the single JSON object callers parse; LEKKER_PROGRESS=off silences it.
+function progress(stage, message) {
+  if (process.env.LEKKER_PROGRESS === 'off' || !STAGES[stage]) return;
+  try {
+    const ascii = has('ascii') || Boolean(process.env.LEKKER_PROGRESS_ASCII);
+    process.stderr.write(`${frame(stage, STAGES[stage][0] ?? 0, { message, ascii })}\n`);
+  } catch { /* decoration must never fail a review */ }
+}
 
 const readJson = (p) => {
   try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; }
@@ -167,6 +183,7 @@ if (cmd === 'start') {
   writeFileSync(join(dir, 'run.json'), JSON.stringify(meta, null, 2) + '\n');
   appendFileSync(join(dir, 'timeline.jsonl'), JSON.stringify({ phase: 'start', at: startedAt }) + '\n');
   console.log(JSON.stringify({ runId, dir }));
+  progress('start', `${repo} ${target}, ${meta.depth ?? 'depth unset'}`);
 } else if (cmd === 'mark') {
   const [runId, phase] = [argv[1], argv[2]];
   if (!phase) fail('mark needs <runId> <phase>');
@@ -174,6 +191,7 @@ if (cmd === 'start') {
   if (!existsSync(dir)) fail(`no run ${runId}`);
   appendFileSync(join(dir, 'timeline.jsonl'), JSON.stringify({ phase, at: new Date().toISOString(), note: flag('note') ?? undefined }) + '\n');
   console.log(JSON.stringify({ runId, phase }));
+  progress(PHASE_STAGE[phase], flag('note') ?? (phase === 'synthesis' ? 'review synthesized' : undefined));
 } else if (cmd === 'decide') {
   const runId = argv[1];
   const dir = runDir(runId);
@@ -193,6 +211,7 @@ if (cmd === 'start') {
   const lines = rows.map(({ kind, what, why }) => JSON.stringify({ at, kind, what, why }) + '\n').join('');
   appendFileSync(join(dir, 'timeline.jsonl'), lines);
   console.log(JSON.stringify({ runId, decisions: rows.length }));
+  rows.forEach(({ what, why }) => progress('decision', `${what}: ${why}`));
 } else if (cmd === 'attach') {
   const runId = argv[1];
   const dir = runDir(runId);
@@ -235,6 +254,8 @@ if (cmd === 'start') {
   append(row);
   const unresolved = workflows.filter((w) => w.durationS == null).map((w) => w.wfId);
   console.log(JSON.stringify({ runId, ledger: LEDGER, wallS: row.wallS, tokensTotal: row.tokensTotal, unresolvedWorkflows: unresolved }));
+  if (row.status === 'ok') progress('success', row.verdict ?? undefined);
+  else progress('failure', row.note ?? row.status);
 } else if (cmd === 'report') {
   const days = Number(flag('days', '30'));
   const rows = latestRows(days);
