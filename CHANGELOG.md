@@ -1,3 +1,10 @@
+# [1.94.0](https://github.com/oleg-koval/agent-skills/compare/v1.93.0...v1.94.0) (2026-11-20)
+
+
+### ✨ Features
+
+* **reflection:** wrap-up checks for a skill worth creating ([#233](https://github.com/oleg-koval/agent-skills/issues/233)) ([62ce3eb](https://github.com/oleg-koval/agent-skills/commit/62ce3eb4040fd6f7b6717a8102d347c3e1cdf7bf))
+
 # [1.93.0](https://github.com/oleg-koval/agent-skills/compare/v1.92.0...v1.93.0) (2026-11-20)
 
 
