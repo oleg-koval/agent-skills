@@ -1,3 +1,15 @@
+# [1.93.0](https://github.com/oleg-koval/agent-skills/compare/v1.92.0...v1.93.0) (2026-11-20)
+
+
+### ✨ Features
+
+* **lekker-review:** large tier, specialist tool budget and cross-lens dedup ([#235](https://github.com/oleg-koval/agent-skills/issues/235)) ([6961015](https://github.com/oleg-koval/agent-skills/commit/6961015f38bca6d1740a7498c93370b9a585d807))
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** print the progress line from the run log and stop pinning the main loop to Sonnet ([#234](https://github.com/oleg-koval/agent-skills/issues/234)) ([6cdc0d3](https://github.com/oleg-koval/agent-skills/commit/6cdc0d3a2ef799134755481c7cdd1a2397814f76))
+
 # [1.92.0](https://github.com/oleg-koval/agent-skills/compare/v1.91.0...v1.92.0) (2026-11-19)
 
 
