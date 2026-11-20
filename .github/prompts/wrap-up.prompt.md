@@ -47,7 +47,7 @@ Stay silent unless something qualifies. This step must never add noise to a smal
 
 - It ran as a sequence of at least three distinct steps with recognisable inputs and outputs, for example: gather facts from two sources, produce an artifact, draft the message that goes with it.
 - It repeated in this session (the same sequence for a second item), or the user corrected or re-asked for the same shape of work, or the user called it a standing process ("again", "for each", "next one").
-- No installed skill already covers most of it. Check before claiming: `jev pick-skill --turn "<abstract>"` (an empty list means nothing fits; a `fail_open` reply means unknown, not none), the skills listed in your context, and a find-skills skill where available. If a skill covers most of it, the finding is "extend skill X", not "create one".
+- No installed skill already covers most of it. Check the skills listed in your context and a find-skills skill where available. If the skip rules in "Second opinion from Jev" allow Jev, also run `jev pick-skill --turn "<abstract>"` (an empty list means nothing fits; a `fail_open` reply means unknown, not none). If a skill covers most of it, report that skill to use or extend and skip the creation assessment.
 - It is a procedure, not a fact. A gotcha, preference or project rule belongs in memory or a knowledge entry, not in a skill.
 
 For the strongest candidate only, write a name, trigger phrases, the steps, inputs, outputs, side effects that need approval, and the plugin it would live in.
@@ -72,7 +72,7 @@ Read `reusable` at 0.6 or higher as yes (a starting value; adjust it with experi
 | Candidate, not covered | reusable and shape `skill` | Suggest creating the skill: name, a one-sentence trigger description, at most six steps, inputs and outputs, approvals, plugin. Ask whether to create it; never create it unprompted. |
 | Candidate, an existing skill covers most | any | Name the skill to use or extend instead. |
 | Candidate, not covered | not reusable, or shape other than `skill` | One line: "possible skill, Jev disagrees (reason)". Suggest nothing. If the shape is `memory`, propose that memory entry instead. |
-| Candidate, not covered | no opinion or skipped | Say so. Suggest a skill only when the workflow repeated three or more times. |
+| Candidate, not covered | no opinion or skipped | Report that Jev gave no opinion or was skipped; do not suggest creating a skill. |
 | None | not run | Silent: the report says "Skill check: none". |
 
 Report at most one suggestion, the strongest.
