@@ -960,3 +960,26 @@ test('decisions: one route entry per role, finding entries carry the verifier re
   assert.equal(findings.find((d) => d.what.startsWith('src/example.ts:20 ')).why, 'dropped: Guarded two lines above.')
   assert.match(findings.find((d) => d.what.startsWith('src/example.ts:30 ')).why, /^kept: Reachable/)
 })
+
+test('specialists get a tool budget by depth; rules and scan lenses do not', async () => {
+  for (const [depth, budget] of [['medium', 12], ['deep', 20], ['scan', null]]) {
+    const prompts = {}
+    await runScenario({
+      depth,
+      worktreePath: '/tmp/fake-worktree',
+      respond: ({ prompt, options }) => {
+        prompts[options.label] = prompt
+        if (options.label === 'critic') return { angles: [] }
+        return { findings: [] }
+      },
+    })
+    for (const [label, prompt] of Object.entries(prompts)) {
+      if (!label.startsWith('review:')) continue
+      const specialist = ['quality', 'implementation', 'simplification', 'conventions', 'test-quality']
+        .includes(label.slice('review:'.length))
+      const match = prompt.match(/TOOL BUDGET: about (\d+) tool calls/)
+      assert.equal(match ? Number(match[1]) : null, specialist ? budget : null, `${depth} ${label}`)
+    }
+    assert.ok(Object.keys(prompts).some((label) => label === 'review:project-rules'), depth)
+  }
+})
