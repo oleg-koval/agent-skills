@@ -1,3 +1,10 @@
+## [1.94.1](https://github.com/oleg-koval/agent-skills/compare/v1.94.0...v1.94.1) (2026-11-21)
+
+
+### 🐛 Bug Fixes
+
+* **lekker-review:** refresh bundled review prompts ([4bf369c](https://github.com/oleg-koval/agent-skills/commit/4bf369c07b8c61a813958ee4ce5315e7b12563c8))
+
 # [1.94.0](https://github.com/oleg-koval/agent-skills/compare/v1.93.0...v1.94.0) (2026-11-20)
 
 
