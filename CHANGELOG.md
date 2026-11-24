@@ -1,3 +1,10 @@
+## [1.94.4](https://github.com/oleg-koval/agent-skills/compare/v1.94.3...v1.94.4) (2026-11-24)
+
+
+### ⚙️ Continuous Integrations
+
+* add a dedicated skill validator job ([#239](https://github.com/oleg-koval/agent-skills/issues/239)) ([2ef8a86](https://github.com/oleg-koval/agent-skills/commit/2ef8a86c7e4dc031dc1715abb4966d471d93657d))
+
 ## [1.94.3](https://github.com/oleg-koval/agent-skills/compare/v1.94.2...v1.94.3) (2026-11-24)
 
 
