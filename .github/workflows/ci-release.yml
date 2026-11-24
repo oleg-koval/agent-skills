@@ -38,12 +38,32 @@ jobs:
           sudo apt-get update && sudo apt-get install -y shellcheck
           shellcheck scripts/*.sh tests/*.sh
       - run: npm run build
-      - name: Generated tree is clean
-        run: git diff --exit-code
       - run: npm test
 
+  skill-audit:
+    name: Skill audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Audit committed skill metadata and catalog
+        run: npm run validate
+      - name: Verify generated adapters match the checkout
+        run: |
+          npm run build
+          git diff --exit-code
+          if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+            echo "::error::Skill build generated untracked files"
+            git ls-files --others --exclude-standard
+            exit 1
+          fi
+
   release-readiness:
-    needs: test
+    needs: [test, skill-audit]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
     runs-on: ubuntu-latest
     permissions:
