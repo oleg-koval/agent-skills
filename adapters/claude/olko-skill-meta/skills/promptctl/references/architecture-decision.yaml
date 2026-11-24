@@ -1,0 +1,94 @@
+# architecture-decision.yaml
+#
+# Generate an Architecture Decision Record (ADR) from context and options.
+# Useful for documenting technical decisions in a structured, reviewable format.
+# Based on the Michael Nygard ADR format (https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions).
+#
+# Usage:
+#   promptctl run architecture-decision \
+#     --title="Use PostgreSQL over MongoDB" \
+#     --context="We need a database for our user service. We have 50k users, complex queries, and ACID requirements." \
+#     --options="PostgreSQL, MongoDB, CockroachDB"
+#
+# Output: A complete ADR in Markdown format.
+
+name: architecture-decision
+description: Generate an Architecture Decision Record (ADR) from context and options
+
+variables:
+  - name: title
+    description: Short title for the decision (e.g., "Use PostgreSQL over MongoDB")
+    required: true
+  - name: context
+    description: Background and constraints driving this decision
+    required: true
+  - name: options
+    description: Comma-separated list of options considered
+    default: ""
+
+body: |
+  <context>
+  You are a senior software architect helping document a technical decision
+  using the Architecture Decision Record (ADR) format. ADRs capture important
+  decisions along with their context and consequences so future team members
+  understand why choices were made.
+  </context>
+
+  <task>
+  Generate a complete Architecture Decision Record for the following:
+
+  Title: {{.title}}
+
+  Context and constraints:
+  {{.context}}
+
+  {{if .options}}
+  Options being considered:
+  {{.options}}
+  {{end}}
+  </task>
+
+  <output_format>
+  Write the ADR in Markdown using exactly this structure:
+
+  # ADR: [Title]
+
+  ## Status
+  Proposed
+
+  ## Context
+  [Expand on the provided context. Include technical constraints,
+  business requirements, team expertise, and timeline pressures.]
+
+  ## Options Considered
+  [For each option, provide:]
+  ### Option N: [Name]
+  - **Pros:** [List advantages]
+  - **Cons:** [List disadvantages]
+  - **Effort:** [Low/Medium/High]
+
+  ## Decision
+  [State the decision clearly. Start with "We will use..."]
+
+  ## Consequences
+
+  ### Positive
+  - [List benefits of this decision]
+
+  ### Negative
+  - [List trade-offs and downsides]
+
+  ### Risks
+  - [List risks and how to mitigate them]
+
+  ## References
+  - [Relevant links, docs, or prior art]
+  </output_format>
+
+  <constraints>
+  - Be objective - present real trade-offs, not just justify one choice
+  - Include specific technical details, not generic advice
+  - Consequences should be concrete and measurable where possible
+  - Keep the entire ADR under 500 words
+  - If no options are provided, infer reasonable alternatives from the context
+  </constraints>

@@ -44,7 +44,7 @@ promptctl explain --file=src/parser.ts       # Code explanation
 promptctl list                               # See all available templates
 promptctl score prompts/                     # Score prompt files 0-100
 promptctl fix prompts/                       # Auto-fix low-scoring prompts
-promptctl create "review auth for security"  # Create prompt from raw intent (offline)
+PROMPTCTL_ENHANCE=rule promptctl create "review auth for security"  # Create prompt from raw intent (offline)
 ```
 
 ## Pi integration commands
@@ -84,11 +84,20 @@ promptctl fix my-prompt.md
 
 **Create a new structured prompt from intent (offline):**
 ```
-promptctl create "analyze this Go function for race conditions"
+PROMPTCTL_ENHANCE=rule promptctl create "analyze this Go function for race conditions"
 ```
+
+## Reusable templates
+
+Copy a template from the skill's bundled `references/` directory or from the linked public source into a project's `.promptctl/templates/` directory. Render it with `promptctl run <name>`. Keep incident inputs and source files in the project.
+
+- [Debug with error context](https://github.com/prompt-ctl/prompt-ctl/blob/main/examples/debug-error-context.yaml)
+- [Architecture decision record](https://github.com/prompt-ctl/prompt-ctl/blob/main/examples/architecture-decision.yaml)
+
+The examples come from [the public Promptctl repository](https://github.com/prompt-ctl/prompt-ctl/tree/main/examples) and retain its [Apache-2.0 license](https://github.com/prompt-ctl/prompt-ctl/blob/main/LICENSE).
 
 ## Resources
 
-- GitHub: https://github.com/oleg-koval/promptctl
+- GitHub: https://github.com/prompt-ctl/prompt-ctl
 - Website: https://prompt-ctl.com
 - Install: `brew tap oleg-koval/tap && brew install promptctl`

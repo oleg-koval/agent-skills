@@ -1,0 +1,85 @@
+# debug-error-context.yaml
+#
+# Debug template that provides full error context to an LLM.
+# Pass the failing file, the error message, and optionally a stack trace
+# to get a structured root cause analysis and fix suggestions.
+#
+# Usage:
+#   promptctl run debug-error-context --file=src/db.go \
+#     --error_message="nil pointer dereference" \
+#     --stack_trace="goroutine 1 [running]: main.handleRequest(...)  db.go:42"
+#
+# Output: Structured JSON with root cause analysis and suggested fixes.
+
+name: debug-error-context
+description: Diagnose errors with full context - file, error message, and stack trace
+
+variables:
+  - name: file
+    description: Path to the file where the error occurs
+    required: true
+  - name: error_message
+    description: The error message or exception text
+    required: true
+  - name: stack_trace
+    description: Stack trace or backtrace (if available)
+    default: ""
+
+body: |
+  <context>
+  You are a senior software engineer debugging a production issue.
+  Analyze the error in the context of the source code and provide
+  a precise diagnosis with actionable fixes.
+  </context>
+
+  <task>
+  The following error occurred in this file:
+
+  Error: {{.error_message}}
+
+  {{if .stack_trace}}
+  Stack trace:
+  {{.stack_trace}}
+  {{end}}
+
+  Analyze the source code below to determine the root cause.
+  </task>
+
+  <file name="{{.file_name}}" language="{{.file_ext}}">
+  {{.file_content}}
+  </file>
+
+  <output_contract>
+  Return strictly valid JSON. No explanations outside JSON.
+  </output_contract>
+
+  <required_structure>
+  {
+    "root_cause": "Clear explanation of why this error happens",
+    "failing_line": 0,
+    "error_type": "Category (e.g., null reference, type error, race condition, logic error)",
+    "contributing_factors": [
+      "Other code patterns that contribute to this bug"
+    ],
+    "suggested_fixes": [
+      {
+        "description": "What to change",
+        "line": 0,
+        "before": "Current code snippet",
+        "after": "Fixed code snippet",
+        "confidence": "high | medium | low"
+      }
+    ],
+    "prevention": [
+      "How to prevent similar bugs in the future"
+    ]
+  }
+  </required_structure>
+
+  <constraints>
+  - Focus on the most likely root cause first
+  - Show exact code changes (before/after) for each fix
+  - Rate confidence for each suggestion
+  - Keep fixes minimal - change only what is necessary
+  - If the stack trace points to a specific line, start analysis there
+  </constraints>
