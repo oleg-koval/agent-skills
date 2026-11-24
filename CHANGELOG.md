@@ -1,3 +1,10 @@
+## [1.94.2](https://github.com/oleg-koval/agent-skills/compare/v1.94.1...v1.94.2) (2026-11-24)
+
+
+### 📚 Documentation
+
+* preserve reusable offline promptctl templates ([#237](https://github.com/oleg-koval/agent-skills/issues/237)) ([27e54ee](https://github.com/oleg-koval/agent-skills/commit/27e54ee750a31430a3fa6169764f7731d685e6c3))
+
 ## [1.94.1](https://github.com/oleg-koval/agent-skills/compare/v1.94.0...v1.94.1) (2026-11-21)
 
 
