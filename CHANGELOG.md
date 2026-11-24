@@ -1,3 +1,10 @@
+## [1.94.3](https://github.com/oleg-koval/agent-skills/compare/v1.94.2...v1.94.3) (2026-11-24)
+
+
+### ⚙️ Continuous Integrations
+
+* add a dedicated skill audit job ([#238](https://github.com/oleg-koval/agent-skills/issues/238)) ([73151c5](https://github.com/oleg-koval/agent-skills/commit/73151c56dcede7c230cf3c41809c41b919390d45))
+
 ## [1.94.2](https://github.com/oleg-koval/agent-skills/compare/v1.94.1...v1.94.2) (2026-11-24)
 
 
